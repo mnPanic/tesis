@@ -1,6 +1,6 @@
 -- chapter 1
 
-double x = x + x
+--double x = x + x
 
 -- double $ double 2 = double (double 2) -- tengo que repasar $
 
@@ -30,5 +30,8 @@ seqn (act:acts) = do x <- act
 product' [] = 1
 product' (x:xs) = 1 * product xs
 
--- ver por que no anda
--- product'' = foldr (\l r -> l * r) 1
+product'' :: [Int] -> Int
+product'' = foldl (*) 1
+
+double :: [Int] -> [Int]
+double = map (*2)

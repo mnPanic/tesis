@@ -388,6 +388,99 @@ tail (_:xs) = xs
 > prioridad que otros operadores. Entonces `head x:_` se interpreta como `(head
 > x): _` que no es lo deseado.
 
+### Lambda expressions
+
+Son *nameless functions*, como `\x -> x + x`.
+
+Se pueden usar para formalizar el significado de funciones currificadas. Por ej.
+
+```haskell
+add : Int -> Int -> Int
+add x y = x + y
+
+-- se puede entender como
+add :: Int -> (Int -> Int)
+add = \x -> (\y -> x + y)
+```
+
+dos ventajas de escribirla así
+
+- Queda más claro que add es una función que toma x, devuelve otra func que toma
+  y y devuelve la suma
+- Tienen la misma forma sintáctica `? -> (? -> ?)`
+
+A veces permite escribir una función de forma más clara, por ej. `const` que
+toma un valor y devuelve una función que siempre retorna ese valor se puede
+tomar escribir de dos maneras
+
+```haskell
+const :: a -> b -> a
+const x _ = x
+
+const :: a -> (b -> a)
+const x = \_ -> x
+```
+
+### Operadores
+
+Las funciones como `+` que se escriben entre dos argumentos se llaman
+*operadores*
+
+> yo: infijos
+
+cualquier func con dos argumentos se puede convertir en un operador usando
+backticks, como
+
+```haskell
+7 `div` 2
+```
+
+también se puede la inversa. Cada operador se puede convertir en una función
+currificada que se escribe antes que sus argumentos encerrándola entre
+paréntesis, como
+
+```haskell
+(+) 1 2
+```
+
+Y también permite que *uno* de los argumentos se incluya en los paréntesis si se
+quieren como `(1+) 2` o `(+2) 1`
+
+En general, si `#` es un operador entonces las expresiones de la siguiente forma
+se llaman **secciones**, y se pueden formalizar con exp lambda
+
+```haskell
+(#) = \x y -> x # y
+(x #) = \y -> x # y
+(# y) = \x -> x # y
+```
+
+Usos:
+
+1. Construir funciones utiles de una forma compacta, como
+
+  - `(+)` suma
+  - `(1+)` sucesor
+  - `(1/)` inversa
+  - `(*2)` doble
+  - `(/2)` mitad
+
+2. Son necesarias para explicitar el tipo de un operador, porque los operadores
+   por si solos no son expresiones válidas en haskell
+
+   ```haskell
+   (+) :: Int -> Int -> Int
+   ```
+  
+3. Para usar operadores como argumentos a otras funciones.
+
+  ```haskell
+  sum :: [Int] -> Int
+  sum = foldl (+) 0
+  ```
+
+
+
 ## 5 - List comprehensions
 
 ## 6 - Recursive functions
