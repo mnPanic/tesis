@@ -479,9 +479,81 @@ Usos:
   sum = foldl (+) 0
   ```
 
-
-
 ## 5 - List comprehensions
+
+Forma de definir funciones y listas de forma simple.
+
+En matemáticas se pueden definir conjuntos por *comprensión*, por ej. $\{x^2
+\mid x \in \{ 1..5\} \}$ es un conjunto, que se puede describir en Haskell como
+`[x ^ 2 | x <- [1..5]]`
+
+> Esto viene del *axiom of comprehension* de set theory, que hace precisa la
+> idea de construir conjuntos seleccionando todos los valores que satisfacen
+> cierta propiedad.
+
+en donde `|` se lee *such that* y `<-` *drawn from* y la expresión `x <- [1..5]`
+es un *generator*. Una list comprehension puede tener más de un generador,
+separados por comas. Por ej. el prod cartesiano entre dos listas,
+
+```haskell
+[(x, y) | x <- [1, 2, 3], y <- [4, 5]]
+```
+
+Aspectos interesantes
+
+- **Orden**
+
+  Son como dos for anidados, cambiar el orden cambia el orden en el que aparecen
+  las tuplas. Los futuros pueden depender de los previos
+
+  ```haskell
+  [(x, y) | x <- [1..3], y <- [x..3]]
+  ```
+
+  Otro ejemplo práctico, una func `concat` que hace flatten de una lista de
+  listas
+  
+  ```haskell
+  concat :: [[a]] -> [a]
+  concat xss = [x | xs <- xss, x <- xs]
+  ```
+
+- **Wildcard**
+
+  ```haskell
+  firsts :: [(a, b)] -> [a]
+  firsts ps = [x | (x, _) <- ps]
+  ```
+
+  forma falopa de definir length
+
+  ```haskell
+  length :: [a] -> Int
+  length xs = sum [ 1 | _ <- xs]
+  ```
+
+- **Guardas**
+
+  Pueden usar guardas, ej.
+
+  ```haskell
+  [x | x <- [1..10], even x]
+  ```
+
+### `zip`
+
+La func `zip` produce una nueva lista con pares de elementos sucesivos de dos
+listas hasta que una o ambas son completadas.
+
+```haskell
+> zip [’a’,’b’,’c’] [1,2,3,4]
+[(’a’,1),(’b’,2),(’c’,3)]
+```
+
+### String comprehensions
+
+Los strings en realidad son `[Char]`, por lo que cualquier func polimórfica en
+listas se puede usar en strings
 
 ## 6 - Recursive functions
 
