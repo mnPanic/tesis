@@ -557,6 +557,53 @@ listas se puede usar en strings
 
 ## 6 - Recursive functions
 
+Da ejemplos de cómo definir funciones recursivas, que yo ya lo se
+
+- Se puede hacer recursión en más de un argumento, como en `zip` (dos listas) o
+  `drop` (lista y num)
+- **Recursión multiple**: se aplica más de una vez una func en su def, como con fibonacci.
+- **Recursión mútua**: Dos funciones se definen recursivamente en términos de la
+  otra. Por ej. `even` y `odd` se podrían definir como
+
+  ```haskell
+  even :: Int -> Bool
+  even 0 = True
+  even n = odd (n-1)
+
+  odd :: Int -> Bool
+  odd 0 = False
+  odd n = even (n-1)
+
+Tips para definir funciones recursivas
+
+1. Definir el tipo
+2. Enumerar los casos (en general son standard para cada tipo)
+3. Definir los casos simples (generalmente los base)
+4. Definir el resto de los casos
+5. Generalizar (el tipo por ej) y simplificar
+
+Ejemplo:
+
+```haskell
+product :: [Int] -> Int
+product [] = 1
+product (n:ns) = x * product ns
+```
+
+es lo mismo que el esquema recursivo `foldr`, se puede escribir como
+
+```haskell
+product :: Num a => [a] -> Int
+product = foldr (*) 1
+```
+
+Intento de escribir foldr
+
+```haskell
+foldr' :: (a -> b -> b) -> b -> [a] -> b
+foldr' _ z [] = z
+foldr' f z (x:xs) = f x (foldr f z xs)
+
 ## 7 - Higher order functions
 
 ## 8 - Declaring types and classes
