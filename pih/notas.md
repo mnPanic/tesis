@@ -603,8 +603,170 @@ Intento de escribir foldr
 foldr' :: (a -> b -> b) -> b -> [a] -> b
 foldr' _ z [] = z
 foldr' f z (x:xs) = f x (foldr f z xs)
+```
 
 ## 7 - Higher order functions
+
+Permiten que los patrones comunes de programación se encapsulen como funciones (`map`, `filter`, `foldr`)
+
+Una *higher-order function* toma funciones como argumentos o retorna funciones como resultados. Pero como se suele decir que una func que retorna funciones está *currificada*, le decimos higher order si toma como param.
+
+> Reflexión mía: me gusta más como en PLP se definen los esquemas recursivos como no más que una generalización de patrones comunes. En cambio acá te galerea map.
+
+### Listas
+
+```haskell
+map :: (a -> b) -> [a] -> [b]
+map _ [] = []
+map f (x:xs) = f x : map f xs
+
+-- def alternativa
+map f xs = [f x | x <- xs]
+
+filter :: (a -> Bool) -> [a] -> [a]
+filter _ [] = []
+filter p (x:xs) = if p x then x: filter p xs else filter p xs
+
+filter p (x:xs) = (if p x then [x] else []) ++ filter p xs
+
+filter p (x:xs) | p x = x: filter p xs
+                | otherwise = filter p xs
+
+filter p xs = [x | x <- xs, p x]
+```
+
+Ejemplo de uso conjunto, sumar los cuadrados de los enteros pares de una lista
+
+```haskell
+sumSquares :: [Int] -> Int
+sumSquares xs = sum (map (^2) (filter even xs))
+```
+
+Otras del prelude
+
+- `all`: Todos satisfacen
+- `any`: Alguno satisface
+- `takeWhile`: Seleccionar elementos de una lista mientras se satisface un predicado
+- `dropWhile`: Remover elementos de una lista mientras se satisfaga un predicado
+
+### `foldr` (*fold right*)
+
+Patrón de recursión, donde `#` es un operador que hace algo con la cabeza y el
+tail de la lista
+
+```haskell
+f [] = v
+f (x:xs) = x # f xs
+```
+
+por ej.
+
+```haskell
+sum = foldr (+) 0
+product = foldr (*) 1
+or = foldr (||) False
+and = foldr (&&) True
+```
+
+```haskell
+foldr :: (a -> b -> b) -> b -> [a] -> b
+foldr _ v [] = v
+foldr f v (x:xs) = f x (foldr f v xs)
+```
+
+Otra forma de pensarlo: reemplazar cada cons por f, y el [] del final por v
+
+```haskell
+foldr (+) 0
+-- a
+1 : (2 : (3 : []))
+1 + (2 + (3 + v))
+```
+
+Se llama *fold right* porque asume que el operador `#` asocia a derecha, porque
+así lo aplica.
+
+```haskell
+foldr (#) v [x0, x1, ..., xn] = x0 # (x1 # (x2 # ... (xn # v) ... ))
+```
+
+### `foldl` (*fold left*)
+
+Es posible que querramos un operador que asocie a izquierda, como
+
+```haskell
+sum :: Num a => [a] -> a
+sum = sum' 0
+  where
+    sum' v [] = v
+    sum' v (x:xs) = sum' (v+x) xs
+
+sum' 0 1: (2 : (3 : [])) = (((0 + 1) + 2) + 3)
+
+sum' (1: (2 : (3 : [])))
+  = sum' (0 + 1) (2 : (3 : []))
+  = sum' ((0 + 1) + 2) (3 : [])
+  = sum' (((0 + 1) + 2) + 3) []
+  = (((0 + 1) + 2) + 3)
+```
+
+se puede generalizar como
+
+```haskell
+foldl :: (b -> a -> b) -> b -> [a] -> b
+foldl _ v [] = v
+foldl f v (x:xs) = foldl (f v x) xs
+```
+
+```haskell
+reverse :: [a] -> [a]
+reverse = foldl (\xs x -> x:xs) []
+reverse = foldl (flip (:)) []
+
+reverse [1, 2, 3] = reverse (1: (2: (3: [])))
+  = (3:(2:(1:[])))
+```
+
+es mejor pensar en el comportamiento de foldl como un operador que asocia a der
+
+```haskell
+foldl (#) v [x0, x1, ..., xn] = (... (((v # x0) # x1) # x2) ...) # xn
+```
+
+### Composition operator `(.)`
+
+$f \circ g = f (g(x))$
+
+```haskell
+(.) :: (b -> c) -> (a -> b) -> (a -> c)
+f . g = \x -> f (g x)
+
+-- otra peor
+(f . g) x = f (g x)
+```
+
+puede servir para simplificar aplicaciones de funciones anidadas
+
+```haskell
+odd n = not (even n)
+odd = not.even
+
+twice f x = f (f x)
+twice f = f.f
+
+sumsqreven ns = sum ( map (^2) (filter even ns))
+sumsqreven = sum . map (^2) . filter even
+```
+
+la 3ra usa que la composición es asociativa, `f . (g . h) = (f . g) . h`
+
+`id` es la identidad de la composición, que permite usarla como caso base para
+secencias. Por ej.
+
+```haskell
+compose :: [a -> a] -> (a -> a)
+compose = foldr (.) id
+```
 
 ## 8 - Declaring types and classes
 
