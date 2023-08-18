@@ -768,6 +768,10 @@ compose :: [a -> a] -> (a -> a)
 compose = foldr (.) id
 ```
 
+### `case`
+
+Se puede usar para evitar definir funciones adicionales solo para hacer pattern matching.
+
 ## 8 - Declaring types and classes
 
 ## 9 - The countdown problem
