@@ -774,4 +774,130 @@ Se puede usar para evitar definir funciones adicionales solo para hacer pattern 
 
 ## 8 - Declaring types and classes
 
+### Type declarations
+
+`type` introduce un **nuevo nombre** a un **tipo existente**.
+
+```haskell
+type String = [Char]
+```
+
+No pueden ser recursivas
+
+```haskell
+type Tree = (Int, [Tree])
+```
+
+Los tipos recursivos se introducen con `data`
+
+Pueden tener tipos parametrizados
+
+```haskell
+-- Para definir funciones que manipulan pares de valores
+type Pair a = (a, a)
+
+-- Tipo de tablas de lookup que asocian claves a valores
+type Assoc k v = [(k, v)]
+```
+
+### Data declarations
+
+Para definir un nuevo tipo en lugar de un sinónimo se usa `data`.
+
+```data
+move = North | South | East | West
+```
+
+`|` se lee *or*. y cada valor nuevo del tipo se llama *constructor*.
+
+Los nombres por si solos no tienen significado, eso lo introduce el programador
+con las funciones que definen sobre esos tipos.
+
+Pueden tener argumentos
+
+```haskell
+data Shape = Circle Float | Rect Float Float
+```
+
+`Circle` y `Rect` son *funciones constructoras*
+
+```haskell
+> :type Circle
+Circle :: Float -> Shape
+> :type Rect
+Rect :: Float -> Float -> Shape
+```
+
+También se pueden parametrizar
+
+```haskell
+data Maybe a = Nothing | Just a
+```
+
+El libro da ejemplos de tipos recursivos (8.4) de
+
+- `Nat` con `Succ`
+- `List` igual que standard pero de 0, con `Nil` y `Cons`
+- `Tree` binarios
+
+### `newtype`
+
+Si un nuevo tipo tiene un solo constructor con un solo argumento se puede
+declarar usando `newtype`
+
+```haskell
+newtype Nat = N Int
+
+-- vs
+type Nat = Int
+data Nat = N Int
+```
+
+no son sinónimos, entonces no se puede usar uno en lugar del otro
+accidentalmente. Y tiene mejora de performance porque el compilador los inlinea.
+
+### Classes y instance declarations
+
+Mecanismo `class`
+
+```haskell
+class Eq a where
+  (==), (/=) :: a -> a -> Bool
+
+  -- definición default, que se puede pisar
+  x /= y = not (x == y)
+
+-- para que un tipo implemente Eq tiene que implementar == explícitamente (no hay duck typing)
+instance Eq Bool where
+    False == False = True
+    True == True = True
+    _ == _ = False
+
+-- extensiones de clases
+class Eq a => Ord a where
+  (<), (<=), (>), (>=) :: a -> a -> Bool
+  min, max             :: a -> a -> a
+
+  min x y | x <= y = x
+          | otherwise = y
+
+  max x y | x <= y = y
+          | otherwise = x
+```
+
+Solo tipos declarados con `data` o `newtype` pueden ser instancias de clases.
+
+### Instancias derivadas (`deriving`)
+
+Haskell provee facilidades para hacer que nuevos tipos sean instancias de `Eq`,
+`Ord`, `Show`, `Read` automáticamente.
+
+> Para ord, el orden de los constructores es el de su declaración
+
+### Ejercicios
+
+Son sencillos, parecidos a los de PLP, mejor hacer las guias.
+
 ## 9 - The countdown problem
+
+Salteado, no parece tan interesante.
