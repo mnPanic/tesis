@@ -1,0 +1,15 @@
+# latex
+*.synctex.gz
+*.synctex(busy)
+*.log
+*.fls
+*.fdb_latexmk
+*.aux
+*.nav
+*.toc
+*.out
+*.snm
+*.vrb
+
+# IDE
+.vscode/

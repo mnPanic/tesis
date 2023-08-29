@@ -1,0 +1,212 @@
+\documentclass{report}
+
+\usepackage[spanish]{babel}
+\usepackage{amsmath}
+\usepackage{amsthm}     % teoremas
+\usepackage{float}      % [H]
+\usepackage{abraces}    % \aunderbrace y \aoverbrace
+\usepackage[dvipsnames]{xcolor}     % \textcolor
+\usepackage[colorlinks=true]{hyperref}
+\usepackage[spanish]{babel}
+
+% https://tex.stackexchange.com/questions/32701/side-by-side-equations-with-equation-numbers-for-each
+\usepackage{multicol}
+
+% https://tex.stackexchange.com/questions/468/what-is-the-best-package-out-there-to-typeset-proof-trees
+% https://mathweb.ucsd.edu/~sbuss/ResearchWeb/bussproofs/BussGuide2_Smith2012.pdf
+% https://mathweb.ucsd.edu/~sbuss/ResearchWeb/bussproofs/
+\usepackage{bussproofs}
+
+\usepackage{xargs}
+\usepackage{xifthen}
+\newcommand{\ife}[4]{\ifthenelse{\equal{#1}{#2}}{#3}{#4}}
+\newcommand{\ax}[1]{\AxiomC{\EMX{#1}}}
+\renewcommandx{\inf}[2][1=1, usedefault]{
+\ife{#1}{1}
+    {\UnaryInfC{\EMX{#2}}}
+    {\ife{#1}{2}
+        {\BinaryInfC{\EMX{#2}}}
+        {\ife{#1}{3}
+            {\TrinaryInfC{\EMX{#2}}}
+            {\ife{#1}{4}
+                {\QuaternaryInfC{\EMX{#2}}}
+                {\ife{#1}{5}
+                    {\QuinaryInfC{\EMX{#2}}}
+                    {}
+                }
+            }
+        }
+    }
+}
+
+\newcommand{\binf}[1]{\inf[2]{#1}}
+\newcommand{\LL}[1]{\LeftLabel{#1}}
+\newcommand{\RL}[1]{\RightLabel{#1}}
+
+% Teoremas, corolarios, etc.
+% https://www.overleaf.com/learn/latex/theorems_and_proofs
+\theoremstyle{definition} % Para que no salga en italicas
+
+\newtheorem{theorem}{Teorema}
+\newtheorem*{theorem*}{Teorema}
+
+\newtheorem{lemma}{Lema}
+\newtheorem*{lemma*}{Lema}
+
+\newtheorem{prop}{Prop.}
+\newtheorem*{prop*}{Prop}
+
+\newtheorem{definition}{Def.}
+\newtheorem*{definition*}{Def}
+
+\newtheorem{obs}{Obs.}
+\newtheorem*{obs*}{Obs}
+
+\newtheorem{example}{Ejemplo}
+\newtheorem*{example*}{Ejemplo}
+
+\newcommand{\ubrace}[2]{\aunderbrace[l1r]{#1}_{#2}}
+\newcommand{\obrace}[2]{\aoverbrace[L1R]{#1}^{#2}}
+
+\newcommand{\todo}[1]{\textcolor{red}{(TODO: #1)}}
+
+\title{Tesis de licenciatura}
+\author{
+    Manuel Panichelli
+}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+Dos tipos de reglas
+
+\begin{itemize}
+    \item \textbf{Introducción}: Cómo demuestro?
+    \item \textbf{Eliminación}: Cómo lo uso para demostrar?
+\end{itemize}
+
+\begin{multicols}{2}
+    \begin{prooftree}
+        \AxiomC{$\Gamma \vdash \bot$}
+        \UnaryInfC{$\Gamma \vdash A$}
+    \end{prooftree}
+    \begin{prooftree}
+        \AxiomC{}
+        \UnaryInfC{$\Gamma \vdash \top$}
+    \end{prooftree}
+\end{multicols}
+
+\begin{multicols}{2}
+    \begin{prooftree}
+        \AxiomC{}
+        \RL{LEM}
+        \UnaryInfC{$\Gamma \vdash A \vee \neg A$}
+    \end{prooftree}
+    \begin{prooftree}
+        \AxiomC{}
+        \RL{Ax}
+        \UnaryInfC{$\Gamma, x:A \vdash x:A$}
+    \end{prooftree}
+\end{multicols}
+
+\vspace*{0.5cm}
+
+
+\begin{prooftree}
+    \AxiomC{$\Gamma \vdash A$}
+    \AxiomC{$\Gamma \vdash B$}
+    \RL{I$\wedge$}
+    \BinaryInfC{$\Gamma \vdash A \wedge B$}
+\end{prooftree}
+
+\begin{multicols}{2}
+    \begin{prooftree}
+        \AxiomC{$\Gamma \vdash A \wedge B$}
+        \RL{E\ $\wedge_1$}
+        \UnaryInfC{$\Gamma \vdash A$}
+    \end{prooftree}
+    \begin{prooftree}
+        \AxiomC{$\Gamma \vdash A \wedge B$}
+        \RL{E\ $\wedge_2$}
+        \UnaryInfC{$\Gamma \vdash B$}
+    \end{prooftree}
+\end{multicols}
+
+\begin{multicols}{2}
+    \begin{prooftree}
+        \AxiomC{$\Gamma \vdash A$}
+        \RL{I\ $\vee_1$}
+        \UnaryInfC{$\Gamma \vdash A \vee B$}
+    \end{prooftree}
+    \begin{prooftree}
+        \AxiomC{$\Gamma \vdash B$}
+        \RL{I\ $\vee_2$}
+        \UnaryInfC{$\Gamma \vdash A \vee B$}
+    \end{prooftree}
+\end{multicols}
+
+\begin{prooftree}
+    \AxiomC{$\Gamma \vdash A \vee B$}
+    \AxiomC{$\Gamma, A \vdash C$}
+    \AxiomC{$\Gamma, B \vdash C$}
+    \RL{E\ $\vee$}
+    \TrinaryInfC{$\Gamma \vdash C$}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{$\Gamma, A \vdash B$}
+    \RL{I\ $\to$}
+    \UnaryInfC{$\Gamma \vdash A \to B$}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{$\Gamma \vdash A \to B$}
+    \AxiomC{$\Gamma \vdash A$}
+    \RL{E\ $\to$ \scriptsize (modus ponens)}
+    \BinaryInfC{$\Gamma \vdash B$}
+\end{prooftree}
+
+\todo{Validar las justificaciones coloquiales de acá}
+
+\begin{multicols}{2}
+    \begin{prooftree}
+        \AxiomC{$\Gamma \vdash A$}
+        \AxiomC{$x \notin fv(\Gamma)$}
+        \RL{I\ $\forall$}
+        \BinaryInfC{$\Gamma \vdash \forall x.A$}
+    \end{prooftree}
+    \begin{prooftree}
+        \AxiomC{$\Gamma \vdash \forall x.A$}
+        \RL{E\ $\forall$}
+        \UnaryInfC{$\Gamma \vdash A \{x := t\}$}
+    \end{prooftree}
+\end{multicols}
+
+Para demostrar (introducir) un $\forall x. A$, quiero ver que sin importar el
+valor que tome $x$ yo puedo demostrar $A$. Pero para eso en mi contexto $\Gamma$
+no tengo que tenerlo ligado a nada, sino no lo estaría demostrando en general
+
+Para usar un $\forall x.A$ para demostrar (eliminar) instancio el $x$ en
+cualquier \textit{término} $t$, ya que es válido para todos.
+
+\begin{prooftree}
+    \AxiomC{$\Gamma \vdash A\{x := t\}$}
+    \RL{I\ $\exists$}
+    \UnaryInfC{$\Gamma \vdash \exists x. A$}
+\end{prooftree}
+
+Para demostrar un $\exists$, alcanza con instanciar la variable en un valor que
+sea válido.
+
+\begin{prooftree}
+    \AxiomC{$\Gamma \vdash \exists x.A$}
+    \AxiomC{$\Gamma, A \vdash B$}
+    \AxiomC{$x \notin fv(\Gamma, B)$}
+    \RL{E\ $\exists$}
+    \TrinaryInfC{$\Gamma \vdash B$}
+\end{prooftree}
+
+Para usar un $\exists$ para demostrar, es parecido a un $\vee$. \todo{Seguir}
+
+\end{document}
