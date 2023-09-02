@@ -82,8 +82,10 @@ data Proof =
     deriving (Show, Eq)
 
 data CheckResult = CheckOK
-    | CheckError Env Proof Form String 
+    | CheckError Env Proof Form String
     deriving (Show, Eq)
+
+-- TODO: Mónadas para chaining de errores? Por ej en PImpE
 
 check :: Env -> Proof -> Form -> CheckResult
 check env (PAx hyp) f =
@@ -93,5 +95,13 @@ check env (PAx hyp) f =
                         env (PAx hyp) f
                         (printf "env has hyp %s for different form" hyp)
         Nothing -> CheckError env (PAx hyp) f (printf "hyp %s not in env" hyp)
-check env (PImpI hyp proof) (FImp f1 f2) = check (EExtend hyp f1 env) proof f2
 
+-- dem A -> B
+check env (PImpI hyp proofB) (FImp fA fB) = check (EExtend hyp fA env) proofB fB
+
+-- dem B con A -> B
+check env (PImpE fA proofAImpB proofA) fB =
+    case check env proofAImpB (FImp fA fB) of
+        CheckError e p f s -> CheckError e p f s
+        CheckOK -> check env proofA fA
+        
