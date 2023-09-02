@@ -60,5 +60,10 @@ testCheck = test [
              EEmpty)
             (PAx "h B")
             (propVar "B")
-            "hyp h B not in env"
+            "hyp h B not in env",
+    -- PFalseE
+    "bot -> P" ~: check EEmpty p5 f5 ~?= CheckOK,
+
+    -- PNotE, PNotI
+    "P -> ~~P" ~: check EEmpty p6 f6 ~?= CheckOK
     ]

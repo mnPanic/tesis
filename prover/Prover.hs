@@ -89,19 +89,32 @@ data CheckResult = CheckOK
 
 check :: Env -> Proof -> Form -> CheckResult
 check env (PAx hyp) f =
-    case (get env hyp) of
+    case get env hyp of
         Just f' -> if f == f' then CheckOK
                    else CheckError
                         env (PAx hyp) f
                         (printf "env has hyp %s for different form" hyp)
         Nothing -> CheckError env (PAx hyp) f (printf "hyp %s not in env" hyp)
 
+-- no importa quien es f, false demuestra cualquier cosa
+check env (PFalseE pFalse) _ = check env pFalse FFalse
+
 -- dem A -> B
-check env (PImpI hyp proofB) (FImp fA fB) = check (EExtend hyp fA env) proofB fB
+check env (PImpI hyp proofB) (FImp fA fB) =
+    check (EExtend hyp fA env) proofB fB
 
 -- dem B con A -> B
 check env (PImpE fA proofAImpB proofA) fB =
     case check env proofAImpB (FImp fA fB) of
         CheckError e p f s -> CheckError e p f s
         CheckOK -> check env proofA fA
-        
+
+-- dem not A
+check env (PNotI hyp proofFalse) (FNot f) =
+    check (EExtend hyp f env) proofFalse FFalse
+
+-- dem False con not A
+check env (PNotE fA proofNotA proofA) FFalse =
+    case check env proofNotA (FNot fA) of
+        CheckError e p f s -> CheckError e p f s
+        CheckOK -> check env proofA fA

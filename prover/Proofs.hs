@@ -71,6 +71,7 @@ p4 = PImpI "h A -> (B -> C)" (
         )
     )
 
+-- Errores en ambos juicios
 p4Err1 = PImpI "h A -> (B -> C)" (
         PImpI "h A -> B" (
             PImpI "h A" (
@@ -106,3 +107,22 @@ p4Err2 = PImpI "h A -> (B -> C)" (
             )
         )
     )
+
+-- bot -> P
+f5 = FImp FFalse $ propVar "P"
+p5 = PImpI "h False" (
+        PFalseE (PAx "h False")
+    )
+
+-- p -> ~~p
+f6 = FImp (propVar "P") (FNot $ FNot $ propVar "P")
+p6 = PImpI "h P" (
+        PNotI "h ~P" (
+            PNotE
+                (propVar "P")
+                (PAx "h ~P")
+                (PAx "h P")
+        )
+    )
+
+-- TODO: ~~p -> p, si vale para LK
