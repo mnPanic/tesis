@@ -1,14 +1,17 @@
-module Main where
+module Prover where
+
+import Text.Printf
 
 -- Tipos de identificadores
-type VarId String
-type FunId String
-type PredId String
-type HypId String
+type VarId = String
+type FunId = String
+type PredId = String
+type HypId = String
 
 data Term =
     TVar VarId
     | TFun FunId [Term]
+    deriving (Show, Eq)
 
 data Form =
     FPred PredId [Term]
@@ -20,6 +23,17 @@ data Form =
     | FFalse
     | FForall VarId Form
     | FExists VarId Form
+    deriving (Show, Eq)
+
+data Env = EEmpty
+    | EExtend HypId Form Env
+    deriving (Show, Eq)
+
+get :: Env -> HypId -> Maybe Form
+get EEmpty hyp = Nothing
+get (EExtend hyp' f env) hyp
+    | hyp == hyp' = Just f
+    | otherwise = get env hyp
 
 data Proof =
     PAx HypId
@@ -65,8 +79,19 @@ data Proof =
     | PExistsE VarId -- x:A
                Form -- A
                Proof -- de E x. A
+    deriving (Show, Eq)
 
-data Env = EEmpty | EExtend Env HypId Form
+data CheckResult = CheckOK
+    | CheckError Env Proof Form String 
+    deriving (Show, Eq)
 
-check :: Env -> Proof -> Form -> Bool
-check = undefined
+check :: Env -> Proof -> Form -> CheckResult
+check env (PAx hyp) f =
+    case (get env hyp) of
+        Just f' -> if f == f' then CheckOK
+                   else CheckError
+                        env (PAx hyp) f
+                        (printf "env has hyp %s for different form" hyp)
+        Nothing -> CheckError env (PAx hyp) f (printf "hyp %s not in env" hyp)
+check env (PImpI hyp proof) (FImp f1 f2) = check (EExtend hyp f1 env) proof f2
+
