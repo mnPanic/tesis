@@ -12,37 +12,6 @@
 % https://tex.stackexchange.com/questions/32701/side-by-side-equations-with-equation-numbers-for-each
 \usepackage{multicol}
 
-% https://tex.stackexchange.com/questions/468/what-is-the-best-package-out-there-to-typeset-proof-trees
-% https://mathweb.ucsd.edu/~sbuss/ResearchWeb/bussproofs/BussGuide2_Smith2012.pdf
-% https://mathweb.ucsd.edu/~sbuss/ResearchWeb/bussproofs/
-\usepackage{bussproofs}
-
-\usepackage{xargs}
-\usepackage{xifthen}
-\newcommand{\ife}[4]{\ifthenelse{\equal{#1}{#2}}{#3}{#4}}
-\newcommand{\ax}[1]{\AxiomC{\EMX{#1}}}
-\renewcommandx{\inf}[2][1=1, usedefault]{
-\ife{#1}{1}
-    {\UnaryInfC{\EMX{#2}}}
-    {\ife{#1}{2}
-        {\BinaryInfC{\EMX{#2}}}
-        {\ife{#1}{3}
-            {\TrinaryInfC{\EMX{#2}}}
-            {\ife{#1}{4}
-                {\QuaternaryInfC{\EMX{#2}}}
-                {\ife{#1}{5}
-                    {\QuinaryInfC{\EMX{#2}}}
-                    {}
-                }
-            }
-        }
-    }
-}
-
-\newcommand{\binf}[1]{\inf[2]{#1}}
-\newcommand{\LL}[1]{\LeftLabel{#1}}
-\newcommand{\RL}[1]{\RightLabel{#1}}
-
 % Teoremas, corolarios, etc.
 % https://www.overleaf.com/learn/latex/theorems_and_proofs
 \theoremstyle{definition} % Para que no salga en italicas
@@ -65,6 +34,31 @@
 \newtheorem{example}{Ejemplo}
 \newtheorem*{example*}{Ejemplo}
 
+% https://tex.stackexchange.com/questions/468/what-is-the-best-package-out-there-to-typeset-proof-trees
+% https://mathweb.ucsd.edu/~sbuss/ResearchWeb/bussproofs/BussGuide2_Smith2012.pdf
+% https://mathweb.ucsd.edu/~sbuss/ResearchWeb/bussproofs/
+\usepackage{bussproofs}
+
+\newcommand{\LL}[1]{\LeftLabel{#1}}
+\newcommand{\RL}[1]{\RightLabel{#1}}
+
+\newcommand{\ruleI}[1]{I#1}
+\newcommand{\ruleE}[1]{E#1}
+
+% Tipado
+%% Contextos
+\newcommand{\ctx}{\Gamma}
+\newcommand{\ctxTwo}{\Delta}
+
+%% Fórmulas
+\newcommand{\form}{A}
+\newcommand{\formTwo}{B}
+\newcommand{\formThree}{C}
+
+%% Juicios
+\newcommand{\judg}[2]{#1 \vdash #2}
+
+% Misceláneos
 \newcommand{\ubrace}[2]{\aunderbrace[l1r]{#1}_{#2}}
 \newcommand{\obrace}[2]{\aoverbrace[L1R]{#1}^{#2}}
 
@@ -89,10 +83,12 @@ Dos tipos de reglas
 \begin{multicols}{2}
     \begin{prooftree}
         \AxiomC{$\Gamma \vdash \bot$}
+        \RL{\ruleE{$\bot$}}
         \UnaryInfC{$\Gamma \vdash A$}
     \end{prooftree}
     \begin{prooftree}
         \AxiomC{}
+        \RL{\ruleI{$\top$}}
         \UnaryInfC{$\Gamma \vdash \top$}
     \end{prooftree}
 \end{multicols}
@@ -116,19 +112,19 @@ Dos tipos de reglas
 \begin{prooftree}
     \AxiomC{$\Gamma \vdash A$}
     \AxiomC{$\Gamma \vdash B$}
-    \RL{I$\wedge$}
+    \RL{\ruleI{$\wedge$}}
     \BinaryInfC{$\Gamma \vdash A \wedge B$}
 \end{prooftree}
 
 \begin{multicols}{2}
     \begin{prooftree}
         \AxiomC{$\Gamma \vdash A \wedge B$}
-        \RL{E\ $\wedge_1$}
+        \RL{\ruleE{$\wedge_1$}}
         \UnaryInfC{$\Gamma \vdash A$}
     \end{prooftree}
     \begin{prooftree}
         \AxiomC{$\Gamma \vdash A \wedge B$}
-        \RL{E\ $\wedge_2$}
+        \RL{\ruleE{$\wedge_2$}}
         \UnaryInfC{$\Gamma \vdash B$}
     \end{prooftree}
 \end{multicols}
@@ -136,12 +132,12 @@ Dos tipos de reglas
 \begin{multicols}{2}
     \begin{prooftree}
         \AxiomC{$\Gamma \vdash A$}
-        \RL{I\ $\vee_1$}
+        \RL{\ruleI{$\vee_1$}}
         \UnaryInfC{$\Gamma \vdash A \vee B$}
     \end{prooftree}
     \begin{prooftree}
         \AxiomC{$\Gamma \vdash B$}
-        \RL{I\ $\vee_2$}
+        \RL{\ruleI{$\vee_2$}}
         \UnaryInfC{$\Gamma \vdash A \vee B$}
     \end{prooftree}
 \end{multicols}
@@ -150,22 +146,40 @@ Dos tipos de reglas
     \AxiomC{$\Gamma \vdash A \vee B$}
     \AxiomC{$\Gamma, A \vdash C$}
     \AxiomC{$\Gamma, B \vdash C$}
-    \RL{E\ $\vee$}
+    \RL{\ruleE{$\vee$}}
     \TrinaryInfC{$\Gamma \vdash C$}
 \end{prooftree}
 
 \begin{prooftree}
     \AxiomC{$\Gamma, A \vdash B$}
-    \RL{I\ $\to$}
+    \RL{\ruleI{$\to$}}
     \UnaryInfC{$\Gamma \vdash A \to B$}
 \end{prooftree}
 
 \begin{prooftree}
     \AxiomC{$\Gamma \vdash A \to B$}
     \AxiomC{$\Gamma \vdash A$}
-    \RL{E\ $\to$ \scriptsize (modus ponens)}
+    \RL{\ruleE{$\to$} \scriptsize (modus ponens)}
     \BinaryInfC{$\Gamma \vdash B$}
 \end{prooftree}
+
+\vspace{0.5cm}
+
+\begin{multicols}{2}
+    \begin{prooftree}
+        \AxiomC{$\Gamma, A \vdash \bot $}
+        \RL{\ruleI{$\neg$}}
+        \UnaryInfC{$\Gamma \vdash \neg A$}
+    \end{prooftree}
+    
+    \begin{prooftree}
+        \AxiomC{$\Gamma \vdash \neg A$}
+        \AxiomC{$\Gamma \vdash A$}
+        \RL{\ruleE{$\neg$}}
+        \BinaryInfC{$\Gamma \vdash \bot$}
+    \end{prooftree}
+    
+\end{multicols}
 
 \todo{Validar las justificaciones coloquiales de acá}
 
@@ -173,12 +187,12 @@ Dos tipos de reglas
     \begin{prooftree}
         \AxiomC{$\Gamma \vdash A$}
         \AxiomC{$x \notin fv(\Gamma)$}
-        \RL{I\ $\forall$}
+        \RL{\ruleI{$\forall$}}
         \BinaryInfC{$\Gamma \vdash \forall x.A$}
     \end{prooftree}
     \begin{prooftree}
         \AxiomC{$\Gamma \vdash \forall x.A$}
-        \RL{E\ $\forall$}
+        \RL{\ruleE{$\forall$}}
         \UnaryInfC{$\Gamma \vdash A \{x := t\}$}
     \end{prooftree}
 \end{multicols}
@@ -192,7 +206,7 @@ cualquier \textit{término} $t$, ya que es válido para todos.
 
 \begin{prooftree}
     \AxiomC{$\Gamma \vdash A\{x := t\}$}
-    \RL{I\ $\exists$}
+    \RL{\ruleI{$\exists$}}
     \UnaryInfC{$\Gamma \vdash \exists x. A$}
 \end{prooftree}
 
@@ -203,7 +217,7 @@ sea válido.
     \AxiomC{$\Gamma \vdash \exists x.A$}
     \AxiomC{$\Gamma, A \vdash B$}
     \AxiomC{$x \notin fv(\Gamma, B)$}
-    \RL{E\ $\exists$}
+    \RL{\ruleE{$\exists$}}
     \TrinaryInfC{$\Gamma \vdash B$}
 \end{prooftree}
 
