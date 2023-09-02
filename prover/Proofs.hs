@@ -126,3 +126,43 @@ p6 = PImpI "h P" (
     )
 
 -- TODO: ~~p -> p, si vale para LK
+
+-- ~~~p -> ~p
+f7 = FImp (FNot $ FNot $ FNot $ propVar "P") (FNot $ propVar "P")
+p7 = PImpI "h ~~~P" (
+        PNotI "h P" (
+            PNotE
+                (FNot $ FNot $ propVar "P")
+                -- ~~~P
+                (PAx "h ~~~P")
+                -- ~~P
+                (PNotI "h ~P" (
+                    PNotE
+                        (propVar "P")
+                        (PAx "h ~P")
+                        (PAx "h P")
+                ))
+        )
+    )
+
+-- modus tollens
+-- (A -> B) -> (~B -> ~A)
+f8 = FImp (FImp (propVar "A")
+                (propVar "B"))
+          (FImp (FNot $ propVar "B")
+                (FNot $ propVar "A"))
+p8 = PImpI "h A -> B" (
+        PImpI "h ~B" (
+            PNotI "h A" (
+                PNotE
+                    (propVar "B")
+                    (PAx "h ~B")
+                    -- dem B con A -> B
+                    (PImpE
+                        (propVar "A")
+                        (PAx "h A -> B")
+                        (PAx "h A")
+                    )
+            )
+        )
+    )

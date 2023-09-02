@@ -1,4 +1,9 @@
-module Prover where
+module Prover (
+               Env(..), get,
+               VarId, FunId, PredId, HypId,
+               Term(..), Form(..), Proof(..),
+               check, CheckResult(..)
+               ) where
 
 import Text.Printf
 
@@ -90,10 +95,9 @@ data CheckResult = CheckOK
 check :: Env -> Proof -> Form -> CheckResult
 check env (PAx hyp) f =
     case get env hyp of
-        Just f' -> if f == f' then CheckOK
-                   else CheckError
-                        env (PAx hyp) f
-                        (printf "env has hyp %s for different form" hyp)
+        Just f' -> if f == f'
+                   then CheckOK
+                   else CheckError env (PAx hyp) f (printf "env has hyp %s for different form" hyp)
         Nothing -> CheckError env (PAx hyp) f (printf "hyp %s not in env" hyp)
 
 -- no importa quien es f, false demuestra cualquier cosa
