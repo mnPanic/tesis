@@ -125,8 +125,6 @@ p6 = PImpI "h P" (
         )
     )
 
--- TODO: ~~p -> p, si vale para LK
-
 -- ~~~p -> ~p
 f7 = FImp (FNot $ FNot $ FNot $ propVar "P") (FNot $ propVar "P")
 p7 = PImpI "h ~~~P" (
@@ -165,4 +163,28 @@ p8 = PImpI "h A -> B" (
                     )
             )
         )
+    )
+
+-- ~~p -> p, si vale para LK
+f9 = FImp (FNot $ FNot $ propVar "A") (propVar "A")
+
+p9 = PImpI "h ~~A" (
+        -- Uso LEM de A v ~A
+        POrE
+            (propVar "A") (FNot $ propVar "A")
+            PLEM
+            -- Dem de A asumiendo A
+            "h A" (PAx "h A")
+            -- Dem de A asumiendo ~ A
+            "h ~A" (
+                -- ~A y ~~A generan una contradicción
+                PFalseE (
+                    PNotE
+                        (FNot $ propVar "A") -- Uso ~~A
+                        -- Dem de ~~A
+                        (PAx "h ~~A")
+                        -- Dem de ~A
+                        (PAx "h ~A")
+                )
+            )
     )

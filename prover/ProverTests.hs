@@ -67,5 +67,8 @@ testCheck = test [
     -- PNotE, PNotI
     "P -> ~~P" ~: check EEmpty p6 f6 ~?= CheckOK,
     "~~~P -> ~P" ~: check EEmpty p7 f7 ~?= CheckOK,
-    "(A -> B) -> (~B -> ~A)" ~: check EEmpty p8 f8 ~?= CheckOK
+    "(A -> B) -> (~B -> ~A)" ~: check EEmpty p8 f8 ~?= CheckOK,
+
+    -- LK
+    "~~P -> P" ~: check EEmpty p9 f9 ~?= CheckOK
     ]

@@ -67,9 +67,9 @@ data Proof =
     -- ¬ A = A -> bottom
     | PNotI HypId -- x:A
             Proof -- de bottom
-    | PNotE Form
-            Proof
-            Proof
+    | PNotE Form -- A
+            Proof -- de ~A
+            Proof -- de A
     | PTrueI
     | PFalseE Proof
     | PLEM
@@ -90,9 +90,20 @@ data CheckResult = CheckOK
     | CheckError Env Proof Form String
     deriving (Show, Eq)
 
--- TODO: Mónadas para chaining de errores? Por ej en PImpE
-
+{- TODO:
+    - Mónadas para chaining de errores? Por ej en PImpE
+    - En vez de tomar la form por pattern matching directo, tomar la form y
+      hacer un case para poder retornar error en vez de un non exhaustive cuando
+      use mal una regla?
+-}
 check :: Env -> Proof -> Form -> CheckResult
+
+-- TODO: handlearlo cuando es al reves, not A v A que es lo mismo
+check env (PLEM) (FOr f1 (FNot f2)) =
+    if f1 == f2
+    then CheckOK
+    else CheckError env (PLEM) (FOr (FNot f1) f2) "LEM proves A v ~A for the same form A, but they are different"
+
 check env (PAx hyp) f =
     case get env hyp of
         Just f' -> if f == f'
@@ -122,3 +133,14 @@ check env (PNotE fA proofNotA proofA) FFalse =
     case check env proofNotA (FNot fA) of
         CheckError e p f s -> CheckError e p f s
         CheckOK -> check env proofA fA
+
+-- dem C con A v B
+check env (POrE fA fB proofAorB hypA proofAC hypB proofBC) fC =
+    case check env proofAorB (FOr fA fB) of
+        CheckError e p f s -> CheckError e p f s
+        CheckOK -> case check (EExtend hypA fA env) proofAC fC of
+            CheckError e p f s -> CheckError e p f s
+            CheckOK -> check (EExtend hypB fB env) proofBC fC
+
+-- Error para agarrar todo lo no handleado
+check env proof form = CheckError env proof form "Unhandled proof"
