@@ -71,4 +71,7 @@ testCheck = test [
 
     -- LK
     "~~P -> P" ~: check EEmpty p9 f9 ~?= CheckOK
+
+    -- PAndE1, PAndE2
+    , "(~A v ~B) -> ~(A ^ B)" ~: check EEmpty p10 f10 ~?= CheckOK
     ]

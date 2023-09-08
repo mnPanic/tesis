@@ -144,7 +144,7 @@ p7 = PImpI "h ~~~P" (
     )
 
 -- modus tollens
--- (A -> B) -> (~B -> ~A)
+-- (ej7 curry howard) (A -> B) -> (~B -> ~A)
 f8 = FImp (FImp (propVar "A")
                 (propVar "B"))
           (FImp (FNot $ propVar "B")
@@ -188,3 +188,37 @@ p9 = PImpI "h ~~A" (
                 )
             )
     )
+
+-- De morgan
+
+-- (ej9 CurryHoward) (~A v ~B) -> ~(A ^ B)
+
+f10 = FImp
+        (FOr (FNot $ propVar "A") (FNot $ propVar "B"))
+        (FNot $ FAnd (propVar "A") (propVar "B"))
+
+p10 = PImpI ("h ~A v ~B") (
+        PNotI ("h A ^ B") (
+            -- Para demostrar ~(A^B), asumimos que no vale y dem false
+            -- Para demostrar false, por casos en h ~A v ~B. En cualquiera
+            -- llegamos a una contradicción con h A ^ B
+            POrE
+                (FNot $ propVar "A") (FNot $ propVar "B") (PAx "h ~A v ~B")
+                "h ~A" (
+                    PNotE
+                        (propVar "A") -- uso ~A
+                        (PAx "h ~A")
+                        (PAndE1 (propVar "B") (PAx "h A ^ B"))
+                )
+                "h ~B" (
+                    PNotE
+                        (propVar "B") -- uso ~B
+                        (PAx "h ~B")
+                        (PAndE2 (propVar "A") (PAx "h A ^ B"))
+                )
+
+        )
+    )
+
+-- vuelta (solo LK)
+-- ~(A ^ B) -> (~A v ~B)

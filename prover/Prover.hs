@@ -46,9 +46,9 @@ data Proof =
     | PAndI Proof -- A
             Proof -- de B
     | PAndE1 Form -- B
-             Proof -- de A
+             Proof -- de A ^ B
     | PAndE2 Form -- A
-             Proof -- de B
+             Proof -- de A ^ B
     -- A v B deduce C
     | POrI1 Proof -- A
     | POrI2 Proof -- B
@@ -92,9 +92,6 @@ data CheckResult = CheckOK
 
 {- TODO:
     - Mónadas para chaining de errores? Por ej en PImpE
-    - En vez de tomar la form por pattern matching directo, tomar la form y
-      hacer un case para poder retornar error en vez de un non exhaustive cuando
-      use mal una regla?
 -}
 check :: Env -> Proof -> Form -> CheckResult
 
@@ -141,6 +138,10 @@ check env (POrE fA fB proofAorB hypA proofAC hypB proofBC) fC =
         CheckOK -> case check (EExtend hypA fA env) proofAC fC of
             CheckError e p f s -> CheckError e p f s
             CheckOK -> check (EExtend hypB fB env) proofBC fC
+
+-- dem con A ^ B
+check env (PAndE1 fB proofAnB) fA = check env proofAnB (FAnd fA fB) 
+check env (PAndE2 fA proofAnB) fB = check env proofAnB (FAnd fA fB)
 
 -- Error para agarrar todo lo no handleado
 check env proof form = CheckError env proof form "Unhandled proof"
