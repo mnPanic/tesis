@@ -189,7 +189,7 @@ p8 = PImpI "h A -> B" (
         )
     )
 
--- ~~p -> p, si vale para LK
+-- ~~A -> A, si vale para LK
 f9 :: Form
 f9 = FImp (FNot $ FNot $ propVar "A") (propVar "A")
 
@@ -247,9 +247,6 @@ p10 = PImpI "h ~A v ~B" (
 
         )
     )
-
--- vuelta (solo LK)
--- ~(A ^ B) -> (~A v ~B)
 
 -- ej 11 CurryHoward, curryficación
 -- ((A ^ B) -> C) <-> (A -> (B -> C))
@@ -371,3 +368,15 @@ p14 = PAndI
         (PImpI "h true" (
             POrI2 $ PAx "h true"
         ))
+
+-- vuelta (solo LK)
+-- ~(A ^ B) -> (~A v ~B)
+f15 :: Form
+f15 = FImp
+        (FNot $ FAnd (propVar "A") (propVar "B"))
+        (FOr (FNot $ propVar "A") (FNot $ propVar "B"))
+
+p15 :: Proof
+p15 = PImpI "h ~(A ^ B)" (
+        
+    )
