@@ -1,6 +1,10 @@
 module Proofs where
 
 import Prover
+    ( Proof(PAx, PImpE, PLEM, PFalseE, PImpI, PNotI, POrE, PAndE1,
+            PNotE, PAndE2, PAndI, POrI2, POrI1, PTrueI),
+      Form(FNot, FPred, FFalse, FImp, FOr, FAnd, FTrue),
+      PredId )
 
 -- Dems sacadas de ejercicios de Lectures on the Curry Howard Isomorphism
 -- Originalmente son para deducción natural de intuicionista.
@@ -26,18 +30,23 @@ f2 = FImp
         (propVar "A")
     )
 
+p2 :: Proof
 p2 = PImpI "hA" (PImpI "hB" (PAx "hA"))
 
 -- A -> (B -> B)
+f3 :: Form
 f3 = FImp
     (propVar "A")
     (FImp
         (propVar "B")
         (propVar "B")
     )
+
+p3 :: Proof
 p3 = PImpI "x" (PImpI "x" (PAx "x"))
 
 -- (A -> (B -> C)) -> [(A -> B) -> (A -> C)]
+f4 :: Form
 f4 = FImp
         (FImp
             (propVar "A")
@@ -49,6 +58,7 @@ f4 = FImp
         )
 
 
+p4 :: Proof
 p4 = PImpI "h A -> (B -> C)" (
         PImpI "h A -> B" (
             PImpI "h A" (
@@ -72,6 +82,7 @@ p4 = PImpI "h A -> (B -> C)" (
     )
 
 -- Errores en ambos juicios
+p4Err1 :: Proof
 p4Err1 = PImpI "h A -> (B -> C)" (
         PImpI "h A -> B" (
             PImpI "h A" (
@@ -90,6 +101,7 @@ p4Err1 = PImpI "h A -> (B -> C)" (
         )
     )
 
+p4Err2 :: Proof
 p4Err2 = PImpI "h A -> (B -> C)" (
         PImpI "h A -> B" (
             PImpI "h A" (
@@ -109,13 +121,19 @@ p4Err2 = PImpI "h A -> (B -> C)" (
     )
 
 -- bot -> P
+f5 :: Form
 f5 = FImp FFalse $ propVar "P"
+
+p5 :: Proof
 p5 = PImpI "h False" (
         PFalseE (PAx "h False")
     )
 
 -- p -> ~~p
+f6 :: Form
 f6 = FImp (propVar "P") (FNot $ FNot $ propVar "P")
+
+p6 :: Proof
 p6 = PImpI "h P" (
         PNotI "h ~P" (
             PNotE
@@ -126,7 +144,10 @@ p6 = PImpI "h P" (
     )
 
 -- ~~~p -> ~p
+f7 :: Form
 f7 = FImp (FNot $ FNot $ FNot $ propVar "P") (FNot $ propVar "P")
+
+p7 :: Proof
 p7 = PImpI "h ~~~P" (
         PNotI "h P" (
             PNotE
@@ -145,10 +166,13 @@ p7 = PImpI "h ~~~P" (
 
 -- modus tollens
 -- (ej7 curry howard) (A -> B) -> (~B -> ~A)
+f8 :: Form
 f8 = FImp (FImp (propVar "A")
                 (propVar "B"))
           (FImp (FNot $ propVar "B")
                 (FNot $ propVar "A"))
+
+p8 :: Proof
 p8 = PImpI "h A -> B" (
         PImpI "h ~B" (
             PNotI "h A" (
@@ -166,8 +190,10 @@ p8 = PImpI "h A -> B" (
     )
 
 -- ~~p -> p, si vale para LK
+f9 :: Form
 f9 = FImp (FNot $ FNot $ propVar "A") (propVar "A")
 
+p9 :: Proof
 p9 = PImpI "h ~~A" (
         -- Uso LEM de A v ~A
         POrE
@@ -193,12 +219,14 @@ p9 = PImpI "h ~~A" (
 
 -- (ej9 CurryHoward) (~A v ~B) -> ~(A ^ B)
 
+f10 :: Form
 f10 = FImp
         (FOr (FNot $ propVar "A") (FNot $ propVar "B"))
         (FNot $ FAnd (propVar "A") (propVar "B"))
 
-p10 = PImpI ("h ~A v ~B") (
-        PNotI ("h A ^ B") (
+p10 :: Proof
+p10 = PImpI "h ~A v ~B" (
+        PNotI "h A ^ B" (
             -- Para demostrar ~(A^B), asumimos que no vale y dem false
             -- Para demostrar false, por casos en h ~A v ~B. En cualquiera
             -- llegamos a una contradicción con h A ^ B
@@ -222,3 +250,124 @@ p10 = PImpI ("h ~A v ~B") (
 
 -- vuelta (solo LK)
 -- ~(A ^ B) -> (~A v ~B)
+
+-- ej 11 CurryHoward, curryficación
+-- ((A ^ B) -> C) <-> (A -> (B -> C))
+
+f11 :: Form
+f11 = FAnd
+        (FImp
+            (FImp (FAnd (propVar "A") (propVar "B")) (propVar "C"))
+            (FImp (propVar "A") (FImp (propVar "B") (propVar "C"))))
+         (FImp
+            (FImp (propVar "A") (FImp (propVar "B") (propVar "C")))
+            (FImp (FAnd (propVar "A") (propVar "B")) (propVar "C")))
+
+p11 :: Proof
+p11 = PAndI
+        -- ((A ^ B) -> C) -> (A -> (B -> C))
+        (PImpI "h (A ^ B) -> C)" (
+            PImpI "h A" (
+                PImpI "h B" (
+                    PImpE
+                        (FAnd (propVar "A") (propVar "B"))
+                        (PAx "h (A ^ B) -> C)")
+                        (PAndI (PAx "h A") (PAx "h B"))
+                ) 
+            )
+        ))
+
+        -- (A -> (B -> C)) -> ((A ^ B) -> C)
+        (PImpI "h (A -> (B -> C))" (
+            PImpI "h A ^ B" (
+                -- Implico C a partir de B -> C que viene de A -> (B -> C)
+                PImpE
+                    (propVar "B")
+                    -- Interesante que la dem de B -> C no es PAx
+                    (PImpE
+                        (propVar "A") -- A -> (B -> C)
+                        (PAx "h (A -> (B -> C))")
+                        (PAndE1 (propVar "B") (PAx "h A ^ B")))
+                    (PAndE2 (propVar "A") (PAx "h A ^ B"))
+            )
+        ))
+
+-- ej 13 CurryHoward
+-- ~~(A v ~A)
+f12 :: Form
+f12 = FNot $ FNot $ FOr (propVar "A") (FNot $ propVar "A")
+
+p12LEM :: Proof
+p12LEM = PNotI "h ~(A v ~A)" (
+        PNotE
+            (FOr (propVar "A") (FNot $ propVar "A"))
+            -- ~(A v ~A)
+            (PAx "h ~(A v ~A)")
+            -- A v ~A
+            -- medio trucho
+            PLEM
+    )
+
+p12 :: Proof 
+p12 = PNotI "h ~(A v ~A)" (
+        PNotE
+            (FOr (propVar "A") (FNot $ propVar "A"))
+            -- ~(A v ~A)
+            (PAx "h ~(A v ~A)")
+            -- A v ~A
+            (POrI2 (PNotI "h A" (
+                PNotE
+                    (FOr (propVar "A") (FNot $ propVar "A"))
+                    (PAx "h ~(A v ~A)")
+                    (POrI1 (PAx "h A"))
+            )))
+    )
+
+-- alguna usando true
+-- (A ^ true) <-> A
+f13 :: Form
+f13 = FAnd
+        (FImp
+            (FAnd (propVar "A") FTrue)
+            (propVar "A"))
+        (FImp
+            (propVar "A")
+            (FAnd (propVar "A") FTrue))
+
+p13 :: Proof
+p13 = PAndI
+        -- A ^ true -> A
+        (PImpI "h A ^ true" (
+            PAndE1 FTrue (PAx "h A ^ true")
+        ))
+        -- A -> A ^ true
+        (PImpI "h A" (
+            PAndI
+                (PAx "h A")
+                PTrueI
+        ))
+
+-- (A v true) <-> true
+f14 :: Form
+f14 = FAnd
+        (FImp
+            (FOr (propVar "A") FTrue)
+            FTrue)
+        (FImp
+            FTrue
+            (FOr (propVar "A") FTrue))
+
+p14 :: Proof
+p14 = PAndI
+        -- A v true -> true
+        (PImpI "h A v true" (
+            POrE
+                (propVar "A") FTrue
+                (PAx "h A v true")
+                "h A" PTrueI
+                "h true" PTrueI
+        ))
+        -- true -> A v true
+        (PImpI "h true" (
+            POrI2 $ PAx "h true"
+        ))

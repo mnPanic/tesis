@@ -1,11 +1,11 @@
 module Prover (
-               Env(..), get,
-               VarId, FunId, PredId, HypId,
-               Term(..), Form(..), Proof(..),
-               check, CheckResult(..)
-               ) where
+    Env(..), get,
+    VarId, FunId, PredId, HypId,
+    Term(..), Form(..), Proof(..),
+    check, CheckResult(..)
+    ) where
 
-import Text.Printf
+import Text.Printf ( printf )
 
 -- Tipos de identificadores
 type VarId = String
@@ -88,7 +88,16 @@ data Proof =
 
 data CheckResult = CheckOK
     | CheckError Env Proof Form String
-    deriving (Show, Eq)
+    deriving (Eq)
+
+instance Show CheckResult where
+    show CheckOK = "OK"
+    show (CheckError env proof form msg) =
+        printf "Check error! %s on\nenv: %s\nproof: %s\nform: %s\n"
+            msg
+            (show env)
+            (show proof)
+            (show form)
 
 {- TODO:
     - Mónadas para chaining de errores? Por ej en PImpE
@@ -96,10 +105,10 @@ data CheckResult = CheckOK
 check :: Env -> Proof -> Form -> CheckResult
 
 -- TODO: handlearlo cuando es al reves, not A v A que es lo mismo
-check env (PLEM) (FOr f1 (FNot f2)) =
+check env PLEM (FOr f1 (FNot f2)) =
     if f1 == f2
     then CheckOK
-    else CheckError env (PLEM) (FOr (FNot f1) f2) "LEM proves A v ~A for the same form A, but they are different"
+    else CheckError env PLEM (FOr (FNot f1) f2) "LEM proves A v ~A for the same form A, but they are different"
 
 check env (PAx hyp) f =
     case get env hyp of
@@ -110,6 +119,8 @@ check env (PAx hyp) f =
 
 -- no importa quien es f, false demuestra cualquier cosa
 check env (PFalseE pFalse) _ = check env pFalse FFalse
+
+check env PTrueI FTrue = CheckOK
 
 -- dem A -> B
 check env (PImpI hyp proofB) (FImp fA fB) =
@@ -139,9 +150,19 @@ check env (POrE fA fB proofAorB hypA proofAC hypB proofBC) fC =
             CheckError e p f s -> CheckError e p f s
             CheckOK -> check (EExtend hypB fB env) proofBC fC
 
+-- dem A v B
+check env (POrI1 proofA) (FOr fA _) = check env proofA fA
+check env (POrI2 proofB) (FOr _ fB) = check env proofB fB
+
 -- dem con A ^ B
 check env (PAndE1 fB proofAnB) fA = check env proofAnB (FAnd fA fB) 
 check env (PAndE2 fA proofAnB) fB = check env proofAnB (FAnd fA fB)
+
+-- dem de A ^ B
+check env (PAndI proofA proofB) (FAnd fA fB) =
+    case check env proofA fA of
+        CheckError e p f s -> CheckError e p f s
+        CheckOK -> check env proofB fB
 
 -- Error para agarrar todo lo no handleado
 check env proof form = CheckError env proof form "Unhandled proof"
