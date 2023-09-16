@@ -129,7 +129,7 @@ check env (PImpI hyp proofB) (FImp fA fB) =
 -- dem B con A -> B
 check env (PImpE fA proofAImpB proofA) fB =
     case check env proofAImpB (FImp fA fB) of
-        CheckError e p f s -> CheckError e p f s
+        err@(CheckError {}) -> err
         CheckOK -> check env proofA fA
 
 -- dem not A
@@ -139,15 +139,15 @@ check env (PNotI hyp proofFalse) (FNot f) =
 -- dem False con not A
 check env (PNotE fA proofNotA proofA) FFalse =
     case check env proofNotA (FNot fA) of
-        CheckError e p f s -> CheckError e p f s
+        err@(CheckError {}) -> err
         CheckOK -> check env proofA fA
 
 -- dem C con A v B
 check env (POrE fA fB proofAorB hypA proofAC hypB proofBC) fC =
     case check env proofAorB (FOr fA fB) of
-        CheckError e p f s -> CheckError e p f s
+        err@(CheckError {}) -> err
         CheckOK -> case check (EExtend hypA fA env) proofAC fC of
-            CheckError e p f s -> CheckError e p f s
+            err@(CheckError {}) -> err
             CheckOK -> check (EExtend hypB fB env) proofBC fC
 
 -- dem A v B
@@ -161,7 +161,7 @@ check env (PAndE2 fA proofAnB) fB = check env proofAnB (FAnd fA fB)
 -- dem de A ^ B
 check env (PAndI proofA proofB) (FAnd fA fB) =
     case check env proofA fA of
-        CheckError e p f s -> CheckError e p f s
+        err@(CheckError {}) -> err
         CheckOK -> check env proofB fB
 
 -- Error para agarrar todo lo no handleado

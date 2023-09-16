@@ -1,1 +1,3 @@
 - Exportar explícitamente en los módulos
+
+- Usar record patterns para data https://stackoverflow.com/questions/38052553/haskell-record-pattern-matching

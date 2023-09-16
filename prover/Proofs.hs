@@ -376,7 +376,7 @@ f15 = FImp
         (FNot $ FAnd (propVar "A") (propVar "B"))
         (FOr (FNot $ propVar "A") (FNot $ propVar "B"))
 
-p15 :: Proof
-p15 = PImpI "h ~(A ^ B)" (
+-- p15 :: Proof
+-- p15 = PImpI "h ~(A ^ B)" (
         
-    )
+--     )
