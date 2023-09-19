@@ -215,6 +215,30 @@ p9 = PImpI "h ~~A" (
             )
     )
 
+-- Dada una fórmula A da una demostración de ~~A -> A
+doubleNegElim :: Form -> Proof
+doubleNegElim formA =
+    PImpI "h ~~{A}" (
+        -- Uso LEM de A v ~A
+        POrE
+            formA (FNot formA)
+            PLEM
+            -- Dem de A asumiendo A
+            "h {A}" (PAx "h {A}")
+            -- Dem de A asumiendo ~ A
+            "h ~{A}" (
+                -- ~A y ~~A generan una contradicción
+                PFalseE (
+                    PNotE
+                        (FNot formA) -- Uso ~~A
+                        -- Dem de ~~A
+                        (PAx "h ~~{A}")
+                        -- Dem de ~A
+                        (PAx "h ~{A}")
+                )
+            )
+        )
+
 -- De morgan
 
 -- (ej9 CurryHoward) (~A v ~B) -> ~(A ^ B)
@@ -376,7 +400,38 @@ f15 = FImp
         (FNot $ FAnd (propVar "A") (propVar "B"))
         (FOr (FNot $ propVar "A") (FNot $ propVar "B"))
 
--- p15 :: Proof
--- p15 = PImpI "h ~(A ^ B)" (
-        
---     )
+-- Estrategia: usar eliminación de la doble negación, y después se puede hacer
+-- una dem intuicionista
+p15 :: Proof
+p15 = PImpI "h ~(A ^ B)" (
+        -- Uso eliminación de doble negación
+        -- ~~(~A v ~B) -> ~A v ~B
+        PImpE
+            (FNot $ FNot $ FOr (FNot fA) (FNot fB))
+            (doubleNegElim $ FOr (FNot fA) (FNot fB))
+            -- Dem de ~~(~A v ~B)
+            (PNotI "h ~A v ~B" (
+                PNotE
+                    (FOr (FNot fA) (FNot fB))
+                    (PAx "h ~A v ~B")
+                    (POrI1 (
+                        PNotI "h A" (
+                            PNotE
+                                (FOr (FNot fA) (FNot fB))
+                                (PAx "h ~A v ~B")
+                                (POrI2 (
+                                    PNotI "h B" (
+                                        PNotE
+                                            (FAnd fA fB)
+                                            (PAx "h ~(A ^ B)")
+                                            (PAndI
+                                                (PAx "h A")
+                                                (PAx "h B"))
+                                    )
+                                ))
+                        )
+                    ))
+            ))
+    )
+    where fA = propVar "A"
+          fB = propVar "B"
