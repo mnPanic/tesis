@@ -435,3 +435,9 @@ p15 = PImpI "h ~(A ^ B)" (
     )
     where fA = propVar "A"
           fB = propVar "B"
+
+-- ~(A v B) <-> ~A ^ ~B
+
+-- leyes de demorgan (son dificiles - pablo)
+-- ~forall <=> exists~
+-- ~exists <=> forall~
