@@ -32,7 +32,7 @@ import Proofs
       f9,
       p9,
       f10,
-      p10, p11, f11, p12LEM, f12, p12, p13, f13, p14, f14, doubleNegElim, p15, f15 )
+      p10, p11, f11, p12LEM, f12, p12, p13, f13, p14, f14, doubleNegElim, p15, f15, p17, f17 )
 
 main :: IO Counts
 main = do runTestTT tests
@@ -113,4 +113,5 @@ testCheck = test [
     , "~~P -> P" ~: check EEmpty p9 f9 ~?= CheckOK
     , "~~P -> P con macro" ~: check EEmpty (doubleNegElim $ propVar "A") f9 ~?= CheckOK
     , "~(A ^ B) -> (~A v ~B)" ~: check EEmpty p15 f15 ~?= CheckOK
+    , "~A ^ ~B -> ~(A v B)" ~: check EEmpty p17 f17 ~?= CheckOK
     ]

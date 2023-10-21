@@ -402,6 +402,7 @@ f15 = FImp
 
 -- Estrategia: usar eliminación de la doble negación, y después se puede hacer
 -- una dem intuicionista
+-- Tengo una dem 100% clásica en el cuaderno pero es muy larga
 p15 :: Proof
 p15 = PImpI "h ~(A ^ B)" (
         -- Uso eliminación de doble negación
@@ -437,6 +438,46 @@ p15 = PImpI "h ~(A ^ B)" (
           fB = propVar "B"
 
 -- ~(A v B) <-> ~A ^ ~B
+
+-- ~(A v B) -> ~A ^ ~B
+f16 :: Form
+f16 = FImp (FNot $ FOr fA fB )
+           (FAnd (FNot fA) (FNot fB))
+    where fA = propVar "A"
+          fB = propVar "B"
+-- TODO
+
+-- ~A ^ ~B -> ~(A v B)
+f17 :: Form
+f17 = FImp (FAnd (FNot fA) (FNot fB))
+           (FNot $ FOr fA fB )
+    where fA = propVar "A"
+          fB = propVar "B"
+
+p17 :: Proof
+p17 = PImpI "h ~A ^ ~B" (
+        PNotI "h A v B" (
+            -- dem de bottom (contradicción)
+            -- idea: asumo A, por ~A contradicción. Análogo para B y ~B
+            POrE
+                fA fB (PAx "h A v B")
+                "h A"
+                -- proof de bottom asumiendo A
+                (PNotE
+                    fA
+                    (PAndE1 (FNot fB) (PAx "h ~A ^ ~B"))
+                    (PAx "h A"))
+                -- proof de bot asumiendo B
+                "h B"
+                (PNotE
+                    fB
+                    (PAndE2 (FNot fA) (PAx "h ~A ^ ~B"))
+                    (PAx "h B"))
+        )
+    )
+    where fA = propVar "A"
+          fB = propVar "B"
+
 
 -- leyes de demorgan (son dificiles - pablo)
 -- ~forall <=> exists~
