@@ -2,7 +2,7 @@ module Prover (
     Env(..), get,
     VarId, FunId, PredId, HypId,
     Term(..), Form(..), Proof(..),
-    check, CheckResult(..)
+    check, CheckResult(..), subst
     ) where
 
 import Text.Printf ( printf )
@@ -39,6 +39,30 @@ get EEmpty hyp = Nothing
 get (EExtend hyp' f env) hyp
     | hyp == hyp' = Just f
     | otherwise = get env hyp
+
+-- substituye todas las ocurrencias libres de VarId por Term
+subst :: VarId -> Term -> Form -> Form
+subst x t f = case f of
+    FPred l ts -> FPred l (map (substTerm x t) ts)
+    FAnd f1 f2 -> FAnd (rec f1) (rec f2)
+    FOr f1 f2 -> FOr (rec f1) (rec f2)
+    FImp f1 f2 -> FImp (rec f1) (rec f2)
+    FNot f1 -> FNot (rec f1)
+    FTrue -> FTrue
+    FFalse -> FFalse
+    orig@(FForall y f1) -> if x == y 
+                           then orig
+                           else FForall y (rec f1)
+    orig@(FExists y f1) -> if x == y 
+                           then orig
+                           else FExists y (rec f1)
+
+    where rec = subst x t
+
+substTerm :: VarId -> Term -> Term -> Term
+substTerm x t t' = case t' of 
+    o@(TVar y) -> if x == y then t else o
+    TFun f ts -> TFun f (map (substTerm x t) ts)
 
 data Proof =
     PAx HypId
@@ -163,6 +187,10 @@ check env (PAndI proofA proofB) (FAnd fA fB) =
     case check env proofA fA of
         err@(CheckError {}) -> err
         CheckOK -> check env proofB fB
+
+-- dem de Exists x. f
+check env (PExistsI validTerm proofSubstA) (FExists x f)=
+    check env proofSubstA (subst x validTerm f)
 
 -- Error para agarrar todo lo no handleado
 check env proof form = CheckError env proof form "Unhandled proof"

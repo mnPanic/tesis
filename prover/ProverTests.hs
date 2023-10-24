@@ -6,9 +6,10 @@ import Prover
     ( CheckResult(CheckOK, CheckError),
       Proof(PAx),
       Env(EEmpty, EExtend),
-      Form(FImp, FTrue, FFalse, FPred),
+      Form(FImp, FTrue, FFalse, FPred, FAnd, FNot, FOr, FForall, FExists),
+      subst,
       get,
-      check )
+      check, Term (TFun, TVar) )
 import Proofs
     ( propVar,
       f1,
@@ -32,15 +33,16 @@ import Proofs
       f9,
       p9,
       f10,
-      p10, p11, f11, p12LEM, f12, p12, p13, f13, p14, f14, doubleNegElim, p15, f15, p17, f17 )
+      p10, p11, f11, p12LEM, f12, p12, p13, f13, p14, f14, doubleNegElim, p15, f15, p17, f17, p16, f16, f18, p18 )
 
 main :: IO Counts
 main = do runTestTT tests
 
 tests :: Test
 tests = test [
-    "check" ~: testCheck,
-    "env" ~: testEnv
+    "check" ~: testCheck
+    , "env" ~: testEnv
+    , "subst" ~: testSubst
     ]
 
 exampleEnv :: Env
@@ -48,10 +50,46 @@ exampleEnv = EExtend "h1" FTrue $ EExtend "h2" FFalse EEmpty
 
 testEnv :: Test
 testEnv = test [
-    get exampleEnv "h1" ~?= Just FTrue,
-    get exampleEnv "h2" ~?= Just FFalse,
-    get exampleEnv "h3" ~?= Nothing
+    get exampleEnv "h1" ~?= Just FTrue
+    , get exampleEnv "h2" ~?= Just FFalse
+    , get exampleEnv "h3" ~?= Nothing
     ]
+
+testTerm :: Term
+testTerm = TFun "f" [ TVar "y" ]
+
+testSubst :: Test
+testSubst = test [
+        subst "x" testTerm FTrue ~?= FTrue
+        , subst "x" testTerm FFalse ~?= FFalse
+        -- Reemplaza solo los que tienen la misma
+        , subst "x" testTerm (FPred "A" [TFun "f" [TVar "x"],
+                                         TVar "y",
+                                         TVar "x"])
+            ~?= FPred "A" [TFun "f" [testTerm],
+                           TVar "y",
+                           testTerm]
+        -- Caso con todos los constructores que no son forall y exists
+        , subst "x" testTerm (
+            FAnd
+                (FNot px)
+                (FImp
+                    (propVar "A")
+                    (FOr (propVar "B") px))
+            ) ~?= FAnd
+                (FNot pt)
+                (FImp
+                    (propVar "A")
+                    (FOr (propVar "B") pt))
+        -- Forall y exists pasan cuando es diferente la var cuantificada
+        , subst "x" testTerm (FForall "y" px) ~?= FForall "y" pt
+        , subst "x" testTerm (FExists "y" px) ~?= FExists "y" pt
+        -- Forall y exists cortan cuando es igual la variable
+        , subst "x" testTerm (FForall "x" px) ~?= FForall "x" px
+        , subst "x" testTerm (FExists "x" px) ~?= FExists "x" px
+    ]
+    where px = FPred "P" [TVar "x"]
+          pt = FPred "P" [testTerm]
 
 testCheck :: Test
 testCheck = test [
@@ -114,4 +152,6 @@ testCheck = test [
     , "~~P -> P con macro" ~: check EEmpty (doubleNegElim $ propVar "A") f9 ~?= CheckOK
     , "~(A ^ B) -> (~A v ~B)" ~: check EEmpty p15 f15 ~?= CheckOK
     , "~A ^ ~B -> ~(A v B)" ~: check EEmpty p17 f17 ~?= CheckOK
+    , "~(A v B) -> ~A ^ ~B" ~: check EEmpty p16 f16 ~?= CheckOK
+    , "Good(y) -> Exists x. Good(x)" ~: check EEmpty p18 f18 ~?= CheckOK
     ]

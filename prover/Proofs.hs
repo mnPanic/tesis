@@ -2,9 +2,9 @@ module Proofs where
 
 import Prover
     ( Proof(PAx, PImpE, PLEM, PFalseE, PImpI, PNotI, POrE, PAndE1,
-            PNotE, PAndE2, PAndI, POrI2, POrI1, PTrueI),
-      Form(FNot, FPred, FFalse, FImp, FOr, FAnd, FTrue),
-      PredId )
+            PNotE, PAndE2, PAndI, POrI2, POrI1, PTrueI, PExistsI),
+      Form(FNot, FPred, FFalse, FImp, FOr, FAnd, FTrue, FForall, FExists),
+      PredId, Term (TVar) )
 
 -- Dems sacadas de ejercicios de Lectures on the Curry Howard Isomorphism
 -- Originalmente son para deducción natural de intuicionista.
@@ -411,15 +411,15 @@ p15 = PImpI "h ~(A ^ B)" (
             (FNot $ FNot $ FOr (FNot fA) (FNot fB))
             (doubleNegElim $ FOr (FNot fA) (FNot fB))
             -- Dem de ~~(~A v ~B)
-            (PNotI "h ~A v ~B" (
+            (PNotI "h (~A v ~B)" (
                 PNotE
                     (FOr (FNot fA) (FNot fB))
-                    (PAx "h ~A v ~B")
+                    (PAx "h (~A v ~B)")
                     (POrI1 (
                         PNotI "h A" (
                             PNotE
                                 (FOr (FNot fA) (FNot fB))
-                                (PAx "h ~A v ~B")
+                                (PAx "h (~A v ~B)")
                                 (POrI2 (
                                     PNotI "h B" (
                                         PNotE
@@ -446,6 +446,28 @@ f16 = FImp (FNot $ FOr fA fB )
     where fA = propVar "A"
           fB = propVar "B"
 -- TODO
+
+p16 :: Proof
+p16 = PImpI "h ~(A v B)" (
+        PAndI
+            -- Dem ~A
+            (PNotI "h A" (
+                PNotE
+                    (FOr fA fB)
+                    (PAx "h ~(A v B)")
+                    (POrI1 (PAx "h A"))
+            ))
+            -- Dem ~B
+            (PNotI "h B" (
+                PNotE
+                    (FOr fA fB)
+                    (PAx "h ~(A v B)")
+                    (POrI2 (PAx "h B"))
+            ))
+    )
+    where fA = propVar "A"
+          fB = propVar "B"
+
 
 -- ~A ^ ~B -> ~(A v B)
 f17 :: Form
@@ -479,6 +501,22 @@ p17 = PImpI "h ~A ^ ~B" (
           fB = propVar "B"
 
 
--- leyes de demorgan (son dificiles - pablo)
+-- Dems bobas con exists y forall
+
+-- Good(y) -> Exists x. Good(x)
+f18 :: Form
+f18 = FImp (FPred "Good" [ TVar "y" ])
+           (FExists "x" (FPred "Good" [ TVar "x" ]))
+
+p18 :: Proof
+p18 = PImpI "h Good(y)" (
+        PExistsI
+            (TVar "y")
+            (PAx "h Good(y)")
+    )
+
+-- Forall x. Good(x) -> Good(y)
+
+-- TODO leyes de demorgan (son dificiles - pablo)
 -- ~forall <=> exists~
 -- ~exists <=> forall~
