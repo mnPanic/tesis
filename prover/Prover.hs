@@ -108,6 +108,8 @@ data Proof =
     | PExistsE VarId -- x:A
                Form -- A
                Proof -- de E x. A
+               HypId
+               Proof
     deriving (Show, Eq)
 
 data CheckResult = CheckOK

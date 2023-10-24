@@ -2,7 +2,7 @@ module Proofs where
 
 import Prover
     ( Proof(PAx, PImpE, PLEM, PFalseE, PImpI, PNotI, POrE, PAndE1,
-            PNotE, PAndE2, PAndI, POrI2, POrI1, PTrueI, PExistsI),
+            PNotE, PAndE2, PAndI, POrI2, POrI1, PTrueI, PExistsI, PExistsE),
       Form(FNot, FPred, FFalse, FImp, FOr, FAnd, FTrue, FForall, FExists),
       PredId, Term (TVar) )
 
@@ -513,6 +513,23 @@ p18 = PImpI "h Good(y)" (
         PExistsI
             (TVar "y")
             (PAx "h Good(y)")
+    )
+
+-- Exists x. A(x) ^ B(x) -> Exists y. A(y)
+f19 :: Form
+f19 = FImp
+        (FExists "x" (FAnd 
+            (FPred "A" [TVar "x"])
+            (FPred "B" [TVar "x"])))
+        (FExists "y" (FPred "A" [TVar "y"]))
+
+p19 :: Proof
+p19 = PImpI "h E x. A(x) ^ B(x)" (
+        PExistsI
+            (TVar "x")
+            (PAndE1
+                (FPred "B" [TVar "x"])
+                (PExistsE))??
     )
 
 -- Forall x. Good(x) -> Good(y)
