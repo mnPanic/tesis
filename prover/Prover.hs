@@ -2,10 +2,11 @@ module Prover (
     Env(..), get,
     VarId, FunId, PredId, HypId,
     Term(..), Form(..), Proof(..),
-    check, CheckResult(..), subst
+    check, CheckResult(..), subst, fv, fvE
     ) where
 
 import Text.Printf ( printf )
+import qualified Data.Set as Set
 
 -- Tipos de identificadores
 type VarId = String
@@ -17,6 +18,11 @@ data Term =
     TVar VarId
     | TFun FunId [Term]
     deriving (Show, Eq)
+
+-- Free variables de un término
+fvT :: Term -> Set.Set VarId
+fvT (TVar x) = Set.singleton x
+fvT (TFun _ ts) = foldr (Set.union . fvT) Set.empty ts
 
 data Form =
     FPred PredId [Term]
@@ -30,6 +36,17 @@ data Form =
     | FExists VarId Form
     deriving (Show, Eq)
 
+fv :: Form -> Set.Set VarId
+fv (FPred _ ts) = foldr (Set.union . fvT) Set.empty ts
+fv (FAnd f1 f2) = Set.union (fv f1) (fv f2)
+fv (FOr f1 f2) = Set.union (fv f1) (fv f2)
+fv (FImp f1 f2) = Set.union (fv f1) (fv f2)
+fv (FNot f1) = fv f1
+fv FTrue = Set.empty
+fv FFalse = Set.empty
+fv (FForall y f1) = Set.delete y (fv f1)
+fv (FExists y f1) = Set.delete y (fv f1)
+
 data Env = EEmpty
     | EExtend HypId Form Env
     deriving (Show, Eq)
@@ -39,6 +56,13 @@ get EEmpty hyp = Nothing
 get (EExtend hyp' f env) hyp
     | hyp == hyp' = Just f
     | otherwise = get env hyp
+
+forms :: Env -> [Form]
+forms EEmpty = []
+forms (EExtend _ f e') = f:forms e'
+
+fvE :: Env -> Set.Set VarId
+fvE e = foldr (Set.union . fv) Set.empty (forms e)
 
 -- substituye todas las ocurrencias libres de VarId por Term
 subst :: VarId -> Term -> Form -> Form
@@ -102,6 +126,7 @@ data Proof =
     | PForallE VarId -- x
                Form -- A (sin sust)
                Proof -- de V x . A
+               Term -- t
     -- E x . A deduce B
     | PExistsI Term -- t
                Proof -- de A con x reemplazado por t  
@@ -131,17 +156,17 @@ instance Show CheckResult where
 check :: Env -> Proof -> Form -> CheckResult
 
 -- TODO: handlearlo cuando es al reves, not A v A que es lo mismo
-check env PLEM (FOr f1 (FNot f2)) =
+check env PLEM form@(FOr f1 (FNot f2)) =
     if f1 == f2
     then CheckOK
-    else CheckError env PLEM (FOr (FNot f1) f2) "LEM proves A v ~A for the same form A, but they are different"
+    else CheckError env PLEM form "LEM proves A v ~A for the same form A, but they are different"
 
-check env (PAx hyp) f =
+check env proof@(PAx hyp) f =
     case get env hyp of
         Just f' -> if f == f'
                    then CheckOK
-                   else CheckError env (PAx hyp) f (printf "env has hyp %s for different form" hyp)
-        Nothing -> CheckError env (PAx hyp) f (printf "hyp %s not in env" hyp)
+                   else CheckError env proof f (printf "env has hyp %s for different form" hyp)
+        Nothing -> CheckError env proof f (printf "hyp %s not in env" hyp)
 
 -- no importa quien es f, false demuestra cualquier cosa
 check env (PFalseE pFalse) _ = check env pFalse FFalse
@@ -190,9 +215,30 @@ check env (PAndI proofA proofB) (FAnd fA fB) =
         err@(CheckError {}) -> err
         CheckOK -> check env proofB fB
 
--- dem de Exists x. f
-check env (PExistsI validTerm proofSubstA) (FExists x f)=
-    check env proofSubstA (subst x validTerm f)
+-- dem de Exists x. A, prueba A{x := t}
+check env (PExistsI t proofSubstA) (FExists x f) =
+    check env proofSubstA (subst x t f)
+
+-- TODO: PExistsE
+
+-- dem de Forall x. A
+check env proof@(PForallI proofA) form@(FForall x fA) = 
+    if x `elem` fvE env
+    then CheckError env proof form (printf "env shouldn't contain fv '%s'" x)
+    else check env proofA fA
+
+-- dem de A{x:=t} usando Forall x. A
+check env proof@(PForallE x fA proofForallxA t) fAxt =
+    -- TODO: Check que A{x:=t} == f
+    if subst x t fA /= fAxt
+    then CheckError
+            env proof fAxt
+            (printf "form %s /= (%s){%s := %s}" 
+                (show fAxt)
+                (show fA)
+                x
+                (show t))
+    else check env proofForallxA (FForall x fA)
 
 -- Error para agarrar todo lo no handleado
 check env proof form = CheckError env proof form "Unhandled proof"

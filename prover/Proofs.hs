@@ -2,7 +2,7 @@ module Proofs where
 
 import Prover
     ( Proof(PAx, PImpE, PLEM, PFalseE, PImpI, PNotI, POrE, PAndE1,
-            PNotE, PAndE2, PAndI, POrI2, POrI1, PTrueI, PExistsI, PExistsE),
+            PNotE, PAndE2, PAndI, POrI2, POrI1, PTrueI, PExistsI, PExistsE, PForallI, PForallE),
       Form(FNot, FPred, FFalse, FImp, FOr, FAnd, FTrue, FForall, FExists),
       PredId, Term (TVar) )
 
@@ -534,6 +534,7 @@ f19 = FImp
 
 -- Forall x. Good(x) -> Good(y)
 
+-- Misma x, tiene que funcionar porque no está libre
 -- Forall x. A(x) ^ B(x) => Forall x. A(x)
 f20 :: Form
 f20 = FImp
@@ -546,11 +547,47 @@ p20 :: Proof
 p20 = PImpI "h Forall x. A(x) ^ B(x)" (
         PForallI (
             -- Proof A(x)
-            
+            PAndE1
+                bx
+                (PForallE
+                    "x" (FAnd ax bx)
+                    (PAx "h Forall x. A(x) ^ B(x)")
+                    (TVar "x"))
         )
     )
     where ax = FPred "A" [TVar "x"]
           bx = FPred "B" [TVar "x"]
+
+-- Var diferente, debería ser lo mismo
+
+
+-- Dem inválida de introducción forall, en la que no está libre x en el contexto
+-- A(x) => Forall x. A(x)
+-- no está bien, y se podría demostrar con PAx
+f21 :: Form
+f21 = FImp (FPred "A" [ TVar "x" ])
+           (FForall "x" (FPred "A" [ TVar "x" ]))
+
+p21 :: Proof
+p21 = PImpI "h A(x)" (PForallI (PAx "h A(x)"))
+
+-- Dem inválida de eliminación de forall, en donde el término a demostrar no
+-- A{x := t} sino que otra cosa
+-- Forall x. A(x) => Exists x. B(x)
+f22 :: Form
+f22 = FImp
+        (FForall "x" $ FPred "A" [TVar "x"])
+        (FExists "x" $ FPred "B" [TVar "x"])
+
+p22 :: Proof
+p22 = PImpI "h Forall x. A(x)" (
+        PExistsI (TVar "x") (
+            PForallE
+                "x" (FPred "A" [TVar "x"])
+                (PAx "h Forall x. A(x)")
+                (TVar "x")
+        )
+    )
 
 -- TODO leyes de demorgan (son dificiles - pablo)
 -- ~forall <=> exists~

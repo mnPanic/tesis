@@ -4,12 +4,13 @@ import Test.HUnit
     ( (~:), (~?=), runTestTT, Counts, Test, Testable(test) )
 import Prover
     ( CheckResult(CheckOK, CheckError),
-      Proof(PAx),
+      Proof(..),
       Env(EEmpty, EExtend),
       Form(FImp, FTrue, FFalse, FPred, FAnd, FNot, FOr, FForall, FExists),
       subst,
       get,
-      check, Term (TFun, TVar) )
+      check, fv, Term (TFun, TVar), fvE )
+
 import Proofs
     ( propVar,
       f1,
@@ -33,7 +34,9 @@ import Proofs
       f9,
       p9,
       f10,
-      p10, p11, f11, p12LEM, f12, p12, p13, f13, p14, f14, doubleNegElim, p15, f15, p17, f17, p16, f16, f18, p18 )
+      p10, p11, f11, p12LEM, f12, p12, p13, f13, p14, f14, doubleNegElim, p15, f15, p17, f17, p16, f16, f18, p18, p21, f21, f20, p20, p22, f22 )
+
+import qualified Data.Set as Set
 
 main :: IO Counts
 main = do runTestTT tests
@@ -43,6 +46,7 @@ tests = test [
     "check" ~: testCheck
     , "env" ~: testEnv
     , "subst" ~: testSubst
+    , "fv" ~: testFV
     ]
 
 exampleEnv :: Env
@@ -53,6 +57,21 @@ testEnv = test [
     get exampleEnv "h1" ~?= Just FTrue
     , get exampleEnv "h2" ~?= Just FFalse
     , get exampleEnv "h3" ~?= Nothing
+    ]
+
+longForm :: Form
+longForm = FExists "z" $ FForall "x" (
+        FImp
+            (FPred "A" [TVar "y"] )
+            (FNot $ FAnd
+                (FOr FTrue (FPred "B" [TVar "y"]))
+                (FPred "A" [ TVar "x", TVar "y", TFun "f" [TVar "z" ]]))
+    )
+
+testFV :: Test
+testFV = test [
+        fv longForm ~?= Set.singleton "y"
+        , fvE (EExtend "h1" (FPred "A" [TVar "w"]) $ EExtend "h2" longForm $ EEmpty) ~?= Set.fromList ["w", "y"]
     ]
 
 testTerm :: Term
@@ -153,5 +172,20 @@ testCheck = test [
     , "~(A ^ B) -> (~A v ~B)" ~: check EEmpty p15 f15 ~?= CheckOK
     , "~A ^ ~B -> ~(A v B)" ~: check EEmpty p17 f17 ~?= CheckOK
     , "~(A v B) -> ~A ^ ~B" ~: check EEmpty p16 f16 ~?= CheckOK
+
+    -- Exists y forall
     , "Good(y) -> Exists x. Good(x)" ~: check EEmpty p18 f18 ~?= CheckOK
+    , "Forall x. A(x) ^ B(x) => Forall x. A(x)" ~: check EEmpty p20 f20 ~?= CheckOK
+    , "Forall x. A(x) => Exists x. B(x)" ~: check EEmpty p22 f22 ~?=
+        CheckError
+            (EExtend "h Forall x. A(x)" (FForall "x" (FPred "A" [TVar "x"])) EEmpty)
+            (PForallE "x" (FPred "A" [TVar "x"]) (PAx "h Forall x. A(x)") (TVar "x"))
+            (FPred "B" [TVar "x"])
+            "form FPred \"B\" [TVar \"x\"] /= (FPred \"A\" [TVar \"x\"]){x := TVar \"x\"}"
+    , "A(x) -> Forall x. A(x)" ~: check EEmpty p21 f21 ~?=
+        CheckError
+            (EExtend "h A(x)" (FPred "A" [TVar "x"]) EEmpty)
+            (PForallI (PAx "h A(x)"))
+            (FForall "x" (FPred "A" [TVar "x"]))
+            "env shouldn't contain fv 'x'"
     ]

@@ -1,3 +1,7 @@
 - Exportar explícitamente en los módulos
 
-- Usar record patterns para data https://stackoverflow.com/questions/38052553/haskell-record-pattern-matching
+- Usar record patterns para data
+https://stackoverflow.com/questions/38052553/haskell-record-pattern-matching
+
+- Considerar usar type classes para free variables y subst así evito definir una
+para Form y otra para Term
