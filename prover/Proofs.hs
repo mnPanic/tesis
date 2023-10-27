@@ -523,16 +523,34 @@ f19 = FImp
             (FPred "B" [TVar "x"])))
         (FExists "y" (FPred "A" [TVar "y"]))
 
-p19 :: Proof
-p19 = PImpI "h E x. A(x) ^ B(x)" (
-        PExistsI
-            (TVar "x")
-            (PAndE1
-                (FPred "B" [TVar "x"])
-                (PExistsE))??
-    )
+-- p19 :: Proof
+-- p19 = PImpI "h E x. A(x) ^ B(x)" (
+--         PExistsI
+--             (TVar "x")
+--             (PAndE1
+--                 (FPred "B" [TVar "x"])
+--                 (PExistsE))??
+--     )
 
 -- Forall x. Good(x) -> Good(y)
+
+-- Forall x. A(x) ^ B(x) => Forall x. A(x)
+f20 :: Form
+f20 = FImp
+        (FForall "x" (FAnd ax bx))
+        (FForall "x" ax)
+    where ax = FPred "A" [TVar "x"]
+          bx = FPred "B" [TVar "x"]
+
+p20 :: Proof
+p20 = PImpI "h Forall x. A(x) ^ B(x)" (
+        PForallI (
+            -- Proof A(x)
+            
+        )
+    )
+    where ax = FPred "A" [TVar "x"]
+          bx = FPred "B" [TVar "x"]
 
 -- TODO leyes de demorgan (son dificiles - pablo)
 -- ~forall <=> exists~
