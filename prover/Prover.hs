@@ -127,14 +127,15 @@ data Proof =
                Form -- A (sin sust)
                Proof -- de V x . A
                Term -- t
-    -- E x . A deduce B
+    -- E x . A
     | PExistsI Term -- t
                Proof -- de A con x reemplazado por t  
-    | PExistsE VarId -- x:A
+    -- E x . A deduce B
+    | PExistsE VarId -- x
                Form -- A
                Proof -- de E x. A
-               HypId
-               Proof
+               HypId -- x:A
+               Proof -- de B con A como hyp
     deriving (Show, Eq)
 
 data CheckResult = CheckOK
@@ -219,7 +220,13 @@ check env (PAndI proofA proofB) (FAnd fA fB) =
 check env (PExistsI t proofSubstA) (FExists x f) =
     check env proofSubstA (subst x t f)
 
--- TODO: PExistsE
+-- del de B con Exists x. A
+check env proof@(PExistsE x fA proofExistsxA hypA proofB) fB
+    | x `elem` fvE env = CheckError env proof fB (printf "env shouldn't contain fv '%s'" x)
+    | x `elem` fv fB = CheckError env proof fB (printf "form to prove shoudln't contain fv '%s'" x)
+    | otherwise = case check env proofExistsxA (FExists x fA) of
+            err@(CheckError {}) -> err
+            CheckOK -> check (EExtend hypA fA env) proofB fB
 
 -- dem de Forall x. A
 check env proof@(PForallI proofA) form@(FForall x fA) = 

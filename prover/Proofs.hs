@@ -4,7 +4,7 @@ import Prover
     ( Proof(PAx, PImpE, PLEM, PFalseE, PImpI, PNotI, POrE, PAndE1,
             PNotE, PAndE2, PAndI, POrI2, POrI1, PTrueI, PExistsI, PExistsE, PForallI, PForallE),
       Form(FNot, FPred, FFalse, FImp, FOr, FAnd, FTrue, FForall, FExists),
-      PredId, Term (TVar) )
+      PredId, Term (TVar), VarId )
 
 -- Dems sacadas de ejercicios de Lectures on the Curry Howard Isomorphism
 -- Originalmente son para deducción natural de intuicionista.
@@ -13,6 +13,9 @@ import Prover
 -- i.e una variable proposicional
 propVar :: PredId -> Form 
 propVar pid = FPred pid []
+
+predVar :: PredId -> VarId -> Form
+predVar p v = FPred p [TVar v]
 
 -- A -> A
 f1 :: Form
@@ -504,8 +507,8 @@ p17 = PImpI "h ~A ^ ~B" (
 
 -- Good(y) -> Exists x. Good(x)
 f18 :: Form
-f18 = FImp (FPred "Good" [ TVar "y" ])
-           (FExists "x" (FPred "Good" [ TVar "x" ]))
+f18 = FImp (predVar "Good" "y")
+           (FExists "x" (predVar "Good" "x"))
 
 p18 :: Proof
 p18 = PImpI "h Good(y)" (
@@ -518,18 +521,31 @@ p18 = PImpI "h Good(y)" (
 f19 :: Form
 f19 = FImp
         (FExists "x" (FAnd 
-            (FPred "A" [TVar "x"])
-            (FPred "B" [TVar "x"])))
-        (FExists "y" (FPred "A" [TVar "y"]))
+            (predVar "A" "x")
+            (predVar "B" "x")))
+        (FExists "y" (predVar "A" "y"))
 
--- p19 :: Proof
--- p19 = PImpI "h E x. A(x) ^ B(x)" (
---         PExistsI
---             (TVar "x")
---             (PAndE1
---                 (FPred "B" [TVar "x"])
---                 (PExistsE))??
---     )
+p19 :: Proof
+p19 = PImpI "h Exists x. A(x) ^ B(x)" (
+        PExistsE
+            "x"
+            (FAnd 
+                (predVar "A" "x")
+                (predVar "B" "x"))
+            (PAx "h Exists x. A(x) ^ B(x)")
+            "h A(x) ^ B(x)"
+            -- Dem Exists y. A(y)
+            (PExistsI
+                (TVar "x")
+                -- Dem A(x)
+                (PAndE1
+                    (predVar "B" "x")
+                    (PAx "h A(x) ^ B(x)")))
+    )
+
+-- Es necesario primero hacer eliminación del exists y después PExistsI, PAndE1, porque sino al revés
+-- se querría probar A(x) ^ B(x) con ExistsE pero no se puede porque tiene x libre.
+-- Análogamente, para probar lo mismo pero del consecuente Exists x. A(x), no hay problema porque justamente x no está libre, sino que está ligado por el existencial.
 
 -- Forall x. Good(x) -> Good(y)
 

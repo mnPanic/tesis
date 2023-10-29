@@ -154,6 +154,8 @@ Dos tipos de reglas
     \TrinaryInfC{$\judg{\ctx}{\formThree}$}
 \end{prooftree}
 
+\ruleE{$\vee$} nos deja inferir una conclusión a partir de una disyunción dando sub demostraciones que muestran como la conclusión se puede deducir asumiendo cualquiera de los elementos.
+
 \begin{prooftree}
     \AxiomC{$\judg{\ctx, \form}{\formTwo}$}
     \RL{\ruleI{$\to$}}
@@ -187,6 +189,10 @@ Dos tipos de reglas
 
 \todo{Validar las justificaciones coloquiales de acá}
 
+Las reglas de $\forall$ y $\exists$ se pueden ver como extensiones a las de $\wedge$ y $\vee$.
+
+Un $\forall$ se puede pensar como una conjunción con un elemento por cada uno dl dominio sobre el cual se cuantifica.
+
 \begin{multicols}{2}
     \begin{prooftree}
         \AxiomC{$\judg{\ctx}{\form}$}
@@ -201,21 +207,16 @@ Dos tipos de reglas
     \end{prooftree}
 \end{multicols}
 
-Para demostrar (introducir) un $\forall x. \form$, quiero ver que sin importar el
-valor que tome $x$ yo puedo demostrar $\form$. Pero para eso en mi contexto $\Gamma$
-no tengo que tenerlo ligado a nada, sino no lo estaría demostrando en general
-
-Para usar un $\forall x.\form$ para demostrar (eliminar) instancio el $x$ en
-cualquier \textit{término} $t$, ya que es válido para todos.
+\begin{itemize}
+    \item \ruleE{$\forall$}: Para usar un $\forall x.\form$ para demostrar (eliminar) instancio el $x$ en cualquier \textit{término} $t$, ya que es válido para todos.
+    \item \ruleI{$\forall$}: Para demostrar (introducir) un $\forall x. \form$, quiero ver que sin importar el valor que tome $x$ yo puedo demostrar $\form$. Pero para eso en mi contexto $\Gamma$ no tengo que tenerlo ligado a nada, sino no lo estaría demostrando en general
+\end{itemize}
 
 \begin{prooftree}
     \AxiomC{$\judg{\ctx}{\form\{\var := \term\}}$}
     \RL{\ruleI{$\exists$}}
     \UnaryInfC{$\judg{\ctx}{\exists \var. \form}$}
 \end{prooftree}
-
-Para demostrar un $\exists$, alcanza con instanciar la variable en un término que
-sea válido.
 
 \begin{prooftree}
     \AxiomC{$\judg{\ctx}{\exists \var.\form}$}
@@ -225,6 +226,10 @@ sea válido.
     \TrinaryInfC{$\judg{\ctx}{\formTwo}$}
 \end{prooftree}
 
-Para usar un $\exists$ para demostrar, es parecido a un $\vee$. \todo{Seguir}
+
+\begin{itemize}
+    \item \ruleI{$\exists$}: Para demostrar un $\exists$, alcanza con instanciar la variable en un término $t$ que sea válido.
+    \item \ruleE{$\exists$}: Para usar un $\exists$ para demostrar, es parecido a \ruleE{$\vee$}. Como tenemos que ver que vale para cualquier $\var$, podemos concluir $\formTwo$ tomando como hipótesis $\form$ con $\var$ sin instanciar. 
+\end{itemize}
 
 \end{document}

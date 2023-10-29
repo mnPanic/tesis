@@ -34,7 +34,7 @@ import Proofs
       f9,
       p9,
       f10,
-      p10, p11, f11, p12LEM, f12, p12, p13, f13, p14, f14, doubleNegElim, p15, f15, p17, f17, p16, f16, f18, p18, p21, f21, f20, p20, p22, f22, p20', f20' )
+      p10, p11, f11, p12LEM, f12, p12, p13, f13, p14, f14, doubleNegElim, p15, f15, p17, f17, p16, f16, f18, p18, p21, f21, f20, p20, p22, f22, p20', f20', p19, f19 )
 
 import qualified Data.Set as Set
 
@@ -174,7 +174,8 @@ testCheck = test [
     , "~(A v B) -> ~A ^ ~B" ~: check EEmpty p16 f16 ~?= CheckOK
 
     -- Exists y forall
-    , "Good(y) -> Exists x. Good(x)" ~: check EEmpty p18 f18 ~?= CheckOK
+    , "Good(y) => Exists x. Good(x)" ~: check EEmpty p18 f18 ~?= CheckOK
+    , "Exists x. A(x) ^ B(x) => Exists y. A(y)" ~: check EEmpty p19 f19 ~?= CheckOK
     , "Forall x. A(x) ^ B(x) => Forall x. A(x)" ~: check EEmpty p20 f20 ~?= CheckOK
     , "Forall x. A(x) ^ B(x) => Forall y. A(y)" ~: check EEmpty p20' f20' ~?= CheckOK
     , "Forall x. A(x) => Exists x. B(x)" ~: check EEmpty p22 f22 ~?=
@@ -183,10 +184,12 @@ testCheck = test [
             (PForallE "x" (FPred "A" [TVar "x"]) (PAx "h Forall x. A(x)") (TVar "x"))
             (FPred "B" [TVar "x"])
             "form FPred \"B\" [TVar \"x\"] /= (FPred \"A\" [TVar \"x\"]){x := TVar \"x\"}"
-    , "A(x) -> Forall x. A(x)" ~: check EEmpty p21 f21 ~?=
+    , "A(x) => Forall x. A(x)" ~: check EEmpty p21 f21 ~?=
         CheckError
             (EExtend "h A(x)" (FPred "A" [TVar "x"]) EEmpty)
             (PForallI (PAx "h A(x)"))
             (FForall "x" (FPred "A" [TVar "x"]))
             "env shouldn't contain fv 'x'"
+
+    -- DeMorgan de Exists y Forall
     ]
