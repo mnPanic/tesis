@@ -229,7 +229,6 @@ check env proof@(PForallI proofA) form@(FForall x fA) =
 
 -- dem de A{x:=t} usando Forall x. A
 check env proof@(PForallE x fA proofForallxA t) fAxt =
-    -- TODO: Check que A{x:=t} == f
     if subst x t fA /= fAxt
     then CheckError
             env proof fAxt

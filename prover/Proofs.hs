@@ -445,7 +445,6 @@ f16 = FImp (FNot $ FOr fA fB )
            (FAnd (FNot fA) (FNot fB))
     where fA = propVar "A"
           fB = propVar "B"
--- TODO
 
 p16 :: Proof
 p16 = PImpI "h ~(A v B)" (
@@ -559,6 +558,30 @@ p20 = PImpI "h Forall x. A(x) ^ B(x)" (
           bx = FPred "B" [TVar "x"]
 
 -- Var diferente, debería ser lo mismo
+-- Forall x. A(x) ^ B(x) => Forall y. A(y)
+f20' :: Form
+f20' = FImp
+        (FForall "x" (FAnd ax bx))
+        (FForall "y" ay)
+    where ax = FPred "A" [TVar "x"]
+          ay = FPred "A" [TVar "y"]
+          bx = FPred "B" [TVar "x"]
+
+p20' :: Proof
+p20' = PImpI "h Forall x. A(x) ^ B(x)" (
+        PForallI (
+            -- Proof A(y)
+            PAndE1
+                by -- tengo que cambiar en ambos
+                (PForallE
+                    "x" (FAnd ax bx)
+                    (PAx "h Forall x. A(x) ^ B(x)")
+                    (TVar "y"))
+        )
+    )
+    where ax = FPred "A" [TVar "x"]
+          bx = FPred "B" [TVar "x"]
+          by = FPred "B" [TVar "y"]
 
 
 -- Dem inválida de introducción forall, en la que no está libre x en el contexto
