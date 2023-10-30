@@ -34,7 +34,7 @@ import Proofs
       f9,
       p9,
       f10,
-      p10, p11, f11, p12LEM, f12, p12, p13, f13, p14, f14, doubleNegElim, p15, f15, p17, f17, p16, f16, f18, p18, p21, f21, f20, p20, p22, f22, p20', f20', p19, f19 )
+      p10, p11, f11, p12LEM, f12, p12, p13, f13, p14, f14, doubleNegElim, p15, f15, p17, f17, p16, f16, f18, p18, p21, f21, f20, p20, p22, f22, p20', f20', p19, f19, p23Ida, f23Ida, p24Ida, f24Ida, p23Vuelta, f23Vuelta )
 
 import qualified Data.Set as Set
 
@@ -192,4 +192,7 @@ testCheck = test [
             "env shouldn't contain fv 'x'"
 
     -- DeMorgan de Exists y Forall
+    , "V x. A(x) => ~ E x. ~A(x)" ~: check EEmpty p23Ida f23Ida ~?= CheckOK
+    , "~E x. ~A(x) => V x. A(x)" ~: check EEmpty p23Vuelta f23Vuelta ~?= CheckOK
+    , "E x. A(x) => ~ V x. ~A(x)" ~: check EEmpty p24Ida f24Ida ~?= CheckOK
     ]

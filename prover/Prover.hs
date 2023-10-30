@@ -113,6 +113,7 @@ data Proof =
             Proof -- de A -> B
             Proof -- de A
     -- ¬ A = A -> bottom
+    -- También conocida como RAA (reducción al absurdo)
     | PNotI HypId -- x:A
             Proof -- de bottom
     | PNotE Form -- A

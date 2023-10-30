@@ -414,15 +414,17 @@ p15 = PImpI "h ~(A ^ B)" (
             (FNot $ FNot $ FOr (FNot fA) (FNot fB))
             (doubleNegElim $ FOr (FNot fA) (FNot fB))
             -- Dem de ~~(~A v ~B)
-            (PNotI "h (~A v ~B)" (
+            (PNotI "h ~(~A v ~B)" (
+                -- Acá es una dem por el absurdo, asumimos ~(~A v ~B) que es
+                -- la negación que lo que queremos probar, y llegamos a bottom.
                 PNotE
                     (FOr (FNot fA) (FNot fB))
-                    (PAx "h (~A v ~B)")
+                    (PAx "h ~(~A v ~B)")
                     (POrI1 (
                         PNotI "h A" (
                             PNotE
                                 (FOr (FNot fA) (FNot fB))
-                                (PAx "h (~A v ~B)")
+                                (PAx "h ~(~A v ~B)")
                                 (POrI2 (
                                     PNotI "h B" (
                                         PNotE
@@ -631,3 +633,92 @@ p22 = PImpI "h Forall x. A(x)" (
 -- TODO leyes de demorgan (son dificiles - pablo)
 -- ~forall <=> exists~
 -- ~exists <=> forall~
+
+-- V x. A(x) => ~ E x. ~A(x)
+f23Ida :: Form
+f23Ida = FImp
+            (FForall "x" $ predVar "A" "x")
+            (FNot $ FExists "x" $ FNot $ predVar "A" "x")
+
+-- No se puede invertir el orden de NotE y ExistsE porque si hiciera NotE
+-- primero, tendría que demostrar A(x) con ExistsE y no cumpliría con la
+-- restricción de las FV
+
+p23Ida :: Proof
+p23Ida = PImpI "h V x. A(x)" (
+            PNotI "h E x. ~A(x)" (
+                -- Dem bot
+                PExistsE
+                    "x" (FNot $ predVar "A" "x")
+                    (PAx "h E x. ~A(x)")
+                    "h ~A(x)"
+                    -- Contradicción de ~A(x) y A(x)
+                    (PNotE
+                        (predVar "A" "x")
+                        (PAx "h ~A(x)")
+                        -- Instancio V x. A(x) en x para llegar al abs
+                        (PForallE
+                            "x" (predVar "A" "x")
+                            (PAx "h V x. A(x)")
+                            (TVar "x") -- no cambia x
+                            ))
+            )
+        )
+
+-- Esta pinta que va a ser la difícil
+-- ~E x. ~A(x) => V x. A(x)
+f23Vuelta :: Form
+f23Vuelta = FImp
+                (FNot $ FExists "x" $ FNot $ predVar "A" "x")
+                (FForall "x" $ predVar "A" "x")
+
+p23Vuelta :: Proof
+p23Vuelta = PImpI "h ~E x. ~A(x)" (
+                PForallI (
+                    -- Dem de A(x), por absurdo, asumo ~A(x) mediante dnegelim
+                    PImpE
+                        (FNot $ FNot $ predVar "A" "x")
+                        (doubleNegElim $ predVar "A" "x")
+                        -- Dem ~~A(x)
+                        (PNotI "h ~A(x)" (
+                            PNotE
+                                (FExists "x" $ FNot $ predVar "A" "x")
+                                (PAx "h ~E x. ~A(x)")
+                                -- Dem E x. ~A(x)
+                                (PExistsI
+                                    (TVar "x")
+                                    (PAx "h ~A(x)"))
+                        ))
+                )
+            )
+
+-- E x. A(x) => ~ V x. ~A(x)
+f24Ida :: Form
+f24Ida = FImp
+            (FExists "x" $ predVar "A" "x")
+            (FNot $ FForall "x" $ FNot $ predVar "A" "x")
+
+p24Ida :: Proof
+p24Ida = PImpI "h E x. A(x)" (
+            PNotI "h V x. ~A(x)" (
+                PExistsE
+                    "x" (predVar "A" "x")
+                    (PAx "h E x. A(x)")
+                    "h A(x)"
+                    (PNotE
+                        (predVar "A" "x")
+                        (PForallE
+                            "x" (FNot $ predVar "A" "x")
+                            (PAx "h V x. ~A(x)")
+                            (TVar "x") -- queda igual
+                        )
+                        (PAx "h A(x)")
+                    )
+            )
+        )
+
+-- ~ V x. ~A(x) => E x. A(x)
+f24Vuelta :: Form
+f24Vuelta = FImp
+            (FNot $ FForall "x" $ FNot $ predVar "A" "x")
+            (FExists "x" $ predVar "A" "x")
