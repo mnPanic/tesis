@@ -218,6 +218,10 @@ p9 = PImpI "h ~~A" (
             )
     )
 
+-- Dada una fórmula A da su doble negación
+dneg :: Form -> Form
+dneg f = FNot $ FNot f
+
 -- Dada una fórmula A da una demostración de ~~A -> A
 doubleNegElim :: Form -> Proof
 doubleNegElim formA =
@@ -411,7 +415,7 @@ p15 = PImpI "h ~(A ^ B)" (
         -- Uso eliminación de doble negación
         -- ~~(~A v ~B) -> ~A v ~B
         PImpE
-            (FNot $ FNot $ FOr (FNot fA) (FNot fB))
+            (dneg $ FOr (FNot fA) (FNot fB))
             (doubleNegElim $ FOr (FNot fA) (FNot fB))
             -- Dem de ~~(~A v ~B)
             (PNotI "h ~(~A v ~B)" (
@@ -677,7 +681,7 @@ p23Vuelta = PImpI "h ~E x. ~A(x)" (
                 PForallI (
                     -- Dem de A(x), por absurdo, asumo ~A(x) mediante dnegelim
                     PImpE
-                        (FNot $ FNot $ predVar "A" "x")
+                        (dneg $ predVar "A" "x")
                         (doubleNegElim $ predVar "A" "x")
                         -- Dem ~~A(x)
                         (PNotI "h ~A(x)" (
@@ -720,5 +724,30 @@ p24Ida = PImpI "h E x. A(x)" (
 -- ~ V x. ~A(x) => E x. A(x)
 f24Vuelta :: Form
 f24Vuelta = FImp
-            (FNot $ FForall "x" $ FNot $ predVar "A" "x")
-            (FExists "x" $ predVar "A" "x")
+                (FNot $ FForall "x" $ FNot $ predVar "A" "x")
+                (FExists "x" $ predVar "A" "x")
+
+-- Acá no funciona primero hacer ExistsI y después dneg sobre A(x) porque el
+-- absurdo es sobre la no existencia
+p24Vuelta :: Proof
+p24Vuelta =
+    PImpI "h ~V x. ~A(x)" (
+        -- Dem E x. A(x) por absurdo mediante dneg elim, asumo ~E x. A(x)
+        PImpE
+            (dneg $ FExists "x" $ predVar "A" "x")
+            (doubleNegElim $ FExists "x" $ predVar "A" "x")
+            (PNotI "h ~E x. A(x)" (
+                PNotE
+                    (FForall "x" (FNot $ predVar "A" "x"))
+                    (PAx "h ~V x. ~A(x)")
+                    -- Dem de V x. ~A(x) (usando que no existe x. A(x))
+                    (PForallI (
+                        PNotI "h A(x)" (
+                            PNotE
+                                (FExists "x" $ predVar "A" "x")
+                                (PAx "h ~E x. A(x)")
+                                (PExistsI (TVar "x") (PAx "h A(x)"))
+                        )
+                    ))
+            ))
+    )
