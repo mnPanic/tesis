@@ -246,6 +246,19 @@ doubleNegElim formA =
             )
         )
 
+
+-- doubleNegElim de A se puede usar para demostrar A por contradicción, asumiendo ~A
+{-
+    PImpE
+        dneg A
+        dnegEim A
+        -- Proof de ~~A
+        PNotI "h ~A"
+            -- Proof de bottom asumiendo ~A, es decir que asumir que no vale A
+            -- lleva a una contradicción.
+-}
+
+
 -- De morgan
 
 -- (ej9 CurryHoward) (~A v ~B) -> ~(A ^ B)
@@ -635,8 +648,10 @@ p22 = PImpI "h Forall x. A(x)" (
     )
 
 -- TODO leyes de demorgan (son dificiles - pablo)
--- ~forall <=> exists~
--- ~exists <=> forall~
+-- 23 forall <=> ~exists~
+-- 23' ~forall <=> exists~
+-- 24 exists <=> ~forall~
+-- 24' ~exists <=> forall~
 
 -- V x. A(x) => ~ E x. ~A(x)
 f23Ida :: Form
