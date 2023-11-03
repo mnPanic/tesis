@@ -74,6 +74,10 @@ subst x t f = case f of
     FNot f1 -> FNot (rec f1)
     FTrue -> FTrue
     FFalse -> FFalse
+    -- si y esta libre en T
+    -- buscar y' que no este libre en T, f1 dif de y.
+    -- en f1 y por y'
+    -- reemplazar y' recursivamente por T
     orig@(FForall y f1) -> if x == y 
                            then orig
                            else FForall y (rec f1)
