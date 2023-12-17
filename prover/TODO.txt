@@ -35,7 +35,7 @@ ej de por qué necesitas chequear las fv en Exists E
 
 exists x . ~p(x) -> p(x) -> bot
 
-surge de ~V x. P(x) -> ~P(x)
+surge de P(x) -> V x. P(x)
 
 ---
 
