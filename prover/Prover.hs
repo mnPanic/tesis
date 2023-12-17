@@ -20,9 +20,9 @@ data Term =
     deriving (Show, Eq)
 
 -- Free variables de un término
-fvT :: Term -> Set.Set VarId
-fvT (TVar x) = Set.singleton x
-fvT (TFun _ ts) = foldr (Set.union . fvT) Set.empty ts
+fvTerm :: Term -> Set.Set VarId
+fvTerm (TVar x) = Set.singleton x
+fvTerm (TFun _ ts) = foldr (Set.union . fvTerm) Set.empty ts
 
 data Form =
     FPred PredId [Term]
@@ -37,7 +37,7 @@ data Form =
     deriving (Show, Eq)
 
 fv :: Form -> Set.Set VarId
-fv (FPred _ ts) = foldr (Set.union . fvT) Set.empty ts
+fv (FPred _ ts) = foldr (Set.union . fvTerm) Set.empty ts
 fv (FAnd f1 f2) = Set.union (fv f1) (fv f2)
 fv (FOr f1 f2) = Set.union (fv f1) (fv f2)
 fv (FImp f1 f2) = Set.union (fv f1) (fv f2)
@@ -65,6 +65,7 @@ fvE :: Env -> Set.Set VarId
 fvE e = foldr (Set.union . fv) Set.empty (forms e)
 
 -- substituye todas las ocurrencias libres de VarId por Term
+-- Lo hace alpha-renombrando en el camino.
 subst :: VarId -> Term -> Form -> Form
 subst x t f = case f of
     FPred l ts -> FPred l (map (substTerm x t) ts)
@@ -78,12 +79,20 @@ subst x t f = case f of
     -- buscar y' que no este libre en T, f1 dif de y.
     -- en f1 y por y'
     -- reemplazar y' recursivamente por T
-    orig@(FForall y f1) -> if x == y 
-                           then orig
-                           else FForall y (rec f1)
-    orig@(FExists y f1) -> if x == y 
-                           then orig
-                           else FExists y (rec f1)
+    orig@(FForall y f1)
+        -- No está libre, no cambio
+        | x == y -> orig
+        -- Captura de variables
+        | y `elem` fvTerm t -> FForall y' (rec (subst y (TVar y') f1))
+        | otherwise -> FForall y (rec f1)
+            where y' = freshWRT y $ fv f1 `Set.union` fvTerm t
+    orig@(FExists y f1)
+        -- No está libre, no cambio
+        | x == y -> orig
+        -- Captura de variables
+        | y `elem` fvTerm t -> FExists y' (rec (subst y (TVar y') f1))
+        | otherwise -> FExists y (rec f1)
+            where y' = freshWRT y $ fv f1 `Set.union` fvTerm t
 
     where rec = subst x t
 
@@ -91,6 +100,11 @@ substTerm :: VarId -> Term -> Term -> Term
 substTerm x t t' = case t' of 
     o@(TVar y) -> if x == y then t else o
     TFun f ts -> TFun f (map (substTerm x t) ts)
+
+-- freshWRT da una variable libre con respecto a una lista en donde no queremos
+-- que aparezca
+freshWRT :: Foldable t => VarId -> t VarId -> VarId
+freshWRT x forbidden = head [ x ++ suffix | suffix <- map show [0..], x++suffix `notElem` forbidden ]
 
 data Proof =
     PAx HypId

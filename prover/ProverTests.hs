@@ -100,12 +100,23 @@ testSubst = test [
                 (FImp
                     (propVar "A")
                     (FOr (propVar "B") pt))
-        -- Forall y exists pasan cuando es diferente la var cuantificada
-        , subst "x" testTerm (FForall "y" px) ~?= FForall "y" pt
-        , subst "x" testTerm (FExists "y" px) ~?= FExists "y" pt
+        -- Forall y exists pasan cuando es diferente la var cuantificada (sin captura)
+        , subst "x" testTerm (FForall "w" px) ~?= FForall "w" pt
+        , subst "x" testTerm (FExists "w" px) ~?= FExists "w" pt
         -- Forall y exists cortan cuando es igual la variable
         , subst "x" testTerm (FForall "x" px) ~?= FForall "x" px
         , subst "x" testTerm (FExists "x" px) ~?= FExists "x" px
+        -- Evita captura de variables (alpha renombra)
+        , subst
+            "x"
+            (TFun "f" [TVar "z", TVar "y"])
+            (FForall "z" (FPred "P" [ TVar "x", TVar "z"]))
+            ~?= FForall "z0" (FPred "P" [ TFun "f" [TVar "z", TVar "y"], TVar "z0"])
+        , subst
+            "x"
+            (TFun "f" [TVar "z", TVar "y"])
+            (FExists "z" (FPred "P" [ TVar "x", TVar "z"]))
+            ~?= FExists "z0" (FPred "P" [ TFun "f" [TVar "z", TVar "y"], TVar "z0"])
     ]
     where px = FPred "P" [TVar "x"]
           pt = FPred "P" [testTerm]
