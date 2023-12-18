@@ -107,16 +107,37 @@ testSubst = test [
         , subst "x" testTerm (FForall "x" px) ~?= FForall "x" px
         , subst "x" testTerm (FExists "x" px) ~?= FExists "x" px
         -- Evita captura de variables (alpha renombra)
-        , subst
-            "x"
-            (TFun "f" [TVar "z", TVar "y"])
-            (FForall "z" (FPred "P" [ TVar "x", TVar "z"]))
-            ~?= FForall "z0" (FPred "P" [ TFun "f" [TVar "z", TVar "y"], TVar "z0"])
-        , subst
-            "x"
-            (TFun "f" [TVar "z", TVar "y"])
-            (FExists "z" (FPred "P" [ TVar "x", TVar "z"]))
-            ~?= FExists "z0" (FPred "P" [ TFun "f" [TVar "z", TVar "y"], TVar "z0"])
+        , subst "x"
+                (TFun "f" [TVar "z", TVar "y"])
+                (FForall "z" (FPred "P" [ TVar "x", TVar "z"]))
+            ~?= FForall "z0"
+                        (FPred "P" [ TFun "f" [TVar "z", TVar "y"], TVar "z0"])
+        , subst "x"
+                (TFun "f" [TVar "z", TVar "y"])
+                (FExists "z" (FPred "P" [ TVar "x", TVar "z"]))
+            ~?= FExists "z0"
+                        (FPred "P" [ TFun "f" [TVar "z", TVar "y"], TVar "z0"])
+        , subst "z"
+                (TFun "f" [ TVar "x", TVar "y"])
+                (FForall "x"
+                    (FAnd 
+                        (FPred "P" [TVar "x"])
+                        (FForall "y" (FPred "Q" [TVar "y"]))))
+            ~?= FForall "x0"
+                    (FAnd 
+                        (FPred "P" [TVar "x0"])
+                        (FForall "y0" (FPred "Q" [TVar "y0"])))
+        -- Misma var anidada                        
+        , subst "z"
+                (TFun "f" [ TVar "x", TVar "y"])
+                (FForall "x"
+                    (FAnd 
+                        (FPred "P" [TVar "x"])
+                        (FForall "x" (FPred "Q" [TVar "x"]))))
+            ~?= FForall "x0"
+                    (FAnd 
+                        (FPred "P" [TVar "x0"])
+                        (FForall "x0" (FPred "Q" [TVar "x0"])))
     ]
     where px = FPred "P" [TVar "x"]
           pt = FPred "P" [testTerm]
