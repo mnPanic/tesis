@@ -7,6 +7,7 @@ module Prover (
 
 import Text.Printf ( printf )
 import qualified Data.Set as Set
+import qualified Data.Map as Map
 
 -- Tipos de identificadores
 type VarId = String
@@ -17,12 +18,24 @@ type HypId = String
 data Term =
     TVar VarId
     | TFun FunId [Term]
-    deriving (Show, Eq)
+    deriving Show
 
 -- Free variables de un término
 fvTerm :: Term -> Set.Set VarId
 fvTerm (TVar x) = Set.singleton x
 fvTerm (TFun _ ts) = foldr (Set.union . fvTerm) Set.empty ts
+
+alphaEqTerm :: Map.Map -> Map.Map -> Term -> Term -> Bool
+alphaEqTerm m1 m2 (TVar x) (TVar y)
+    | x == y = True
+    | otherwise = case Map.lookup x m1 of
+                    Nothing -> False
+                    Just x' -> case Map.lookup y m2 of 
+                                Nothing -> False
+                                Just y' -> x' == y'
+alphaEqTerm m1 m2 (TFun _ ts1) (TFun _ ts2) =
+    all id $ map (alphaEqTerm m1 m2) (zip ts1 ts2)
+alphaEqTerm _ _ _ = False -- Diferente forma
 
 data Form =
     FPred PredId [Term]
@@ -34,7 +47,32 @@ data Form =
     | FFalse
     | FForall VarId Form
     | FExists VarId Form
-    deriving (Show, Eq)
+    deriving Show
+
+instance Eq Form where
+    (==) :: Form -> Form -> Bool
+    (==) f1 f2 = alphaEq f1 f2
+
+-- alphaEq chequea que dos fórmulas sean alpha equivalentes.
+-- Por ej
+--
+--  Exists x . f(x) `alphaEq` Exists y . (y)
+--
+-- Cuando se encuentra con una variable ligada, si son diferentes se mapean a
+-- una variable libre fresca igual para ambos. Si es la misma se sigue de largo.
+-- Luego, para ver si una var es igual a otra, nos fijamos que tengan mapeado el
+-- mismo nombre.
+alphaEqForm :: Map.Map -> Form -> Form  -> Bool
+alphaEqForm (FPred _ ts) (FPred _ ts) = 
+alphaEqForm (FAnd f1 f2) (FAnd f1 f2) = 
+alphaEqForm (FOr f1 f2) (FOr f1 f2) = 
+alphaEqForm (FImp f1 f2) (FImp f1 f2) = 
+alphaEqForm (FNot f1)  (FNot f1)  = 
+alphaEqForm FTrue FTrue = True
+alphaEqForm FFalse FFalse = True
+alphaEqForm (FForall y f1) (FForall y f1) = 
+alphaEqForm (FExists y f1) (FExists y f1) = 
+alphaEqForm _ _ _ = False -- Diferente forma
 
 fv :: Form -> Set.Set VarId
 fv (FPred _ ts) = foldr (Set.union . fvTerm) Set.empty ts
