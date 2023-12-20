@@ -1,7 +1,7 @@
 module ProverTests where
 
 import Test.HUnit
-    ( (~:), (~?=), runTestTT, Counts, Test, Testable(test) )
+    ( (~:), (~?), (~?=), runTestTT, Counts, Test, Testable(test) )
 import Prover
     ( CheckResult(CheckOK, CheckError),
       Proof(..),
@@ -47,6 +47,7 @@ tests = test [
     , "env" ~: testEnv
     , "subst" ~: testSubst
     , "fv" ~: testFV
+    , "alphaEq" ~: testAlphaEq
     ]
 
 exampleEnv :: Env
@@ -76,6 +77,41 @@ testFV = test [
 
 testTerm :: Term
 testTerm = TFun "f" [ TVar "y" ]
+
+testAlphaEq :: Test
+testAlphaEq = test [
+    "terms" ~: test [
+        "equal vars no subst" ~: test [
+            "eq" ~: TVar "x" == TVar "x" ~?= True,
+            "neq" ~: TVar "y" == TVar "x" ~?= False
+        ]
+        , "fun name eq" ~: TFun "f1" [] == TFun "f1" [] ~?= True
+        , "fun name neq" ~: TFun "f1" [] == TFun "f2" [] ~?= False
+        , "fun arity" ~:
+            TFun "f" [TVar "x", TVar "y"] ==
+            TFun "f" [TVar "x"] ~?= False
+        , "fun vars neq" ~:
+            TFun "f" [TVar "x", TVar "y"] ==
+            TFun "f" [TVar "x", TVar "z"] ~?= False
+        , "fun vars eq" ~:
+            TFun "f" [TVar "x", TVar "y"] ==
+            TFun "f" [TVar "x", TVar "y"] ~?= True
+    ]
+    , "true" ~: FTrue == FTrue ~?= True
+    , "predicate name eq " ~: FPred "A" [] == FPred "A" [] ~?= True
+    , "predicate name neq " ~: FPred "A" [] == FPred "B" [] ~?= False
+    , "predicate arity" ~: FPred "A" [] == FPred "A" [TVar "x"] ~?= False
+    , "forall eq" ~:
+        FForall "x" (FPred "A" [TVar "x"]) ==
+        FForall "y" (FPred "A" [TVar "y"]) ~?= True
+    , "exists eq" ~:
+        FExists "x" (FPred "A" [TVar "x"]) ==
+        FExists "y" (FPred "A" [TVar "y"]) ~?= True
+    , "neq free var" ~:
+        FExists "x" (FPred "A" [TVar "z"]) ==
+        FExists "y" (FPred "A" [TVar "x"]) ~?= False
+
+    ]
 
 testSubst :: Test
 testSubst = test [
@@ -157,7 +193,11 @@ testCheck = test [
     -- Usar la misma etiqueta para diferentes hipótesis
     , "A -> (B -> B)" ~: check EEmpty p3 f3 ~?= CheckOK
     , "A -> (B -> A) invalid" ~: check EEmpty p3 f2
-        ~?= CheckError (EExtend "x" (FPred "B" []) (EExtend "x" (FPred "A" []) EEmpty)) (PAx "x") (FPred "A" []) "env has hyp x for different form"
+        ~?= CheckError
+            (EExtend "x" (FPred "B" []) (EExtend "x" (FPred "A" []) EEmpty))
+            (PAx "x")
+            (FPred "A" [])
+            "env has hyp x for different form"
 
     -- PImpE
     , "(A -> (B -> C)) -> [(A -> B) -> (A -> C)]" ~:

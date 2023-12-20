@@ -15,6 +15,8 @@ type FunId = String
 type PredId = String
 type HypId = String
 
+type Subst = Map.Map String String
+
 data Term =
     TVar VarId
     | TFun FunId [Term]
@@ -25,17 +27,23 @@ fvTerm :: Term -> Set.Set VarId
 fvTerm (TVar x) = Set.singleton x
 fvTerm (TFun _ ts) = foldr (Set.union . fvTerm) Set.empty ts
 
-alphaEqTerm :: Map.Map -> Map.Map -> Term -> Term -> Bool
+instance Eq Term where
+    (==) = alphaEqTerm Map.empty Map.empty
+
+alphaEqTerm :: Subst -> Subst -> Term -> Term -> Bool
 alphaEqTerm m1 m2 (TVar x) (TVar y)
     | x == y = True
     | otherwise = case Map.lookup x m1 of
                     Nothing -> False
-                    Just x' -> case Map.lookup y m2 of 
+                    Just x' -> case Map.lookup y m2 of
                                 Nothing -> False
                                 Just y' -> x' == y'
-alphaEqTerm m1 m2 (TFun _ ts1) (TFun _ ts2) =
-    all id $ map (alphaEqTerm m1 m2) (zip ts1 ts2)
-alphaEqTerm _ _ _ = False -- Diferente forma
+alphaEqTerm m1 m2 (TFun f1 ts1) (TFun f2 ts2) = f1 == f2 && alphaEqTerms m1 m2 ts1 ts2
+alphaEqTerm _ _ _ _ = False -- Diferente forma
+
+alphaEqTerms :: Subst -> Subst -> [Term] -> [Term] -> Bool
+alphaEqTerms m1 m2 ts1 ts2 = length ts1 == length ts2
+                             && and (zipWith (alphaEqTerm m1 m2) ts1 ts2)
 
 data Form =
     FPred PredId [Term]
@@ -50,29 +58,50 @@ data Form =
     deriving Show
 
 instance Eq Form where
-    (==) :: Form -> Form -> Bool
-    (==) f1 f2 = alphaEq f1 f2
+    (==) = alphaEqForm' Map.empty Map.empty
 
--- alphaEq chequea que dos fórmulas sean alpha equivalentes.
+alphaEqForm' :: Subst -> Subst -> Form -> Form -> Bool
+alphaEqForm' = alphaEqForm 0
+
+-- alphaEqForm chequea que dos fórmulas sean alpha equivalentes.
 -- Por ej
 --
---  Exists x . f(x) `alphaEq` Exists y . (y)
+--  E x . f(x) `alphaEq` E y . f(y)
 --
 -- Cuando se encuentra con una variable ligada, si son diferentes se mapean a
 -- una variable libre fresca igual para ambos. Si es la misma se sigue de largo.
 -- Luego, para ver si una var es igual a otra, nos fijamos que tengan mapeado el
 -- mismo nombre.
-alphaEqForm :: Map.Map -> Form -> Form  -> Bool
-alphaEqForm (FPred _ ts) (FPred _ ts) = 
-alphaEqForm (FAnd f1 f2) (FAnd f1 f2) = 
-alphaEqForm (FOr f1 f2) (FOr f1 f2) = 
-alphaEqForm (FImp f1 f2) (FImp f1 f2) = 
-alphaEqForm (FNot f1)  (FNot f1)  = 
-alphaEqForm FTrue FTrue = True
-alphaEqForm FFalse FFalse = True
-alphaEqForm (FForall y f1) (FForall y f1) = 
-alphaEqForm (FExists y f1) (FExists y f1) = 
-alphaEqForm _ _ _ = False -- Diferente forma
+alphaEqForm :: Int -> Subst -> Subst -> Form -> Form -> Bool
+alphaEqForm n _ _ FTrue FTrue = True
+alphaEqForm n _ _ FFalse FFalse = True
+
+alphaEqForm n m1 m2 (FPred p1 ts1) (FPred p2 ts2) = p1 == p2 && alphaEqTerms m1 m2 ts1 ts2
+
+alphaEqForm n m1 m2 (FAnd f1 g1)  (FAnd f2 g2)  = alphaEqForm n m1 m2 f1 f2 && alphaEqForm n m1 m2 g1 g2
+alphaEqForm n m1 m2 (FOr f1 g1)   (FOr f2 g2)   = alphaEqForm n m1 m2 f1 f2 && alphaEqForm n m1 m2 g1 g2
+alphaEqForm n m1 m2 (FImp f1 g1)  (FImp f2 g2)  = alphaEqForm n m1 m2 f1 f2 && alphaEqForm n m1 m2 g1 g2
+alphaEqForm n m1 m2 (FNot f1)     (FNot f2)     = alphaEqForm n m1 m2 f1 f2
+
+alphaEqForm n m1 m2 (FForall x f1) (FForall y f2)
+    | x == y = alphaEqForm n m1 m2 f1 f2
+    | otherwise = alphaEqForm (n+1)
+                              (Map.insert x (varN n) m1)
+                              (Map.insert y (varN n) m2)
+                              f1 f2
+
+alphaEqForm n m1 m2 (FExists x f1) (FExists y f2)
+    | x == y = alphaEqForm n m1 m2 f1 f2
+    | otherwise = alphaEqForm (n+1)
+                              (Map.insert x (varN n) m1)
+                              (Map.insert y (varN n) m2)
+                              f1 f2
+
+alphaEqForm _ _ _ _ _ = False -- Diferente forma
+
+-- Devuelve la n-esima variable
+varN :: Int -> VarId
+varN n = "s_" ++ show n
 
 fv :: Form -> Set.Set VarId
 fv (FPred _ ts) = foldr (Set.union . fvTerm) Set.empty ts
@@ -103,7 +132,8 @@ fvE :: Env -> Set.Set VarId
 fvE e = foldr (Set.union . fv) Set.empty (forms e)
 
 -- substituye todas las ocurrencias libres de VarId por Term
--- Lo hace alpha-renombrando en el camino.
+-- Lo hace alpha-renombrando en el camino: si y esta libre en T, busca y' que no
+-- este libre en T y f1. Reemplaza en f1 recursivamente y por y' y continua.
 subst :: VarId -> Term -> Form -> Form
 subst x t f = case f of
     FPred l ts -> FPred l (map (substTerm x t) ts)
@@ -113,10 +143,7 @@ subst x t f = case f of
     FNot f1 -> FNot (rec f1)
     FTrue -> FTrue
     FFalse -> FFalse
-    -- si y esta libre en T
-    -- buscar y' que no este libre en T, f1 dif de y.
-    -- en f1 y por y'
-    -- reemplazar y' recursivamente por T
+    
     orig@(FForall y f1)
         -- No está libre, no cambio
         | x == y -> orig
@@ -135,7 +162,7 @@ subst x t f = case f of
     where rec = subst x t
 
 substTerm :: VarId -> Term -> Term -> Term
-substTerm x t t' = case t' of 
+substTerm x t t' = case t' of
     o@(TVar y) -> if x == y then t else o
     TFun f ts -> TFun f (map (substTerm x t) ts)
 
@@ -264,7 +291,7 @@ check env (POrI1 proofA) (FOr fA _) = check env proofA fA
 check env (POrI2 proofB) (FOr _ fB) = check env proofB fB
 
 -- dem con A ^ B
-check env (PAndE1 fB proofAnB) fA = check env proofAnB (FAnd fA fB) 
+check env (PAndE1 fB proofAnB) fA = check env proofAnB (FAnd fA fB)
 check env (PAndE2 fA proofAnB) fB = check env proofAnB (FAnd fA fB)
 
 -- dem de A ^ B
@@ -286,7 +313,7 @@ check env proof@(PExistsE x fA proofExistsxA hypA proofB) fB
             CheckOK -> check (EExtend hypA fA env) proofB fB
 
 -- dem de Forall x. A
-check env proof@(PForallI proofA) form@(FForall x fA) = 
+check env proof@(PForallI proofA) form@(FForall x fA) =
     if x `elem` fvE env
     then CheckError env proof form (printf "env shouldn't contain fv '%s'" x)
     else check env proofA fA
@@ -296,7 +323,7 @@ check env proof@(PForallE x fA proofForallxA t) fAxt =
     if subst x t fA /= fAxt
     then CheckError
             env proof fAxt
-            (printf "form %s /= (%s){%s := %s}" 
+            (printf "form %s /= (%s){%s := %s}"
                 (show fAxt)
                 (show fA)
                 x
