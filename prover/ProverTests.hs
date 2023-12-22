@@ -81,6 +81,7 @@ import Proofs (
     p7,
     p8,
     p9,
+    predVar,
     propVar,
  )
 
@@ -175,6 +176,10 @@ testAlphaEq =
             ~: FExists "x" (FPred "A" [TVar "z"])
             == FExists "y" (FPred "A" [TVar "x"])
             ~?= False
+        , "swapped vars (need two substs)"
+            ~: FExists "x" (FForall "y" (FPred "A" [TVar "x", TVar "y"]))
+            == FExists "y" (FForall "x" (FPred "A" [TVar "y", TVar "x"]))
+            ~?= True
         ]
 
 testSubst :: Test
@@ -369,4 +374,22 @@ testCheck =
         , "~E x. ~A(x) => V x. A(x)" ~: check EEmpty p23Vuelta f23Vuelta ~?= CheckOK
         , "E x. A(x) => ~V x. ~A(x)" ~: check EEmpty p24Ida f24Ida ~?= CheckOK
         , "~V x. ~A(x) => E x. A(x)" ~: check EEmpty p24Vuelta f24Vuelta ~?= CheckOK
+        , "alphaEq E x. A(x) => E y. A(y) directo"
+            ~: check
+                EEmpty
+                (PImpI "h E x. A(x)" (PAx "h E x. A(x)"))
+                ( FImp
+                    (FExists "x" (predVar "A" "x"))
+                    (FExists "y" (predVar "A" "y"))
+                )
+            ~?= CheckOK
+        , "subst sin captura - E y. V x. A(z) v true"
+            ~: check
+                EEmpty
+                ( PExistsI
+                    (TVar "x") -- generaria captura con V x
+                    (PForallI (POrI2 PTrueI))
+                )
+                (FExists "y" (FForall "x" (FOr (predVar "A" "z") FTrue)))
+            ~?= CheckOK
         ]
