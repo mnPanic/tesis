@@ -180,6 +180,18 @@ testAlphaEq =
             ~: FExists "x" (FForall "y" (FPred "A" [TVar "x", TVar "y"]))
             == FExists "y" (FForall "x" (FPred "A" [TVar "y", TVar "x"]))
             ~?= True
+        , "exists and"
+            ~: FExists "x" (FAnd (FPred "A" [TVar "x"]) (FPred "A" [TVar "y"]))
+            == FExists "x" (FAnd (FPred "A" [TVar "x"]) (FPred "A" [TVar "x"]))
+            ~?= False
+        , "and exists"
+            ~: FAnd
+                (FExists "x" (FPred "A" [TVar "x"]))
+                (FExists "x" (FPred "A" [TVar "y"]))
+            == FAnd
+                (FExists "x" (FPred "A" [TVar "x"]))
+                (FExists "x" (FPred "A" [TVar "x"]))
+            ~?= False
         ]
 
 testSubst :: Test
