@@ -91,6 +91,8 @@ class Functor f => Applicative f where
 
 También sirven para hacer *effectful programming*
 
+`g <$> x` behaves in the same way as `pure g <*> x`.
+
 ### Monads
 
 > Video de graham hutton que usa el mismo ejemplo en computerphile
@@ -106,3 +108,13 @@ class Applicative m => Monad f where
 
 a `>>=` también se lo suele llamar *bind* porque el segundo argumento bindea el
 resultado del primero
+
+## 13 - Parsers
+
+Links
+
+- https://hackage.haskell.org/package/parsec es una implementación
+- https://www.kuniga.me/blog/2014/01/21/an-introduction-to-the-parsec-library.html
+  intro a la lib
+- https://stackoverflow.com/questions/5055370/parsec-vs-yacc-bison-antlr-why-and-when-to-use-parsec
+  argumentos a favor y en contra de generators vs combinators
