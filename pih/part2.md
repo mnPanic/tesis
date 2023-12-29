@@ -60,3 +60,49 @@ tienen tipo `a`. Aplica la función y devuelve otra estructura de tipo `f b`
 ### Applicatives
 
 https://stackoverflow.com/questions/3242361/what-is-called-and-what-does-it-do/3242853#3242853
+
+fmap solo te deja aplicar una función de tipo `a -> b`, pero que pasa si
+querríamos aplicar una función de cualquier aridad?
+
+```haskell
+fmap0 :: a -> f a
+fmap1 :: (a -> b) -> f a -> f b
+fmap2 :: (a -> b -> c) -> f a -> f b -> f c
+fmap3 :: (a -> b -> c -> d) -> f a -> f b -> f c -> f d
+... etc
+```
+
+se puede hacer usando currificación y funciones
+
+```haskell
+pure :: a -> f a
+
+(<*>) :: f (a -> b) -> f a -> f b
+```
+
+la clase de functors que soportan `pure` y `<*>` son *applicative functors* o
+*applicatives*.
+
+```haskell
+class Functor f => Applicative f where
+  pure :: a -> f a
+  (<*>) :: f (a -> b) -> f a -> f b
+```
+
+También sirven para hacer *effectful programming*
+
+### Monads
+
+> Video de graham hutton que usa el mismo ejemplo en computerphile
+> https://www.youtube.com/watch?v=t1e8gqXLbsU
+
+```haskell
+class Applicative m => Monad f where
+  return :: a -> m a
+  (>>=) :: m a -> (a -> m b) -> m b
+
+  return = pure
+```
+
+a `>>=` también se lo suele llamar *bind* porque el segundo argumento bindea el
+resultado del primero
