@@ -19,7 +19,7 @@ data HappyAbsSyn t4 t5 t6 t7
 	| HappyAbsSyn7 t7
 
 happyExpList :: Happy_Data_Array.Array Prelude.Int Prelude.Int
-happyExpList = Happy_Data_Array.listArray (0,48) ([61440,5,190,56,63488,2,0,0,0,2,32832,0,0,0,48,256,8192,0,0,380,12160,61440,49157,1,0,0,0,95,3040,0,2051,32768,0,0,0,48,0,0,0,0,0,8,0,0,0
+happyExpList = Happy_Data_Array.listArray (0,48) ([61440,5,190,56,63488,2,0,0,0,2,32832,0,0,0,48,256,8192,0,0,380,12160,61440,49157,1,0,0,0,95,3040,0,2051,32768,0,0,0,48,0,0,7168,32768,3,8,0,0,0
 	])
 
 {-# NOINLINE happyExpListPerState #-}
@@ -244,23 +244,23 @@ happyReduction_6 (HappyAbsSyn5  happy_var_2)
 happyReduction_6 _ _  = notHappyAtAll 
 
 happyReduce_7 = happyReduce 4 5 happyReduction_7
-happyReduction_7 (_ `HappyStk`
-	(HappyTerminal happy_var_3) `HappyStk`
+happyReduction_7 ((HappyAbsSyn5  happy_var_4) `HappyStk`
+	_ `HappyStk`
 	(HappyTerminal (TokenVar happy_var_2)) `HappyStk`
 	_ `HappyStk`
 	happyRest)
 	 = HappyAbsSyn5
-		 (FExists happy_var_2 happy_var_3
+		 (FExists happy_var_2 happy_var_4
 	) `HappyStk` happyRest
 
 happyReduce_8 = happyReduce 4 5 happyReduction_8
-happyReduction_8 (_ `HappyStk`
-	(HappyTerminal happy_var_3) `HappyStk`
+happyReduction_8 ((HappyAbsSyn5  happy_var_4) `HappyStk`
+	_ `HappyStk`
 	(HappyTerminal (TokenVar happy_var_2)) `HappyStk`
 	_ `HappyStk`
 	happyRest)
 	 = HappyAbsSyn5
-		 (FForall happy_var_2 happy_var_3
+		 (FForall happy_var_2 happy_var_4
 	) `HappyStk` happyRest
 
 happyReduce_9 = happySpecReduce_1  5 happyReduction_9

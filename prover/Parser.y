@@ -25,7 +25,7 @@ import Lexer ( Token(..) )
     id      { TokenId $$ }
     var     { TokenVar $$ }
 
-%nonassoc exists forall
+%right exists forall dot
 %right imp
 %left and or
 %nonassoc not
@@ -38,8 +38,8 @@ Form    : id '(' Terms ')'          { FPred $1 $3 }
         | Form or Form              { FOr $1 $3 }
         | Form imp Form             { FImp $1 $3 }
         | not Form                  { FNot $2 }
-        | exists var dot Form       { FExists $2 $3 }
-        | forall var dot Form       { FForall $2 $3 }
+        | exists var dot Form       { FExists $2 $4 }
+        | forall var dot Form       { FForall $2 $4 }
         | true                      { FTrue }
         | false                     { FFalse }
 

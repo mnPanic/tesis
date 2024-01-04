@@ -4,12 +4,12 @@ module Lexer(lexer, Token(..)) where
 
 %wrapper "basic"
 
+-- Actions have type String -> Token
 tokens :-
-
     $white+         ;
     "//".*          ;
-    &&              { const TokenAnd }
-    \|\|            { const TokenOr }
+    \&|\^           { const TokenAnd }
+    \||v            { const TokenOr }
     true            { const TokenTrue }
     false           { const TokenFalse }
     =>              { const TokenImp }
