@@ -9,21 +9,25 @@ import Lexer ( Token(..) )
 %tokentype { Token }
 %error { parseError }
 
-%token
-    '('     { TokenOB }
-    ')'     { TokenCB }
-    and     { TokenAnd }
-    or      { TokenOr }
-    imp     { TokenImp }
-    not     { TokenNot }
-    true    { TokenTrue }
-    false   { TokenFalse }
-    forall  { TokenForall }
-    exists  { TokenExists }
-    dot     { TokenDot }
+-- % https://monlih.github.io/happy-docs/#_sec_errorhandlertype_directive
+%errorhandlertype explist
 
-    id      { TokenId $$ }
-    var     { TokenVar $$ }
+%token
+    '('         { TokenParenOpen }
+    ')'         { TokenParenClose }
+    and         { TokenAnd }
+    or          { TokenOr }
+    imp         { TokenImp }
+    not         { TokenNot }
+    true        { TokenTrue }
+    false       { TokenFalse }
+    forall      { TokenForall }
+    exists      { TokenExists }
+    dot         { TokenDot }
+    comma       { TokenComma }
+
+    id          { TokenId $$ }
+    var         { TokenVar $$ }
 
 %right exists forall dot
 %right imp
@@ -33,7 +37,8 @@ import Lexer ( Token(..) )
 
 Exp     : Form                      { $1 }
 
-Form    : id '(' Terms ')'          { FPred $1 $3 }
+Form :: { Form }
+Form    : id TermArgs               { FPred $1 $2 }
         | Form and Form             { FAnd $1 $3 }
         | Form or Form              { FOr $1 $3 }
         | Form imp Form             { FImp $1 $3 }
@@ -42,14 +47,22 @@ Form    : id '(' Terms ')'          { FPred $1 $3 }
         | forall var dot Form       { FForall $2 $4 }
         | true                      { FTrue }
         | false                     { FFalse }
+        | '(' Form ')'              { $2 }
 
+Term :: { Term }
 Term    : var                       { TVar $1 }
-        | id '(' Terms ')'          { TFun $1 $3 }
+        | id TermArgs               { TFun $1 $2 }
 
-Terms   : {- empty -}               { [] }
-        | Term Terms                { $1 : $2 }
+TermArgs :: { [Term] }
+TermArgs : {- empty -}              { [] }
+         | '(' Terms ')'            { $2 }
+
+Terms :: { [Term] }
+Terms   : Term                      { [$1] }
+        | Term comma Terms          { $1 : $3 }
 
 {
-parseError :: [Token] -> a
-parseError _ = error "Parse error"
+parseError :: ([Token], [String]) -> a
+parseError (r, n) = error (
+        "Parse error on " ++ show r ++ "\npossible tokens: " ++ show n)
 }

@@ -34,8 +34,8 @@ testLexer =
             ~: lexer "+ > @"
             ~?= [TokenId "+", TokenId ">", TokenId "@"]
         , "reserved symbols"
-            ~: lexer "~ ! v | ^ & => exists . (forall)"
-            ~?= [TokenNot, TokenNot, TokenOr, TokenOr, TokenAnd, TokenAnd, TokenImp, TokenExists, TokenDot, TokenOB, TokenForall, TokenCB]
+            ~: lexer "~ ¬ v | ^ & => exists . (forall)"
+            ~?= [TokenNot, TokenNot, TokenOr, TokenOr, TokenAnd, TokenAnd, TokenImp, TokenExists, TokenDot, TokenParenOpen, TokenForall, TokenParenClose]
         ]
 
 parse :: String -> Form
@@ -55,10 +55,29 @@ testParser =
                         (FPred "g" [TVar "Y"])
                     )
                 )
+        , "parens"
+            ~: parse "(p(X) => q(X)) v r(Y)"
+            ~?= FOr
+                ( FImp
+                    (FPred "p" [TVar "X"])
+                    (FPred "q" [TVar "X"])
+                )
+                (FPred "r" [TVar "Y"])
+        , "preds and funcs"
+            ~: parse "q v p(X, f(Y, K, q), W)"
+            ~?= FOr
+                (FPred "q" [])
+                ( FPred
+                    "p"
+                    [ TVar "X"
+                    , TFun "f" [TVar "Y", TVar "K", TFun "q" []]
+                    , TVar "W"
+                    ]
+                )
         , "complete formula"
             ~: parse
                 "exists Y .forall _X .\
-                \~num_positivo(_X) => !num_negativo(+(_X, Y)) & q(Y)\
+                \~num_positivo(_X) => num_negativo(+(_X, Y)) & q(Y)\
                 \| a ^ (false v true)"
             ~?= FExists
                 "Y"
@@ -69,9 +88,7 @@ testParser =
                         ( FAnd
                             ( FOr
                                 ( FAnd
-                                    ( FNot
-                                        ( FPred "num_negativo" [TFun "+" [TVar "_X", TVar "Y"]]
-                                        )
+                                    ( FPred "num_negativo" [TFun "+" [TVar "_X", TVar "Y"]]
                                     )
                                     (FPred "q" [TVar "Y"])
                                 )

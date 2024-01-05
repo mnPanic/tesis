@@ -1,27 +1,29 @@
 {
-module Lexer(lexer, Token(..)) where
+module Lexer(lexer, Token(..), AlexPosn(..)) where
 }
 
-%wrapper "basic"
+-- https://github.com/haskell/alex/blob/master/examples/Tokens_posn.x
+%wrapper "posn"
 
--- Actions have type String -> Token
+-- Actions have type AlexPosn -> String -> Token
 tokens :-
     $white+         ;
     "//".*          ;
-    \&|\^           { const TokenAnd }
-    \||v            { const TokenOr }
-    true            { const TokenTrue }
-    false           { const TokenFalse }
-    =>              { const TokenImp }
-    (\!|\~)         { const TokenNot }
-    exists          { const TokenExists }
-    forall          { const TokenForall }
-    \.              { const TokenDot }
-    \(              { const TokenOB }
-    \)              { const TokenCB }
+    \.              { \_ _ -> TokenDot }
+    \,              { \_ _ -> TokenComma }
+    \&|\^           { \_ _ -> TokenAnd }
+    \||v            { \_ _ -> TokenOr }
+    true            { \_ _ -> TokenTrue }
+    false           { \_ _ -> TokenFalse }
+    =>              { \_ _ -> TokenImp }
+    (\¬|\~)         { \_ _ -> TokenNot }
+    exists          { \_ _ -> TokenExists }
+    forall          { \_ _ -> TokenForall }
+    \(              { \_ _ -> TokenParenOpen }
+    \)              { \_ _ -> TokenParenClose }
 
-    (\_|[A-Z])[a-zA-Z0-9\_\-]*(\')*                        { TokenVar }
-    [a-zA-Z0-9\_\-\?!#\$\%&\*\+\:\;\<\>\=\?\@\^]+(\')*     { TokenId }
+    (\_|[A-Z])[a-zA-Z0-9\_\-]*(\')*                        { const TokenVar }
+    [a-zA-Z0-9\_\-\?!#\$\%&\*\+\:\;\<\>\=\?\@\^]+(\')*     { const TokenId }
     
 {
 data Token 
@@ -29,15 +31,16 @@ data Token
     | TokenVar String
     | TokenAnd
     | TokenOr
-    | TokenDot
     | TokenNot
     | TokenTrue
     | TokenFalse
     | TokenImp
     | TokenExists
     | TokenForall
-    | TokenOB
-    | TokenCB
+    | TokenDot
+    | TokenComma
+    | TokenParenOpen
+    | TokenParenClose
     deriving (Eq, Show)
 
 lexer = alexScanTokens
