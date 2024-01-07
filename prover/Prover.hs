@@ -25,6 +25,7 @@ type FunId = String
 type PredId = String
 type HypId = String
 
+-- Sustitución de variables, usado para alphaEqForm y subst sin capturas
 type Subst = Map.Map String String
 
 data Term
@@ -147,12 +148,18 @@ forms (EExtend _ f e') = f : forms e'
 fvE :: Env -> Set.Set VarId
 fvE e = foldr (Set.union . fv) Set.empty (forms e)
 
--- substituye todas las ocurrencias libres de VarId por Term
--- Lo hace alpha-renombrando en el camino: si y esta libre en T, busca y' que no
--- este libre en T y f1. Reemplaza en f1 recursivamente y por y' y continua.
+-- sustituye todas las ocurrencias libres de VarId por Term.
+--
+-- Lo hace alpha-renombrando en el camino para evitar *capturas* de variables:
+-- si y esta libre en T, busca y' que no este libre en T y f1. En lugar de
+-- reemplazar en el momento, lo guarda en una Subst para hacerlo lineal y no
+-- cuadrático.
 subst :: VarId -> Term -> Form -> Form
-subst x t f = case f of
-    FPred l ts -> FPred l (map (substTerm x t) ts)
+subst = subst' Map.empty
+
+subst' :: Subst -> VarId -> Term -> Form -> Form
+subst' s x t f = case f of
+    FPred l ts -> FPred l (map (substTerm s x t) ts)
     FAnd f1 f2 -> FAnd (rec f1) (rec f2)
     FOr f1 f2 -> FOr (rec f1) (rec f2)
     FImp f1 f2 -> FImp (rec f1) (rec f2)
@@ -163,7 +170,7 @@ subst x t f = case f of
         -- No está libre, no cambio
         | x == y -> orig
         -- Captura de variables
-        | y `elem` fvTerm t -> FForall y' (rec (subst y (TVar y') f1))
+        | y `elem` fvTerm t -> FForall y' (recRenaming y y' f1)
         | otherwise -> FForall y (rec f1)
       where
         y' = freshWRT y $ fv f1 `Set.union` fvTerm t
@@ -171,17 +178,24 @@ subst x t f = case f of
         -- No está libre, no cambio
         | x == y -> orig
         -- Captura de variables
-        | y `elem` fvTerm t -> FExists y' (rec (subst y (TVar y') f1))
+        | y `elem` fvTerm t -> FExists y' (recRenaming y y' f1)
         | otherwise -> FExists y (rec f1)
       where
         y' = freshWRT y $ fv f1 `Set.union` fvTerm t
   where
-    rec = subst x t
+    rec = subst' s x t
+    recRenaming y y' = subst' (Map.insert y y' s) x t
 
-substTerm :: VarId -> Term -> Term -> Term
-substTerm x t t' = case t' of
-    o@(TVar y) -> if x == y then t else o
-    TFun f ts -> TFun f (map (substTerm x t) ts)
+substTerm :: Subst -> VarId -> Term -> Term -> Term
+substTerm s x t t' = case t' of
+    -- No es necesario chequear que el renombre de x se quiera sustituir, porque
+    -- renombramos cuando encontramos un cuantificador, y si la var del
+    -- cuantificador es la misma de la subst entonces no está libre y hubiera
+    -- cortado (nunca llega acá)
+    o@(TVar y)
+        | x == y -> t
+        | otherwise -> maybe o TVar (Map.lookup y s)
+    TFun f ts -> TFun f (map (substTerm s x t) ts)
 
 -- freshWRT da una variable libre con respecto a una lista en donde no queremos
 -- que aparezca

@@ -6,6 +6,7 @@ https://stackoverflow.com/questions/38052553/haskell-record-pattern-matching
 - Considerar usar type classes para free variables y subst así evito definir una
 para Form y otra para Term
 
+## Notas raw reunión 23/11/03
 
 hacer que todo funcione mod alpha renombres
 

@@ -254,7 +254,9 @@ testSubst =
             ~?= FExists
                 "z0"
                 (FPred "P" [TFun "f" [TVar "z", TVar "y"], TVar "z0"])
-        , subst
+        , -- Doble cuantificador. Aunque no haya ningún reemplazo que hacer, alpha
+          -- renombra igual
+          subst
             "z"
             (TFun "f" [TVar "x", TVar "y"])
             ( FForall
@@ -269,6 +271,28 @@ testSubst =
                 ( FAnd
                     (FPred "P" [TVar "x0"])
                     (FForall "y0" (FPred "Q" [TVar "y0"]))
+                )
+        , subst
+            "z"
+            (TFun "f" [TVar "x", TVar "y"])
+            ( FForall
+                "x"
+                ( FAnd
+                    ( FAnd
+                        (FPred "P" [TVar "x"])
+                        (FForall "y" (FPred "Q" [TVar "y"]))
+                    )
+                    (FPred "R" [TVar "z"])
+                )
+            )
+            ~?= FForall
+                "x0"
+                ( FAnd
+                    ( FAnd
+                        (FPred "P" [TVar "x0"])
+                        (FForall "y0" (FPred "Q" [TVar "y0"]))
+                    )
+                    (FPred "R" [TFun "f" [TVar "x", TVar "y"]])
                 )
         , -- Misma var anidada
           subst
