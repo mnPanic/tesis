@@ -2,6 +2,7 @@
 module Parser(parseExp) where
 
 import Prover ( Form(..), Term(..) )
+import Theory ( Proof, ProofStep(..), Theorem(..), Program(..) )
 import Lexer ( Token(..) )
 }
 
@@ -28,6 +29,15 @@ import Lexer ( Token(..) )
 
     id          { TokenId $$ }
     var         { TokenVar $$ }
+    ';'         { TokenSemicolon }
+    ':'         { TokenDoubleColon }
+    theorem     { TokenTheorem }
+    proof       { TokenProof }
+    qed         { TokenQED }
+    name        { TokenQuotedName $$ }
+    assume      { TokenAssume }
+    thus        { TokenThus }
+    by          { TokenBy }
 
 %right exists forall dot
 %right imp
@@ -35,7 +45,20 @@ import Lexer ( Token(..) )
 %nonassoc not
 %%
 
-Exp     : Form                      { $1 }
+Prog    :: { Program }
+Prog    : Theorem                   { ProgramT $1 }
+        | Form                      { ProgramF $1 }
+
+Theorem :: { Theorem }
+Theorem : theorem name ':' Form proof Proof qed   { Theorem $2 $4 $6 }
+
+Proof   :: { Proof }
+Proof   : ProofStep ';' Proof       { $1 : $3 }
+        | ProofStep ';'             { [ $1 ] }
+
+ProofStep       :: { ProofStep }
+ProofStep       : assume name ':' Form       { PSAssume $2 $4 }
+                | thus Form by name          { PSThus $2 $4 }
 
 Form :: { Form }
 Form    : id TermArgs               { FPred $1 $2 }
