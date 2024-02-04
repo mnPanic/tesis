@@ -2,7 +2,7 @@
 module Parser(parseExp) where
 
 import Prover ( Form(..), Term(..) )
-import Theory ( Proof, ProofStep(..), Theorem(..), Program(..) )
+import Theory ( TProof, ProofStep(..), Theorem(..), Program(..) )
 import Lexer ( Token(..) )
 import qualified Data.Array as Happy_Data_Array
 import qualified Data.Bits as Bits
@@ -16,7 +16,7 @@ data HappyAbsSyn
 	| HappyErrorToken Prelude.Int
 	| HappyAbsSyn4 (Program)
 	| HappyAbsSyn5 (Theorem)
-	| HappyAbsSyn6 (Proof)
+	| HappyAbsSyn6 (TProof)
 	| HappyAbsSyn7 (ProofStep)
 	| HappyAbsSyn8 (Form)
 	| HappyAbsSyn9 (Term)

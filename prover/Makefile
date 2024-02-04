@@ -1,5 +1,8 @@
 .PHONY: all
 
+main:
+	ghc Main.hs
+
 lexer:
 	alex Lexer.x
 

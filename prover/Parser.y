@@ -2,7 +2,7 @@
 module Parser(parseExp) where
 
 import Prover ( Form(..), Term(..) )
-import Theory ( Proof, ProofStep(..), Theorem(..), Program(..) )
+import Theory ( TProof, ProofStep(..), Theorem(..), Program(..) )
 import Lexer ( Token(..) )
 }
 
@@ -52,7 +52,7 @@ Prog    : Theorem                   { ProgramT $1 }
 Theorem :: { Theorem }
 Theorem : theorem name ':' Form proof Proof qed   { Theorem $2 $4 $6 }
 
-Proof   :: { Proof }
+Proof   :: { TProof }
 Proof   : ProofStep ';' Proof       { $1 : $3 }
         | ProofStep ';'             { [ $1 ] }
 

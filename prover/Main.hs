@@ -2,7 +2,7 @@ module Main where
 
 import Lexer (lexer)
 import Parser (parseExp)
-import Theory (Program)
+import Theory (Program, execute)
 
 import System.Environment (getArgs)
 
@@ -13,7 +13,7 @@ main = do
         [] -> getContents
         [f] -> readFile f
         _ -> error "expected max. 1 argument "
-    print $ parse raw
+    print $ execute $ parse raw
 
 parse :: String -> Program
 parse = parseExp . lexer
