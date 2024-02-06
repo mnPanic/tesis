@@ -202,31 +202,41 @@ substTerm s x t t' = case t' of
 freshWRT :: (Foldable t) => VarId -> t VarId -> VarId
 freshWRT x forbidden = head [x ++ suffix | suffix <- map show [0 ..], x ++ suffix `notElem` forbidden]
 
+-- Record syntax: https://en.wikibooks.org/wiki/Haskell/More_on_datatypes
+
 data Proof
     = PAx HypId
     | -- A ^ B
       PAndI
-        Proof -- A
-        Proof -- de B
+        { proofLeft :: Proof -- A
+        , proofRight :: Proof -- de B
+        }
     | PAndE1
-        Form -- B
-        Proof -- de A ^ B
+        { right :: Form -- B
+        , proofAnd :: Proof -- de A ^ B
+        }
     | PAndE2
-        Form -- A
-        Proof -- de A ^ B
-        -- A v B deduce C
-    | POrI1 Proof -- A
-    | POrI2 Proof -- B
+        { left :: Form -- A
+        , proofAnd :: Proof -- de A ^ B
+        }
+    | -- A v B deduce C
+      POrI1
+        { proofLeft :: Proof -- A
+        }
+    | POrI2
+        { proofRight :: Proof -- B
+        }
     | POrE
-        Form -- A
-        Form -- B
-        Proof -- de A v B
-        HypId -- x:A
-        Proof -- de C asumiendo A
-        HypId -- x:B
-        Proof -- de C asumiendo B
-        -- A -> B
-    | PImpI HypId Proof
+        { left :: Form -- A
+        , right :: Form -- B
+        , proofOr :: Proof -- de A v B
+        , hypLeft :: HypId -- x:A
+        , proofAssumingLeft :: Proof -- de C asumiendo A
+        , hypRight :: HypId -- x:B
+        , proofAssumingRight :: Proof -- de C asumiendo B
+        }
+    | -- A -> B
+      PImpI HypId Proof
     | PImpE
         Form -- A
         Proof -- de A -> B

@@ -3,26 +3,7 @@ module Proofs where
 import Prover (
     Form (FAnd, FExists, FFalse, FForall, FImp, FNot, FOr, FPred, FTrue),
     PredId,
-    Proof (
-        PAndE1,
-        PAndE2,
-        PAndI,
-        PAx,
-        PExistsE,
-        PExistsI,
-        PFalseE,
-        PForallE,
-        PForallI,
-        PImpE,
-        PImpI,
-        PLEM,
-        PNotE,
-        PNotI,
-        POrE,
-        POrI1,
-        POrI2,
-        PTrueI
-    ),
+    Proof (..),
     Term (TVar),
     VarId,
  )
@@ -31,7 +12,7 @@ import Prover (
 -- Originalmente son para deducción natural de intuicionista.
 
 -- Dado un id de predicado devuelve un predicado de aridad 0,
--- i.e una variable proposicional
+-- i.e una variable proposicional (propositional variable)
 propVar :: PredId -> Form
 propVar pid = FPred pid []
 
@@ -957,4 +938,60 @@ p24Vuelta =
                     )
                 )
             )
+        )
+
+-----
+-- Demostraciones necesarias para el automatic proof del by
+
+-- X ^ (Y v Z) => (X ^ Y) v (X ^ Z)
+f25 :: Form
+f25 =
+    FImp
+        (FAnd (propVar "X") (FOr (propVar "Y") (propVar "Z")))
+        ( FOr
+            (FAnd (propVar "X") (propVar "Y"))
+            (FAnd (propVar "X") (propVar "Z"))
+        )
+
+p25 :: Proof
+p25 =
+    PImpI
+        "h X ^ (Y v Z)"
+        -- Dependiendo de si vale Y o Z pruebo el primero o el segundo (respectivamente)
+        ( POrE
+            { left = propVar "Y"
+            , right = propVar "Z"
+            , proofOr =
+                ( PAndE2
+                    { left = propVar "X"
+                    , proofAnd = PAx "h X ^ (Y v Z)"
+                    }
+                )
+            , hypLeft = "h Y"
+            , proofAssumingLeft =
+                POrI1
+                    { proofLeft =
+                        PAndI
+                            { proofLeft =
+                                PAndE1
+                                    { right = FOr (propVar "Y") (propVar "Z")
+                                    , proofAnd = PAx "h X ^ (Y v Z)"
+                                    }
+                            , proofRight = PAx "h Y"
+                            }
+                    }
+            , hypRight = "h Z"
+            , proofAssumingRight =
+                POrI2
+                    { proofRight =
+                        PAndI
+                            { proofLeft =
+                                PAndE1
+                                    { right = FOr (propVar "Y") (propVar "Z")
+                                    , proofAnd = PAx "h X ^ (Y v Z)"
+                                    }
+                            , proofRight = PAx "h Z"
+                            }
+                    }
+            }
         )

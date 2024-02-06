@@ -44,6 +44,7 @@ import Proofs (
     f23Vuelta,
     f24Ida,
     f24Vuelta,
+    f25,
     f3,
     f4,
     f5,
@@ -72,6 +73,7 @@ import Proofs (
     p23Vuelta,
     p24Ida,
     p24Vuelta,
+    p25,
     p3,
     p4,
     p4Err1,
@@ -319,6 +321,13 @@ testSubst =
 testCheck :: Test
 testCheck =
     test
+        [ "for by" ~: testCheckBy
+        , "examples" ~: testCheckExamples
+        ]
+
+testCheckExamples :: Test
+testCheckExamples =
+    test
         [ -- PAx
           "A |- A" ~: check exampleEnv (PAx "h1") FTrue ~?= CheckOK
         , "A |- B invalid"
@@ -427,5 +436,14 @@ testCheck =
                     (PForallI (POrI2 PTrueI))
                 )
                 (FExists "y" (FForall "x" (FOr (predVar "A" "z") FTrue)))
+            ~?= CheckOK
+        ]
+
+-- Test de demostraciones necesarias para la implementación de by
+testCheckBy :: Test
+testCheckBy =
+    test
+        [ "X ^ (Y v Z) => (X ^ Y) v (X ^ Z)"
+            ~: check EEmpty p25 f25
             ~?= CheckOK
         ]
