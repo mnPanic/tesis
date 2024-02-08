@@ -293,7 +293,7 @@ doubleNegElim formA =
 {-
     PImpE
         dneg A
-        dnegEim A
+        dnegElim A
         -- Proof de ~~A
         PNotI "h ~A"
             -- Proof de bottom asumiendo ~A, es decir que asumir que no vale A
@@ -943,9 +943,69 @@ p24Vuelta =
 -----
 -- Demostraciones necesarias para el automatic proof del by
 
--- X ^ (Y v Z) => (X ^ Y) v (X ^ Z)
+-- (X ^ Y) v (X ^ Z) => X ^ (Y v Z)
 f25 :: Form
 f25 =
+    FImp
+        ( FOr
+            (FAnd (propVar "X") (propVar "Y"))
+            (FAnd (propVar "X") (propVar "Z"))
+        )
+        (FAnd (propVar "X") (FOr (propVar "Y") (propVar "Z")))
+
+-- Devuelve una demostración para
+-- (X ^ Y) v (X ^ Z) => X ^ (Y v Z)
+-- TODO: Mejor nombre
+proofDistOrOverAnd :: Form -> Form -> Form -> Proof
+proofDistOrOverAnd fx fy fz =
+    PImpI
+        "h (X ^ Y) v (X ^ Z)"
+        -- Queremos demostrar X ^ (Y v Z), necesariamente se repite
+        -- o el POrE del antecedente o el PAndI del consecuente
+        ( POrE
+            { left = FAnd fx fy
+            , right = FAnd fx fz
+            , proofOr = PAx "h (X ^ Y) v (X ^ Z)"
+            , hypLeft = "h X ^ Y"
+            , proofAssumingLeft =
+                PAndI
+                    { proofLeft =
+                        PAndE1
+                            { right = fy
+                            , proofAnd = PAx "h X ^ Y"
+                            }
+                    , proofRight =
+                        POrI1
+                            { proofLeft =
+                                PAndE2
+                                    { left = fx
+                                    , proofAnd = PAx "h X ^ Y"
+                                    }
+                            }
+                    }
+            , hypRight = "h X ^ Z"
+            , proofAssumingRight =
+                PAndI
+                    { proofLeft =
+                        PAndE1
+                            { right = fz
+                            , proofAnd = PAx "h X ^ Z"
+                            }
+                    , proofRight =
+                        POrI2
+                            { proofRight =
+                                PAndE2
+                                    { left = fx
+                                    , proofAnd = PAx "h X ^ Z"
+                                    }
+                            }
+                    }
+            }
+        )
+
+-- X ^ (Y v Z) => (X ^ Y) v (X ^ Z)
+f25' :: Form
+f25' =
     FImp
         (FAnd (propVar "X") (FOr (propVar "Y") (propVar "Z")))
         ( FOr
@@ -953,8 +1013,8 @@ f25 =
             (FAnd (propVar "X") (propVar "Z"))
         )
 
-p25 :: Proof
-p25 =
+p25' :: Proof
+p25' =
     PImpI
         "h X ^ (Y v Z)"
         -- Dependiendo de si vale Y o Z pruebo el primero o el segundo (respectivamente)
@@ -995,3 +1055,33 @@ p25 =
                     }
             }
         )
+
+{- Dem de prueba con by
+
+thus B by A, A => B
+ = (A) ^ (A => B) => B
+
+Queremos demostrar por la negación, viendo que es refutable con dnegelim
+Para demostrar que la negación es refutable,
+ - la pasamos a DNF con equivalencias
+ - refutás cada cláusula encontrando mismos literales sin negar y negados
+
+~ ((A) ^ (A => B) => B)
+= ~ (~ (A ^ (A => B)) v B))         [ X => Y = ~X v Y ]
+= (~~(A ^ (A => B) ^ ~B))           [ ~(X v Y) = ~X ^ ~Y ]
+= A ^ (A => B) ^ ~B                 [ ~~X = X ]
+= { A ^ (~A v B) } ^ ~B             [ X => Y = ~X v Y ]
+= ((A ^ ~A) v (A ^ B)) ^ ~B         [ X ^ (Y v Z) = (X ^ Y) v (X ^ Z)]
+= (A ^ ~A ^ ~B) v (A ^ B ^ ~B)      [ (X v Y) ^ Z = (X ^ Z) v (Y ^ Z)]
+
+en DNF
+-}
+
+f26 :: Form
+f26 =
+    FImp
+        ( FAnd
+            (propVar "A")
+            (FImp (propVar "A") (propVar "B"))
+        )
+        (propVar "B")

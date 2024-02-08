@@ -236,14 +236,18 @@ data Proof
         , proofAssumingRight :: Proof -- de C asumiendo B
         }
     | -- A -> B
-      PImpI HypId Proof
+      PImpI
+        { hypAntecedent :: HypId
+        , proofConsequent :: Proof
+        }
     | PImpE
-        Form -- A
-        Proof -- de A -> B
-        Proof -- de A
-        -- ¬ A = A -> bottom
-        -- También conocida como RAA (reducción al absurdo)
-    | PNotI
+        { antecedent :: Form -- A
+        , proofImp :: Proof -- de A -> B
+        , proofAntecedent :: Proof -- de A
+        }
+    | -- ¬ A = A -> bottom
+      -- También conocida como RAA (reducción al absurdo)
+      PNotI
         HypId -- x:A
         Proof -- de bottom
     | PNotE

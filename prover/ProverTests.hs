@@ -45,6 +45,7 @@ import Proofs (
     f24Ida,
     f24Vuelta,
     f25,
+    f25',
     f3,
     f4,
     f5,
@@ -73,7 +74,7 @@ import Proofs (
     p23Vuelta,
     p24Ida,
     p24Vuelta,
-    p25,
+    p25',
     p3,
     p4,
     p4Err1,
@@ -84,6 +85,7 @@ import Proofs (
     p8,
     p9,
     predVar,
+    proofDistOrOverAnd,
     propVar,
  )
 
@@ -444,6 +446,9 @@ testCheckBy :: Test
 testCheckBy =
     test
         [ "X ^ (Y v Z) => (X ^ Y) v (X ^ Z)"
-            ~: check EEmpty p25 f25
+            ~: check EEmpty p25' f25'
+            ~?= CheckOK
+        , "(X ^ Y) v (X ^ Z) => X ^ (Y v Z) with macro"
+            ~: check EEmpty (proofDistOrOverAnd (propVar "X") (propVar "Y") (propVar "Z")) f25
             ~?= CheckOK
         ]
