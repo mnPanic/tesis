@@ -1063,10 +1063,12 @@ thus B by A, A => B
 
 Queremos demostrar por la negación, viendo que es refutable con dnegelim
 Para demostrar que la negación es refutable,
+ - eliminamos implicaciones
+ - pasamos a forma normal negada (negaciones más adentro posible)
  - la pasamos a DNF con equivalencias
  - refutás cada cláusula encontrando mismos literales sin negar y negados
 
-~ ((A) ^ (A => B) => B)
+~ ( ( A ^ (A => B) ) => B )
 = ~ (~ (A ^ (A => B)) v B))         [ X => Y = ~X v Y ]
 = (~~(A ^ (A => B) ^ ~B))           [ ~(X v Y) = ~X ^ ~Y ]
 = A ^ (A => B) ^ ~B                 [ ~~X = X ]
@@ -1085,3 +1087,31 @@ f26 =
             (FImp (propVar "A") (propVar "B"))
         )
         (propVar "B")
+
+p26 :: Proof
+-- Primero doubleNegElim para demostrar por contradicción
+p26 =
+    PImpE
+        { antecedent =
+            dneg thesis
+        , proofImp = doubleNegElim thesis
+        ,
+          proofAntecedent =
+            PNotI
+                { hyp = "h ~((A) ^ (A => B) => B)"
+                -- Demostración de bottom (contradicción) asumiendo que no vale
+                -- la tesis
+                , proofBot = PImpE {
+                    antecedent = 
+                }
+
+                }
+        }
+  where
+    thesis =
+        FImp
+            ( FAnd
+                (propVar "A")
+                (FImp (propVar "A") (propVar "B"))
+            )
+            (propVar "B")
