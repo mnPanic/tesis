@@ -1,9 +1,9 @@
-module ProverTests where
+module ParserTests where
 
 import Lexer (Token (..), lexer)
 
+import ND (Form (..), Term (..))
 import Parser (parseExp)
-import Prover (Form (..), Term (..))
 import Test.HUnit (
     Counts,
     Test,

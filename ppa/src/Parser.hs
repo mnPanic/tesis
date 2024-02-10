@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -w #-}
 module Parser(parseExp) where
 
-import Prover ( Form(..), Term(..) )
+import ND ( Form(..), Term(..) )
 import Theory ( TProof, ProofStep(..), Theorem(..), Program(..) )
 import Lexer ( Token(..) )
 import qualified Data.Array as Happy_Data_Array

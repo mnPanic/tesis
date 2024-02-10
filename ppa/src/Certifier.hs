@@ -1,28 +1,28 @@
-module Theory (
-    Theorem (..),
+module Certifier () where
+
+import PPA (
+    Context,
+    Program,
     TProof,
-    ProofStep (..),
-    Program (..),
-    execute,
-) where
+ )
 
-import Prover (CheckResult, Env (EEmpty), Form (..), Proof (..), check)
+import ND (
+    Form (..),
+    Proof (..),
+ )
 
-data Program
-    = ProgramT Theorem
-    | ProgramF Prover.Form
-    deriving (Show)
+certify :: Program -> Context
+certify = undefined
 
-data Theorem = Theorem String Form TProof
-    deriving (Show)
+check :: Context -> Bool
+check = undefined
 
-type TProof = [ProofStep]
+type M = Maybe
 
-data ProofStep
-    = PSAssume String Form
-    | PSThus Form String
-    deriving (Show)
+certifyProof :: Context -> Form -> TProof -> M Proof
+certifyProof = undefined
 
+{-
 execute :: Program -> CheckResult
 execute (ProgramT t) = checkT t
 
@@ -38,3 +38,5 @@ checkPS (PSAssume name form) (FImp f1 f2) ps = PImpI name (checkP ps f2)
 checkPS (PSThus form hyp) thesis _
     | form /= thesis = error "form not thesis"
     | otherwise = PAx hyp
+
+-}

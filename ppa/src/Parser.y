@@ -1,7 +1,7 @@
 {
 module Parser(parseExp) where
 
-import Prover ( Form(..), Term(..) )
+import ND ( Form(..), Term(..) )
 import Theory ( TProof, ProofStep(..), Theorem(..), Program(..) )
 import Lexer ( Token(..) )
 }

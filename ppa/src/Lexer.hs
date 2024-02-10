@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-unused-binds -fno-warn-missing-signatures #-}
 {-# LANGUAGE CPP #-}
-{-# LINE 1 "Lexer.x" #-}
+{-# LINE 1 "src/Lexer.x" #-}
 module Lexer(lexer, Token(..), AlexPosn(..)) where
 #if __GLASGOW_HASKELL__ >= 603
 #include "ghcconfig.h"
@@ -14219,7 +14219,7 @@ alexRightContext IBOX(sc) user__ _ _ input__ =
         -- match when checking the right context, just
         -- the first match will do.
 #endif
-{-# LINE 38 "Lexer.x" #-}
+{-# LINE 38 "src/Lexer.x" #-}
 data Token 
     -- Fórmulas
     = TokenId String

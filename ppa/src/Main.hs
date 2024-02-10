@@ -1,8 +1,9 @@
 module Main where
 
+import Certifier (certify)
 import Lexer (lexer)
+import PPA (Program)
 import Parser (parseExp)
-import Theory (Program, execute)
 
 import System.Environment (getArgs)
 

@@ -1,17 +1,21 @@
 module ProverTests where
 
-import Prover (
-    CheckResult (CheckError, CheckOK),
+import ND (
     Env (EEmpty, EExtend),
     Form (FAnd, FExists, FFalse, FForall, FImp, FNot, FOr, FPred, FTrue),
     Proof (..),
     Term (TFun, TVar),
-    check,
     fv,
     fvE,
     get,
+ )
+
+import NDChecker (
+    CheckResult (CheckError, CheckOK),
+    check,
     subst,
  )
+
 import Test.HUnit (
     Counts,
     Test,
@@ -22,7 +26,7 @@ import Test.HUnit (
     (~?=),
  )
 
-import Proofs (
+import TestProofs (
     doubleNegElim,
     f1,
     f10,

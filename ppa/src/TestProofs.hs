@@ -1,6 +1,6 @@
-module Proofs where
+module TestProofs where
 
-import Prover (
+import ND (
     Form (FAnd, FExists, FFalse, FForall, FImp, FNot, FOr, FPred, FTrue),
     PredId,
     Proof (..),
@@ -1088,30 +1088,31 @@ f26 =
         )
         (propVar "B")
 
-p26 :: Proof
--- Primero doubleNegElim para demostrar por contradicción
-p26 =
-    PImpE
-        { antecedent =
-            dneg thesis
-        , proofImp = doubleNegElim thesis
-        ,
-          proofAntecedent =
-            PNotI
-                { hyp = "h ~((A) ^ (A => B) => B)"
-                -- Demostración de bottom (contradicción) asumiendo que no vale
-                -- la tesis
-                , proofBot = PImpE {
-                    antecedent = 
-                }
+-- p26 :: Proof
 
-                }
-        }
-  where
-    thesis =
-        FImp
-            ( FAnd
-                (propVar "A")
-                (FImp (propVar "A") (propVar "B"))
-            )
-            (propVar "B")
+-- Primero doubleNegElim para demostrar por contradicción
+-- p26 =
+--     PImpE
+--         { antecedent =
+--             dneg thesis
+--         , proofImp = doubleNegElim thesis
+--         ,
+--           proofAntecedent =
+--             PNotI
+--                 { hyp = "h ~((A) ^ (A => B) => B)"
+--                 -- Demostración de bottom (contradicción) asumiendo que no vale
+--                 -- la tesis
+--                 , proofBot = PImpE {
+--                     antecedent =
+--                 }
+
+--                 }
+--         }
+--   where
+--     thesis =
+--         FImp
+--             ( FAnd
+--                 (propVar "A")
+--                 (FImp (propVar "A") (propVar "B"))
+--             )
+--             (propVar "B")
