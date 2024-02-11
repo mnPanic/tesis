@@ -9,6 +9,11 @@ import ND (
     VarId,
  )
 
+import NDProofs (
+    Result,
+    proofAndEProjection,
+ )
+
 -- Dems sacadas de ejercicios de Lectures on the Curry Howard Isomorphism
 -- Originalmente son para deducción natural de intuicionista.
 
@@ -1001,49 +1006,48 @@ p27 =
                 }
         }
 
-
-p27_andEProjection :: Proof
-p27_andEProjection =
-    PImpI
-        { hypAntecedent = "h ((A => B) ^ (B => C)) ^ A"
-        , -- Dem de C por transitividad
-          proofConsequent =
-            PImpE
-                { antecedent = propVar "B"
-                , -- Dem de B => C hay que meterse en el AND
-                  proofImp =
-                    PAndE2
-                        { left = FImp (propVar "A") (propVar "B")
-                        , proofAnd =
-                            PAndE1
-                                { right = propVar "A"
-                                , proofAnd = PAx "h ((A => B) ^ (B => C)) ^ A"
-                                }
-                        }
-                , -- Dem de B
-                  proofAntecedent =
-                    PImpE
-                        { antecedent = propVar "A"
-                        , proofImp =
-                            PAndE1
-                                { right = FImp (propVar "B") (propVar "C")
-                                , proofAnd =
-                                    PAndE1
-                                        { right = propVar "A"
-                                        , proofAnd = PAx "h ((A => B) ^ (B => C)) ^ A"
-                                        }
-                                }
-                        , proofAntecedent =
-                            PAndE2
-                                { left =
-                                    FAnd
-                                        (FImp (propVar "A") (propVar "B"))
-                                        (FImp (propVar "B") (propVar "C"))
-                                , proofAnd = PAx "h ((A => B) ^ (B => C)) ^ A"
-                                }
-                        }
-                }
-        }
+p27_andEProjection :: Result Proof
+p27_andEProjection = do
+    let ands =
+            FAnd
+                ( FAnd
+                    (FImp (propVar "A") (propVar "B"))
+                    (FImp (propVar "B") (propVar "C"))
+                )
+                (propVar "A")
+    proofBImpC <-
+        proofAndEProjection
+            ands
+            "h ((A => B) ^ (B => C)) ^ A"
+            (FImp (propVar "B") (propVar "C"))
+    proofAImpB <-
+        proofAndEProjection
+            ands
+            "h ((A => B) ^ (B => C)) ^ A"
+            (FImp (propVar "A") (propVar "B"))
+    proofA <-
+        proofAndEProjection
+            ands
+            "h ((A => B) ^ (B => C)) ^ A"
+            (propVar "A")
+    return
+        PImpI
+            { hypAntecedent = "h ((A => B) ^ (B => C)) ^ A"
+            , -- Dem de C por transitividad
+              proofConsequent =
+                PImpE
+                    { antecedent = propVar "B"
+                    , -- Dem de B => C hay que meterse en el AND
+                      proofImp = proofBImpC
+                    , -- Dem de B
+                      proofAntecedent =
+                        PImpE
+                            { antecedent = propVar "A"
+                            , proofImp = proofAImpB
+                            , proofAntecedent = proofA
+                            }
+                    }
+            }
 
 -- (X ^ Y) v (X ^ Z) => X ^ (Y v Z)
 f25 :: Form

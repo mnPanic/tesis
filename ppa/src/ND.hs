@@ -19,6 +19,8 @@ module ND (
 import Data.Map qualified as Map
 import Data.Set qualified as Set
 
+import Data.List (intercalate)
+
 -- Tipos de identificadores
 type VarId = String
 type FunId = String
@@ -31,7 +33,10 @@ type Subst = Map.Map String String
 data Term
     = TVar VarId
     | TFun FunId [Term]
-    deriving (Show)
+
+instance Show Term where
+    show (TVar x) = x
+    show (TFun f ts) = f ++ showArgs ts
 
 -- Free variables de un término
 fvTerm :: Term -> Set.Set VarId
@@ -68,7 +73,21 @@ data Form
     | FFalse
     | FForall VarId Form
     | FExists VarId Form
-    deriving (Show)
+
+instance Show Form where
+    show (FPred p ts) = p ++ showArgs ts
+    show (FAnd l r) = show l ++ " ^ " ++ show r
+    show (FOr l r) = show l ++ " v " ++ show r
+    show (FImp a c) = show a ++ " => " ++ show c
+    show (FNot f) = "~" ++ show f
+    show FTrue = "true"
+    show FFalse = "false"
+    show (FForall x f) = "forall x. " ++ show f
+    show (FExists x f) = "exists x. " ++ show f
+
+showArgs :: (Show a) => [a] -> String
+showArgs [] = ""
+showArgs ts = "(" ++ intercalate ", " (map show ts) ++ ")"
 
 instance Eq Form where
     (==) = alphaEqForm' Map.empty Map.empty

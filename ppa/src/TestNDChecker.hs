@@ -26,6 +26,7 @@ import Test.HUnit (
     Test,
     Testable (test),
     assertEqual,
+    assertFailure,
     runTestTT,
     (@=?),
     (@?=),
@@ -89,6 +90,7 @@ import TestProofs (
     p24Vuelta,
     p25',
     p27,
+    p27',
     p3,
     p4,
     p4Err1,
@@ -380,9 +382,82 @@ testAndEProjection =
                             , proofAnd = PAx "h A ^ (B ^ C)"
                             }
                     }
-        , "err A^B |- C"
+        , "((A ^ (B ^ C)) ^ D) ^ E |- B"
+            ~: testAndEProj
+                ( FAnd
+                    ( FAnd
+                        ( FAnd
+                            (propVar "A")
+                            (FAnd (propVar "B") (propVar "C"))
+                        )
+                        (propVar "D")
+                    )
+                    (propVar "E")
+                )
+                "h And"
+                (propVar "B")
+                PAndE1
+                    { right = propVar "C"
+                    , proofAnd =
+                        PAndE2
+                            { left = propVar "A"
+                            , proofAnd =
+                                PAndE1
+                                    { right = propVar "D"
+                                    , proofAnd =
+                                        PAndE1
+                                            { right = propVar "E"
+                                            , proofAnd = PAx "h And"
+                                            }
+                                    }
+                            }
+                    }
+        , "(A ^ B) ^ C |- A ^ B"
+            ~: testAndEProj
+                (FAnd (FAnd (propVar "A") (propVar "B")) (propVar "C"))
+                "h (A ^ B) ^ C"
+                (FAnd (propVar "A") (propVar "B"))
+                PAndE1
+                    { right = propVar "C"
+                    , proofAnd = PAx "h (A ^ B) ^ C"
+                    }
+        , "mixta - ((C => D) ^ (A v B)) ^ ~C |- A v B"
+            ~: testAndEProj
+                ( FAnd
+                    ( FAnd
+                        (FImp (propVar "C") (propVar "D"))
+                        (FOr (propVar "A") (propVar "B"))
+                    )
+                    (FNot $ propVar "C")
+                )
+                "h And"
+                (FOr (propVar "A") (propVar "B"))
+                PAndE2
+                    { left = FImp (propVar "C") (propVar "D")
+                    , proofAnd =
+                        PAndE1
+                            { right = FNot $ propVar "C"
+                            , proofAnd = PAx "h And"
+                            }
+                    }
+        , "err A ^ B |- C"
             ~: proofAndEProjection (FAnd (propVar "A") (propVar "B")) "h" (propVar "C")
-            ~?= Left ""
+            ~?= Left "A ^ B |- C not possible by left (A /= C) or right (B /= C)"
+        , "err ((A ^ (B ^ C)) ^ D) ^ E |- Q"
+            ~: proofAndEProjection
+                ( FAnd
+                    ( FAnd
+                        ( FAnd
+                            (propVar "A")
+                            (FAnd (propVar "B") (propVar "C"))
+                        )
+                        (propVar "D")
+                    )
+                    (propVar "E")
+                )
+                "h"
+                (propVar "Q")
+            ~?= Left "A ^ B ^ C ^ D ^ E |- Q not possible by left (A ^ B ^ C ^ D |- Q not possible by left (A ^ B ^ C |- Q not possible by left (A /= Q) or right (B ^ C |- Q not possible by left (B /= Q) or right (C /= Q))) or right (D /= Q)) or right (E /= Q)"
         ]
 
 testAndEProj :: Form -> HypId -> Form -> Proof -> IO ()
@@ -473,7 +548,7 @@ testCheckExamples =
                 (EExtend "h Forall x. A(x)" (FForall "x" (FPred "A" [TVar "x"])) EEmpty)
                 (PForallE "x" (FPred "A" [TVar "x"]) (PAx "h Forall x. A(x)") (TVar "x"))
                 (FPred "B" [TVar "x"])
-                "form FPred \"B\" [TVar \"x\"] /= (FPred \"A\" [TVar \"x\"]){x := TVar \"x\"}"
+                "form B(x) /= (A(x)){x := x}"
         , "A(x) => Forall x. A(x)"
             ~: check EEmpty p21 f21
             ~?= CheckError
@@ -520,4 +595,8 @@ testCheckBy =
           "trans no cut ((A => B) ^ (B => C)) ^ A => C"
             ~: check EEmpty p27 f27
             ~?= CheckOK
+        , "trans w/ andEProj ((A => B) ^ (B => C)) ^ A => C"
+            ~: case p27_andEProjection of
+                (Left e) -> assertFailure e
+                (Right p) -> check EEmpty p f27 @?= CheckOK
         ]

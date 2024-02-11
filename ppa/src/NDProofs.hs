@@ -1,5 +1,8 @@
 -- Contains proof macros / generators
-module NDProofs (proofAndEProjection) where
+module NDProofs (
+    proofAndEProjection,
+    Result,
+) where
 
 import ND (
     Form (..),
@@ -11,29 +14,47 @@ import Text.Printf (printf)
 
 type Result a = Either String a
 
--- proofAndEProjection dada una cláusula (a_1 ^ ... ^ a_n), que puede estar
--- con asociada de cualquier manera, devuelve una demostración de
---  (a_1 ^ ... ^ a_n) |- a_i
--- con i de 1 a n
+{- proofAndEProjection
+Dada una cláusula (a_1 ^ ... ^ a_n), que puede estar asociada de cualquier
+manera, devuelve una demostración de
+
+    (a_1 ^ ... ^ a_n) |- a_i
+
+con i de 1 a n
+
+Implementación: lo raro es que las demostraciones son "al revés", por ej. con
+
+    (a ^ b) ^ c |- b
+
+comienza con PAndE2 del (a ^ b) y luego hay que demostrar de donde sale ese and
+con PAndE1. Para resolverlo, se usa una función auxiliar que recorre el and
+estructuralmente y devuelve errores si no matchea o id si lo encuentra. Luego se
+rellena con E1 o E2 según el camino tomado y devuelve una demostración a medias,
+que dice cual se usa (E1 o E2) pero no demuestra el and, ya que eso sabe cómo
+hacerlo el padre (recursivamente con E1 o E2).
+-}
 proofAndEProjection :: Form -> HypId -> Form -> Result Proof
 proofAndEProjection fAnd hAnd f =
-    case proj' fAnd f of
+    case proofAndEProjection' fAnd f of
         Right p -> Right $ p (PAx hAnd)
         Left e -> Left e
 
-proj' :: Form -> Form -> Result (Proof -> Proof)
-proj' fAnd@(FAnd l r) f = case proj' l f of
-    Right p -> Right $ \next -> p (PAndE1 r next)
-    Left el -> case proj' r f of
-        Left er ->
-            Left
-                $ printf
-                    "%s |- %s not possible by left (%s) or right (%s)"
-                    (show fAnd)
-                    (show f)
-                    el
-                    er
-        Right p -> Right $ \next -> p (PAndE2 l next)
-proj' f1 f2
+-- Devuelve una demostración para l ^ r |- f sin demostrar el and.
+proofAndEProjection' :: Form -> Form -> Result (Proof -> Proof)
+proofAndEProjection' fAnd@(FAnd l r) f
+    | fAnd == f = Right id
+    | otherwise = case proofAndEProjection' l f of
+        Right p -> Right $ \next -> p (PAndE1 r next)
+        Left el -> case proofAndEProjection' r f of
+            Left er ->
+                Left
+                    $ printf
+                        "%s |- %s not possible by left (%s) or right (%s)"
+                        (show fAnd)
+                        (show f)
+                        el
+                        er
+            Right p -> Right $ \next -> p (PAndE2 l next)
+proofAndEProjection' f1 f2
     | f1 == f2 = Right id
     | otherwise = Left $ printf "%s /= %s" (show f1) (show f2)
