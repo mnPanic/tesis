@@ -11,6 +11,7 @@ import ND (
 
 import NDProofs (
     Result,
+    cut,
     proofAndEProjection,
  )
 
@@ -1048,6 +1049,10 @@ p27_andEProjection = do
                             }
                     }
             }
+
+-- No tiene tanto sentido usar cut en este caso, porque las implicaciones no se
+-- prueban con otras funciones sino que son premisas, así que terminás dando más
+-- vueltas con PImpE. Para pasar de A |- B de vuelta a |- A -> B
 
 -- (X ^ Y) v (X ^ Z) => X ^ (Y v Z)
 f25 :: Form

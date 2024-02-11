@@ -1,6 +1,7 @@
 -- Contains proof macros / generators
 module NDProofs (
     proofAndEProjection,
+    cut,
     Result,
 ) where
 
@@ -13,6 +14,26 @@ import ND (
 import Text.Printf (printf)
 
 type Result a = Either String a
+
+{- cut es un macro que permite pegar demostraciones
+
+    G |- A      G, A |- B
+    --------------------- (cut)
+           G |- B
+
+Permite evitar Imp-E y Imp-I para demostrar a partir de una implicación conocida
+-}
+cut :: Form -> Form -> Proof -> HypId -> Proof -> Proof
+cut fA fB pA hypA pAtoB =
+    PImpE
+        { antecedent = fA
+        , proofImp =
+            PImpI
+                { hypAntecedent = hypA
+                , proofConsequent = pAtoB
+                }
+        , proofAntecedent = pA
+        }
 
 {- proofAndEProjection
 Dada una cláusula (a_1 ^ ... ^ a_n), que puede estar asociada de cualquier
