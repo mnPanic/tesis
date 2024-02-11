@@ -2,6 +2,7 @@ module TestProofs where
 
 import ND (
     Form (FAnd, FExists, FFalse, FForall, FImp, FNot, FOr, FPred, FTrue),
+    HypId,
     PredId,
     Proof (..),
     Term (TVar),
@@ -942,6 +943,107 @@ p24Vuelta =
 
 -----
 -- Demostraciones necesarias para el automatic proof del by
+
+-- Cut, como la transitividad de la implicación
+-- ((A => B) ^ (B => C)) ^ A => C
+f27 :: Form
+f27 =
+    FImp
+        ( FAnd
+            ( FAnd
+                (FImp (propVar "A") (propVar "B"))
+                (FImp (propVar "B") (propVar "C"))
+            )
+            (propVar "A")
+        )
+        (propVar "C")
+
+p27 :: Proof
+p27 =
+    PImpI
+        { hypAntecedent = "h ((A => B) ^ (B => C)) ^ A"
+        , -- Dem de C por transitividad
+          proofConsequent =
+            PImpE
+                { antecedent = propVar "B"
+                , -- Dem de B => C hay que meterse en el AND
+                  proofImp =
+                    PAndE2
+                        { left = FImp (propVar "A") (propVar "B")
+                        , proofAnd =
+                            PAndE1
+                                { right = propVar "A"
+                                , proofAnd = PAx "h ((A => B) ^ (B => C)) ^ A"
+                                }
+                        }
+                , -- Dem de B
+                  proofAntecedent =
+                    PImpE
+                        { antecedent = propVar "A"
+                        , proofImp =
+                            PAndE1
+                                { right = FImp (propVar "B") (propVar "C")
+                                , proofAnd =
+                                    PAndE1
+                                        { right = propVar "A"
+                                        , proofAnd = PAx "h ((A => B) ^ (B => C)) ^ A"
+                                        }
+                                }
+                        , proofAntecedent =
+                            PAndE2
+                                { left =
+                                    FAnd
+                                        (FImp (propVar "A") (propVar "B"))
+                                        (FImp (propVar "B") (propVar "C"))
+                                , proofAnd = PAx "h ((A => B) ^ (B => C)) ^ A"
+                                }
+                        }
+                }
+        }
+
+
+p27_andEProjection :: Proof
+p27_andEProjection =
+    PImpI
+        { hypAntecedent = "h ((A => B) ^ (B => C)) ^ A"
+        , -- Dem de C por transitividad
+          proofConsequent =
+            PImpE
+                { antecedent = propVar "B"
+                , -- Dem de B => C hay que meterse en el AND
+                  proofImp =
+                    PAndE2
+                        { left = FImp (propVar "A") (propVar "B")
+                        , proofAnd =
+                            PAndE1
+                                { right = propVar "A"
+                                , proofAnd = PAx "h ((A => B) ^ (B => C)) ^ A"
+                                }
+                        }
+                , -- Dem de B
+                  proofAntecedent =
+                    PImpE
+                        { antecedent = propVar "A"
+                        , proofImp =
+                            PAndE1
+                                { right = FImp (propVar "B") (propVar "C")
+                                , proofAnd =
+                                    PAndE1
+                                        { right = propVar "A"
+                                        , proofAnd = PAx "h ((A => B) ^ (B => C)) ^ A"
+                                        }
+                                }
+                        , proofAntecedent =
+                            PAndE2
+                                { left =
+                                    FAnd
+                                        (FImp (propVar "A") (propVar "B"))
+                                        (FImp (propVar "B") (propVar "C"))
+                                , proofAnd = PAx "h ((A => B) ^ (B => C)) ^ A"
+                                }
+                        }
+                }
+        }
 
 -- (X ^ Y) v (X ^ Z) => X ^ (Y v Z)
 f25 :: Form

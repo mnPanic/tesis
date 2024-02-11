@@ -3,6 +3,7 @@ module ProverTests where
 import ND (
     Env (EEmpty, EExtend),
     Form (FAnd, FExists, FFalse, FForall, FImp, FNot, FOr, FPred, FTrue),
+    HypId,
     Proof (..),
     Term (TFun, TVar),
     fv,
@@ -16,11 +17,18 @@ import NDChecker (
     subst,
  )
 
+import NDProofs (
+    proofAndEProjection,
+ )
+
 import Test.HUnit (
     Counts,
     Test,
     Testable (test),
+    assertEqual,
     runTestTT,
+    (@=?),
+    (@?=),
     (~:),
     (~?),
     (~?=),
@@ -50,6 +58,7 @@ import TestProofs (
     f24Vuelta,
     f25,
     f25',
+    f27,
     f3,
     f4,
     f5,
@@ -79,6 +88,7 @@ import TestProofs (
     p24Ida,
     p24Vuelta,
     p25',
+    p27,
     p3,
     p4,
     p4Err1,
@@ -329,7 +339,58 @@ testCheck =
     test
         [ "for by" ~: testCheckBy
         , "examples" ~: testCheckExamples
+        , "andEProjection" ~: testAndEProjection
         ]
+
+testAndEProjection :: Test
+testAndEProjection =
+    test
+        [ "A ^ B |- B"
+            ~: testAndEProj
+                (FAnd (propVar "A") (propVar "B"))
+                "h A ^ B"
+                (propVar "B")
+                PAndE2
+                    { left = propVar "A"
+                    , proofAnd = PAx "h A ^ B"
+                    }
+        , "(A ^ B) ^ C |- B"
+            ~: testAndEProj
+                (FAnd (FAnd (propVar "A") (propVar "B")) (propVar "C"))
+                "h (A ^ B) ^ C"
+                (propVar "B")
+                PAndE2
+                    { left = propVar "A"
+                    , proofAnd =
+                        PAndE1
+                            { right = propVar "C"
+                            , proofAnd = PAx "h (A ^ B) ^ C"
+                            }
+                    }
+        , "A ^ (B ^ C) |- B"
+            ~: testAndEProj
+                (FAnd (propVar "A") (FAnd (propVar "B") (propVar "C")))
+                "h A ^ (B ^ C)"
+                (propVar "B")
+                PAndE1
+                    { right = propVar "C"
+                    , proofAnd =
+                        PAndE2
+                            { left = propVar "A"
+                            , proofAnd = PAx "h A ^ (B ^ C)"
+                            }
+                    }
+        , "err A^B |- C"
+            ~: proofAndEProjection (FAnd (propVar "A") (propVar "B")) "h" (propVar "C")
+            ~?= Left ""
+        ]
+
+testAndEProj :: Form -> HypId -> Form -> Proof -> IO ()
+testAndEProj fAnd hAnd f expectedProof = do
+    let result = proofAndEProjection fAnd hAnd f
+    result @?= Right expectedProof
+    let (Right proof) = result
+    check (EExtend hAnd fAnd EEmpty) proof f @?= CheckOK
 
 testCheckExamples :: Test
 testCheckExamples =
@@ -454,5 +515,9 @@ testCheckBy =
             ~?= CheckOK
         , "(X ^ Y) v (X ^ Z) => X ^ (Y v Z) with macro"
             ~: check EEmpty (proofDistOrOverAnd (propVar "X") (propVar "Y") (propVar "Z")) f25
+            ~?= CheckOK
+        , -- Cut
+          "trans no cut ((A => B) ^ (B => C)) ^ A => C"
+            ~: check EEmpty p27 f27
             ~?= CheckOK
         ]
