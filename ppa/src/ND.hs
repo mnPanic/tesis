@@ -14,12 +14,27 @@ module ND (
     fv,
     fvTerm,
     fvE,
+    propVar,
+    predVar,
+    dneg,
 ) where
 
 import Data.Map qualified as Map
 import Data.Set qualified as Set
 
 import Data.List (intercalate)
+
+-- Dada una fórmula A da su doble negación
+dneg :: Form -> Form
+dneg f = FNot $ FNot f
+
+-- Dado un id de predicado devuelve un predicado de aridad 0,
+-- i.e una variable proposicional (propositional variable)
+propVar :: PredId -> Form
+propVar pid = FPred pid []
+
+predVar :: PredId -> VarId -> Form
+predVar p v = FPred p [TVar v]
 
 -- Tipos de identificadores
 type VarId = String
@@ -217,9 +232,10 @@ data Proof
         , proofBot :: Proof -- de bottom
         }
     | PNotE
-        Form -- A
-        Proof -- de ~A
-        Proof -- de A
+        { form :: Form -- A
+        , proofNotForm :: Proof -- de ~A
+        , proofForm :: Proof -- de A
+        }
     | PTrueI
     | PFalseE Proof
     | PLEM

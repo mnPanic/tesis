@@ -7,6 +7,8 @@ import ND (
     Proof (..),
     Term (TVar),
     VarId,
+    predVar,
+    propVar,
  )
 
 import NDProofs (
@@ -22,14 +24,6 @@ import Certifier (
 
 -- Dems sacadas de ejercicios de Lectures on the Curry Howard Isomorphism
 -- Originalmente son para deducción natural de intuicionista.
-
--- Dado un id de predicado devuelve un predicado de aridad 0,
--- i.e una variable proposicional (propositional variable)
-propVar :: PredId -> Form
-propVar pid = FPred pid []
-
-predVar :: PredId -> VarId -> Form
-predVar p v = FPred p [TVar v]
 
 -- A -> A
 f1 :: Form
@@ -269,48 +263,6 @@ p9 =
                 )
             )
         )
-
--- Dada una fórmula A da su doble negación
-dneg :: Form -> Form
-dneg f = FNot $ FNot f
-
--- Dada una fórmula A da una demostración de ~~A -> A
-doubleNegElim :: Form -> Proof
-doubleNegElim formA =
-    PImpI
-        "h ~~{A}"
-        ( -- Uso LEM de A v ~A
-          POrE
-            formA
-            (FNot formA)
-            PLEM
-            -- Dem de A asumiendo A
-            "h {A}"
-            (PAx "h {A}")
-            -- Dem de A asumiendo ~ A
-            "h ~{A}"
-            ( -- ~A y ~~A generan una contradicción
-              PFalseE
-                ( PNotE
-                    (FNot formA) -- Uso ~~A
-                    -- Dem de ~~A
-                    (PAx "h ~~{A}")
-                    -- Dem de ~A
-                    (PAx "h ~{A}")
-                )
-            )
-        )
-
--- doubleNegElim de A se puede usar para demostrar A por contradicción, asumiendo ~A
-{-
-    PImpE
-        dneg A
-        dnegElim A
-        -- Proof de ~~A
-        PNotI "h ~A"
-            -- Proof de bottom asumiendo ~A, es decir que asumir que no vale A
-            -- lleva a una contradicción.
--}
 
 -- De morgan
 
@@ -1015,27 +967,17 @@ p27 =
 p27_andEProjection :: Result Proof
 p27_andEProjection = do
     let ands =
-            FAnd
+            ( "h ((A => B) ^ (B => C)) ^ A"
+            , FAnd
                 ( FAnd
                     (FImp (propVar "A") (propVar "B"))
                     (FImp (propVar "B") (propVar "C"))
                 )
                 (propVar "A")
-    proofBImpC <-
-        proofAndEProjection
-            ands
-            "h ((A => B) ^ (B => C)) ^ A"
-            (FImp (propVar "B") (propVar "C"))
-    proofAImpB <-
-        proofAndEProjection
-            ands
-            "h ((A => B) ^ (B => C)) ^ A"
-            (FImp (propVar "A") (propVar "B"))
-    proofA <-
-        proofAndEProjection
-            ands
-            "h ((A => B) ^ (B => C)) ^ A"
-            (propVar "A")
+            )
+    proofBImpC <- proofAndEProjection ands (FImp (propVar "B") (propVar "C"))
+    proofAImpB <- proofAndEProjection ands (FImp (propVar "A") (propVar "B"))
+    proofA <- proofAndEProjection ands (propVar "A")
     return
         PImpI
             { hypAntecedent = "h ((A => B) ^ (B => C)) ^ A"
@@ -1235,3 +1177,70 @@ p26 = do
                 (FImp (propVar "A") (propVar "B"))
             )
             (propVar "B")
+
+-- (A ^ ~A ^ ~B) v (A ^ B ^ ~B) -> false (bot)
+f28_exampleSolve :: Form
+f28_exampleSolve =
+    FImp
+        ( FOr
+            ( FAnd
+                (propVar "A")
+                ( FAnd
+                    (FNot $ propVar "A")
+                    (FNot $ propVar "B")
+                )
+            )
+            ( FAnd
+                (propVar "A")
+                ( FAnd
+                    (propVar "B")
+                    (FNot $ propVar "B")
+                )
+            )
+        )
+        FFalse
+
+p28_exampleSolve :: Result Proof
+p28_exampleSolve = do
+    let left =
+            FAnd
+                (propVar "A")
+                ( FAnd
+                    (FNot $ propVar "A")
+                    (FNot $ propVar "B")
+                )
+    let right =
+            FAnd
+                (propVar "A")
+                ( FAnd
+                    (propVar "B")
+                    (FNot $ propVar "B")
+                )
+    proofLeftA <- proofAndEProjection ("h (A ^ ~A ^ ~B)", left) (propVar "A")
+    proofLeftNotA <- proofAndEProjection ("h (A ^ ~A ^ ~B)", left) (FNot $ propVar "A")
+    proofRightB <- proofAndEProjection ("h (A ^ B ^ ~B)", right) (propVar "B")
+    proofRightNotB <- proofAndEProjection ("h (A ^ B ^ ~B)", right) (FNot $ propVar "B")
+    return
+        PImpI
+            { hypAntecedent = "h (A ^ ~A ^ ~B) v (A ^ B ^ ~B)"
+            , proofConsequent =
+                POrE
+                    { left = left
+                    , right = right
+                    , proofOr = PAx "h (A ^ ~A ^ ~B) v (A ^ B ^ ~B)"
+                    , hypLeft = "h (A ^ ~A ^ ~B)"
+                    , proofAssumingLeft =
+                        PNotE
+                            { form = propVar "A"
+                            , proofNotForm = proofLeftNotA
+                            , proofForm = proofLeftA
+                            }
+                    , hypRight = "h (A ^ B ^ ~B)"
+                    , proofAssumingRight =
+                        PNotE
+                            { form = propVar "B"
+                            , proofNotForm = proofRightNotB
+                            , proofForm = proofRightB
+                            }
+                    }
+            }

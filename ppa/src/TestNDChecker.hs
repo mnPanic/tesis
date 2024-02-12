@@ -6,9 +6,12 @@ import ND (
     HypId,
     Proof (..),
     Term (TFun, TVar),
+    dneg,
     fv,
     fvE,
     get,
+    predVar,
+    propVar,
  )
 
 import NDChecker (
@@ -18,6 +21,7 @@ import NDChecker (
  )
 
 import NDProofs (
+    doubleNegElim,
     proofAndEProjection,
  )
 
@@ -36,7 +40,6 @@ import Test.HUnit (
  )
 
 import TestProofs (
-    doubleNegElim,
     f1,
     f10,
     f11,
@@ -60,6 +63,7 @@ import TestProofs (
     f25,
     f25',
     f27,
+    f28_exampleSolve,
     f3,
     f4,
     f5,
@@ -90,6 +94,8 @@ import TestProofs (
     p24Vuelta,
     p25',
     p27,
+    p27_andEProjection,
+    p28_exampleSolve,
     p3,
     p4,
     p4Err1,
@@ -99,9 +105,7 @@ import TestProofs (
     p7,
     p8,
     p9,
-    predVar,
     proofDistOrOverAnd,
-    propVar,
  )
 
 import Data.Set qualified as Set
@@ -338,7 +342,7 @@ testSubst =
 testCheck :: Test
 testCheck =
     test
-        [ "for by" ~: testCheckBy
+        [ "examples for by" ~: testCheckBy
         , "examples" ~: testCheckExamples
         , "andEProjection" ~: testAndEProjection
         ]
@@ -440,11 +444,12 @@ testAndEProjection =
                             }
                     }
         , "err A ^ B |- C"
-            ~: proofAndEProjection (FAnd (propVar "A") (propVar "B")) "h" (propVar "C")
+            ~: proofAndEProjection ("h", FAnd (propVar "A") (propVar "B")) (propVar "C")
             ~?= Left "A ^ B |- C not possible by left (A /= C) or right (B /= C)"
         , "err ((A ^ (B ^ C)) ^ D) ^ E |- Q"
             ~: proofAndEProjection
-                ( FAnd
+                ( "h"
+                , FAnd
                     ( FAnd
                         ( FAnd
                             (propVar "A")
@@ -454,14 +459,13 @@ testAndEProjection =
                     )
                     (propVar "E")
                 )
-                "h"
                 (propVar "Q")
             ~?= Left "A ^ B ^ C ^ D ^ E |- Q not possible by left (A ^ B ^ C ^ D |- Q not possible by left (A ^ B ^ C |- Q not possible by left (A /= Q) or right (B ^ C |- Q not possible by left (B /= Q) or right (C /= Q))) or right (D /= Q)) or right (E /= Q)"
         ]
 
 testAndEProj :: Form -> HypId -> Form -> Proof -> IO ()
 testAndEProj fAnd hAnd f expectedProof = do
-    let result = proofAndEProjection fAnd hAnd f
+    let result = proofAndEProjection (hAnd, fAnd) f
     result @?= Right expectedProof
     let (Right proof) = result
     check (EExtend hAnd fAnd EEmpty) proof f @?= CheckOK
@@ -590,12 +594,15 @@ testCheckBy =
         , "(X ^ Y) v (X ^ Z) => X ^ (Y v Z) with macro"
             ~: check EEmpty (proofDistOrOverAnd (propVar "X") (propVar "Y") (propVar "Z")) f25
             ~?= CheckOK
-        , -- Cut
-          "trans no cut ((A => B) ^ (B => C)) ^ A => C"
+        , -- andEProj
+          "trans no proj ((A => B) ^ (B => C)) ^ A => C"
             ~: check EEmpty p27 f27
             ~?= CheckOK
         , "trans w/ andEProj ((A => B) ^ (B => C)) ^ A => C"
             ~: case p27_andEProjection of
                 (Left e) -> assertFailure e
                 (Right p) -> check EEmpty p f27 @?= CheckOK
+        , "example solve contradiction manually (A ^ ~A ^ ~B) v (A ^ B ^ ~B) -> false (bot)" ~: case p28_exampleSolve of
+            (Left e) -> assertFailure e
+            (Right p) -> check EEmpty p f28_exampleSolve @?= CheckOK
         ]

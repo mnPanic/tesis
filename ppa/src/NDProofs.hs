@@ -3,6 +3,7 @@ module NDProofs (
     proofAndEProjection,
     cut,
     dnf,
+    doubleNegElim,
     Result,
     EnvItem,
 ) where
@@ -22,6 +23,43 @@ type Result a = Either String a
 --  x: A |- B
 -- para especificar x:A
 type EnvItem = (HypId, Form)
+
+{- doubleNegElim dada una fórmula A da una demostración de ~~A -> A
+
+Se puede usar para demostrar A por contradicción, asumiendo ~A
+    PImpE
+        dneg A
+        dnegElim A
+        -- Proof de ~~A
+        PNotI "h ~A"
+            -- Proof de bottom asumiendo ~A, es decir que asumir que no vale A
+            -- lleva a una contradicción.
+-}
+doubleNegElim :: Form -> Proof
+doubleNegElim formA =
+    PImpI
+        "h ~~{A}"
+        ( -- Uso LEM de A v ~A
+          POrE
+            formA
+            (FNot formA)
+            PLEM
+            -- Dem de A asumiendo A
+            "h {A}"
+            (PAx "h {A}")
+            -- Dem de A asumiendo ~ A
+            "h ~{A}"
+            ( -- ~A y ~~A generan una contradicción
+              PFalseE
+                ( PNotE
+                    (FNot formA) -- Uso ~~A
+                    -- Dem de ~~A
+                    (PAx "h ~~{A}")
+                    -- Dem de ~A
+                    (PAx "h ~{A}")
+                )
+            )
+        )
 
 {- cut es un macro que permite pegar demostraciones
 
@@ -62,8 +100,8 @@ rellena con E1 o E2 según el camino tomado y devuelve una demostración a media
 que dice cual se usa (E1 o E2) pero no demuestra el and, ya que eso sabe cómo
 hacerlo el padre (recursivamente con E1 o E2).
 -}
-proofAndEProjection :: Form -> HypId -> Form -> Result Proof
-proofAndEProjection fAnd hAnd f =
+proofAndEProjection :: EnvItem -> Form -> Result Proof
+proofAndEProjection (hAnd, fAnd) f =
     case proofAndEProjection' fAnd f of
         Right p -> Right $ p (PAx hAnd)
         Left e -> Left e
