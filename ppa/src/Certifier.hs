@@ -1,9 +1,14 @@
-module Certifier () where
+module Certifier (solve) where
 
 import PPA (
     Context,
     Program,
     TProof,
+ )
+
+import NDProofs (
+    EnvItem,
+    Result,
  )
 
 import ND (
@@ -40,3 +45,13 @@ checkPS (PSThus form hyp) thesis _
     | otherwise = PAx hyp
 
 -}
+
+{- solve demuestra una contradicción de una fórmula que se asume que está en
+DNF. Para ello refuta cada cláusula, buscando o el mismo literal negado y sin
+negar, o que tenga false.
+
+Devuelve una demostración de
+    f |- bot
+-}
+solve :: EnvItem -> Result Proof
+solve (h, f) = Left "er"

@@ -12,7 +12,12 @@ import ND (
 import NDProofs (
     Result,
     cut,
+    dnf,
     proofAndEProjection,
+ )
+
+import Certifier (
+    solve,
  )
 
 -- Dems sacadas de ejercicios de Lectures on the Curry Howard Isomorphism
@@ -1199,31 +1204,34 @@ f26 =
         )
         (propVar "B")
 
--- p26 :: Proof
-
+p26 :: Result Proof
 -- Primero doubleNegElim para demostrar por contradicción
--- p26 =
---     PImpE
---         { antecedent =
---             dneg thesis
---         , proofImp = doubleNegElim thesis
---         ,
---           proofAntecedent =
---             PNotI
---                 { hyp = "h ~((A) ^ (A => B) => B)"
---                 -- Demostración de bottom (contradicción) asumiendo que no vale
---                 -- la tesis
---                 , proofBot = PImpE {
---                     antecedent =
---                 }
-
---                 }
---         }
---   where
---     thesis =
---         FImp
---             ( FAnd
---                 (propVar "A")
---                 (FImp (propVar "A") (propVar "B"))
---             )
---             (propVar "B")
+p26 = do
+    (dnfNegThesis, dnfProof) <- dnf (FNot thesis)
+    contradictionProof <- solve ("h dnfThesis", dnfNegThesis)
+    return
+        PImpE
+            { antecedent = dneg thesis
+            , proofImp = doubleNegElim thesis
+            , proofAntecedent =
+                PNotI
+                    { hyp = "h ~((A) ^ (A => B) => B)"
+                    , -- Demostración de bottom (contradicción) asumiendo que no vale
+                      -- la tesis. Primero convertimos a DNF y luego demostramos que
+                      -- la version en DNF es refutable.
+                      proofBot =
+                        cut
+                            dnfNegThesis
+                            dnfProof
+                            "h dnfThesis"
+                            contradictionProof
+                    }
+            }
+  where
+    thesis =
+        FImp
+            ( FAnd
+                (propVar "A")
+                (FImp (propVar "A") (propVar "B"))
+            )
+            (propVar "B")

@@ -2,7 +2,9 @@
 module NDProofs (
     proofAndEProjection,
     cut,
+    dnf,
     Result,
+    EnvItem,
 ) where
 
 import ND (
@@ -15,6 +17,12 @@ import Text.Printf (printf)
 
 type Result a = Either String a
 
+-- (x: A) es un elemento del entorno de una demostración.
+-- Usado por todas las funciones que generan demostraciones del estilo
+--  x: A |- B
+-- para especificar x:A
+type EnvItem = (HypId, Form)
+
 {- cut es un macro que permite pegar demostraciones
 
     G |- A      G, A |- B
@@ -23,8 +31,8 @@ type Result a = Either String a
 
 Permite evitar Imp-E y Imp-I para demostrar a partir de una implicación conocida
 -}
-cut :: Form -> Form -> Proof -> HypId -> Proof -> Proof
-cut fA fB pA hypA pAtoB =
+cut :: Form -> Proof -> HypId -> Proof -> Proof
+cut fA pA hypA pAtoB =
     PImpE
         { antecedent = fA
         , proofImp =
@@ -79,3 +87,11 @@ proofAndEProjection' fAnd@(FAnd l r) f
 proofAndEProjection' f1 f2
     | f1 == f2 = Right id
     | otherwise = Left $ printf "%s /= %s" (show f1) (show f2)
+
+{- dnf
+
+Dada una fórmula F y una versión en DNF F' (no es única), da una demostración de
+F |- F'.
+-}
+dnf :: Form -> Result (Form, Proof)
+dnf f = Right (f, PAx "h")
