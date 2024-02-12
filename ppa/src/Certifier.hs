@@ -79,8 +79,7 @@ solve (hOr, FOr l r) = do
             , hypRight = hRight
             , proofAssumingRight = proofRight
             }
-solve (hAnd, fAnd@(FAnd _ _)) = solveClause (hAnd, fAnd)
-solve (h, f) = Left $ printf "Unexpected format for form: '%s: %s'" h (show f)
+solve i = solveClause i
 
 {- solveClause intenta demostrar que una cláusula es contradictoria.
 
@@ -129,7 +128,7 @@ toClause (FAnd l r) = do
     return (clauseL ++ clauseR)
 toClause f
     | isLiteral f = Right [f]
-    | otherwise = Left $ printf "%s is not a literal" (show f)
+    | otherwise = Left $ printf "convert to clause: %s is not a literal" (show f)
 
 -- left assoc
 fromClause :: Clause -> Form

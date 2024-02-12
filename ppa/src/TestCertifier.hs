@@ -55,15 +55,15 @@ testSolve :: Test
 testSolve =
     test
         [ "refutable single clause w/ false"
-            ~: doTestSolve
+            ~: doTestSolveEqCheck
                 ("h", fromClause [FFalse, propVar "Q"])
                 PAndE1
                     { right = propVar "Q"
                     , proofAnd = PAx "h"
                     }
         , "refutable single clause w/ opposites"
-            ~: solve ("h", fromClause [propVar "A", FNot $ propVar "A"])
-            ~?= Right
+            ~: doTestSolveEqCheck
+                ("h", fromClause [propVar "A", FNot $ propVar "A"])
                 PNotE
                     { form = propVar "A"
                     , proofNotForm =
@@ -77,76 +77,119 @@ testSolve =
                             , proofAnd = PAx "h"
                             }
                     }
-                    -- , "refutable dnf three clauses"
-                    --     ~: solve
-                    --         ( "h"
-                    --         , fromDNF
-                    --             [ [propVar "A", FNot $ propVar "A"]
-                    --             , [FFalse, propVar "Q"]
-                    --             , [FNot $ propVar "B", propVar "B"]
-                    --             ]
-                    --         )
-                    --     ~?= Right
-                    --         POrE
-                    --             { left =
-                    --                 fromDNF
-                    --                     [ [propVar "A", FNot $ propVar "A"]
-                    --                     , [FFalse, propVar "Q"]
-                    --                     ]
-                    --             , right = fromClause [FNot $ propVar "B", propVar "B"]
-                    --             , proofOr = PAx "h"
-                    --             , hypLeft = "h L"
-                    --             , proofAssumingLeft =
-                    --                 POrE
-                    --                     { left = fromClause [propVar "A", FNot $ propVar "A"]
-                    --                     , right = fromClause [FFalse, propVar "Q"]
-                    --                     , proofOr = PAx "h L"
-                    --                     , hypLeft = "h L L"
-                    --                     , proofAssumingLeft =
-                    --                         PNotE
-                    --                             { form = propVar "A"
-                    --                             , proofNotForm =
-                    --                                 PAndE2
-                    --                                     { left = propVar "A"
-                    --                                     , proofAnd = PAx "h L L"
-                    --                                     }
-                    --                             , proofForm =
-                    --                                 PAndE1
-                    --                                     { right = FNot $ propVar "A"
-                    --                                     , proofAnd = PAx "h L L"
-                    --                                     }
-                    --                             }
-                    --                     , hypRight = "h L R"
-                    --                     , proofAssumingRight =
-                    --                         PAndE1
-                    --                             { right = propVar "Q"
-                    --                             , proofAnd = PAx "h L R"
-                    --                             }
-                    --                     }
-                    --             , hypRight = "h R"
-                    --             , proofAssumingRight =
-                    --                 PNotE
-                    --                     { form = propVar "B"
-                    --                     , proofNotForm =
-                    --                         PAndE2
-                    --                             { left = propVar "B"
-                    --                             , proofAnd = PAx "h R"
-                    --                             }
-                    --                     , proofForm =
-                    --                         PAndE1
-                    --                             { right = FNot $ propVar "B"
-                    --                             , proofAnd = PAx "h R"
-                    --                             }
-                    --                     }
-                    --             }
+        , "refutable dnf three clauses"
+            ~: doTestSolveEqCheck
+                ( "h"
+                , fromDNF
+                    [ [propVar "A", FNot $ propVar "A"]
+                    , [FFalse, propVar "Q"]
+                    , [FNot $ propVar "B", propVar "B"]
+                    ]
+                )
+                POrE
+                    { left =
+                        fromDNF
+                            [ [propVar "A", FNot $ propVar "A"]
+                            , [FFalse, propVar "Q"]
+                            ]
+                    , right = fromClause [FNot $ propVar "B", propVar "B"]
+                    , proofOr = PAx "h"
+                    , hypLeft = "h L"
+                    , proofAssumingLeft =
+                        POrE
+                            { left = fromClause [propVar "A", FNot $ propVar "A"]
+                            , right = fromClause [FFalse, propVar "Q"]
+                            , proofOr = PAx "h L"
+                            , hypLeft = "h L L"
+                            , proofAssumingLeft =
+                                PNotE
+                                    { form = propVar "A"
+                                    , proofNotForm =
+                                        PAndE2
+                                            { left = propVar "A"
+                                            , proofAnd = PAx "h L L"
+                                            }
+                                    , proofForm =
+                                        PAndE1
+                                            { right = FNot $ propVar "A"
+                                            , proofAnd = PAx "h L L"
+                                            }
+                                    }
+                            , hypRight = "h L R"
+                            , proofAssumingRight =
+                                PAndE1
+                                    { right = propVar "Q"
+                                    , proofAnd = PAx "h L R"
+                                    }
+                            }
+                    , hypRight = "h R"
+                    , proofAssumingRight =
+                        PNotE
+                            { form = propVar "B"
+                            , proofNotForm =
+                                PAndE1
+                                    { right = propVar "B"
+                                    , proofAnd = PAx "h R"
+                                    }
+                            , proofForm =
+                                PAndE2
+                                    { left = FNot $ propVar "B"
+                                    , proofAnd = PAx "h R"
+                                    }
+                            }
+                    }
+        , "refutable long"
+            ~: doTestSolveCheck
+            $ fromDNF
+                [
+                    [ FExists "x" (predVar "P" "x")
+                    , FTrue
+                    , propVar "Q"
+                    , FNot $ FExists "x" (predVar "P" "x")
+                    ]
+                , [propVar "X", FFalse, FNot $ propVar "Q"]
+                , [propVar "A", propVar "B", FNot $ propVar "A", FNot $ propVar "B"]
+                ,
+                    [ FForall "y" (predVar "Q" "y")
+                    , FTrue
+                    , propVar "Q"
+                    , FNot $ FForall "y" (predVar "Q" "y")
+                    ]
+                ]
+        , "clause too short not refutable"
+            ~: solve ("h", fromDNF [[propVar "X"]])
+            ~?= Left "[X] contains no contradicting literals or false"
+        , "one clause not refutable"
+            ~: solve
+                ( "h"
+                , fromDNF
+                    [
+                        [ FExists "x" (predVar "P" "x")
+                        , FTrue
+                        , propVar "Q"
+                        , FNot $ FExists "x" (predVar "P" "x")
+                        ]
+                    , [propVar "X", FFalse, FNot $ propVar "Q"]
+                    , [propVar "A", propVar "B", FNot $ propVar "A", FNot $ propVar "B"]
+                    , [propVar "X", FTrue]
+                    ]
+                )
+            ~?= Left "[X,true] contains no contradicting literals or false"
+        , "not dnf" ~: solve ("h", FImp FTrue FFalse) ~?= Left "convert to clause: true => false is not a literal"
         ]
 
-doTestSolve :: EnvItem -> Proof -> IO ()
-doTestSolve i@(h, f) expectedProof = do
+doTestSolveEqCheck :: EnvItem -> Proof -> IO ()
+doTestSolveEqCheck i@(h, f) expectedProof = do
     let result = solve i
     result @?= Right expectedProof
     let (Right proof) = result
-    check (EExtend h f EEmpty) proof f @?= CheckOK
+    check (EExtend h f EEmpty) proof FFalse @?= CheckOK
+
+doTestSolveCheck :: Form -> IO ()
+doTestSolveCheck f = do
+    let result = solve ("h", f)
+    let (Right proof) = result
+    check (EExtend "h" f EEmpty) proof FFalse @?= CheckOK
 
 testFindContradiction :: Test
 testFindContradiction =
@@ -191,10 +234,10 @@ testClause =
         [ "not clause error"
             ~: toClause (FOr (propVar "A") (propVar "B"))
             ~?= Left
-                "A v B is not a literal"
+                "convert to clause: A v B is not a literal"
         , "not literals error"
             ~: toClause (FNot FTrue)
-            ~?= Left "~true is not a literal"
+            ~?= Left "convert to clause: ~true is not a literal"
         , "full clause"
             ~: toClause
                 ( FAnd
