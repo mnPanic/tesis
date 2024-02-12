@@ -106,7 +106,7 @@ check env proof@(PAx hyp) f =
         Just f' ->
             if f == f'
                 then CheckOK
-                else CheckError env proof f (printf "env has hyp %s for different form" hyp)
+                else CheckError env proof f (printf "env has hyp '%s' for different form '%s'" hyp (show f'))
         Nothing -> CheckError env proof f (printf "hyp %s not in env" hyp)
 -- no importa quien es f, false demuestra cualquier cosa
 check env (PFalseE pFalse) _ = check env pFalse FFalse

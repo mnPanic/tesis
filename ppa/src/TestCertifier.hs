@@ -3,11 +3,24 @@ module TestCertifier where
 import Certifier (
     findContradiction,
     fromClause,
+    fromDNF,
+    solve,
     toClause,
  )
 
+import NDProofs (
+    EnvItem,
+ )
+
+import NDChecker (
+    CheckResult (..),
+    check,
+ )
+
 import ND (
+    Env (..),
     Form (..),
+    Proof (..),
     Term (..),
     predVar,
     propVar,
@@ -35,7 +48,105 @@ tests =
     test
         [ "clauses" ~: testClause
         , "findContradiction" ~: testFindContradiction
+        , "testSolve" ~: testSolve
         ]
+
+testSolve :: Test
+testSolve =
+    test
+        [ "refutable single clause w/ false"
+            ~: doTestSolve
+                ("h", fromClause [FFalse, propVar "Q"])
+                PAndE1
+                    { right = propVar "Q"
+                    , proofAnd = PAx "h"
+                    }
+        , "refutable single clause w/ opposites"
+            ~: solve ("h", fromClause [propVar "A", FNot $ propVar "A"])
+            ~?= Right
+                PNotE
+                    { form = propVar "A"
+                    , proofNotForm =
+                        PAndE2
+                            { left = propVar "A"
+                            , proofAnd = PAx "h"
+                            }
+                    , proofForm =
+                        PAndE1
+                            { right = FNot $ propVar "A"
+                            , proofAnd = PAx "h"
+                            }
+                    }
+                    -- , "refutable dnf three clauses"
+                    --     ~: solve
+                    --         ( "h"
+                    --         , fromDNF
+                    --             [ [propVar "A", FNot $ propVar "A"]
+                    --             , [FFalse, propVar "Q"]
+                    --             , [FNot $ propVar "B", propVar "B"]
+                    --             ]
+                    --         )
+                    --     ~?= Right
+                    --         POrE
+                    --             { left =
+                    --                 fromDNF
+                    --                     [ [propVar "A", FNot $ propVar "A"]
+                    --                     , [FFalse, propVar "Q"]
+                    --                     ]
+                    --             , right = fromClause [FNot $ propVar "B", propVar "B"]
+                    --             , proofOr = PAx "h"
+                    --             , hypLeft = "h L"
+                    --             , proofAssumingLeft =
+                    --                 POrE
+                    --                     { left = fromClause [propVar "A", FNot $ propVar "A"]
+                    --                     , right = fromClause [FFalse, propVar "Q"]
+                    --                     , proofOr = PAx "h L"
+                    --                     , hypLeft = "h L L"
+                    --                     , proofAssumingLeft =
+                    --                         PNotE
+                    --                             { form = propVar "A"
+                    --                             , proofNotForm =
+                    --                                 PAndE2
+                    --                                     { left = propVar "A"
+                    --                                     , proofAnd = PAx "h L L"
+                    --                                     }
+                    --                             , proofForm =
+                    --                                 PAndE1
+                    --                                     { right = FNot $ propVar "A"
+                    --                                     , proofAnd = PAx "h L L"
+                    --                                     }
+                    --                             }
+                    --                     , hypRight = "h L R"
+                    --                     , proofAssumingRight =
+                    --                         PAndE1
+                    --                             { right = propVar "Q"
+                    --                             , proofAnd = PAx "h L R"
+                    --                             }
+                    --                     }
+                    --             , hypRight = "h R"
+                    --             , proofAssumingRight =
+                    --                 PNotE
+                    --                     { form = propVar "B"
+                    --                     , proofNotForm =
+                    --                         PAndE2
+                    --                             { left = propVar "B"
+                    --                             , proofAnd = PAx "h R"
+                    --                             }
+                    --                     , proofForm =
+                    --                         PAndE1
+                    --                             { right = FNot $ propVar "B"
+                    --                             , proofAnd = PAx "h R"
+                    --                             }
+                    --                     }
+                    --             }
+        ]
+
+doTestSolve :: EnvItem -> Proof -> IO ()
+doTestSolve i@(h, f) expectedProof = do
+    let result = solve i
+    result @?= Right expectedProof
+    let (Right proof) = result
+    check (EExtend h f EEmpty) proof f @?= CheckOK
 
 testFindContradiction :: Test
 testFindContradiction =
@@ -110,12 +221,30 @@ testClause =
         , "fromClause"
             ~: fromClause [propVar "A", propVar "B", propVar "C", propVar "D"]
             ~?= FAnd
-                (propVar "A")
                 ( FAnd
-                    (propVar "B")
                     ( FAnd
-                        (propVar "C")
-                        (propVar "D")
+                        (propVar "A")
+                        (propVar "B")
                     )
+                    (propVar "C")
                 )
+                (propVar "D")
+        , "fromDNF"
+            ~: fromDNF
+                [ [propVar "A", propVar "B", propVar "Q"]
+                , [propVar "C", FNot $ propVar "A"]
+                , [propVar "X"]
+                ]
+            ~?= FOr
+                ( FOr
+                    ( FAnd
+                        ( FAnd
+                            (propVar "A")
+                            (propVar "B")
+                        )
+                        (propVar "Q")
+                    )
+                    (FAnd (propVar "C") (FNot $ propVar "A"))
+                )
+                (propVar "X")
         ]

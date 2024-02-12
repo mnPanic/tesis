@@ -2,6 +2,7 @@ module Certifier (
     solve,
     toClause,
     fromClause,
+    fromDNF,
     findContradiction,
 ) where
 
@@ -64,8 +65,8 @@ Devuelve una demostración de
 -}
 solve :: EnvItem -> Result Proof
 solve (hOr, FOr l r) = do
-    let hLeft = hOr ++ "L"
-    let hRight = hOr ++ "R"
+    let hLeft = hOr ++ " L"
+    let hRight = hOr ++ " R"
     proofLeft <- solve (hLeft, l)
     proofRight <- solve (hRight, r)
     return
@@ -130,8 +131,13 @@ toClause f
     | isLiteral f = Right [f]
     | otherwise = Left $ printf "%s is not a literal" (show f)
 
+-- left assoc
 fromClause :: Clause -> Form
-fromClause = foldr1 FAnd
+fromClause = foldl1 FAnd
+
+-- left assoc
+fromDNF :: [Clause] -> Form
+fromDNF cs = foldl1 FOr (map fromClause cs)
 
 isLiteral :: Form -> Bool
 isLiteral (FNot f) = isLiteral f && f /= FTrue && f /= FFalse
