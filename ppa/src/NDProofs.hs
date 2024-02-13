@@ -2,7 +2,8 @@
 module NDProofs (
     proofAndEProjection,
     cut,
-    dnf,
+    proofImpElim,
+    hypForm,
     doubleNegElim,
     Result,
     EnvItem,
@@ -126,10 +127,40 @@ proofAndEProjection' f1 f2
     | f1 == f2 = Right id
     | otherwise = Left $ printf "%s /= %s" (show f1) (show f2)
 
-{- dnf
+-- DeMorgan y transformaciones para DNF
 
-Dada una fórmula F y una versión en DNF F' (no es única), da una demostración de
-F |- F'.
--}
-dnf :: Form -> Result (Form, Proof)
-dnf f = Right (f, PAx "h")
+-- Da una demostración para X => Y |- ~X v Y y ~X v Y |- X => Y
+proofImpElim :: Form -> Form -> HypId -> HypId -> (Proof, Proof)
+proofImpElim x y hImp hOr =
+    ( PAx hImp -- ~X v Y |- X => Y
+    , PImpI
+        { hypAntecedent = hX
+        , proofConsequent =
+            POrE
+                { left = FNot x
+                , right = y
+                , proofOr = PAx hOr
+                , -- Si vale ~X, como ya tenemos de hip X llegamos a un abs
+                  hypLeft = hNotX
+                , proofAssumingLeft =
+                    PFalseE
+                        { proofBot =
+                            PNotE
+                                { form = x
+                                , proofNotForm = PAx hNotX
+                                , proofForm = PAx hX
+                                }
+                        }
+                , -- Si vale Y es trivial probar Y
+                  hypRight = hY
+                , proofAssumingRight = PAx hY
+                }
+        }
+    )
+  where
+    hX = hypForm x
+    hY = hypForm y
+    hNotX = hypForm $ FNot x
+
+hypForm :: Form -> HypId
+hypForm f = "h " ++ show f

@@ -188,8 +188,9 @@ doTestSolveEqCheck i@(h, f) expectedProof = do
 doTestSolveCheck :: Form -> IO ()
 doTestSolveCheck f = do
     let result = solve ("h", f)
-    let (Right proof) = result
-    check (EExtend "h" f EEmpty) proof FFalse @?= CheckOK
+    case result of
+        Right proof -> check (EExtend "h" f EEmpty) proof FFalse @?= CheckOK
+        Left err -> assertFailure err
 
 testFindContradiction :: Test
 testFindContradiction =

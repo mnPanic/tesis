@@ -1,4 +1,5 @@
 module Certifier (
+    dnf,
     solve,
     toClause,
     fromClause,
@@ -15,7 +16,9 @@ import PPA (
 import NDProofs (
     EnvItem,
     Result,
+    hypForm,
     proofAndEProjection,
+    proofImpElim,
  )
 
 import ND (
@@ -55,6 +58,25 @@ checkPS (PSThus form hyp) thesis _
     | otherwise = PAx hyp
 
 -}
+
+{- dnf
+
+Dada una fórmula F y una versión en DNF F' (no es única), da una demostración de
+F |- F'.
+-}
+dnf :: Form -> Result (Form, Proof)
+dnf f = Right (f, PAx "h")
+
+{- dnfStep hace una transformación "small-step" de una fórmula hacia DNF.
+Dada una fórmula F, devuelve la fórmula F' con un paso aplicado, y las
+demostraciones de F |- F' y F' |- F (necesarias para la congruencia, dado que
+algunos operadores como el Not son opuestos).
+-}
+dnfStep :: Form -> (Form, Proof, Proof)
+dnfStep fImp@(FImp a b) = (fOr, pImpElim, pOrToImp)
+  where
+    fOr = FOr (FNot a) b
+    (pImpElim, pOrToImp) = proofImpElim a b (hypForm fImp) (hypForm fOr)
 
 {- solve demuestra una contradicción de una fórmula que se asume que está en
 DNF. Para ello refuta cada cláusula, buscando o el mismo literal negado y sin

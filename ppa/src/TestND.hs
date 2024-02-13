@@ -1,4 +1,4 @@
-module ProverTests where
+module TestND where
 
 import ND (
     Env (EEmpty, EExtend),
@@ -22,7 +22,9 @@ import NDChecker (
 
 import NDProofs (
     doubleNegElim,
+    hypForm,
     proofAndEProjection,
+    proofImpElim,
  )
 
 import Test.HUnit (
@@ -116,7 +118,8 @@ main = do runTestTT tests
 tests :: Test
 tests =
     test
-        [ "check" ~: testCheck
+        [ "check" ~: testCheckExamples
+        , "gen proofs" ~: testGeneratedProofs
         , "env" ~: testEnv
         , "subst" ~: testSubst
         , "fv" ~: testFV
@@ -339,12 +342,127 @@ testSubst =
     px = FPred "P" [TVar "x"]
     pt = FPred "P" [testTerm]
 
-testCheck :: Test
-testCheck =
+testCheckExamples :: Test
+testCheckExamples =
     test
-        [ "examples for by" ~: testCheckBy
-        , "examples" ~: testCheckExamples
+        [ -- PAx
+          "A |- A" ~: check exampleEnv (PAx "h1") FTrue ~?= CheckOK
+        , "A |- B invalid"
+            ~: check exampleEnv (PAx "h1") FFalse
+            ~?= CheckError exampleEnv (PAx "h1") FFalse "env has hyp 'h1' for different form 'true'"
+        , -- PImpI
+          "A -> A" ~: check EEmpty p1 f1 ~?= CheckOK
+        , "A -> (B -> A)" ~: check EEmpty p2 f2 ~?= CheckOK
+        , -- Usar la misma etiqueta para diferentes hipótesis
+          "A -> (B -> B)" ~: check EEmpty p3 f3 ~?= CheckOK
+        , "A -> (B -> A) invalid"
+            ~: check EEmpty p3 f2
+            ~?= CheckError
+                (EExtend "x" (FPred "B" []) (EExtend "x" (FPred "A" []) EEmpty))
+                (PAx "x")
+                (FPred "A" [])
+                "env has hyp 'x' for different form 'B'"
+        , -- PImpE
+          "(A -> (B -> C)) -> [(A -> B) -> (A -> C)]"
+            ~: check EEmpty p4 f4
+            ~?= CheckOK
+        , "(A -> (B -> C)) -> [(A -> B) -> (A -> C)] err left"
+            ~: check EEmpty p4Err1 f4
+            ~?= CheckError
+                ( EExtend "h A" (propVar "A")
+                    $ EExtend "h A -> B" (FImp (propVar "A") (propVar "B"))
+                    $ EExtend
+                        "h A -> (B -> C)"
+                        (FImp (propVar "A") (FImp (propVar "B") (propVar "C")))
+                        EEmpty
+                )
+                (PAx "h B -> C")
+                (FImp (propVar "B") (propVar "C"))
+                "hyp h B -> C not in env"
+        , "(A -> (B -> C)) -> [(A -> B) -> (A -> C)] err right"
+            ~: check EEmpty p4Err2 f4
+            ~?= CheckError
+                ( EExtend "h A" (propVar "A")
+                    $ EExtend "h A -> B" (FImp (propVar "A") (propVar "B"))
+                    $ EExtend
+                        "h A -> (B -> C)"
+                        (FImp (propVar "A") (FImp (propVar "B") (propVar "C")))
+                        EEmpty
+                )
+                (PAx "h B")
+                (propVar "B")
+                "hyp h B not in env"
+        , -- PFalseE
+          "bot -> P" ~: check EEmpty p5 f5 ~?= CheckOK
+        , -- PNotE, PNotI
+          "P -> ~~P" ~: check EEmpty p6 f6 ~?= CheckOK
+        , "~~~P -> ~P" ~: check EEmpty p7 f7 ~?= CheckOK
+        , "(A -> B) -> (~B -> ~A)" ~: check EEmpty p8 f8 ~?= CheckOK
+        , -- And y OR
+          "(~A v ~B) -> ~(A ^ B)" ~: check EEmpty p10 f10 ~?= CheckOK
+        , "((A ^ B) -> C) <-> (A -> (B -> C))" ~: check EEmpty p11 f11 ~?= CheckOK
+        , "~~(A v ~A) con LEM" ~: check EEmpty p12LEM f12 ~?= CheckOK
+        , "~~(A v ~A) sin LEM" ~: check EEmpty p12 f12 ~?= CheckOK
+        , -- equivalencias
+          "(A ^ true) <-> A" ~: check EEmpty p13 f13 ~?= CheckOK
+        , "(A v true) <-> true" ~: check EEmpty p14 f14 ~?= CheckOK
+        , -- implicaciones de LK
+          "~~P -> P" ~: check EEmpty p9 f9 ~?= CheckOK
+        , "~~P -> P con macro" ~: check EEmpty (doubleNegElim $ propVar "A") f9 ~?= CheckOK
+        , "~(A ^ B) -> (~A v ~B)" ~: check EEmpty p15 f15 ~?= CheckOK
+        , "~A ^ ~B -> ~(A v B)" ~: check EEmpty p17 f17 ~?= CheckOK
+        , "~(A v B) -> ~A ^ ~B" ~: check EEmpty p16 f16 ~?= CheckOK
+        , -- Exists y forall
+          "Good(y) => Exists x. Good(x)" ~: check EEmpty p18 f18 ~?= CheckOK
+        , "Exists x. A(x) ^ B(x) => Exists y. A(y)" ~: check EEmpty p19 f19 ~?= CheckOK
+        , "Forall x. A(x) ^ B(x) => Forall x. A(x)" ~: check EEmpty p20 f20 ~?= CheckOK
+        , "Forall x. A(x) ^ B(x) => Forall y. A(y)" ~: check EEmpty p20' f20' ~?= CheckOK
+        , "Forall x. A(x) => Exists x. B(x)"
+            ~: check EEmpty p22 f22
+            ~?= CheckError
+                (EExtend "h Forall x. A(x)" (FForall "x" (FPred "A" [TVar "x"])) EEmpty)
+                (PForallE "x" (FPred "A" [TVar "x"]) (PAx "h Forall x. A(x)") (TVar "x"))
+                (FPred "B" [TVar "x"])
+                "form B(x) /= (A(x)){x := x}"
+        , "A(x) => Forall x. A(x)"
+            ~: check EEmpty p21 f21
+            ~?= CheckError
+                (EExtend "h A(x)" (FPred "A" [TVar "x"]) EEmpty)
+                (PForallI (PAx "h A(x)"))
+                (FForall "x" (FPred "A" [TVar "x"]))
+                "env shouldn't contain fv 'x'"
+        , -- DeMorgan de Exists y Forall
+          "V x. A(x) => ~E x. ~A(x)" ~: check EEmpty p23Ida f23Ida ~?= CheckOK
+        , "~E x. ~A(x) => V x. A(x)" ~: check EEmpty p23Vuelta f23Vuelta ~?= CheckOK
+        , "E x. A(x) => ~V x. ~A(x)" ~: check EEmpty p24Ida f24Ida ~?= CheckOK
+        , "~V x. ~A(x) => E x. A(x)" ~: check EEmpty p24Vuelta f24Vuelta ~?= CheckOK
+        , "alphaEq E x. A(x) => E y. A(y) directo"
+            ~: check
+                EEmpty
+                (PImpI "h E x. A(x)" (PAx "h E x. A(x)"))
+                ( FImp
+                    (FExists "x" (predVar "A" "x"))
+                    (FExists "y" (predVar "A" "y"))
+                )
+            ~?= CheckOK
+        , "subst sin captura - E y. V x. A(z) v true"
+            ~: check
+                EEmpty
+                ( PExistsI
+                    (TVar "x") -- generaria captura con V x
+                    (PForallI (POrI2 PTrueI))
+                )
+                (FExists "y" (FForall "x" (FOr (predVar "A" "z") FTrue)))
+            ~?= CheckOK
+        ]
+
+-- generated proofs
+testGeneratedProofs :: Test
+testGeneratedProofs =
+    test
+        [ "examples for by" ~: testByExamples
         , "andEProjection" ~: testAndEProjection
+        , "equivalences" ~: testEquivalences
         ]
 
 testAndEProjection :: Test
@@ -470,123 +588,9 @@ testAndEProj fAnd hAnd f expectedProof = do
     let (Right proof) = result
     check (EExtend hAnd fAnd EEmpty) proof f @?= CheckOK
 
-testCheckExamples :: Test
-testCheckExamples =
-    test
-        [ -- PAx
-          "A |- A" ~: check exampleEnv (PAx "h1") FTrue ~?= CheckOK
-        , "A |- B invalid"
-            ~: check exampleEnv (PAx "h1") FFalse
-            ~?= CheckError exampleEnv (PAx "h1") FFalse "env has hyp h1 for different form"
-        , -- PImpI
-          "A -> A" ~: check EEmpty p1 f1 ~?= CheckOK
-        , "A -> (B -> A)" ~: check EEmpty p2 f2 ~?= CheckOK
-        , -- Usar la misma etiqueta para diferentes hipótesis
-          "A -> (B -> B)" ~: check EEmpty p3 f3 ~?= CheckOK
-        , "A -> (B -> A) invalid"
-            ~: check EEmpty p3 f2
-            ~?= CheckError
-                (EExtend "x" (FPred "B" []) (EExtend "x" (FPred "A" []) EEmpty))
-                (PAx "x")
-                (FPred "A" [])
-                "env has hyp x for different form"
-        , -- PImpE
-          "(A -> (B -> C)) -> [(A -> B) -> (A -> C)]"
-            ~: check EEmpty p4 f4
-            ~?= CheckOK
-        , "(A -> (B -> C)) -> [(A -> B) -> (A -> C)] err left"
-            ~: check EEmpty p4Err1 f4
-            ~?= CheckError
-                ( EExtend "h A" (propVar "A")
-                    $ EExtend "h A -> B" (FImp (propVar "A") (propVar "B"))
-                    $ EExtend
-                        "h A -> (B -> C)"
-                        (FImp (propVar "A") (FImp (propVar "B") (propVar "C")))
-                        EEmpty
-                )
-                (PAx "h B -> C")
-                (FImp (propVar "B") (propVar "C"))
-                "hyp h B -> C not in env"
-        , "(A -> (B -> C)) -> [(A -> B) -> (A -> C)] err right"
-            ~: check EEmpty p4Err2 f4
-            ~?= CheckError
-                ( EExtend "h A" (propVar "A")
-                    $ EExtend "h A -> B" (FImp (propVar "A") (propVar "B"))
-                    $ EExtend
-                        "h A -> (B -> C)"
-                        (FImp (propVar "A") (FImp (propVar "B") (propVar "C")))
-                        EEmpty
-                )
-                (PAx "h B")
-                (propVar "B")
-                "hyp h B not in env"
-        , -- PFalseE
-          "bot -> P" ~: check EEmpty p5 f5 ~?= CheckOK
-        , -- PNotE, PNotI
-          "P -> ~~P" ~: check EEmpty p6 f6 ~?= CheckOK
-        , "~~~P -> ~P" ~: check EEmpty p7 f7 ~?= CheckOK
-        , "(A -> B) -> (~B -> ~A)" ~: check EEmpty p8 f8 ~?= CheckOK
-        , -- And y OR
-          "(~A v ~B) -> ~(A ^ B)" ~: check EEmpty p10 f10 ~?= CheckOK
-        , "((A ^ B) -> C) <-> (A -> (B -> C))" ~: check EEmpty p11 f11 ~?= CheckOK
-        , "~~(A v ~A) con LEM" ~: check EEmpty p12LEM f12 ~?= CheckOK
-        , "~~(A v ~A) sin LEM" ~: check EEmpty p12 f12 ~?= CheckOK
-        , -- equivalencias
-          "(A ^ true) <-> A" ~: check EEmpty p13 f13 ~?= CheckOK
-        , "(A v true) <-> true" ~: check EEmpty p14 f14 ~?= CheckOK
-        , -- implicaciones de LK
-          "~~P -> P" ~: check EEmpty p9 f9 ~?= CheckOK
-        , "~~P -> P con macro" ~: check EEmpty (doubleNegElim $ propVar "A") f9 ~?= CheckOK
-        , "~(A ^ B) -> (~A v ~B)" ~: check EEmpty p15 f15 ~?= CheckOK
-        , "~A ^ ~B -> ~(A v B)" ~: check EEmpty p17 f17 ~?= CheckOK
-        , "~(A v B) -> ~A ^ ~B" ~: check EEmpty p16 f16 ~?= CheckOK
-        , -- Exists y forall
-          "Good(y) => Exists x. Good(x)" ~: check EEmpty p18 f18 ~?= CheckOK
-        , "Exists x. A(x) ^ B(x) => Exists y. A(y)" ~: check EEmpty p19 f19 ~?= CheckOK
-        , "Forall x. A(x) ^ B(x) => Forall x. A(x)" ~: check EEmpty p20 f20 ~?= CheckOK
-        , "Forall x. A(x) ^ B(x) => Forall y. A(y)" ~: check EEmpty p20' f20' ~?= CheckOK
-        , "Forall x. A(x) => Exists x. B(x)"
-            ~: check EEmpty p22 f22
-            ~?= CheckError
-                (EExtend "h Forall x. A(x)" (FForall "x" (FPred "A" [TVar "x"])) EEmpty)
-                (PForallE "x" (FPred "A" [TVar "x"]) (PAx "h Forall x. A(x)") (TVar "x"))
-                (FPred "B" [TVar "x"])
-                "form B(x) /= (A(x)){x := x}"
-        , "A(x) => Forall x. A(x)"
-            ~: check EEmpty p21 f21
-            ~?= CheckError
-                (EExtend "h A(x)" (FPred "A" [TVar "x"]) EEmpty)
-                (PForallI (PAx "h A(x)"))
-                (FForall "x" (FPred "A" [TVar "x"]))
-                "env shouldn't contain fv 'x'"
-        , -- DeMorgan de Exists y Forall
-          "V x. A(x) => ~E x. ~A(x)" ~: check EEmpty p23Ida f23Ida ~?= CheckOK
-        , "~E x. ~A(x) => V x. A(x)" ~: check EEmpty p23Vuelta f23Vuelta ~?= CheckOK
-        , "E x. A(x) => ~V x. ~A(x)" ~: check EEmpty p24Ida f24Ida ~?= CheckOK
-        , "~V x. ~A(x) => E x. A(x)" ~: check EEmpty p24Vuelta f24Vuelta ~?= CheckOK
-        , "alphaEq E x. A(x) => E y. A(y) directo"
-            ~: check
-                EEmpty
-                (PImpI "h E x. A(x)" (PAx "h E x. A(x)"))
-                ( FImp
-                    (FExists "x" (predVar "A" "x"))
-                    (FExists "y" (predVar "A" "y"))
-                )
-            ~?= CheckOK
-        , "subst sin captura - E y. V x. A(z) v true"
-            ~: check
-                EEmpty
-                ( PExistsI
-                    (TVar "x") -- generaria captura con V x
-                    (PForallI (POrI2 PTrueI))
-                )
-                (FExists "y" (FForall "x" (FOr (predVar "A" "z") FTrue)))
-            ~?= CheckOK
-        ]
-
 -- Test de demostraciones necesarias para la implementación de by
-testCheckBy :: Test
-testCheckBy =
+testByExamples :: Test
+testByExamples =
     test
         [ "X ^ (Y v Z) => (X ^ Y) v (X ^ Z)"
             ~: check EEmpty p25' f25'
@@ -605,4 +609,19 @@ testCheckBy =
         , "example solve contradiction manually (A ^ ~A ^ ~B) v (A ^ B ^ ~B) -> false (bot)" ~: case p28_exampleSolve of
             (Left e) -> assertFailure e
             (Right p) -> check EEmpty p f28_exampleSolve @?= CheckOK
+            -- , "by manually: ( ( A ^ (A => B) ) => B )" f26 p26
+        ]
+
+-- Test de demostraciones de equivalencias necesarias para dnf
+testEquivalences :: Test
+testEquivalences =
+    test
+        [ "imp elim"
+            ~: do
+                let (x, y) = (propVar "X", propVar "Y")
+                let (fImp, fOr) = (FImp x y, FOr (FNot x) y)
+                let (hImp, hOr) = (hypForm fImp, hypForm fOr)
+                let (pImpElim, pOrToImp) = proofImpElim x y hImp hOr
+                CheckOK @=? check (EExtend hImp fImp EEmpty) pImpElim fOr
+                CheckOK @=? check (EExtend hOr fOr EEmpty) pOrToImp fImp
         ]

@@ -7,6 +7,7 @@ import ND (
     Proof (..),
     Term (TVar),
     VarId,
+    dneg,
     predVar,
     propVar,
  )
@@ -14,11 +15,12 @@ import ND (
 import NDProofs (
     Result,
     cut,
-    dnf,
+    doubleNegElim,
     proofAndEProjection,
  )
 
 import Certifier (
+    dnf,
     solve,
  )
 
@@ -1146,6 +1148,7 @@ f26 =
         )
         (propVar "B")
 
+-- TODO
 p26 :: Result Proof
 -- Primero doubleNegElim para demostrar por contradicción
 p26 = do

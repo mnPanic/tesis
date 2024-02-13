@@ -237,7 +237,9 @@ data Proof
         , proofForm :: Proof -- de A
         }
     | PTrueI
-    | PFalseE Proof
+    | PFalseE
+        { proofBot :: Proof
+        }
     | PLEM
     | -- V x . A
       PForallI Proof -- de A
