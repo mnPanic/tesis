@@ -5,6 +5,7 @@ module NDProofs (
     proofImpElim,
     hypForm,
     doubleNegElim,
+    proofAndCongruence,
     Result,
     EnvItem,
 ) where
@@ -24,6 +25,10 @@ type Result a = Either String a
 --  x: A |- B
 -- para especificar x:A
 type EnvItem = (HypId, Form)
+
+-- Genera un nombre para una hipótesis a partir de una fórmula
+hypForm :: Form -> HypId
+hypForm f = "h " ++ show f
 
 {- doubleNegElim dada una fórmula A da una demostración de ~~A -> A
 
@@ -186,5 +191,35 @@ proofImpElim x y hImp hOr =
     hY = hypForm y
     hNotX = hypForm $ FNot x
 
-hypForm :: Form -> HypId
-hypForm f = "h " ++ show f
+{- Demuestra la congruencia del ^, es decir da una demostración de
+x ^ y |- x' ^ y usando que x |- x'
+
+        x |- x'
+    ---------------
+    x ^ y |- x' ^ y
+
+mediante cut,
+
+    x ^ y |- x   x ^ y, x |- x' ^ y
+    --------------------------- (cut)
+    x ^ y |- x' ^ y
+-}
+proofAndCongruence :: Form -> Form -> HypId -> HypId -> Proof -> Proof
+proofAndCongruence x y hAnd hX proofXThenX' = cut x proofX hX proofXThenX'AndY
+  where
+    proofX =
+        PAndE1
+            { right = y
+            , proofAnd = PAx hAnd
+            }
+    proofXThenX'AndY =
+        PAndI
+            { -- x'
+              proofLeft = proofXThenX'
+            , -- y
+              proofRight =
+                PAndE2
+                    { left = x
+                    , proofAnd = PAx hAnd
+                    }
+            }

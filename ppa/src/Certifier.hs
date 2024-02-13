@@ -17,6 +17,7 @@ import NDProofs (
     EnvItem,
     Result,
     hypForm,
+    proofAndCongruence,
     proofAndEProjection,
     proofImpElim,
  )
@@ -67,16 +68,29 @@ F |- F'.
 dnf :: Form -> Result (Form, Proof)
 dnf f = Right (f, PAx "h")
 
+convertToDnf :: Form -> (Form, Proof)
+convertToDnf f = undefined
+
 {- dnfStep hace una transformación "small-step" de una fórmula hacia DNF.
 Dada una fórmula F, devuelve la fórmula F' con un paso aplicado, y las
 demostraciones de F |- F' y F' |- F (necesarias para la congruencia, dado que
 algunos operadores como el Not son opuestos).
+
+Devuelve Nothing cuando F ya está en DNF.
 -}
-dnfStep :: Form -> (Form, Proof, Proof)
-dnfStep fImp@(FImp a b) = (fOr, pImpElim, pOrToImp)
+-- TODO: capaz las hip las tiene que devolver acá
+dnfStep :: Form -> Maybe (Form, Proof, Proof)
+-- Casos de reescritura
+dnfStep fImp@(FImp a b) = Just (fOr, pImpElim, pOrToImp)
   where
     fOr = FOr (FNot a) b
     (pImpElim, pOrToImp) = proofImpElim a b (hypForm fImp) (hypForm fOr)
+
+-- Casos de congruencia
+dnfStep (FAnd l r) = case dnfStep l of
+    -- l se puede reescribir
+    Just (l', pLToL', _) -> proofAndCongruence
+    Nothing -> undefined
 
 {- solve demuestra una contradicción de una fórmula que se asume que está en
 DNF. Para ello refuta cada cláusula, buscando o el mismo literal negado y sin

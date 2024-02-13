@@ -23,6 +23,7 @@ import NDChecker (
 import NDProofs (
     doubleNegElim,
     hypForm,
+    proofAndCongruence,
     proofAndEProjection,
     proofImpElim,
  )
@@ -578,7 +579,7 @@ testAndEProjection =
                     (propVar "E")
                 )
                 (propVar "Q")
-            ~?= Left "A ^ B ^ C ^ D ^ E |- Q not possible by left (A ^ B ^ C ^ D |- Q not possible by left (A ^ B ^ C |- Q not possible by left (A /= Q) or right (B ^ C |- Q not possible by left (B /= Q) or right (C /= Q))) or right (D /= Q)) or right (E /= Q)"
+            ~?= Left "((A ^ (B ^ C)) ^ D) ^ E |- Q not possible by left ((A ^ (B ^ C)) ^ D |- Q not possible by left (A ^ (B ^ C) |- Q not possible by left (A /= Q) or right (B ^ C |- Q not possible by left (B /= Q) or right (C /= Q))) or right (D /= Q)) or right (E /= Q)"
         ]
 
 testAndEProj :: Form -> HypId -> Form -> Proof -> IO ()
@@ -624,4 +625,20 @@ testEquivalences =
                 let (pImpElim, pOrToImp) = proofImpElim x y hImp hOr
                 CheckOK @=? check (EExtend hImp fImp EEmpty) pImpElim fOr
                 CheckOK @=? check (EExtend hOr fOr EEmpty) pOrToImp fImp
+        , "and congruence trivial"
+            ~: do
+                let (x, y) = (propVar "X", propVar "Y")
+                let fAnd = FAnd x y
+                let pCong = proofAndCongruence x y "hAnd" "hX" (PAx "hX")
+                CheckOK @=? check (EExtend "hAnd" fAnd EEmpty) pCong fAnd
+        , "and congruence"
+            ~: do
+                let (x, y) = (propVar "X", propVar "Y")
+                let fImp = FImp x y
+                let fAnd = FAnd fImp y
+                let (hAnd, hImp) = (hypForm fAnd, hypForm fImp)
+                let fAnd' = FAnd (FOr (FNot x) y) y
+                let (pImpElim, _) = proofImpElim x y hImp "h or"
+                let pCong = proofAndCongruence fImp y hAnd hImp pImpElim
+                CheckOK @=? check (EExtend hAnd fAnd EEmpty) pCong fAnd'
         ]

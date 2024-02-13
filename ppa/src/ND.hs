@@ -91,14 +91,21 @@ data Form
 
 instance Show Form where
     show (FPred p ts) = p ++ showArgs ts
-    show (FAnd l r) = show l ++ " ^ " ++ show r
-    show (FOr l r) = show l ++ " v " ++ show r
-    show (FImp a c) = show a ++ " => " ++ show c
+    show (FAnd l r) = showBinParen l ++ " ^ " ++ showBinParen r
+    show (FOr l r) = showBinParen l ++ " v " ++ showBinParen r
+    show (FImp a c) = showBinParen a ++ " => " ++ showBinParen c
     show (FNot f) = "~" ++ show f
     show FTrue = "true"
     show FFalse = "false"
-    show (FForall x f) = "forall x. " ++ show f
-    show (FExists x f) = "exists x. " ++ show f
+    show (FForall x f) = "forall x. " ++ showBinParen f
+    show (FExists x f) = "exists x. " ++ showBinParen f
+
+-- muestra las binarias con paréntesis, para evitar supérfluos en show
+showBinParen :: Form -> String
+showBinParen f@(FAnd _ _) = "(" ++ show f ++ ")"
+showBinParen f@(FOr _ _) = "(" ++ show f ++ ")"
+showBinParen f@(FImp _ _) = "(" ++ show f ++ ")"
+showBinParen f = show f
 
 showArgs :: (Show a) => [a] -> String
 showArgs [] = ""
