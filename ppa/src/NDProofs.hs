@@ -132,32 +132,56 @@ proofAndEProjection' f1 f2
 -- Da una demostración para X => Y |- ~X v Y y ~X v Y |- X => Y
 proofImpElim :: Form -> Form -> HypId -> HypId -> (Proof, Proof)
 proofImpElim x y hImp hOr =
-    ( PAx hImp -- ~X v Y |- X => Y
-    , PImpI
-        { hypAntecedent = hX
-        , proofConsequent =
-            POrE
-                { left = FNot x
-                , right = y
-                , proofOr = PAx hOr
-                , -- Si vale ~X, como ya tenemos de hip X llegamos a un abs
-                  hypLeft = hNotX
-                , proofAssumingLeft =
-                    PFalseE
-                        { proofBot =
-                            PNotE
-                                { form = x
-                                , proofNotForm = PAx hNotX
-                                , proofForm = PAx hX
-                                }
-                        }
-                , -- Si vale Y es trivial probar Y
-                  hypRight = hY
-                , proofAssumingRight = PAx hY
-                }
-        }
-    )
+    (proofImpElim, proofOrToImp)
   where
+    -- X => Y |- ~X v Y
+    -- Usando LEM, si vale X entonces vale Y. Si no vale X, vale ~X
+    proofImpElim =
+        POrE
+            { left = x
+            , right = FNot x
+            , proofOr = PLEM
+            , hypLeft = hX
+            , proofAssumingLeft =
+                POrI2
+                    { proofRight =
+                        PImpE
+                            { antecedent = x
+                            , proofImp = PAx hImp
+                            , proofAntecedent = PAx hX
+                            }
+                    }
+            , hypRight = hNotX
+            , proofAssumingRight =
+                POrI1
+                    { proofLeft = PAx hNotX
+                    }
+            }
+    -- ~X v Y |- X => Y
+    proofOrToImp =
+        PImpI
+            { hypAntecedent = hX
+            , proofConsequent =
+                POrE
+                    { left = FNot x
+                    , right = y
+                    , proofOr = PAx hOr
+                    , -- Si vale ~X, como ya tenemos de hip X llegamos a un abs
+                      hypLeft = hNotX
+                    , proofAssumingLeft =
+                        PFalseE
+                            { proofBot =
+                                PNotE
+                                    { form = x
+                                    , proofNotForm = PAx hNotX
+                                    , proofForm = PAx hX
+                                    }
+                            }
+                    , -- Si vale Y es trivial probar Y
+                      hypRight = hY
+                    , proofAssumingRight = PAx hY
+                    }
+            }
     hX = hypForm x
     hY = hypForm y
     hNotX = hypForm $ FNot x
