@@ -3,8 +3,13 @@ module PPA (
     ProofStep (..),
     Program (..),
     Context (..),
+    Justification,
+    Hypothesis,
+    findHyp,
+    getForm,
 ) where
 
+import Data.List (find)
 import ND (Env (EEmpty), Form (..), HypId, Proof (..))
 import NDChecker (
     CheckResult,
@@ -35,3 +40,14 @@ type Goal = (Context, Form)
 data Hypothesis
     = HAxiom HypId Form
     | HTheorem HypId Form Proof
+
+getHypId :: Hypothesis -> HypId
+getHypId (HAxiom h _) = h
+getHypId (HTheorem h _ _) = h
+
+getForm :: Hypothesis -> Form
+getForm (HAxiom _ f) = f
+getForm (HTheorem _ f _) = f
+
+findHyp :: Context -> HypId -> Maybe Hypothesis
+findHyp ctx h = find (\h' -> getHypId h' == h) ctx

@@ -9,13 +9,19 @@ module Certifier (
 
 import PPA (
     Context,
+    Hypothesis,
+    Justification,
     Program,
     TProof,
+    findHyp,
+    getForm,
  )
 
 import NDProofs (
     EnvItem,
     Result,
+    cut,
+    doubleNegElim,
     hypForm,
     proofAndCongruence,
     proofAndEProjection,
@@ -25,9 +31,11 @@ import NDProofs (
 import ND (
     Form (..),
     Proof (..),
+    dneg,
  )
 
 import Data.List (find)
+import Data.Maybe (fromJust, isNothing)
 import Text.Printf (printf)
 
 certify :: Program -> Context
@@ -36,9 +44,7 @@ certify = undefined
 check :: Context -> Bool
 check = undefined
 
-type M = Maybe
-
-certifyProof :: Context -> Form -> TProof -> M Proof
+certifyProof :: Context -> Form -> TProof -> Result Proof
 certifyProof = undefined
 
 {-
@@ -60,16 +66,62 @@ checkPS (PSThus form hyp) thesis _
 
 -}
 
+{- Certifica que js => f
+-}
+certifyBy :: Context -> Form -> Justification -> Result Proof
+certifyBy ctx f js = do
+    justHyps <- findJustification ctx js
+    let justForms = map getForm justHyps
+
+    let thesis = FImp (fromClause justForms) f
+    let negThesis = FNot thesis
+    let hNegThesis = hypForm negThesis
+
+    (dnfNegThesis, dnfProof) <- dnf (hNegThesis, negThesis)
+
+    let hDNFNegThesis = hypForm dnfNegThesis
+
+    contradictionProof <- solve (hDNFNegThesis, dnfNegThesis)
+    return
+        PImpE
+            { antecedent = dneg thesis
+            , proofImp = doubleNegElim thesis
+            , proofAntecedent =
+                PNotI
+                    { hyp = hNegThesis
+                    , -- Demostración de bottom (contradicción) asumiendo que no vale
+                      -- la tesis. Primero convertimos a DNF y luego demostramos que
+                      -- la version en DNF es refutable.
+                      proofBot =
+                        cut
+                            dnfNegThesis
+                            dnfProof
+                            hDNFNegThesis
+                            contradictionProof
+                    }
+            }
+
+findJustification :: Context -> Justification -> Result [Hypothesis]
+findJustification ctx js
+    | not (null missingHyps) =
+        Left
+            $ "justifications not present in context: "
+            ++ show (map fst missingHyps)
+    | otherwise = Right (map (fromJust . snd) hyps)
+  where
+    hyps = zip js $ map (findHyp ctx) js
+    missingHyps = filter (\(h, r) -> isNothing r) hyps
+
 {- dnf
 
 Dada una fórmula F y una versión en DNF F' (no es única), da una demostración de
 F |- F'.
 -}
-dnf :: Form -> Result (Form, Proof)
-dnf f = Right (f, PAx "h")
+dnf :: EnvItem -> Result (Form, Proof)
+dnf (h, f) = Right (f, PAx "h")
 
-convertToDnf :: Form -> (Form, Proof)
-convertToDnf f = undefined
+convertToDnf :: EnvItem -> (Form, Proof)
+convertToDnf i = case dnfStep i of {}
 
 {- dnfStep hace una transformación "small-step" de una fórmula hacia DNF.
 Dada una fórmula F, devuelve la fórmula F' con un paso aplicado, y las
@@ -79,18 +131,25 @@ algunos operadores como el Not son opuestos).
 Devuelve Nothing cuando F ya está en DNF.
 -}
 -- TODO: capaz las hip las tiene que devolver acá
-dnfStep :: Form -> Maybe (Form, Proof, Proof)
+dnfStep :: EnvItem -> Maybe (Form, Proof, Proof)
 -- Casos de reescritura
-dnfStep fImp@(FImp a b) = Just (fOr, pImpElim, pOrToImp)
+dnfStep (hImp, FImp a b) = Just (fOr, pImpElim, pOrToImp)
   where
     fOr = FOr (FNot a) b
-    (pImpElim, pOrToImp) = proofImpElim a b (hypForm fImp) (hypForm fOr)
+    (pImpElim, pOrToImp) = proofImpElim a b hImp (hypForm fOr)
 
 -- Casos de congruencia
-dnfStep (FAnd l r) = case dnfStep l of
+dnfStep (hAnd, FAnd l r) = case dnfStep (hL, l) of
     -- l se puede reescribir
-    Just (l', pLToL', _) -> proofAndCongruence
+    Just (l', pLThenL', _) ->
+        Just
+            ( FAnd l' r
+            , proofAndCongruence l r hAnd hL proofLThenL'
+            )
     Nothing -> undefined
+  where
+    hL = hypForm l
+    hR = hypForm r
 
 {- solve demuestra una contradicción de una fórmula que se asume que está en
 DNF. Para ello refuta cada cláusula, buscando o el mismo literal negado y sin

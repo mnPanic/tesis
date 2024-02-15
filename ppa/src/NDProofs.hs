@@ -132,7 +132,7 @@ proofAndEProjection' f1 f2
     | f1 == f2 = Right id
     | otherwise = Left $ printf "%s /= %s" (show f1) (show f2)
 
--- DeMorgan y transformaciones para DNF
+-------------------- DeMorgan y transformaciones para DNF ----------------------
 
 -- Da una demostración para X => Y |- ~X v Y y ~X v Y |- X => Y
 proofImpElim :: Form -> Form -> HypId -> HypId -> (Proof, Proof)
@@ -191,8 +191,20 @@ proofImpElim x y hImp hOr =
     hY = hypForm y
     hNotX = hypForm $ FNot x
 
-{- Demuestra la congruencia del ^, es decir da una demostración de
-x ^ y |- x' ^ y usando que x |- x'
+-- Demostración de una equivalencia, A |- B y B |- A
+-- Se abrevia con la notación A -|- B
+type EqProof = (Proof, Proof)
+
+{- Demuestra la congruencia del ^ sobre el primer operador, es decir da una
+demostración de x ^ y -|- x' ^ y usando que x -|- x'
+-}
+proofAndCongruence1 :: Form -> Form -> Form -> HypId -> EqProof -> EqProof
+proofAndCongruence1 (hX, x) (x', hX') y hAnd (proofXThenX', proofX'ThenX) =
+    -- Son simétricas
+    where proofXAndYThenX'AndY = proofAndCongruence1'
+    
+
+{- Devuelve una demostración de x ^ y |- x' ^ usando que x |- x'
 
         x |- x'
     ---------------
@@ -204,8 +216,9 @@ mediante cut,
     --------------------------- (cut)
     x ^ y |- x' ^ y
 -}
-proofAndCongruence :: Form -> Form -> HypId -> HypId -> Proof -> Proof
-proofAndCongruence x y hAnd hX proofXThenX' = cut x proofX hX proofXThenX'AndY
+proofAndCongruence1' :: EnvItem -> Form -> HypId -> Proof -> Proof
+proofAndCongruence1' (hX, x) y hAnd proofXThenX' =
+    cut x proofX hX proofXThenX'AndY
   where
     proofX =
         PAndE1
