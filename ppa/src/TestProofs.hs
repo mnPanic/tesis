@@ -1148,11 +1148,11 @@ f26 =
         )
         (propVar "B")
 
--- TODO
+-- TODO arreglar esto que está mal DNF
 p26 :: Result Proof
 -- Primero doubleNegElim para demostrar por contradicción
 p26 = do
-    (dnfNegThesis, dnfProof) <- dnf (FNot thesis)
+    let (dnfNegThesis, dnfProof) = dnf ("h dnfThesis", FNot thesis)
     contradictionProof <- solve ("h dnfThesis", dnfNegThesis)
     return
         PImpE

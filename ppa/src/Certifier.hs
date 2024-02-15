@@ -171,6 +171,7 @@ dnfStep (hAnd, FAnd l r) = case dnfStep (hL, l) of
   where
     hL = hypForm l
     hR = hypForm r
+dnfStep (hOr, FOr l r) = Nothing -- TODO
 
 {- solve demuestra una contradicción de una fórmula que se asume que está en
 DNF. Para ello refuta cada cláusula, buscando o el mismo literal negado y sin

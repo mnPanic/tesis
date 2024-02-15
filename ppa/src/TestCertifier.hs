@@ -1,6 +1,7 @@
 module TestCertifier where
 
 import Certifier (
+    dnf,
     findContradiction,
     fromClause,
     fromDNF,
@@ -10,6 +11,7 @@ import Certifier (
 
 import NDProofs (
     EnvItem,
+    hypForm,
  )
 
 import NDChecker (
@@ -48,7 +50,8 @@ tests =
     test
         [ "clauses" ~: testClause
         , "findContradiction" ~: testFindContradiction
-        , "testSolve" ~: testSolve
+        , "solve" ~: testSolve
+        , "dnf" ~: testDnf
         ]
 
 testSolve :: Test
@@ -291,4 +294,16 @@ testClause =
                     (FAnd (propVar "C") (FNot $ propVar "A"))
                 )
                 (propVar "X")
+        ]
+
+testDnf :: Test
+testDnf =
+    test
+        [ "x => y / ~x v y" ~: do
+            let (x, y) = (propVar "x", propVar "y")
+            let fImp = FImp x y
+            let hImp = hypForm fImp
+            let (fDnf, dnfProof) = dnf (hImp, fImp)
+            fDnf @?= FOr (FNot x) y
+            CheckOK @=? check (EExtend hImp fImp EEmpty) dnfProof fDnf
         ]
