@@ -5,7 +5,8 @@ module NDProofs (
     proofImpElim,
     hypForm,
     doubleNegElim,
-    proofAndCongruence,
+    proofAndCongruence1,
+    proofAndCongruence2,
     Result,
     EnvItem,
 ) where
@@ -74,6 +75,7 @@ doubleNegElim formA =
            G |- B
 
 Permite evitar Imp-E y Imp-I para demostrar a partir de una implicación conocida
+(A -> B)
 -}
 cut :: Form -> Proof -> HypId -> Proof -> Proof
 cut fA pA hypA pAtoB =
@@ -191,20 +193,27 @@ proofImpElim x y hImp hOr =
     hY = hypForm y
     hNotX = hypForm $ FNot x
 
--- Demostración de una equivalencia, A |- B y B |- A
--- Se abrevia con la notación A -|- B
-type EqProof = (Proof, Proof)
-
-{- Demuestra la congruencia del ^ sobre el primer operador, es decir da una
+{- Demuestra la congruencia del ^ sobre el primer argumento, es decir da una
 demostración de x ^ y -|- x' ^ y usando que x -|- x'
 -}
-proofAndCongruence1 :: Form -> Form -> Form -> HypId -> EqProof -> EqProof
-proofAndCongruence1 (hX, x) (x', hX') y hAnd (proofXThenX', proofX'ThenX) =
+proofAndCongruence1 ::
+    Form ->
+    Form ->
+    Form ->
+    HypId ->
+    HypId ->
+    HypId ->
+    Proof ->
+    HypId ->
+    Proof ->
+    (Proof, Proof)
+proofAndCongruence1 x y x' hAnd hAnd' hX proofXThenX' hX' proofX'ThenX = (proofLR, proofRL)
+  where
     -- Son simétricas
-    where proofXAndYThenX'AndY = proofAndCongruence1'
-    
+    proofLR = proofAndCongruence1' x y hAnd hX proofXThenX'
+    proofRL = proofAndCongruence1' x' y hAnd' hX' proofX'ThenX
 
-{- Devuelve una demostración de x ^ y |- x' ^ usando que x |- x'
+{- Devuelve una demostración de x ^ y |- x' ^ y usando que x |- x'
 
         x |- x'
     ---------------
@@ -216,8 +225,8 @@ mediante cut,
     --------------------------- (cut)
     x ^ y |- x' ^ y
 -}
-proofAndCongruence1' :: EnvItem -> Form -> HypId -> Proof -> Proof
-proofAndCongruence1' (hX, x) y hAnd proofXThenX' =
+proofAndCongruence1' :: Form -> Form -> HypId -> HypId -> Proof -> Proof
+proofAndCongruence1' x y hAnd hX proofXThenX' =
     cut x proofX hX proofXThenX'AndY
   where
     proofX =
@@ -235,4 +244,46 @@ proofAndCongruence1' (hX, x) y hAnd proofXThenX' =
                     { left = x
                     , proofAnd = PAx hAnd
                     }
+            }
+
+{- Demuestra la congruencia del ^ sobre el segundo argumento, es decir da una
+demostración de x ^ y -|- x ^ y' usando que y -|- y'
+-}
+proofAndCongruence2 ::
+    Form ->
+    Form ->
+    Form ->
+    HypId ->
+    HypId ->
+    HypId ->
+    Proof ->
+    HypId ->
+    Proof ->
+    (Proof, Proof)
+proofAndCongruence2 x y y' hAnd hAnd' hY proofYThenY' hY' proofY'ThenY = (proofLR, proofRL)
+  where
+    -- Son simétricas
+    proofLR = proofAndCongruence2' x y hAnd hY proofYThenY'
+    proofRL = proofAndCongruence2' x y' hAnd' hY' proofY'ThenY
+
+-- Devuelve una demostración de x ^ y |- x ^ y' usando que y |- y'
+proofAndCongruence2' :: Form -> Form -> HypId -> HypId -> Proof -> Proof
+proofAndCongruence2' x y hAnd hY proofYThenY' =
+    cut y proofY hY proofYThenXAndY'
+  where
+    proofY =
+        PAndE2
+            { left = x
+            , proofAnd = PAx hAnd
+            }
+    proofYThenXAndY' =
+        PAndI
+            { -- x
+              proofLeft =
+                PAndE1
+                    { right = y
+                    , proofAnd = PAx hAnd
+                    }
+            , -- y'
+              proofRight = proofYThenY'
             }

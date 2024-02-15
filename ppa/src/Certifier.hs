@@ -23,7 +23,8 @@ import NDProofs (
     cut,
     doubleNegElim,
     hypForm,
-    proofAndCongruence,
+    proofAndCongruence1,
+    proofAndCongruence2,
     proofAndEProjection,
     proofImpElim,
  )
@@ -77,7 +78,7 @@ certifyBy ctx f js = do
     let negThesis = FNot thesis
     let hNegThesis = hypForm negThesis
 
-    (dnfNegThesis, dnfProof) <- dnf (hNegThesis, negThesis)
+    let (dnfNegThesis, dnfProof) = dnf (hNegThesis, negThesis)
 
     let hDNFNegThesis = hypForm dnfNegThesis
 
@@ -117,11 +118,18 @@ findJustification ctx js
 Dada una fórmula F y una versión en DNF F' (no es única), da una demostración de
 F |- F'.
 -}
-dnf :: EnvItem -> Result (Form, Proof)
-dnf (h, f) = Right (f, PAx "h")
+dnf :: EnvItem -> (Form, Proof)
+dnf i@(h, f) = convertToDnf i
 
 convertToDnf :: EnvItem -> (Form, Proof)
-convertToDnf i = case dnfStep i of {}
+convertToDnf i@(hF, f) = case dnfStep i of
+    -- f está en DNF, caso base
+    Nothing -> (f, PAx hF)
+    -- f |- f' en un paso
+    Just ((hF', f'), pFThenF', _) ->
+        (f'', cut f' pFThenF' hF' pF'ThenF'')
+      where
+        (f'', pF'ThenF'') = convertToDnf (hF', f')
 
 {- dnfStep hace una transformación "small-step" de una fórmula hacia DNF.
 Dada una fórmula F, devuelve la fórmula F' con un paso aplicado, y las
@@ -130,23 +138,36 @@ algunos operadores como el Not son opuestos).
 
 Devuelve Nothing cuando F ya está en DNF.
 -}
--- TODO: capaz las hip las tiene que devolver acá
-dnfStep :: EnvItem -> Maybe (Form, Proof, Proof)
+-- TODO: Raro que tomo la hip de l pero devuelvo la hip de l', porque se genera
+-- acá y no se conoce de antemano. Se podrían devolver siempre acá las hips?
+-- Pero es menos general.
+dnfStep :: EnvItem -> Maybe (EnvItem, Proof, Proof)
 -- Casos de reescritura
-dnfStep (hImp, FImp a b) = Just (fOr, pImpElim, pOrToImp)
+dnfStep (hImp, FImp a b) = Just ((hOr, fOr), pImpElimLR, pImpElimRL)
   where
     fOr = FOr (FNot a) b
-    (pImpElim, pOrToImp) = proofImpElim a b hImp (hypForm fOr)
+    hOr = hypForm fOr
+    (pImpElimLR, pImpElimRL) = proofImpElim a b hImp hOr
 
 -- Casos de congruencia
 dnfStep (hAnd, FAnd l r) = case dnfStep (hL, l) of
-    -- l se puede reescribir
-    Just (l', pLThenL', _) ->
-        Just
-            ( FAnd l' r
-            , proofAndCongruence l r hAnd hL proofLThenL'
-            )
-    Nothing -> undefined
+    -- l |- l'
+    Just ((hL', l'), pLThenL', pL'ThenL) ->
+        Just ((hAnd', fAnd'), pAndCong1LR, pAndCong1RL)
+      where
+        fAnd' = FAnd l' r
+        hAnd' = hypForm fAnd'
+        (pAndCong1LR, pAndCong1RL) = proofAndCongruence1 l r l' hAnd hAnd' hL pLThenL' hL' pL'ThenL
+    Nothing -> case dnfStep (hR, r) of
+        -- Cláusula válida, está en DNF
+        Nothing -> Nothing
+        -- r |- r'
+        Just ((hR', r'), pRThenR', pR'ThenR) ->
+            Just ((hAnd', fAnd'), pAndCong2LR, pAndCong2RL)
+          where
+            fAnd' = FAnd l r'
+            hAnd' = hypForm fAnd'
+            (pAndCong2LR, pAndCong2RL) = proofAndCongruence2 l r r' hAnd hAnd' hL pRThenR' hR' pR'ThenR
   where
     hL = hypForm l
     hR = hypForm r
