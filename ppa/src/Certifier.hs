@@ -27,6 +27,8 @@ import NDProofs (
     proofAndCongruence2,
     proofAndEProjection,
     proofImpElim,
+    proofOrCongruence1,
+    proofOrCongruence2,
  )
 
 import ND (
@@ -150,6 +152,8 @@ dnfStep (hImp, FImp a b) = Just ((hOr, fOr), pImpElimLR, pImpElimRL)
     (pImpElimLR, pImpElimRL) = proofImpElim a b hImp hOr
 
 -- Casos de congruencia
+-- Un AND puede ser una cláusula válida (con otros ands de literales) o
+-- tener que ser transformada recursivamente.
 dnfStep (hAnd, FAnd l r) = case dnfStep (hL, l) of
     -- l |- l'
     Just ((hL', l'), pLThenL', pL'ThenL) ->
@@ -171,7 +175,29 @@ dnfStep (hAnd, FAnd l r) = case dnfStep (hL, l) of
   where
     hL = hypForm l
     hR = hypForm r
-dnfStep (hOr, FOr l r) = Nothing -- TODO
+-- Un OR puede estar en DNF (compuesto por cláusulas válidas) o tener que ser
+-- transformado recursivamente
+dnfStep (hOr, FOr l r) = case dnfStep (hL, l) of
+    -- l |- l'
+    Just ((hL', l'), pLThenL', pL'ThenL) ->
+        Just ((hOr', fOr'), pOrCong1LR, pOrCong1RL)
+      where
+        fOr' = FOr l' r
+        hOr' = hypForm fOr'
+        (pOrCong1LR, pOrCong1RL) = proofOrCongruence1 l r l' hOr hOr' hL pLThenL' hL' pL'ThenL
+    Nothing -> case dnfStep (hR, r) of
+        -- Fórmula válida, está en DNF
+        Nothing -> Nothing
+        -- r |- r'
+        Just ((hR', r'), pRThenR', pR'ThenR) ->
+            Just ((hOr', fOr'), pAndCong2LR, pAndCong2RL)
+          where
+            fOr' = FOr l r'
+            hOr' = hypForm fOr'
+            (pAndCong2LR, pAndCong2RL) = proofOrCongruence2 l r r' hOr hOr' hL pRThenR' hR' pR'ThenR
+  where
+    hL = hypForm l
+    hR = hypForm r
 
 {- solve demuestra una contradicción de una fórmula que se asume que está en
 DNF. Para ello refuta cada cláusula, buscando o el mismo literal negado y sin

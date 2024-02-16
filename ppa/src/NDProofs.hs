@@ -7,6 +7,8 @@ module NDProofs (
     doubleNegElim,
     proofAndCongruence1,
     proofAndCongruence2,
+    proofOrCongruence1,
+    proofOrCongruence2,
     Result,
     EnvItem,
 ) where
@@ -136,7 +138,17 @@ proofAndEProjection' f1 f2
 
 -------------------- DeMorgan y transformaciones para DNF ----------------------
 
--- Da una demostración para X => Y |- ~X v Y y ~X v Y |- X => Y
+-- Da una demostración para ~(X ^ Y) -|- ~X v ~Y
+proofNotDistAnd :: Form -> Form -> HypId -> HypId -> (Proof, Proof)
+proofNotDistAnd x y hNot hOr = (proofNotDistAndLR, proofNotDistAndRL)
+  where
+    -- ~(X ^ Y) |- ~X v ~Y
+    proofNotDistAndLR = undefined
+
+    --  ~X v ~Y |- ~(X ^ Y)
+    proofNotDistAndRL = undefined
+
+-- Da una demostración para X => Y -|- ~X v Y
 proofImpElim :: Form -> Form -> HypId -> HypId -> (Proof, Proof)
 proofImpElim x y hImp hOr =
     (proofImpElim, proofOrToImp)
@@ -207,7 +219,8 @@ proofAndCongruence1 ::
     HypId ->
     Proof ->
     (Proof, Proof)
-proofAndCongruence1 x y x' hAnd hAnd' hX proofXThenX' hX' proofX'ThenX = (proofLR, proofRL)
+proofAndCongruence1 x y x' hAnd hAnd' hX proofXThenX' hX' proofX'ThenX =
+    (proofLR, proofRL)
   where
     -- Son simétricas
     proofLR = proofAndCongruence1' x y hAnd hX proofXThenX'
@@ -287,3 +300,82 @@ proofAndCongruence2' x y hAnd hY proofYThenY' =
             , -- y'
               proofRight = proofYThenY'
             }
+
+{- Demuestra la congruencia del v sobre el primer argumento, es decir da una
+demostración de x v y -|- x' v y usando que x -|- x'
+-}
+proofOrCongruence1 ::
+    Form ->
+    Form ->
+    Form ->
+    HypId ->
+    HypId ->
+    HypId ->
+    Proof ->
+    HypId ->
+    Proof ->
+    (Proof, Proof)
+proofOrCongruence1 x y x' hOr hOr' hX proofXThenX' hX' proofX'ThenX =
+    (proofLR, proofRL)
+  where
+    -- Son simétricas
+    proofLR = proofOrCongruence1' x y hOr hX proofXThenX'
+    proofRL = proofOrCongruence1' x' y hOr' hX' proofX'ThenX
+
+{- Devuelve una demostración de x v y |- x' v y usando que x |- x'
+
+        x |- x'
+    ---------------
+    x v y |- x' v y
+
+Dependiendo de qué vale, si x o y, tenemos que introducir el O por x' (mediante
+x) o por y (trivial)
+-}
+proofOrCongruence1' :: Form -> Form -> HypId -> HypId -> Proof -> Proof
+proofOrCongruence1' x y hOr hX proofXThenX' =
+    POrE
+        { left = x
+        , right = y
+        , proofOr = PAx hOr
+        , hypLeft = hX
+        , proofAssumingLeft = POrI1{proofLeft = proofXThenX'}
+        , hypRight = hY
+        , proofAssumingRight = POrI2{proofRight = PAx hY}
+        }
+  where
+    hY = hypForm y
+
+{- Demuestra la congruencia del v sobre el segundo argumento, es decir da una
+demostración de x v y -|- x v y' usando que y -|- y'
+-}
+proofOrCongruence2 ::
+    Form ->
+    Form ->
+    Form ->
+    HypId ->
+    HypId ->
+    HypId ->
+    Proof ->
+    HypId ->
+    Proof ->
+    (Proof, Proof)
+proofOrCongruence2 x y y' hOr hOr' hY proofYThenY' hY' proofY'ThenY = (proofLR, proofRL)
+  where
+    -- Son simétricas
+    proofLR = proofOrCongruence2' x y hOr hY proofYThenY'
+    proofRL = proofOrCongruence2' x y' hOr' hY' proofY'ThenY
+
+-- Devuelve una demostración de x v y |- x v y' usando que y |- y'
+proofOrCongruence2' :: Form -> Form -> HypId -> HypId -> Proof -> Proof
+proofOrCongruence2' x y hOr hY proofYThenY' =
+    POrE
+        { left = x
+        , right = y
+        , proofOr = PAx hOr
+        , hypLeft = hX
+        , proofAssumingLeft = POrI1{proofLeft = PAx hX}
+        , hypRight = hY
+        , proofAssumingRight = POrI2{proofRight = proofYThenY'}
+        }
+  where
+    hX = hypForm x

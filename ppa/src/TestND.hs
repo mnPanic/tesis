@@ -23,9 +23,12 @@ import NDChecker (
 import NDProofs (
     doubleNegElim,
     hypForm,
-    proofAndCongruence,
+    proofAndCongruence1,
+    proofAndCongruence2,
     proofAndEProjection,
     proofImpElim,
+    proofOrCongruence1,
+    proofOrCongruence2,
  )
 
 import Test.HUnit (
@@ -625,20 +628,70 @@ testEquivalences =
                 let (pImpElim, pOrToImp) = proofImpElim x y hImp hOr
                 CheckOK @=? check (EExtend hImp fImp EEmpty) pImpElim fOr
                 CheckOK @=? check (EExtend hOr fOr EEmpty) pOrToImp fImp
-        , "and congruence trivial"
+        , "and congruence 1"
             ~: do
-                let (x, y) = (propVar "X", propVar "Y")
-                let fAnd = FAnd x y
-                let pCong = proofAndCongruence x y "hAnd" "hX" (PAx "hX")
-                CheckOK @=? check (EExtend "hAnd" fAnd EEmpty) pCong fAnd
-        , "and congruence"
-            ~: do
-                let (x, y) = (propVar "X", propVar "Y")
+                -- if X => Y -|- ~X v Y then (X => Y) ^ Z -|- (~X v Y) ^ Z
+                let (x, y, z) = (propVar "X", propVar "Y", propVar "Z")
                 let fImp = FImp x y
-                let fAnd = FAnd fImp y
+                let fAnd = FAnd fImp z
                 let (hAnd, hImp) = (hypForm fAnd, hypForm fImp)
-                let fAnd' = FAnd (FOr (FNot x) y) y
-                let (pImpElim, _) = proofImpElim x y hImp "h or"
-                let pCong = proofAndCongruence fImp y hAnd hImp pImpElim
-                CheckOK @=? check (EExtend hAnd fAnd EEmpty) pCong fAnd'
+                -- in DNF
+                let fOr = FOr (FNot x) y
+                let fAnd' = FAnd fOr z
+                let (hAnd', hOr) = (hypForm fAnd', hypForm fOr)
+                let (pImpElimLR, pImpElimRL) = proofImpElim x y hImp hOr
+
+                let (pCongLR, pCongRL) = proofAndCongruence1 fImp z fOr hAnd hAnd' hImp pImpElimLR hOr pImpElimRL
+                CheckOK @=? check (EExtend hAnd fAnd EEmpty) pCongLR fAnd'
+                CheckOK @=? check (EExtend hAnd' fAnd' EEmpty) pCongRL fAnd
+        , "and congruence 2"
+            ~: do
+                -- if X => Y -|- ~X v Y then Z ^ (X => Y) -|- Z ^ (~X v Y)
+                let (x, y, z) = (propVar "X", propVar "Y", propVar "Z")
+                let fImp = FImp x y
+                let fAnd = FAnd z fImp
+                let (hAnd, hImp) = (hypForm fAnd, hypForm fImp)
+                -- in DNF
+                let fOr = FOr (FNot x) y
+                let fAnd' = FAnd z fOr
+                let (hAnd', hOr) = (hypForm fAnd', hypForm fOr)
+                let (pImpElimLR, pImpElimRL) = proofImpElim x y hImp hOr
+
+                let (pCongLR, pCongRL) = proofAndCongruence2 z fImp fOr hAnd hAnd' hImp pImpElimLR hOr pImpElimRL
+                CheckOK @=? check (EExtend hAnd fAnd EEmpty) pCongLR fAnd'
+                CheckOK @=? check (EExtend hAnd' fAnd' EEmpty) pCongRL fAnd
+        , "or congruence 1"
+            ~: do
+                -- if X => Y -|- ~X v Y then (X => Y) v Z -|- (~X v Y) v Z
+                let (x, y, z) = (propVar "X", propVar "Y", propVar "Z")
+                let left = FImp x y
+                let f = FOr left z
+
+                let left' = FOr (FNot x) y
+                let f' = FOr left' z
+                let (hF, hF') = (hypForm f, hypForm f')
+                let (hL, hL') = (hypForm left, hypForm left')
+
+                let (pLL', pL'L) = proofImpElim x y hL hL'
+
+                let (pCongLR, pCongRL) = proofOrCongruence1 left z left' hF hF' hL pLL' hL' pL'L
+                CheckOK @=? check (EExtend hF f EEmpty) pCongLR f'
+                CheckOK @=? check (EExtend hF' f' EEmpty) pCongRL f
+        , "or congruence 2"
+            ~: do
+                -- if X => Y -|- ~X v Y then Z v (X => Y) -|- Z v (~X v Y)
+                let (x, y, z) = (propVar "X", propVar "Y", propVar "Z")
+                let right = FImp x y
+                let f = FOr z right
+
+                let right' = FOr (FNot x) y
+                let f' = FOr z right'
+                let (hF, hF') = (hypForm f, hypForm f')
+                let (hR, hR') = (hypForm right, hypForm right')
+
+                let (pRR', pR'R) = proofImpElim x y hR hR'
+
+                let (pCongLR, pCongRL) = proofOrCongruence2 z right right' hF hF' hR pRR' hR' pR'R
+                CheckOK @=? check (EExtend hF f EEmpty) pCongLR f'
+                CheckOK @=? check (EExtend hF' f' EEmpty) pCongRL f
         ]
