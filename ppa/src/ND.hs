@@ -24,6 +24,8 @@ import Data.Set qualified as Set
 
 import Data.List (intercalate)
 
+import Text.Printf (printf)
+
 -- Dada una fórmula A da su doble negación
 dneg :: Form -> Form
 dneg f = FNot $ FNot f
@@ -94,7 +96,7 @@ instance Show Form where
     show (FAnd l r) = showBinParen l ++ " ^ " ++ showBinParen r
     show (FOr l r) = showBinParen l ++ " v " ++ showBinParen r
     show (FImp a c) = showBinParen a ++ " => " ++ showBinParen c
-    show (FNot f) = "~" ++ show f
+    show (FNot f) = "~" ++ showBinParen f
     show FTrue = "true"
     show FFalse = "false"
     show (FForall x f) = "forall x. " ++ showBinParen f
@@ -174,7 +176,17 @@ fv (FExists y f1) = Set.delete y (fv f1)
 data Env
     = EEmpty
     | EExtend HypId Form Env
-    deriving (Show, Eq)
+    deriving (Eq)
+
+instance Show Env where
+    show env = "{" ++ intercalate ", " (map showPair envList) ++ "}"
+      where
+        showPair (h, f) = printf "'%s' : %s" h (show f)
+        envList = asList env
+
+asList :: Env -> [(HypId, Form)]
+asList EEmpty = []
+asList (EExtend h f r) = (h, f) : asList r
 
 get :: Env -> HypId -> Maybe Form
 get EEmpty hyp = Nothing
@@ -192,7 +204,11 @@ fvE e = foldr (Set.union . fv) Set.empty (forms e)
 -- Record syntax: https://en.wikibooks.org/wiki/Haskell/More_on_datatypes
 
 data Proof
-    = PNamed String
+    = PNamed
+        { name :: String
+        , expectedForm :: Form -- for debugging
+        , proof :: Proof
+        }
     | PAx HypId
     | -- A ^ B
       PAndI

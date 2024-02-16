@@ -299,15 +299,18 @@ testClause =
 testDnf :: Test
 testDnf =
     test
-        [ "x => y / ~x v y"
+        [ "imp elim: x => y / ~x v y"
             ~: doTestDNF
                 (FImp x y)
                 (FOr (FNot x) y)
-        , -- TODO: peinar or
-          "x => ~(y ^ z) / ~x v ~y v ~z"
+        , "not dist over and: ~(x ^ y) / ~x v ~y"
+            ~: doTestDNF
+                (FNot (FAnd x y))
+                (FOr (FNot x) (FNot y))
+        , "imp elim + or cong2 + not dist over and: x => ~(y ^ z) / ~x v ~y v ~z"
             ~: doTestDNF
                 (FImp x (FNot $ FAnd y z))
-                (FOr (FNot x) (FOr (FNot y) (FNot z)))
+                (FOr (FNot x) (FOr (FNot y) (FNot z))) -- TODO: peinar or
         ]
   where
     x = propVar "x"

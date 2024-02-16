@@ -49,28 +49,32 @@ Se puede usar para demostrar A por contradicción, asumiendo ~A
 doubleNegElim :: Form -> Proof
 doubleNegElim formA =
     PImpI
-        "h ~~{A}"
+        hNotNotA
         ( -- Uso LEM de A v ~A
           POrE
             formA
             (FNot formA)
             PLEM
             -- Dem de A asumiendo A
-            "h {A}"
-            (PAx "h {A}")
+            hA
+            (PAx hA)
             -- Dem de A asumiendo ~ A
-            "h ~{A}"
+            hNotA
             ( -- ~A y ~~A generan una contradicción
               PFalseE
                 ( PNotE
                     (FNot formA) -- Uso ~~A
                     -- Dem de ~~A
-                    (PAx "h ~~{A}")
+                    (PAx hNotNotA)
                     -- Dem de ~A
-                    (PAx "h ~{A}")
+                    (PAx hNotA)
                 )
             )
         )
+  where
+    hA = hypForm formA
+    hNotA = hypForm $ FNot formA
+    hNotNotA = hypForm $ dneg formA
 
 {- cut es un macro que permite pegar demostraciones
 

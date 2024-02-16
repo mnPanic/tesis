@@ -122,7 +122,9 @@ Dada una fórmula F y una versión en DNF F' (no es única), da una demostració
 F |- F'.
 -}
 dnf :: EnvItem -> (Form, Proof)
-dnf i@(h, f) = convertToDnf i
+dnf i@(h, f) = (f', PNamed "dnf" p)
+  where
+    (f', p) = convertToDnf i
 
 convertToDnf :: EnvItem -> (Form, Proof)
 convertToDnf i@(hF, f) = case dnfStep i of
@@ -145,26 +147,40 @@ Devuelve Nothing cuando F ya está en DNF.
 -- acá y no se conoce de antemano. Se podrían devolver siempre acá las hips?
 -- Pero es menos general.
 dnfStep :: EnvItem -> Maybe (EnvItem, Proof, Proof)
--- Casos de reescritura
+{- Casos de reescritura -}
 -- x => y -|- ~x v y
-dnfStep (hImp, FImp x y) = Just ((hOr, fOr), pImpElimLR, pImpElimRL)
+dnfStep (hImp, FImp x y) =
+    Just
+        ( (hOr, fOr)
+        , PNamed "imp elim LR" pImpElimLR
+        , PNamed "imp elim RL" pImpElimRL
+        )
   where
     fOr = FOr (FNot x) y
     hOr = hypForm fOr
     (pImpElimLR, pImpElimRL) = proofImpElim x y hImp hOr
 -- ~(x ^ y) -|- ~x v ~y
-dnfStep (hNot, FNot (FAnd x y)) = Just ((hOr, fOr), pNotDistOverAndLR, pNotDistOverAndRL)
+dnfStep (hNot, FNot (FAnd x y)) =
+    Just
+        ( (hOr, fOr)
+        , PNamed "not dist over and LR" pNotDistOverAndLR
+        , PNamed "not dist over and RL" pNotDistOverAndRL
+        )
   where
     fOr = FOr (FNot x) (FNot y)
     hOr = hypForm fOr
     (pNotDistOverAndLR, pNotDistOverAndRL) = proofNotDistOverAnd x y hNot hOr
--- Casos de congruencia
+{- Casos de congruencia -}
 -- Un AND puede ser una cláusula válida (con otros ands de literales) o
 -- tener que ser transformada recursivamente.
 dnfStep (hAnd, FAnd l r) = case dnfStep (hL, l) of
     -- l |- l'
     Just ((hL', l'), pLThenL', pL'ThenL) ->
-        Just ((hAnd', fAnd'), pAndCong1LR, pAndCong1RL)
+        Just
+            ( (hAnd', fAnd')
+            , PNamed "and cong1 LR" pAndCong1LR
+            , PNamed "and cong2 RL" pAndCong1RL
+            )
       where
         fAnd' = FAnd l' r
         hAnd' = hypForm fAnd'
@@ -174,7 +190,11 @@ dnfStep (hAnd, FAnd l r) = case dnfStep (hL, l) of
         Nothing -> Nothing
         -- r |- r'
         Just ((hR', r'), pRThenR', pR'ThenR) ->
-            Just ((hAnd', fAnd'), pAndCong2LR, pAndCong2RL)
+            Just
+                ( (hAnd', fAnd')
+                , PNamed "and cong2 LR" pAndCong2LR
+                , PNamed "and cong2 RL" pAndCong2RL
+                )
           where
             fAnd' = FAnd l r'
             hAnd' = hypForm fAnd'
@@ -187,7 +207,11 @@ dnfStep (hAnd, FAnd l r) = case dnfStep (hL, l) of
 dnfStep (hOr, FOr l r) = case dnfStep (hL, l) of
     -- l |- l'
     Just ((hL', l'), pLThenL', pL'ThenL) ->
-        Just ((hOr', fOr'), pOrCong1LR, pOrCong1RL)
+        Just
+            ( (hOr', fOr')
+            , PNamed "or cong1 LR" pOrCong1LR
+            , PNamed "or cong2 RL" pOrCong1RL
+            )
       where
         fOr' = FOr l' r
         hOr' = hypForm fOr'
@@ -197,17 +221,21 @@ dnfStep (hOr, FOr l r) = case dnfStep (hL, l) of
         Nothing -> Nothing
         -- r |- r'
         Just ((hR', r'), pRThenR', pR'ThenR) ->
-            Just ((hOr', fOr'), pAndCong2LR, pAndCong2RL)
+            Just
+                ( (hOr', fOr')
+                , PNamed "or cong2 LR" pOrCong2LR
+                , PNamed "or cong2 RL" pOrCong2RL
+                )
           where
             fOr' = FOr l r'
             hOr' = hypForm fOr'
-            (pAndCong2LR, pAndCong2RL) = proofOrCongruence2 l r r' hOr hOr' hL pRThenR' hR' pR'ThenR
+            (pOrCong2LR, pOrCong2RL) = proofOrCongruence2 l r r' hOr hOr' hR pRThenR' hR' pR'ThenR
   where
     hL = hypForm l
     hR = hypForm r
 dnfStep (hNot, FNot f) = case dnfStep (hF, f) of
     Nothing -> Nothing
-    Just ((hF', f'), pFThenF', pF'ThenF) -> undefined
+    Just ((hF', f'), pFThenF', pF'ThenF) -> error "to be implemented"
   where
     hF = hypForm f
 -- Resto, literales o errores

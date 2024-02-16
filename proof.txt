@@ -1,0 +1,102 @@
+PImpE
+    { antecedent = ~x v ~( y ^ z )
+    , proofImp = PImpI
+        { hypAntecedent = "h ~x v ~(y ^ z)"
+        , proofConsequent = PImpE
+            { antecedent = ~x v ( ~y v ~z )
+            , proofImp = PImpI
+                { hypAntecedent = "h ~x v (~y v ~z)"
+                , proofConsequent = PAx "h ~x v (~y v ~z)"
+                }
+            , proofAntecedent = PNamed
+                { name = "or cong2 LR"
+                , expectedForm = ~x v ( ~y v ~z )
+                , proof = POrE
+                    { left = ~x
+                    , right = ~( y ^ z )
+                    , proofOr = PAx "h ~x v ~(y ^ z)"
+                    , hypLeft = "h ~x"
+                    , proofAssumingLeft = POrI1
+                        { proofLeft = PAx "h ~x" }
+                    , hypRight = "h ~x"
+                    , proofAssumingRight = POrI2
+                        { proofRight = PNamed
+                            { name = "not dist over and LR"
+                            , expectedForm = ~y v ~z
+                            , proof = PImpE
+                                { antecedent = ~~( ~y v ~z )
+                                , proofImp = PImpI
+                                    { hypAntecedent = "h ~~(~y v ~z)"
+                                    , proofConsequent = POrE
+                                        { left = ~y v ~z
+                                        , right = ~( ~y v ~z )
+                                        , proofOr = PLEM
+                                        , hypLeft = "h ~y v ~z"
+                                        , proofAssumingLeft = PAx "h ~y v ~z"
+                                        , hypRight = "h ~(~y v ~z)"
+                                        , proofAssumingRight = PFalseE
+                                            { proofBot = PNotE
+                                                { form = ~( ~y v ~z )
+                                                , proofNotForm = PAx "h ~~(~y v ~z)"
+                                                , proofForm = PAx "h ~(~y v ~z)"
+                                                }
+                                            }
+                                        }
+                                    }
+                                , proofAntecedent = PNotI
+                                    { hyp = "h ~(~y v ~z)"
+                                    , proofBot = PNotE
+                                        { form = ~y v ~z
+                                        , proofNotForm = PAx "h ~(~y v ~z)"
+                                        , proofForm = POrI1
+                                            { proofLeft = PNotI
+                                                { hyp = "h y"
+                                                , proofBot = PNotE
+                                                    { form = ~y v ~z
+                                                    , proofNotForm = PAx "h ~(~y v ~z)"
+                                                    , proofForm = POrI2
+                                                        { proofRight = PNotI
+                                                            { hyp = "h z"
+                                                            , proofBot = PNotE
+                                                                { form = y ^ z
+                                                                , proofNotForm = PAx "h ~(y ^ z)"
+                                                                , proofForm = PAndI
+                                                                    { proofLeft = PAx "h y"
+                                                                    , proofRight = PAx "h z"
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    , proofAntecedent = PNamed
+        { name = "imp elim LR"
+        , expectedForm = ~x v ~( y ^ z )
+        , proof = POrE
+            { left = x
+            , right = ~x
+            , proofOr = PLEM
+            , hypLeft = "h x"
+            , proofAssumingLeft = POrI2
+                { proofRight = PImpE
+                    { antecedent = x
+                    , proofImp = PAx "h x => ~(y ^ z)"
+                    , proofAntecedent = PAx "h x"
+                    }
+                }
+            , hypRight = "h ~x"
+            , proofAssumingRight = POrI1
+                { proofLeft = PAx "h ~x" }
+            }
+        }
+    }

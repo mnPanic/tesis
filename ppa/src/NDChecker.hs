@@ -80,22 +80,48 @@ freshWRT x forbidden = head [x ++ suffix | suffix <- map show [0 ..], x ++ suffi
 data CheckResult
     = CheckOK
     | CheckError Env Proof Form String
+    | CheckErrorW Env Proof Form CheckResult
+    | CheckErrorN
+        { name :: String
+        , err :: CheckResult
+        }
     deriving (Eq)
 
 instance Show CheckResult where
     show CheckOK = "OK"
     show (CheckError env proof form msg) =
         printf
-            "Check error! %s on\nenv: %s\nproof: %s\nform: %s\n"
+            "Check error! %s on\nproof: %s\n%s\n|- %s"
             msg
-            (show env)
             (show proof)
+            (show env)
             (show form)
+    show (CheckErrorW env proof form res) =
+        printf
+            "Checking \nproof: %s\n%s\n|- %s\n\n%s"
+            (show proof)
+            (show env)
+            (show form)
+            (show res)
+    show (CheckErrorN name res) =
+        printf
+            "Checking proof '%s': \n%s"
+            name
+            (show res)
+
+isErr :: CheckResult -> Bool
+isErr (CheckError{}) = True
+isErr (CheckErrorW{}) = True
+isErr (CheckErrorN{}) = True
+isErr (CheckOK{}) = False
 
 {- TODO:
     - Mónadas para chaining de errores? Por ej en PImpE
 -}
 check :: Env -> Proof -> Form -> CheckResult
+check env (PNamed name expectedF proof) f = case check env proof f of
+    err | isErr err -> CheckErrorN name err
+    CheckOK -> CheckOK
 -- TODO: handlearlo cuando es al reves, not A v A que es lo mismo
 check env PLEM form@(FOr f1 (FNot f2)) =
     if f1 == f2
@@ -115,24 +141,24 @@ check env PTrueI FTrue = CheckOK
 check env (PImpI hyp proofB) (FImp fA fB) =
     check (EExtend hyp fA env) proofB fB
 -- dem B con A -> B
-check env (PImpE fA proofAImpB proofA) fB =
+check env proof@(PImpE fA proofAImpB proofA) fB =
     case check env proofAImpB (FImp fA fB) of
-        err@(CheckError{}) -> err
+        err | isErr err -> CheckErrorW env proof fB err
         CheckOK -> check env proofA fA
 -- dem not A
 check env (PNotI hyp proofFalse) (FNot f) =
     check (EExtend hyp f env) proofFalse FFalse
 -- dem False con not A
-check env (PNotE fA proofNotA proofA) FFalse =
+check env proof@(PNotE fA proofNotA proofA) FFalse =
     case check env proofNotA (FNot fA) of
-        err@(CheckError{}) -> err
+        err | isErr err -> CheckErrorW env proof FFalse err
         CheckOK -> check env proofA fA
 -- dem C con A v B
-check env (POrE fA fB proofAorB hypA proofAC hypB proofBC) fC =
+check env proof@(POrE fA fB proofAorB hypA proofAC hypB proofBC) fC =
     case check env proofAorB (FOr fA fB) of
-        err@(CheckError{}) -> err
+        err | isErr err -> CheckErrorW env proof fC err
         CheckOK -> case check (EExtend hypA fA env) proofAC fC of
-            err@(CheckError{}) -> err
+            err | isErr err -> CheckErrorW env proof fC err
             CheckOK -> check (EExtend hypB fB env) proofBC fC
 -- dem A v B
 check env (POrI1 proofA) (FOr fA _) = check env proofA fA
@@ -141,9 +167,9 @@ check env (POrI2 proofB) (FOr _ fB) = check env proofB fB
 check env (PAndE1 fB proofAnB) fA = check env proofAnB (FAnd fA fB)
 check env (PAndE2 fA proofAnB) fB = check env proofAnB (FAnd fA fB)
 -- dem de A ^ B
-check env (PAndI proofA proofB) (FAnd fA fB) =
+check env proof@(PAndI proofA proofB) f@(FAnd fA fB) =
     case check env proofA fA of
-        err@(CheckError{}) -> err
+        err | isErr err -> CheckErrorW env proof f err
         CheckOK -> check env proofB fB
 -- dem de Exists x. A, prueba A{x := t}
 check env (PExistsI t proofSubstA) (FExists x f) =
@@ -153,7 +179,7 @@ check env proof@(PExistsE x fA proofExistsxA hypA proofB) fB
     | x `elem` fvE env = CheckError env proof fB (printf "env shouldn't contain fv '%s'" x)
     | x `elem` fv fB = CheckError env proof fB (printf "form to prove shoudln't contain fv '%s'" x)
     | otherwise = case check env proofExistsxA (FExists x fA) of
-        err@(CheckError{}) -> err
+        err | isErr err -> CheckErrorW env proof fB err
         CheckOK -> check (EExtend hypA fA env) proofB fB
 -- dem de Forall x. A
 check env proof@(PForallI proofA) form@(FForall x fA) =
