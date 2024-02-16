@@ -299,11 +299,24 @@ testClause =
 testDnf :: Test
 testDnf =
     test
-        [ "x => y / ~x v y" ~: do
-            let (x, y) = (propVar "x", propVar "y")
-            let fImp = FImp x y
-            let hImp = hypForm fImp
-            let (fDnf, dnfProof) = dnf (hImp, fImp)
-            fDnf @?= FOr (FNot x) y
-            CheckOK @=? check (EExtend hImp fImp EEmpty) dnfProof fDnf
+        [ "x => y / ~x v y"
+            ~: doTestDNF
+                (FImp x y)
+                (FOr (FNot x) y)
+        , -- TODO: peinar or
+          "x => ~(y ^ z) / ~x v ~y v ~z"
+            ~: doTestDNF
+                (FImp x (FNot $ FAnd y z))
+                (FOr (FNot x) (FOr (FNot y) (FNot z)))
         ]
+  where
+    x = propVar "x"
+    y = propVar "y"
+    z = propVar "z"
+
+doTestDNF :: Form -> Form -> IO ()
+doTestDNF f fDNF = do
+    let hF = hypForm f
+    let (fGotDNF, dnfProof) = dnf (hF, f)
+    fGotDNF @?= fDNF
+    CheckOK @=? check (EExtend hF f EEmpty) dnfProof fDNF

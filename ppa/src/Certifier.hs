@@ -27,6 +27,7 @@ import NDProofs (
     proofAndCongruence2,
     proofAndEProjection,
     proofImpElim,
+    proofNotDistOverAnd,
     proofOrCongruence1,
     proofOrCongruence2,
  )
@@ -145,12 +146,18 @@ Devuelve Nothing cuando F ya está en DNF.
 -- Pero es menos general.
 dnfStep :: EnvItem -> Maybe (EnvItem, Proof, Proof)
 -- Casos de reescritura
-dnfStep (hImp, FImp a b) = Just ((hOr, fOr), pImpElimLR, pImpElimRL)
+-- x => y -|- ~x v y
+dnfStep (hImp, FImp x y) = Just ((hOr, fOr), pImpElimLR, pImpElimRL)
   where
-    fOr = FOr (FNot a) b
+    fOr = FOr (FNot x) y
     hOr = hypForm fOr
-    (pImpElimLR, pImpElimRL) = proofImpElim a b hImp hOr
-
+    (pImpElimLR, pImpElimRL) = proofImpElim x y hImp hOr
+-- ~(x ^ y) -|- ~x v ~y
+dnfStep (hNot, FNot (FAnd x y)) = Just ((hOr, fOr), pNotDistOverAndLR, pNotDistOverAndRL)
+  where
+    fOr = FOr (FNot x) (FNot y)
+    hOr = hypForm fOr
+    (pNotDistOverAndLR, pNotDistOverAndRL) = proofNotDistOverAnd x y hNot hOr
 -- Casos de congruencia
 -- Un AND puede ser una cláusula válida (con otros ands de literales) o
 -- tener que ser transformada recursivamente.
@@ -198,6 +205,15 @@ dnfStep (hOr, FOr l r) = case dnfStep (hL, l) of
   where
     hL = hypForm l
     hR = hypForm r
+dnfStep (hNot, FNot f) = case dnfStep (hF, f) of
+    Nothing -> Nothing
+    Just ((hF', f'), pFThenF', pF'ThenF) -> undefined
+  where
+    hF = hypForm f
+-- Resto, literales o errores
+dnfStep (h, f)
+    | isLiteral f = Nothing
+    | otherwise = error $ printf "unexpected case '%s':'%s'" h (show f)
 
 {- solve demuestra una contradicción de una fórmula que se asume que está en
 DNF. Para ello refuta cada cláusula, buscando o el mismo literal negado y sin
@@ -281,11 +297,19 @@ fromClause = foldl1 FAnd
 fromDNF :: [Clause] -> Form
 fromDNF cs = foldl1 FOr (map fromClause cs)
 
+-- True si es un literal
 isLiteral :: Form -> Bool
-isLiteral (FNot f) = isLiteral f && f /= FTrue && f /= FFalse
+isLiteral (FNot f) = isNotLiteral f
 isLiteral (FPred _ _) = True
 isLiteral FTrue = True
 isLiteral FFalse = True
 isLiteral (FForall _ _) = True
 isLiteral (FExists _ _) = True
 isLiteral _ = False
+
+-- True si ~F es un literal
+isNotLiteral :: Form -> Bool
+isNotLiteral (FPred _ _) = True
+isNotLiteral (FForall _ _) = True
+isNotLiteral (FExists _ _) = True
+isNotLiteral _ = False

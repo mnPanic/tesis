@@ -5,6 +5,7 @@ module NDProofs (
     proofImpElim,
     hypForm,
     doubleNegElim,
+    proofNotDistOverAnd,
     proofAndCongruence1,
     proofAndCongruence2,
     proofOrCongruence1,
@@ -17,6 +18,7 @@ import ND (
     Form (..),
     HypId,
     Proof (..),
+    dneg,
  )
 
 import Text.Printf (printf)
@@ -139,14 +141,98 @@ proofAndEProjection' f1 f2
 -------------------- DeMorgan y transformaciones para DNF ----------------------
 
 -- Da una demostración para ~(X ^ Y) -|- ~X v ~Y
-proofNotDistAnd :: Form -> Form -> HypId -> HypId -> (Proof, Proof)
-proofNotDistAnd x y hNot hOr = (proofNotDistAndLR, proofNotDistAndRL)
+proofNotDistOverAnd :: Form -> Form -> HypId -> HypId -> (Proof, Proof)
+proofNotDistOverAnd x y hNotAnd hOr =
+    (proofNotDistOverAndLR, proofNotDistOverAndRL)
   where
     -- ~(X ^ Y) |- ~X v ~Y
-    proofNotDistAndLR = undefined
+    -- No vale en intuicionista. Mega rara
+    proofNotDistOverAndLR =
+        PImpE
+            { antecedent = dneg fOrNot
+            , proofImp = doubleNegElim fOrNot
+            , proofAntecedent =
+                PNotI
+                    { hyp = hNotOrNot
+                    , -- Por absurdo, dem de bot asumiendo ~ (~X v ~Y)
+                      -- El absurdo se genera en conjunto con ~(X ^ Y)
+                      proofBot =
+                        PNotE
+                            { form = fOrNot
+                            , proofNotForm = PAx hNotOrNot
+                            , -- ~(X ^ Y), ~(~X v ~Y) |- ~X v ~Y
+                              proofForm =
+                                POrI1
+                                    { proofLeft =
+                                        PNotI
+                                            { hyp = hypForm x
+                                            , -- ~(X ^ Y), ~(~X v ~Y), X |- bot
+                                              proofBot =
+                                                PNotE
+                                                    { form = fOrNot
+                                                    , proofNotForm = PAx hNotOrNot
+                                                    , -- ~(X ^ Y), ~(~X v ~Y), X |- ~X v ~Y
+                                                      proofForm =
+                                                        POrI2
+                                                            { proofRight =
+                                                                PNotI
+                                                                    { hyp = hypForm y
+                                                                    , -- ~(X ^ Y), ~(~X v ~Y), X, Y |- bot
+                                                                      proofBot =
+                                                                        PNotE
+                                                                            { form = FAnd x y
+                                                                            , proofNotForm = PAx hNotAnd
+                                                                            , proofForm =
+                                                                                PAndI
+                                                                                    { proofLeft = PAx $ hypForm x
+                                                                                    , proofRight = PAx $ hypForm y
+                                                                                    }
+                                                                            }
+                                                                    }
+                                                            }
+                                                    }
+                                            }
+                                    }
+                            }
+                    }
+            }
+      where
+        fOrNot = FOr (FNot x) (FNot y)
+        hNotOrNot = hypForm $ FNot fOrNot
 
-    --  ~X v ~Y |- ~(X ^ Y)
-    proofNotDistAndRL = undefined
+    -- ~X v ~Y |- ~(X ^ Y)
+    proofNotDistOverAndRL =
+        PNotI
+            { hyp = hypForm (FAnd x y)
+            , proofBot =
+                POrE
+                    { left = FNot x
+                    , right = FNot y
+                    , proofOr = PAx hOr
+                    , hypLeft = hypForm $ FNot x
+                    , proofAssumingLeft =
+                        PNotE
+                            { form = x
+                            , proofNotForm = PAx (hypForm $ FNot x)
+                            , proofForm =
+                                PAndE1
+                                    { right = y
+                                    , proofAnd = PAx (hypForm (FAnd x y))
+                                    }
+                            }
+                    , hypRight = hypForm $ FNot y
+                    , proofAssumingRight =
+                        PNotE
+                            { form = y
+                            , proofNotForm = PAx (hypForm $ FNot y)
+                            , proofForm =
+                                PAndE2
+                                    { left = x
+                                    , proofAnd = PAx (hypForm (FAnd x y))
+                                    }
+                            }
+                    }
+            }
 
 -- Da una demostración para X => Y -|- ~X v Y
 proofImpElim :: Form -> Form -> HypId -> HypId -> (Proof, Proof)

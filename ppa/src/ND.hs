@@ -192,7 +192,8 @@ fvE e = foldr (Set.union . fv) Set.empty (forms e)
 -- Record syntax: https://en.wikibooks.org/wiki/Haskell/More_on_datatypes
 
 data Proof
-    = PAx HypId
+    = PNamed String
+    | PAx HypId
     | -- A ^ B
       PAndI
         { proofLeft :: Proof -- A
