@@ -329,6 +329,10 @@ testDnf =
             ~: doTestDNF
                 (FNot $ FImp x y)
                 (FAnd x (FNot y))
+        , "not true y not false"
+            ~: doTestDNF
+                (FAnd (FNot FTrue) (FNot FFalse))
+                (FAnd FFalse FTrue)
         ]
   where
     p = propVar "p"

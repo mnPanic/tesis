@@ -4,6 +4,8 @@ module NDProofs (
     cut,
     proofImpElim,
     hypForm,
+    proofNotTrue,
+    proofNotFalse,
     proofAndAssoc,
     proofOrAssoc,
     doubleNegElim,
@@ -151,9 +153,46 @@ proofAndEProjection' f1 f2
 
 -------------------- DeMorgan y transformaciones para DNF ----------------------
 
+-- Da una dem para ~T -|- F
+proofNotTrue :: HypId -> HypId -> (Proof, Proof)
+proofNotTrue hNotTrue hFalse =
+    ( PNamed "not true then false" pNotTrueThenFalse
+    , PNamed "false then not true" pFalseThenNotTrue
+    )
+  where
+    -- ~T |- F
+    pNotTrueThenFalse =
+        PNotE
+            { form = FTrue
+            , proofNotForm = PAx hNotTrue
+            , proofForm = PTrueI
+            }
+    -- F |- ~T
+    pFalseThenNotTrue =
+        PNotI
+            { hyp = hypForm FTrue
+            , proofBot = PAx hFalse
+            }
+
+-- Da una dem para ~F -|- T
+proofNotFalse :: HypId -> HypId -> (Proof, Proof)
+proofNotFalse hNotFalse hTrue = (pNotFalseThenTrue, pTrueThenNotFalse)
+  where
+    -- ~F |- T
+    pNotFalseThenTrue = PTrueI
+    -- T |- ~F
+    pTrueThenNotFalse =
+        PNotI
+            { hyp = hypForm FFalse
+            , proofBot = PAx (hypForm FFalse)
+            }
+
 -- Da una dem para (x ^ y) ^ z -|- x ^ (y ^ z)
 proofAndAssoc :: Form -> Form -> Form -> HypId -> HypId -> (Proof, Proof)
-proofAndAssoc x y z hAndL hAndR = (proofAndAssocLToR, proofAndAssocRToL)
+proofAndAssoc x y z hAndL hAndR =
+    ( PNamed "and assoc L to R" proofAndAssocLToR
+    , PNamed "and assoc R to L" proofAndAssocRToL
+    )
   where
     -- (x ^ y) ^ z |- x ^ (y ^ z)
     proofAndAssocLToR =
@@ -222,7 +261,10 @@ proofAndAssoc x y z hAndL hAndR = (proofAndAssocLToR, proofAndAssocRToL)
 
 -- Da una dem para (x v y) v z -|- x v (y v z)
 proofOrAssoc :: Form -> Form -> Form -> HypId -> HypId -> (Proof, Proof)
-proofOrAssoc x y z hOrL hOrR = (proofOrAssocLToR, proofOrAssocRToL)
+proofOrAssoc x y z hOrL hOrR =
+    ( PNamed "or assoc L to R" proofOrAssocLToR
+    , PNamed "or assoc R to L" proofOrAssocRToL
+    )
   where
     -- (x v y) v z |- x v (y v z)
     proofOrAssocLToR =
@@ -292,7 +334,9 @@ proofOrAssoc x y z hOrL hOrR = (proofOrAssocLToR, proofOrAssocRToL)
 -- Da una dem para ~(x v y) -|- ~x ^ ~y
 proofNotDistOverOr :: Form -> Form -> HypId -> HypId -> (Proof, Proof)
 proofNotDistOverOr x y hNotOr hAnd =
-    (proofNotDistOverOrLR, proofNotDistOverOrRL)
+    ( PNamed "not dist over or LR" proofNotDistOverOrLR
+    , PNamed "not dist over or RL" proofNotDistOverOrRL
+    )
   where
     -- ~(x v y) |- ~x ^ ~y
     proofNotDistOverOrLR =
@@ -370,7 +414,9 @@ proofNotDistOverOr x y hNotOr hAnd =
 -- Da una demostración para ~(X ^ Y) -|- ~X v ~Y
 proofNotDistOverAnd :: Form -> Form -> HypId -> HypId -> (Proof, Proof)
 proofNotDistOverAnd x y hNotAnd hOr =
-    (proofNotDistOverAndLR, proofNotDistOverAndRL)
+    ( PNamed "not dist over and LR" proofNotDistOverAndLR
+    , PNamed "not dist over and RL" proofNotDistOverAndRL
+    )
   where
     -- ~(X ^ Y) |- ~X v ~Y
     -- No vale en intuicionista. Mega rara
@@ -464,7 +510,9 @@ proofNotDistOverAnd x y hNotAnd hOr =
 -- Da una demostración para X => Y -|- ~X v Y
 proofImpElim :: Form -> Form -> HypId -> HypId -> (Proof, Proof)
 proofImpElim x y hImp hOr =
-    (proofImpElim, proofOrToImp)
+    ( PNamed "imp elim LR" proofImpElim
+    , PNamed "imp elim RL" proofOrToImp
+    )
   where
     -- X => Y |- ~X v Y
     -- Usando LEM, si vale X entonces vale Y. Si no vale X, vale ~X
@@ -520,7 +568,10 @@ proofImpElim x y hImp hOr =
 
 -- Da una dem de ~~x -|- x
 proofDNegElim :: Form -> HypId -> HypId -> (Proof, Proof)
-proofDNegElim x hX hDNegX = (proofDNegE, proofDNegI)
+proofDNegElim x hX hDNegX =
+    ( PNamed "dneg elim" proofDNegE
+    , PNamed "dneg introduce" proofDNegI
+    )
   where
     -- x |- ~~x
     proofDNegI =
@@ -559,7 +610,9 @@ proofAndCongruence1 ::
     Proof ->
     (Proof, Proof)
 proofAndCongruence1 x y x' hAnd hAnd' hX proofXThenX' hX' proofX'ThenX =
-    (proofLR, proofRL)
+    ( PNamed "and cong1 LR" proofLR
+    , PNamed "and cong1 RL" proofRL
+    )
   where
     -- Son simétricas
     proofLR = proofAndCongruence1' x y hAnd hX proofXThenX'
@@ -612,7 +665,10 @@ proofAndCongruence2 ::
     HypId ->
     Proof ->
     (Proof, Proof)
-proofAndCongruence2 x y y' hAnd hAnd' hY proofYThenY' hY' proofY'ThenY = (proofLR, proofRL)
+proofAndCongruence2 x y y' hAnd hAnd' hY proofYThenY' hY' proofY'ThenY =
+    ( PNamed "and cong2 LR" proofLR
+    , PNamed "and cong2 RL" proofRL
+    )
   where
     -- Son simétricas
     proofLR = proofAndCongruence2' x y hAnd hY proofYThenY'
@@ -655,7 +711,9 @@ proofOrCongruence1 ::
     Proof ->
     (Proof, Proof)
 proofOrCongruence1 x y x' hOr hOr' hX proofXThenX' hX' proofX'ThenX =
-    (proofLR, proofRL)
+    ( PNamed "or cong1 LR" proofLR
+    , PNamed "or cong1 RL" proofRL
+    )
   where
     -- Son simétricas
     proofLR = proofOrCongruence1' x y hOr hX proofXThenX'
@@ -698,7 +756,10 @@ proofOrCongruence2 ::
     HypId ->
     Proof ->
     (Proof, Proof)
-proofOrCongruence2 x y y' hOr hOr' hY proofYThenY' hY' proofY'ThenY = (proofLR, proofRL)
+proofOrCongruence2 x y y' hOr hOr' hY proofYThenY' hY' proofY'ThenY =
+    ( PNamed "or cong2 LR" proofLR
+    , PNamed "or cong2 RL" proofRL
+    )
   where
     -- Son simétricas
     proofLR = proofOrCongruence2' x y hOr hY proofYThenY'
@@ -732,7 +793,9 @@ proofNotCongruence ::
     Proof ->
     (Proof, Proof)
 proofNotCongruence x x' hNotX hNotX' hX proofXThenX' hX' proofX'ThenX =
-    (proofLR, proofRL)
+    ( PNamed "not cong LR" proofLR
+    , PNamed "not cong RL" proofRL
+    )
   where
     proofLR = proofNotCongruence' x x' hNotX hX' proofX'ThenX
     proofRL = proofNotCongruence' x' x hNotX' hX proofXThenX'

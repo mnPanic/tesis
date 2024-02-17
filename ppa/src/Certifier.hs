@@ -32,6 +32,8 @@ import NDProofs (
     proofNotCongruence,
     proofNotDistOverAnd,
     proofNotDistOverOr,
+    proofNotFalse,
+    proofNotTrue,
     proofOrAssoc,
     proofOrCongruence1,
     proofOrCongruence2,
@@ -153,12 +155,33 @@ Devuelve Nothing cuando F ya está en DNF.
 -- Pero es menos general.
 dnfStep :: EnvItem -> Maybe (EnvItem, Proof, Proof)
 {- Casos de reescritura -}
+-- ~T -|- F
+dnfStep (hNotTrue, FNot FTrue) =
+    Just
+        ( (hFalse, FFalse)
+        , pNotTrueThenFalse
+        , pFalseThenNotTrue
+        )
+  where
+    hFalse = hypForm FFalse
+    (pNotTrueThenFalse, pFalseThenNotTrue) = proofNotTrue hNotTrue hFalse
+-- ~F -|- T
+dnfStep (hNotFalse, FNot FFalse) =
+    Just
+        ( (hTrue, FTrue)
+        , pNotFalseThenTrue
+        , pTrueThenNotFalse
+        )
+  where
+    hTrue = hypForm FTrue
+    (pNotFalseThenTrue, pTrueThenNotFalse) = proofNotFalse hNotFalse hTrue
+
 -- x v (y v z) -|- (x v y) v z
 dnfStep (hOrR, FOr x (FOr y z)) =
     Just
         ( (hOrL, fOrL)
-        , PNamed "or assoc R to L" pOrAssocRL
-        , PNamed "or assoc L to R" pOrAssocLR
+        , pOrAssocRL
+        , pOrAssocLR
         )
   where
     fOrL = FOr (FOr x y) z
@@ -168,8 +191,8 @@ dnfStep (hOrR, FOr x (FOr y z)) =
 dnfStep (hAndR, FAnd x (FAnd y z)) =
     Just
         ( (hAndL, fAndL)
-        , PNamed "and assoc R to L" pAndAssocRL
-        , PNamed "and assoc L to R" pAndAssocLR
+        , pAndAssocRL
+        , pAndAssocLR
         )
   where
     fAndL = FAnd (FAnd x y) z
@@ -179,8 +202,8 @@ dnfStep (hAndR, FAnd x (FAnd y z)) =
 dnfStep (hDNeg, FNot (FNot x)) =
     Just
         ( (hX, x)
-        , PNamed "dneg elim LR" pDNegElimLR
-        , PNamed "dneg elim RL" pDNegElimRL
+        , pDNegElimLR
+        , pDNegElimRL
         )
   where
     hX = hypForm x
@@ -190,8 +213,8 @@ dnfStep (hDNeg, FNot (FNot x)) =
 dnfStep (hImp, FImp x y) =
     Just
         ( (hOr, fOr)
-        , PNamed "imp elim LR" pImpElimLR
-        , PNamed "imp elim RL" pImpElimRL
+        , pImpElimLR
+        , pImpElimRL
         )
   where
     fOr = FOr (FNot x) y
@@ -201,8 +224,8 @@ dnfStep (hImp, FImp x y) =
 dnfStep (hNot, FNot (FAnd x y)) =
     Just
         ( (hOr, fOr)
-        , PNamed "not dist over and LR" pNotDistOverAndLR
-        , PNamed "not dist over and RL" pNotDistOverAndRL
+        , pNotDistOverAndLR
+        , pNotDistOverAndRL
         )
   where
     fOr = FOr (FNot x) (FNot y)
@@ -211,8 +234,8 @@ dnfStep (hNot, FNot (FAnd x y)) =
 dnfStep (hNotOr, FNot (FOr x y)) =
     Just
         ( (hAnd, fAnd)
-        , PNamed "not dist over or LR" pNotDistOverOrLR
-        , PNamed "not dist over or RL" pNotDistOverOrRL
+        , pNotDistOverOrLR
+        , pNotDistOverOrRL
         )
   where
     fAnd = FAnd (FNot x) (FNot y)
@@ -226,8 +249,8 @@ dnfStep (hAnd, FAnd l r) = case dnfStep (hL, l) of
     Just ((hL', l'), pLThenL', pL'ThenL) ->
         Just
             ( (hAnd', fAnd')
-            , PNamed "and cong1 LR" pAndCong1LR
-            , PNamed "and cong2 RL" pAndCong1RL
+            , pAndCong1LR
+            , pAndCong1RL
             )
       where
         fAnd' = FAnd l' r
@@ -240,8 +263,8 @@ dnfStep (hAnd, FAnd l r) = case dnfStep (hL, l) of
         Just ((hR', r'), pRThenR', pR'ThenR) ->
             Just
                 ( (hAnd', fAnd')
-                , PNamed "and cong2 LR" pAndCong2LR
-                , PNamed "and cong2 RL" pAndCong2RL
+                , pAndCong2LR
+                , pAndCong2RL
                 )
           where
             fAnd' = FAnd l r'
@@ -257,8 +280,8 @@ dnfStep (hOr, FOr l r) = case dnfStep (hL, l) of
     Just ((hL', l'), pLThenL', pL'ThenL) ->
         Just
             ( (hOr', fOr')
-            , PNamed "or cong1 LR" pOrCong1LR
-            , PNamed "or cong2 RL" pOrCong1RL
+            , pOrCong1LR
+            , pOrCong1RL
             )
       where
         fOr' = FOr l' r
@@ -271,8 +294,8 @@ dnfStep (hOr, FOr l r) = case dnfStep (hL, l) of
         Just ((hR', r'), pRThenR', pR'ThenR) ->
             Just
                 ( (hOr', fOr')
-                , PNamed "or cong2 LR" pOrCong2LR
-                , PNamed "or cong2 RL" pOrCong2RL
+                , pOrCong2LR
+                , pOrCong2RL
                 )
           where
             fOr' = FOr l r'
@@ -287,8 +310,8 @@ dnfStep (hNot, FNot f) = case dnfStep (hF, f) of
     Just ((hF', f'), pFThenF', pF'ThenF) ->
         Just
             ( (hNot', fNot')
-            , PNamed "not cong LR" pNotCongLR
-            , PNamed "not cong RL" pNotCongRL
+            , pNotCongLR
+            , pNotCongRL
             )
       where
         fNot' = FNot f'

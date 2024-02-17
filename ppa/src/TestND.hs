@@ -35,6 +35,8 @@ import NDProofs (
     proofNotCongruence,
     proofNotDistOverAnd,
     proofNotDistOverOr,
+    proofNotFalse,
+    proofNotTrue,
     proofOrAssoc,
     proofOrCongruence1,
     proofOrCongruence2,
@@ -629,13 +631,24 @@ testByExamples =
 testEquivalences :: Test
 testEquivalences =
     test
-        [ "imp elim" ~: do
-            let (x, y) = (propVar "X", propVar "Y")
-            let (fImp, fOr) = (FImp x y, FOr (FNot x) y)
-            let (hImp, hOr) = (hypForm fImp, hypForm fOr)
-            let (pImpElim, pOrToImp) = proofImpElim x y hImp hOr
-            CheckOK @=? check (EExtend hImp fImp EEmpty) pImpElim fOr
-            CheckOK @=? check (EExtend hOr fOr EEmpty) pOrToImp fImp
+        [ "not true"
+            ~: do
+                let (hNotTrue, hFalse) = (hypForm (FNot FTrue), hypForm FFalse)
+                let (pLR, pRL) = proofNotTrue hNotTrue hFalse
+                checkEquiv hNotTrue (FNot FTrue) hFalse FFalse pLR pRL
+        , "not false"
+            ~: do
+                let (hNotFalse, hTrue) = (hypForm (FNot FFalse), hypForm FTrue)
+                let (pLR, pRL) = proofNotFalse hNotFalse hTrue
+                checkEquiv hNotFalse (FNot FFalse) hTrue FTrue pLR pRL
+        , "imp elim"
+            ~: do
+                let (x, y) = (propVar "X", propVar "Y")
+                let (fImp, fOr) = (FImp x y, FOr (FNot x) y)
+                let (hImp, hOr) = (hypForm fImp, hypForm fOr)
+                let (pImpElim, pOrToImp) = proofImpElim x y hImp hOr
+                CheckOK @=? check (EExtend hImp fImp EEmpty) pImpElim fOr
+                CheckOK @=? check (EExtend hOr fOr EEmpty) pOrToImp fImp
         , "not dist over and" ~: do
             let (x, y) = (propVar "X", propVar "Y")
             let (fNotAnd, fOrNots) = (FNot $ FAnd x y, FOr (FNot x) (FNot y))
@@ -777,3 +790,8 @@ testEquivalences =
                 CheckOK @=? check (EExtend hImp fImp EEmpty) pCongLR fImp'
                 CheckOK @=? check (EExtend hImp' fImp' EEmpty) pCongRL fImp
         ]
+
+checkEquiv :: HypId -> Form -> HypId -> Form -> Proof -> Proof -> IO ()
+checkEquiv hF f hF' f' pFThenF' pF'ThenF = do
+    CheckOK @=? check (EExtend hF f EEmpty) pFThenF' f'
+    CheckOK @=? check (EExtend hF' f' EEmpty) pF'ThenF f
