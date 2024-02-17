@@ -17,6 +17,7 @@ import ND (
 import NDChecker (
     CheckResult (CheckError, CheckOK),
     check,
+    rootCause,
     subst,
  )
 
@@ -27,6 +28,7 @@ import NDProofs (
     proofAndCongruence2,
     proofAndEProjection,
     proofImpElim,
+    proofNotCongruence,
     proofNotDistOverAnd,
     proofOrCongruence1,
     proofOrCongruence2,
@@ -372,7 +374,7 @@ testCheckExamples =
             ~: check EEmpty p4 f4
             ~?= CheckOK
         , "(A -> (B -> C)) -> [(A -> B) -> (A -> C)] err left"
-            ~: check EEmpty p4Err1 f4
+            ~: rootCause (check EEmpty p4Err1 f4)
             ~?= CheckError
                 ( EExtend "h A" (propVar "A")
                     $ EExtend "h A -> B" (FImp (propVar "A") (propVar "B"))
@@ -385,7 +387,7 @@ testCheckExamples =
                 (FImp (propVar "B") (propVar "C"))
                 "hyp h B -> C not in env"
         , "(A -> (B -> C)) -> [(A -> B) -> (A -> C)] err right"
-            ~: check EEmpty p4Err2 f4
+            ~: rootCause (check EEmpty p4Err2 f4)
             ~?= CheckError
                 ( EExtend "h A" (propVar "A")
                     $ EExtend "h A -> B" (FImp (propVar "A") (propVar "B"))
@@ -702,4 +704,17 @@ testEquivalences =
                 let (pCongLR, pCongRL) = proofOrCongruence2 z right right' hF hF' hR pRR' hR' pR'R
                 CheckOK @=? check (EExtend hF f EEmpty) pCongLR f'
                 CheckOK @=? check (EExtend hF' f' EEmpty) pCongRL f
+        , "not congruence"
+            ~: do
+                let (x, y) = (propVar "X", propVar "Y")
+                let (f, f') = (FImp x y, FOr (FNot x) y)
+                let (hF, hF') = (hypForm f, hypForm f')
+                let (pFF', pF'F) = proofImpElim x y hF hF'
+
+                let (fNot, fNot') = (FNot f, FNot f')
+                let (hNot, hNot') = (hypForm fNot, hypForm fNot')
+
+                let (pCongLR, pCongRL) = proofNotCongruence f f' hNot hNot' hF pFF' hF' pF'F
+                CheckOK @=? check (EExtend hNot fNot EEmpty) pCongLR fNot'
+                CheckOK @=? check (EExtend hNot' fNot' EEmpty) pCongRL fNot
         ]

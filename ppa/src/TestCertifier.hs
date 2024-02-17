@@ -311,6 +311,10 @@ testDnf =
             ~: doTestDNF
                 (FImp x (FNot $ FAnd y z))
                 (FOr (FNot x) (FOr (FNot y) (FNot z))) -- TODO: peinar or
+        , "not cong + imp elim + dnegelim: ~(x => y) / x v ~y"
+            ~: doTestDNF
+                (FNot $ FImp x y)
+                (FOr x (FNot y))
         ]
   where
     x = propVar "x"

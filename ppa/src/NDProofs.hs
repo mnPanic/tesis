@@ -10,6 +10,7 @@ module NDProofs (
     proofAndCongruence2,
     proofOrCongruence1,
     proofOrCongruence2,
+    proofNotCongruence,
     Result,
     EnvItem,
 ) where
@@ -469,3 +470,40 @@ proofOrCongruence2' x y hOr hY proofYThenY' =
         }
   where
     hX = hypForm x
+
+-- Dada una demostración de x' -|- x da una de ~x -|- ~x'
+-- (inverso)
+proofNotCongruence ::
+    Form ->
+    Form ->
+    HypId ->
+    HypId ->
+    HypId ->
+    Proof ->
+    HypId ->
+    Proof ->
+    (Proof, Proof)
+proofNotCongruence x x' hNotX hNotX' hX proofXThenX' hX' proofX'ThenX =
+    (proofLR, proofRL)
+  where
+    proofLR = proofNotCongruence' x x' hNotX hX' proofX'ThenX
+    proofRL = proofNotCongruence' x' x hNotX' hX proofXThenX'
+
+-- Dada una demostración de x' |- x da una de ~x |- ~x' (inverso)
+proofNotCongruence' ::
+    Form ->
+    Form ->
+    HypId ->
+    HypId ->
+    Proof ->
+    Proof
+proofNotCongruence' x x' hNotX hX' proofX'ThenX =
+    PNotI
+        { hyp = hX'
+        , proofBot =
+            PNotE
+                { form = x
+                , proofNotForm = PAx hNotX
+                , proofForm = proofX'ThenX
+                }
+        }

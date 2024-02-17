@@ -2,6 +2,7 @@ module NDChecker (
     check,
     CheckResult (..),
     subst,
+    rootCause,
 ) where
 
 import ND (
@@ -115,11 +116,18 @@ isErr (CheckErrorW{}) = True
 isErr (CheckErrorN{}) = True
 isErr (CheckOK{}) = False
 
+-- rootCause grabs the errs root cause.
+-- pre: isErr err = True
+rootCause :: CheckResult -> CheckResult
+rootCause e@(CheckError{}) = e
+rootCause (CheckErrorW _ _ _ e) = e
+rootCause (CheckErrorN _ e) = e
+
 {- TODO:
     - Mónadas para chaining de errores? Por ej en PImpE
 -}
 check :: Env -> Proof -> Form -> CheckResult
-check env (PNamed name expectedF proof) f = case check env proof f of
+check env (PNamed name proof) f = case check env proof f of
     err | isErr err -> CheckErrorN name err
     CheckOK -> CheckOK
 -- TODO: handlearlo cuando es al reves, not A v A que es lo mismo

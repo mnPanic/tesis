@@ -206,7 +206,6 @@ fvE e = foldr (Set.union . fv) Set.empty (forms e)
 data Proof
     = PNamed
         { name :: String
-        , expectedForm :: Form -- for debugging
         , proof :: Proof
         }
     | PAx HypId

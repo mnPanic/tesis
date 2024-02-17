@@ -27,6 +27,7 @@ import NDProofs (
     proofAndCongruence2,
     proofAndEProjection,
     proofImpElim,
+    proofNotCongruence,
     proofNotDistOverAnd,
     proofOrCongruence1,
     proofOrCongruence2,
@@ -148,6 +149,16 @@ Devuelve Nothing cuando F ya está en DNF.
 -- Pero es menos general.
 dnfStep :: EnvItem -> Maybe (EnvItem, Proof, Proof)
 {- Casos de reescritura -}
+-- ~~x -|- x
+dnfStep (hDNeg, FNot (FNot x)) =
+    Just
+        ( (hX, x)
+        , PNamed "dneg elim LR" pDNegElimLR
+        , PNamed "dneg elim RL" pDNegElimRL
+        )
+  where
+    hX = hypForm x
+    (pDNegElimLR, pDNegElimRL) = (undefined, undefined)
 -- x => y -|- ~x v y
 dnfStep (hImp, FImp x y) =
     Just
@@ -235,7 +246,16 @@ dnfStep (hOr, FOr l r) = case dnfStep (hL, l) of
     hR = hypForm r
 dnfStep (hNot, FNot f) = case dnfStep (hF, f) of
     Nothing -> Nothing
-    Just ((hF', f'), pFThenF', pF'ThenF) -> error "to be implemented"
+    Just ((hF', f'), pFThenF', pF'ThenF) ->
+        Just
+            ( (hNot', fNot')
+            , PNamed "not cong LR" pNotCongLR
+            , PNamed "not cong RL" pNotCongRL
+            )
+      where
+        fNot' = FNot f'
+        hNot' = hypForm fNot'
+        (pNotCongLR, pNotCongRL) = proofNotCongruence f f' hNot hNot' hF pFThenF' hF' pF'ThenF
   where
     hF = hypForm f
 -- Resto, literales o errores
