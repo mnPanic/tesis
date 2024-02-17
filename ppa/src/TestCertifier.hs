@@ -309,6 +309,14 @@ testDnf =
             ~: doTestDNF
                 (FNot (FAnd x y))
                 (FOr (FNot x) (FNot y))
+        , "and assoc: x ^ ((y ^ z) ^ (p ^ q)) / (((x ^ y) ^ z) ^ p) ^ q"
+            ~: doTestDNF
+                (FAnd x (FAnd (FAnd y z) (FAnd p q)))
+                (FAnd (FAnd (FAnd (FAnd x y) z) p) q)
+        , "or assoc: x v ((y v z) v (p v q)) / (((x v y) v z) v p) v q"
+            ~: doTestDNF
+                (FOr x (FOr (FOr y z) (FOr p q)))
+                (FOr (FOr (FOr (FOr x y) z) p) q)
         , "not dist over or: ~(x v y) / ~x ^ ~y"
             ~: doTestDNF
                 (FNot (FOr x y))
@@ -316,13 +324,15 @@ testDnf =
         , "imp elim + or cong2 + not dist over and: x => ~(y ^ z) / ~x v ~y v ~z"
             ~: doTestDNF
                 (FImp x (FNot $ FAnd y z))
-                (FOr (FNot x) (FOr (FNot y) (FNot z))) -- TODO: peinar or
+                (FOr (FOr (FNot x) (FNot y)) (FNot z))
         , "not cong + imp elim + dnegelim: ~(x => y) / x ^ ~y"
             ~: doTestDNF
                 (FNot $ FImp x y)
                 (FAnd x (FNot y))
         ]
   where
+    p = propVar "p"
+    q = propVar "q"
     x = propVar "x"
     y = propVar "y"
     z = propVar "z"

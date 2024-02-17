@@ -24,14 +24,18 @@ import NDChecker (
 import NDProofs (
     doubleNegElim,
     hypForm,
+    proofAndAssoc,
     proofAndCongruence1,
     proofAndCongruence2,
     proofAndEProjection,
     proofDNegElim,
+    proofImpCongruence1,
+    proofImpCongruence2,
     proofImpElim,
     proofNotCongruence,
     proofNotDistOverAnd,
     proofNotDistOverOr,
+    proofOrAssoc,
     proofOrCongruence1,
     proofOrCongruence2,
  )
@@ -653,6 +657,20 @@ testEquivalences =
             let (pDNegE, pDNegI) = proofDNegElim x hX hDNegX
             CheckOK @=? check (EExtend hX x EEmpty) pDNegI dnegX
             CheckOK @=? check (EExtend hDNegX dnegX EEmpty) pDNegE x
+        , "or assoc" ~: do
+            let (x, y, z) = (propVar "x", propVar "y", propVar "z")
+            let (fOrL, fOrR) = (FOr (FOr x y) z, FOr x (FOr y z))
+            let (hOrL, hOrR) = (hypForm fOrL, hypForm fOrR)
+            let (pOrAssocLR, pOrAssocRL) = proofOrAssoc x y z hOrL hOrR
+            CheckOK @=? check (EExtend hOrL fOrL EEmpty) pOrAssocLR fOrR
+            CheckOK @=? check (EExtend hOrR fOrR EEmpty) pOrAssocRL fOrL
+        , "and assoc" ~: do
+            let (x, y, z) = (propVar "x", propVar "y", propVar "z")
+            let (fAndL, fAndR) = (FAnd (FAnd x y) z, FAnd x (FAnd y z))
+            let (hAndL, hAndR) = (hypForm fAndL, hypForm fAndR)
+            let (pAndAssocLR, pAndAssocRL) = proofAndAssoc x y z hAndL hAndR
+            CheckOK @=? check (EExtend hAndL fAndL EEmpty) pAndAssocLR fAndR
+            CheckOK @=? check (EExtend hAndR fAndR EEmpty) pAndAssocRL fAndL
         , "and congruence 1"
             ~: do
                 -- if X => Y -|- ~X v Y then (X => Y) ^ Z -|- (~X v Y) ^ Z
@@ -732,4 +750,30 @@ testEquivalences =
                 let (pCongLR, pCongRL) = proofNotCongruence f f' hNot hNot' hF pFF' hF' pF'F
                 CheckOK @=? check (EExtend hNot fNot EEmpty) pCongLR fNot'
                 CheckOK @=? check (EExtend hNot' fNot' EEmpty) pCongRL fNot
+        , "imp congruence 1"
+            ~: do
+                let (x, y, z) = (propVar "X", propVar "Y", propVar "Z")
+                let (f, f') = (FImp x y, FOr (FNot x) y)
+                let (hF, hF') = (hypForm f, hypForm f')
+                let (pFF', pF'F) = proofImpElim x y hF hF'
+
+                let (fImp, fImp') = (FImp f z, FImp f' z)
+                let (hImp, hImp') = (hypForm fImp, hypForm fImp')
+
+                let (pCongLR, pCongRL) = proofImpCongruence1 f z f' hImp hImp' hF pFF' hF' pF'F
+                CheckOK @=? check (EExtend hImp fImp EEmpty) pCongLR fImp'
+                CheckOK @=? check (EExtend hImp' fImp' EEmpty) pCongRL fImp
+        , "imp congruence 2"
+            ~: do
+                let (x, y, z) = (propVar "X", propVar "Y", propVar "Z")
+                let (f, f') = (FImp x y, FOr (FNot x) y)
+                let (hF, hF') = (hypForm f, hypForm f')
+                let (pFF', pF'F) = proofImpElim x y hF hF'
+
+                let (fImp, fImp') = (FImp z f, FImp z f')
+                let (hImp, hImp') = (hypForm fImp, hypForm fImp')
+
+                let (pCongLR, pCongRL) = proofImpCongruence2 z f f' hImp hImp' hF pFF' hF' pF'F
+                CheckOK @=? check (EExtend hImp fImp EEmpty) pCongLR fImp'
+                CheckOK @=? check (EExtend hImp' fImp' EEmpty) pCongRL fImp
         ]

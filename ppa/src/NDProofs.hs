@@ -4,6 +4,8 @@ module NDProofs (
     cut,
     proofImpElim,
     hypForm,
+    proofAndAssoc,
+    proofOrAssoc,
     doubleNegElim,
     proofDNegElim,
     proofNotDistOverAnd,
@@ -13,6 +15,8 @@ module NDProofs (
     proofOrCongruence1,
     proofOrCongruence2,
     proofNotCongruence,
+    proofImpCongruence1,
+    proofImpCongruence2,
     Result,
     EnvItem,
 ) where
@@ -146,6 +150,144 @@ proofAndEProjection' f1 f2
     | otherwise = Left $ printf "%s /= %s" (show f1) (show f2)
 
 -------------------- DeMorgan y transformaciones para DNF ----------------------
+
+-- Da una dem para (x ^ y) ^ z -|- x ^ (y ^ z)
+proofAndAssoc :: Form -> Form -> Form -> HypId -> HypId -> (Proof, Proof)
+proofAndAssoc x y z hAndL hAndR = (proofAndAssocLToR, proofAndAssocRToL)
+  where
+    -- (x ^ y) ^ z |- x ^ (y ^ z)
+    proofAndAssocLToR =
+        PAndI
+            { -- x
+              proofLeft =
+                PAndE1
+                    { right = y
+                    , proofAnd =
+                        PAndE1
+                            { right = z
+                            , proofAnd = PAx hAndL
+                            }
+                    }
+            , -- y ^ z
+              proofRight =
+                PAndI
+                    { proofLeft =
+                        PAndE2
+                            { left = x
+                            , proofAnd =
+                                PAndE1
+                                    { right = z
+                                    , proofAnd = PAx hAndL
+                                    }
+                            }
+                    , proofRight =
+                        PAndE2
+                            { left = FAnd x y
+                            , proofAnd = PAx hAndL
+                            }
+                    }
+            }
+    -- x ^ (y ^ z) |- (x ^ y) ^ z
+    proofAndAssocRToL =
+        PAndI
+            { -- x ^ y
+              proofLeft =
+                PAndI
+                    { proofLeft =
+                        PAndE1
+                            { right = FAnd y z
+                            , proofAnd = PAx hAndR
+                            }
+                    , proofRight =
+                        PAndE1
+                            { right = z
+                            , proofAnd =
+                                PAndE2
+                                    { left = x
+                                    , proofAnd = PAx hAndR
+                                    }
+                            }
+                    }
+            , -- z
+              proofRight =
+                PAndE2
+                    { left = y
+                    , proofAnd =
+                        PAndE2
+                            { left = x
+                            , proofAnd = PAx hAndR
+                            }
+                    }
+            }
+
+-- Da una dem para (x v y) v z -|- x v (y v z)
+proofOrAssoc :: Form -> Form -> Form -> HypId -> HypId -> (Proof, Proof)
+proofOrAssoc x y z hOrL hOrR = (proofOrAssocLToR, proofOrAssocRToL)
+  where
+    -- (x v y) v z |- x v (y v z)
+    proofOrAssocLToR =
+        POrE
+            { left = FOr x y
+            , right = z
+            , proofOr = PAx hOrL
+            , hypLeft = hXOrY
+            , proofAssumingLeft =
+                POrE
+                    { left = x
+                    , right = y
+                    , proofOr = PAx hXOrY
+                    , hypLeft = hX
+                    , proofAssumingLeft = POrI1{proofLeft = PAx hX}
+                    , hypRight = hY
+                    , proofAssumingRight =
+                        POrI2
+                            { proofRight = POrI1{proofLeft = PAx hY}
+                            }
+                    }
+            , hypRight = hZ
+            , proofAssumingRight =
+                POrI2
+                    { proofRight = POrI2{proofRight = PAx hZ}
+                    }
+            }
+    hXOrY = hypForm $ FOr x y
+    hZ = hypForm z
+    hX = hypForm x
+    hY = hypForm y
+    -- x v (y v z) |- (x v y) v z
+    proofOrAssocRToL =
+        POrE
+            { left = x
+            , right = FOr y z
+            , proofOr = PAx hOrR
+            , hypLeft = hX
+            , proofAssumingLeft =
+                POrI1
+                    { proofLeft =
+                        POrI1
+                            { proofLeft = PAx hX
+                            }
+                    }
+            , hypRight = hYOrZ
+            , proofAssumingRight =
+                POrE
+                    { left = y
+                    , right = z
+                    , proofOr = PAx hYOrZ
+                    , hypLeft = hY
+                    , proofAssumingLeft =
+                        POrI1
+                            { proofLeft =
+                                POrI2
+                                    { proofRight =
+                                        PAx hY
+                                    }
+                            }
+                    , hypRight = hZ
+                    , proofAssumingRight = POrI2{proofRight = PAx hZ}
+                    }
+            }
+    hYOrZ = hypForm $ FOr y z
 
 -- Da una dem para ~(x v y) -|- ~x ^ ~y
 proofNotDistOverOr :: Form -> Form -> HypId -> HypId -> (Proof, Proof)
@@ -376,6 +518,7 @@ proofImpElim x y hImp hOr =
     hY = hypForm y
     hNotX = hypForm $ FNot x
 
+-- Da una dem de ~~x -|- x
 proofDNegElim :: Form -> HypId -> HypId -> (Proof, Proof)
 proofDNegElim x hX hDNegX = (proofDNegE, proofDNegI)
   where
@@ -612,3 +755,76 @@ proofNotCongruence' x x' hNotX hX' proofX'ThenX =
                 , proofForm = proofX'ThenX
                 }
         }
+
+-- TODO: No se necesita porque las imps se eliminan a nots
+{- Demuestra la congruencia del => sobre el primer argumento, es decir da una
+demostración de x => y -|- x' => y usando que x' -|- x (contravariante)
+-}
+proofImpCongruence1 ::
+    Form ->
+    Form ->
+    Form ->
+    HypId ->
+    HypId ->
+    HypId ->
+    Proof ->
+    HypId ->
+    Proof ->
+    (Proof, Proof)
+proofImpCongruence1 x y x' hImp hImp' hX proofXThenX' hX' proofX'ThenX =
+    (proofLR, proofRL)
+  where
+    proofLR = proofImpCongruence1' x y hImp hX' proofX'ThenX
+    proofRL = proofImpCongruence1' x' y hImp' hX proofXThenX'
+
+{- Devuelve una demostración de x => y |- x' => y usando que x' |- x
+
+        x' |- x
+    ---------------
+    x => y |- x' => y
+-}
+proofImpCongruence1' :: Form -> Form -> HypId -> HypId -> Proof -> Proof
+proofImpCongruence1' x y hImp hX' proofX'ThenX =
+    PImpI
+        { hypAntecedent = hX'
+        , -- x', x => y |- y
+          proofConsequent =
+            PImpE
+                { antecedent = x
+                , proofImp = PAx hImp
+                , proofAntecedent = proofX'ThenX
+                }
+        }
+
+{- Demuestra la congruencia del => sobre el segundo argumento, es decir da una
+demostración de x => y -|- x => y' usando que y -|- y' (covariante)
+-}
+proofImpCongruence2 ::
+    Form ->
+    Form ->
+    Form ->
+    HypId ->
+    HypId ->
+    HypId ->
+    Proof ->
+    HypId ->
+    Proof ->
+    (Proof, Proof)
+proofImpCongruence2 x y y' hImp hImp' hY proofYThenY' hY' proofY'ThenY =
+    (proofLR, proofRL)
+  where
+    -- Son simétricas
+    proofLR = proofImpCongruence2' x y hImp hY proofYThenY'
+    proofRL = proofImpCongruence2' x y' hImp' hY' proofY'ThenY
+
+-- Devuelve una demostración de x => y |- x => y' usando que y |- y'
+proofImpCongruence2' :: Form -> Form -> HypId -> HypId -> Proof -> Proof
+proofImpCongruence2' x y hImp hY proofYThenY' =
+    PImpI
+        { hypAntecedent = hX
+        , -- x, x => y |- y'
+          proofConsequent = cut y pY hY proofYThenY'
+        }
+  where
+    hX = hypForm x
+    pY = PImpE{antecedent = x, proofImp = PAx hImp, proofAntecedent = PAx hX}

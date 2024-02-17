@@ -23,6 +23,7 @@ import NDProofs (
     cut,
     doubleNegElim,
     hypForm,
+    proofAndAssoc,
     proofAndCongruence1,
     proofAndCongruence2,
     proofAndEProjection,
@@ -30,8 +31,10 @@ import NDProofs (
     proofImpElim,
     proofNotCongruence,
     proofNotDistOverAnd,
+    proofNotDistOverOr,
+    proofOrAssoc,
     proofOrCongruence1,
-    proofOrCongruence2, proofNotDistOverOr,
+    proofOrCongruence2,
  )
 
 import ND (
@@ -150,6 +153,28 @@ Devuelve Nothing cuando F ya está en DNF.
 -- Pero es menos general.
 dnfStep :: EnvItem -> Maybe (EnvItem, Proof, Proof)
 {- Casos de reescritura -}
+-- x v (y v z) -|- (x v y) v z
+dnfStep (hOrR, FOr x (FOr y z)) =
+    Just
+        ( (hOrL, fOrL)
+        , PNamed "or assoc R to L" pOrAssocRL
+        , PNamed "or assoc L to R" pOrAssocLR
+        )
+  where
+    fOrL = FOr (FOr x y) z
+    hOrL = hypForm fOrL
+    (pOrAssocLR, pOrAssocRL) = proofOrAssoc x y z hOrL hOrR
+-- x ^ (y ^ z) -|- (x ^ y) ^ z
+dnfStep (hAndR, FAnd x (FAnd y z)) =
+    Just
+        ( (hAndL, fAndL)
+        , PNamed "and assoc R to L" pAndAssocRL
+        , PNamed "and assoc L to R" pAndAssocLR
+        )
+  where
+    fAndL = FAnd (FAnd x y) z
+    hAndL = hypForm fAndL
+    (pAndAssocLR, pAndAssocRL) = proofAndAssoc x y z hAndL hAndR
 -- ~~x -|- x
 dnfStep (hDNeg, FNot (FNot x)) =
     Just
@@ -256,6 +281,7 @@ dnfStep (hOr, FOr l r) = case dnfStep (hL, l) of
   where
     hL = hypForm l
     hR = hypForm r
+-- Not
 dnfStep (hNot, FNot f) = case dnfStep (hF, f) of
     Nothing -> Nothing
     Just ((hF', f'), pFThenF', pF'ThenF) ->
