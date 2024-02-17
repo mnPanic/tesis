@@ -31,7 +31,7 @@ import NDProofs (
     proofNotCongruence,
     proofNotDistOverAnd,
     proofOrCongruence1,
-    proofOrCongruence2,
+    proofOrCongruence2, proofNotDistOverOr,
  )
 
 import ND (

@@ -31,6 +31,7 @@ import NDProofs (
     proofImpElim,
     proofNotCongruence,
     proofNotDistOverAnd,
+    proofNotDistOverOr,
     proofOrCongruence1,
     proofOrCongruence2,
  )
@@ -638,6 +639,13 @@ testEquivalences =
             let (pLR, pRL) = proofNotDistOverAnd x y hNotAnd hOrNots
             CheckOK @=? check (EExtend hNotAnd fNotAnd EEmpty) pLR fOrNots
             CheckOK @=? check (EExtend hOrNots fOrNots EEmpty) pRL fNotAnd
+        , "not dist over or" ~: do
+            let (x, y) = (propVar "X", propVar "Y")
+            let (fNotOr, fAndNots) = (FNot $ FOr x y, FAnd (FNot x) (FNot y))
+            let (hNotOr, hAndNots) = (hypForm fNotOr, hypForm fAndNots)
+            let (pLR, pRL) = proofNotDistOverOr x y hNotOr hAndNots
+            CheckOK @=? check (EExtend hNotOr fNotOr EEmpty) pLR fAndNots
+            CheckOK @=? check (EExtend hAndNots fAndNots EEmpty) pRL fNotOr
         , "dneg elim" ~: do
             let x = propVar "X"
             let dnegX = dneg x

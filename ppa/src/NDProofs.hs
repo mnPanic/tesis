@@ -7,6 +7,7 @@ module NDProofs (
     doubleNegElim,
     proofDNegElim,
     proofNotDistOverAnd,
+    proofNotDistOverOr,
     proofAndCongruence1,
     proofAndCongruence2,
     proofOrCongruence1,
@@ -145,6 +146,84 @@ proofAndEProjection' f1 f2
     | otherwise = Left $ printf "%s /= %s" (show f1) (show f2)
 
 -------------------- DeMorgan y transformaciones para DNF ----------------------
+
+-- Da una dem para ~(x v y) -|- ~x ^ ~y
+proofNotDistOverOr :: Form -> Form -> HypId -> HypId -> (Proof, Proof)
+proofNotDistOverOr x y hNotOr hAnd =
+    (proofNotDistOverOrLR, proofNotDistOverOrRL)
+  where
+    -- ~(x v y) |- ~x ^ ~y
+    proofNotDistOverOrLR =
+        PAndI
+            { proofLeft =
+                PNotI
+                    { hyp = hX
+                    , proofBot =
+                        PNotE
+                            { form = FOr x y
+                            , proofNotForm = PAx hNotOr
+                            , proofForm =
+                                POrI1
+                                    { proofLeft = PAx hX
+                                    }
+                            }
+                    }
+            , proofRight =
+                PNotI
+                    { hyp = hY
+                    , proofBot =
+                        PNotE
+                            { form = FOr x y
+                            , proofNotForm = PAx hNotOr
+                            , proofForm =
+                                POrI2
+                                    { proofRight = PAx hY
+                                    }
+                            }
+                    }
+            }
+      where
+        hX = hypForm x
+        hY = hypForm y
+
+    -- ~x ^ ~y |- ~(x v y)
+    proofNotDistOverOrRL =
+        PNotI
+            { hyp = hXOrY
+            , -- Contradicción entre ~x ^ ~y, x v y depende de cual valga de or
+              proofBot =
+                POrE
+                    { left = x
+                    , right = y
+                    , proofOr = PAx hXOrY
+                    , hypLeft = hX
+                    , proofAssumingLeft =
+                        PNotE
+                            { form = x
+                            , proofForm = PAx hX
+                            , proofNotForm =
+                                PAndE1
+                                    { right = FNot y
+                                    , proofAnd = PAx hAnd
+                                    }
+                            }
+                    , hypRight = hY
+                    , proofAssumingRight =
+                        PNotE
+                            { form = y
+                            , proofForm = PAx hY
+                            , proofNotForm =
+                                PAndE2
+                                    { left = FNot x
+                                    , proofAnd = PAx hAnd
+                                    }
+                            }
+                    }
+            }
+      where
+        hXOrY = hypForm (FOr x y)
+        hX = hypForm x
+        hY = hypForm y
 
 -- Da una demostración para ~(X ^ Y) -|- ~X v ~Y
 proofNotDistOverAnd :: Form -> Form -> HypId -> HypId -> (Proof, Proof)
