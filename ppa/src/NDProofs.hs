@@ -10,6 +10,8 @@ module NDProofs (
     proofOrAssoc,
     doubleNegElim,
     proofDNegElim,
+    proofAndDistOverOrL,
+    proofAndDistOverOrR,
     proofNotDistOverAnd,
     proofNotDistOverOr,
     proofAndCongruence1,
@@ -152,6 +154,119 @@ proofAndEProjection' f1 f2
     | otherwise = Left $ printf "%s /= %s" (show f1) (show f2)
 
 -------------------- DeMorgan y transformaciones para DNF ----------------------
+
+-- Dem de x ^ (y v z) -|- (x ^ y) v (x ^ z)
+proofAndDistOverOrL :: Form -> Form -> Form -> HypId -> HypId -> (Proof, Proof)
+proofAndDistOverOrL x y z hAnd hOr =
+    ( PNamed "and dist over or L (LR)" proofAndToOr
+    , PNamed "and dist over or L (RL)" proofOrToAnd
+    )
+  where
+    -- x ^ (y v z) |- (x ^ y) v (x ^ z)
+    proofAndToOr =
+        POrE
+            { left = y
+            , right = z
+            , proofOr =
+                PAndE2
+                    { left = x
+                    , proofAnd = PAx hAnd
+                    }
+            , hypLeft = hY
+            , proofAssumingLeft =
+                POrI1
+                    { proofLeft =
+                        -- x ^ y
+                        PAndI
+                            { proofLeft =
+                                PAndE1
+                                    { right = FOr y z
+                                    , proofAnd = PAx hAnd
+                                    }
+                            , proofRight = PAx hY
+                            }
+                    }
+            , hypRight = hZ
+            , proofAssumingRight =
+                POrI2
+                    { proofRight =
+                        -- x ^ z
+                        PAndI
+                            { proofLeft =
+                                PAndE1
+                                    { right = FOr y z
+                                    , proofAnd = PAx hAnd
+                                    }
+                            , proofRight = PAx hZ
+                            }
+                    }
+            }
+    hY = hypForm y
+    hZ = hypForm z
+    hYOrZ = hypForm (FOr y z)
+    -- (x ^ y) v (x ^ z) |- x ^ (y v z)
+    proofOrToAnd =
+        PAndI
+            { -- x
+              proofLeft =
+                POrE
+                    { left = FAnd x y
+                    , right = FAnd x z
+                    , proofOr = PAx hOr
+                    , hypLeft = hXAndY
+                    , proofAssumingLeft =
+                        PAndE1
+                            { right = y
+                            , proofAnd = PAx hXAndY
+                            }
+                    , hypRight = hXAndZ
+                    , proofAssumingRight =
+                        PAndE1
+                            { right = y
+                            , proofAnd = PAx hXAndZ
+                            }
+                    }
+            , -- y v z
+              proofRight =
+                POrE
+                    { left = FAnd x y
+                    , right = FAnd x z
+                    , proofOr = PAx hOr
+                    , hypLeft = hXAndY
+                    , proofAssumingLeft =
+                        POrI1
+                            { proofLeft =
+                                PAndE2
+                                    { left = x
+                                    , proofAnd = PAx hXAndY
+                                    }
+                            }
+                    , hypRight = hXAndZ
+                    , proofAssumingRight =
+                        POrI2
+                            { proofRight =
+                                PAndE2
+                                    { left = x
+                                    , proofAnd = PAx hXAndZ
+                                    }
+                            }
+                    }
+            }
+    hXAndY = hypForm (FAnd x y)
+    hXAndZ = hypForm (FAnd x z)
+
+-- Dem de (y v z) ^ x -|- (x ^ y) v (x ^ z)
+proofAndDistOverOrR :: Form -> Form -> Form -> HypId -> HypId -> (Proof, Proof)
+proofAndDistOverOrR x y z hAnd hOr =
+    ( PNamed "and dist over or R (LR)" proofAndToOr
+    , PNamed "and dist over or R (RL)" proofOrToAnd
+    )
+  where
+    -- (y v z) ^ x |- (x ^ y) v (x ^ z)
+    proofAndToOr = undefined
+
+    -- (x ^ y) v (x ^ z) |- (y v z) ^ x
+    proofOrToAnd = undefined
 
 -- Da una dem para ~T -|- F
 proofNotTrue :: HypId -> HypId -> (Proof, Proof)
