@@ -26,6 +26,7 @@ import NDProofs (
     proofAndCongruence1,
     proofAndCongruence2,
     proofAndEProjection,
+    proofDNegElim,
     proofImpElim,
     proofNotCongruence,
     proofNotDistOverAnd,
@@ -158,7 +159,8 @@ dnfStep (hDNeg, FNot (FNot x)) =
         )
   where
     hX = hypForm x
-    (pDNegElimLR, pDNegElimRL) = (undefined, undefined)
+    hDNegX = hypForm $ dneg x
+    (pDNegElimLR, pDNegElimRL) = proofDNegElim x hX hDNegX
 -- x => y -|- ~x v y
 dnfStep (hImp, FImp x y) =
     Just
@@ -181,6 +183,16 @@ dnfStep (hNot, FNot (FAnd x y)) =
     fOr = FOr (FNot x) (FNot y)
     hOr = hypForm fOr
     (pNotDistOverAndLR, pNotDistOverAndRL) = proofNotDistOverAnd x y hNot hOr
+dnfStep (hNotOr, FNot (FOr x y)) =
+    Just
+        ( (hAnd, fAnd)
+        , PNamed "not dist over or LR" pNotDistOverOrLR
+        , PNamed "not dist over or RL" pNotDistOverOrRL
+        )
+  where
+    fAnd = FAnd (FNot x) (FNot y)
+    hAnd = hypForm fAnd
+    (pNotDistOverOrLR, pNotDistOverOrRL) = proofNotDistOverOr x y hNotOr hAnd
 {- Casos de congruencia -}
 -- Un AND puede ser una cláusula válida (con otros ands de literales) o
 -- tener que ser transformada recursivamente.

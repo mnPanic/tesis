@@ -27,6 +27,7 @@ import NDProofs (
     proofAndCongruence1,
     proofAndCongruence2,
     proofAndEProjection,
+    proofDNegElim,
     proofImpElim,
     proofNotCongruence,
     proofNotDistOverAnd,
@@ -623,14 +624,13 @@ testByExamples =
 testEquivalences :: Test
 testEquivalences =
     test
-        [ "imp elim"
-            ~: do
-                let (x, y) = (propVar "X", propVar "Y")
-                let (fImp, fOr) = (FImp x y, FOr (FNot x) y)
-                let (hImp, hOr) = (hypForm fImp, hypForm fOr)
-                let (pImpElim, pOrToImp) = proofImpElim x y hImp hOr
-                CheckOK @=? check (EExtend hImp fImp EEmpty) pImpElim fOr
-                CheckOK @=? check (EExtend hOr fOr EEmpty) pOrToImp fImp
+        [ "imp elim" ~: do
+            let (x, y) = (propVar "X", propVar "Y")
+            let (fImp, fOr) = (FImp x y, FOr (FNot x) y)
+            let (hImp, hOr) = (hypForm fImp, hypForm fOr)
+            let (pImpElim, pOrToImp) = proofImpElim x y hImp hOr
+            CheckOK @=? check (EExtend hImp fImp EEmpty) pImpElim fOr
+            CheckOK @=? check (EExtend hOr fOr EEmpty) pOrToImp fImp
         , "not dist over and" ~: do
             let (x, y) = (propVar "X", propVar "Y")
             let (fNotAnd, fOrNots) = (FNot $ FAnd x y, FOr (FNot x) (FNot y))
@@ -638,6 +638,13 @@ testEquivalences =
             let (pLR, pRL) = proofNotDistOverAnd x y hNotAnd hOrNots
             CheckOK @=? check (EExtend hNotAnd fNotAnd EEmpty) pLR fOrNots
             CheckOK @=? check (EExtend hOrNots fOrNots EEmpty) pRL fNotAnd
+        , "dneg elim" ~: do
+            let x = propVar "X"
+            let dnegX = dneg x
+            let (hX, hDNegX) = (hypForm x, hypForm dnegX)
+            let (pDNegE, pDNegI) = proofDNegElim x hX hDNegX
+            CheckOK @=? check (EExtend hX x EEmpty) pDNegI dnegX
+            CheckOK @=? check (EExtend hDNegX dnegX EEmpty) pDNegE x
         , "and congruence 1"
             ~: do
                 -- if X => Y -|- ~X v Y then (X => Y) ^ Z -|- (~X v Y) ^ Z

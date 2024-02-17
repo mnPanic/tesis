@@ -24,6 +24,7 @@ import ND (
     Form (..),
     Proof (..),
     Term (..),
+    dneg,
     predVar,
     propVar,
  )
@@ -303,6 +304,7 @@ testDnf =
             ~: doTestDNF
                 (FImp x y)
                 (FOr (FNot x) y)
+        , "dneg elim: ~~x / x" ~: doTestDNF (dneg x) x
         , "not dist over and: ~(x ^ y) / ~x v ~y"
             ~: doTestDNF
                 (FNot (FAnd x y))

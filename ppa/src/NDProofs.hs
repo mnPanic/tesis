@@ -5,6 +5,7 @@ module NDProofs (
     proofImpElim,
     hypForm,
     doubleNegElim,
+    proofDNegElim,
     proofNotDistOverAnd,
     proofAndCongruence1,
     proofAndCongruence2,
@@ -295,6 +296,31 @@ proofImpElim x y hImp hOr =
     hX = hypForm x
     hY = hypForm y
     hNotX = hypForm $ FNot x
+
+proofDNegElim :: Form -> HypId -> HypId -> (Proof, Proof)
+proofDNegElim x hX hDNegX = (proofDNegE, proofDNegI)
+  where
+    -- x |- ~~x
+    proofDNegI =
+        PNotI
+            { hyp = hNotX
+            , -- x, ~x contraducción
+              proofBot =
+                PNotE
+                    { form = x
+                    , proofNotForm = PAx hNotX
+                    , proofForm = PAx hX
+                    }
+            }
+      where
+        hNotX = hypForm $ FNot x
+    -- ~~x |- x
+    proofDNegE =
+        PImpE
+            { antecedent = dneg x
+            , proofImp = doubleNegElim x
+            , proofAntecedent = PAx hDNegX
+            }
 
 {- Demuestra la congruencia del ^ sobre el primer argumento, es decir da una
 demostración de x ^ y -|- x' ^ y usando que x -|- x'
