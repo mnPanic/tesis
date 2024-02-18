@@ -223,7 +223,7 @@ proofAndDistOverOrL x y z hAnd hOr =
                     , hypRight = hXAndZ
                     , proofAssumingRight =
                         PAndE1
-                            { right = y
+                            { right = z
                             , proofAnd = PAx hXAndZ
                             }
                     }

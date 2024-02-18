@@ -364,7 +364,7 @@ testCheckExamples =
         [ -- PAx
           "A |- A" ~: check exampleEnv (PAx "h1") FTrue ~?= CheckOK
         , "A |- B invalid"
-            ~: check exampleEnv (PAx "h1") FFalse
+            ~: rootCause (check exampleEnv (PAx "h1") FFalse)
             ~?= CheckError exampleEnv (PAx "h1") FFalse "env has hyp 'h1' for different form 'true'"
         , -- PImpI
           "A -> A" ~: check EEmpty p1 f1 ~?= CheckOK
@@ -372,7 +372,7 @@ testCheckExamples =
         , -- Usar la misma etiqueta para diferentes hipótesis
           "A -> (B -> B)" ~: check EEmpty p3 f3 ~?= CheckOK
         , "A -> (B -> A) invalid"
-            ~: check EEmpty p3 f2
+            ~: rootCause (check EEmpty p3 f2)
             ~?= CheckError
                 (EExtend "x" (FPred "B" []) (EExtend "x" (FPred "A" []) EEmpty))
                 (PAx "x")
@@ -434,14 +434,14 @@ testCheckExamples =
         , "Forall x. A(x) ^ B(x) => Forall x. A(x)" ~: check EEmpty p20 f20 ~?= CheckOK
         , "Forall x. A(x) ^ B(x) => Forall y. A(y)" ~: check EEmpty p20' f20' ~?= CheckOK
         , "Forall x. A(x) => Exists x. B(x)"
-            ~: check EEmpty p22 f22
+            ~: rootCause (check EEmpty p22 f22)
             ~?= CheckError
                 (EExtend "h Forall x. A(x)" (FForall "x" (FPred "A" [TVar "x"])) EEmpty)
                 (PForallE "x" (FPred "A" [TVar "x"]) (PAx "h Forall x. A(x)") (TVar "x"))
                 (FPred "B" [TVar "x"])
                 "form B(x) /= (A(x)){x := x}"
         , "A(x) => Forall x. A(x)"
-            ~: check EEmpty p21 f21
+            ~: rootCause (check EEmpty p21 f21)
             ~?= CheckError
                 (EExtend "h A(x)" (FPred "A" [TVar "x"]) EEmpty)
                 (PForallI (PAx "h A(x)"))
