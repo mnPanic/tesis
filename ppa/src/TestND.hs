@@ -27,6 +27,7 @@ import NDProofs (
     proofAndAssoc,
     proofAndCongruence1,
     proofAndCongruence2,
+    proofAndDistOverOrL,
     proofAndEProjection,
     proofDNegElim,
     proofImpCongruence1,
@@ -39,7 +40,7 @@ import NDProofs (
     proofNotTrue,
     proofOrAssoc,
     proofOrCongruence1,
-    proofOrCongruence2, proofAndDistOverOrL,
+    proofOrCongruence2,
  )
 
 import Test.HUnit (
@@ -631,59 +632,50 @@ testByExamples =
 testEquivalences :: Test
 testEquivalences =
     test
-        [ "not true"
-            ~: do
-                let (hNotTrue, hFalse) = (hypForm (FNot FTrue), hypForm FFalse)
-                let (pLR, pRL) = proofNotTrue hNotTrue hFalse
-                checkEquiv hNotTrue (FNot FTrue) hFalse FFalse pLR pRL
-        , "not false"
-            ~: do
-                let (hNotFalse, hTrue) = (hypForm (FNot FFalse), hypForm FTrue)
-                let (pLR, pRL) = proofNotFalse hNotFalse hTrue
-                checkEquiv hNotFalse (FNot FFalse) hTrue FTrue pLR pRL
-        , "imp elim"
-            ~: do
-                let (x, y) = (propVar "X", propVar "Y")
-                let (fImp, fOr) = (FImp x y, FOr (FNot x) y)
-                let (hImp, hOr) = (hypForm fImp, hypForm fOr)
-                let (pImpElim, pOrToImp) = proofImpElim x y hImp hOr
-                CheckOK @=? check (EExtend hImp fImp EEmpty) pImpElim fOr
-                CheckOK @=? check (EExtend hOr fOr EEmpty) pOrToImp fImp
+        [ "not true" ~: do
+            let (hNotTrue, hFalse) = (hypForm (FNot FTrue), hypForm FFalse)
+            let (pLR, pRL) = proofNotTrue hNotTrue hFalse
+            checkEquiv hNotTrue (FNot FTrue) hFalse FFalse pLR pRL
+        , "not false" ~: do
+            let (hNotFalse, hTrue) = (hypForm (FNot FFalse), hypForm FTrue)
+            let (pLR, pRL) = proofNotFalse hNotFalse hTrue
+            checkEquiv hNotFalse (FNot FFalse) hTrue FTrue pLR pRL
+        , "imp elim" ~: do
+            let (x, y) = (propVar "X", propVar "Y")
+            let (fImp, fOr) = (FImp x y, FOr (FNot x) y)
+            let (hImp, hOr) = (hypForm fImp, hypForm fOr)
+            let (pImpElim, pOrToImp) = proofImpElim x y hImp hOr
+            checkEquiv hImp fImp hOr fOr pImpElim pOrToImp
         , "not dist over and" ~: do
             let (x, y) = (propVar "X", propVar "Y")
             let (fNotAnd, fOrNots) = (FNot $ FAnd x y, FOr (FNot x) (FNot y))
             let (hNotAnd, hOrNots) = (hypForm fNotAnd, hypForm fOrNots)
             let (pLR, pRL) = proofNotDistOverAnd x y hNotAnd hOrNots
-            CheckOK @=? check (EExtend hNotAnd fNotAnd EEmpty) pLR fOrNots
-            CheckOK @=? check (EExtend hOrNots fOrNots EEmpty) pRL fNotAnd
+            checkEquiv hNotAnd fNotAnd hOrNots fOrNots pLR pRL
         , "not dist over or" ~: do
             let (x, y) = (propVar "X", propVar "Y")
             let (fNotOr, fAndNots) = (FNot $ FOr x y, FAnd (FNot x) (FNot y))
             let (hNotOr, hAndNots) = (hypForm fNotOr, hypForm fAndNots)
             let (pLR, pRL) = proofNotDistOverOr x y hNotOr hAndNots
-            CheckOK @=? check (EExtend hNotOr fNotOr EEmpty) pLR fAndNots
-            CheckOK @=? check (EExtend hAndNots fAndNots EEmpty) pRL fNotOr
+            checkEquiv hNotOr fNotOr hAndNots fAndNots pLR pRL
         , "dneg elim" ~: do
             let x = propVar "X"
             let dnegX = dneg x
             let (hX, hDNegX) = (hypForm x, hypForm dnegX)
             let (pDNegE, pDNegI) = proofDNegElim x hX hDNegX
-            CheckOK @=? check (EExtend hX x EEmpty) pDNegI dnegX
-            CheckOK @=? check (EExtend hDNegX dnegX EEmpty) pDNegE x
+            checkEquiv hX x hDNegX dnegX pDNegI pDNegE
         , "or assoc" ~: do
             let (x, y, z) = (propVar "x", propVar "y", propVar "z")
             let (fOrL, fOrR) = (FOr (FOr x y) z, FOr x (FOr y z))
             let (hOrL, hOrR) = (hypForm fOrL, hypForm fOrR)
             let (pOrAssocLR, pOrAssocRL) = proofOrAssoc x y z hOrL hOrR
-            CheckOK @=? check (EExtend hOrL fOrL EEmpty) pOrAssocLR fOrR
-            CheckOK @=? check (EExtend hOrR fOrR EEmpty) pOrAssocRL fOrL
+            checkEquiv hOrL fOrL hOrR fOrR pOrAssocLR pOrAssocRL
         , "and assoc" ~: do
             let (x, y, z) = (propVar "x", propVar "y", propVar "z")
             let (fAndL, fAndR) = (FAnd (FAnd x y) z, FAnd x (FAnd y z))
             let (hAndL, hAndR) = (hypForm fAndL, hypForm fAndR)
             let (pAndAssocLR, pAndAssocRL) = proofAndAssoc x y z hAndL hAndR
-            CheckOK @=? check (EExtend hAndL fAndL EEmpty) pAndAssocLR fAndR
-            CheckOK @=? check (EExtend hAndR fAndR EEmpty) pAndAssocRL fAndL
+            checkEquiv hAndL fAndL hAndR fAndR pAndAssocLR pAndAssocRL
         , "and dist over or L" ~: do
             let (x, y, z) = (propVar "x", propVar "y", propVar "z")
             let fAnd = FAnd x (FOr y z)

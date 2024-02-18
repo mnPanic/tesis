@@ -204,6 +204,7 @@ proofAndDistOverOrL x y z hAnd hOr =
     hY = hypForm y
     hZ = hypForm z
     hYOrZ = hypForm (FOr y z)
+
     -- (x ^ y) v (x ^ z) |- x ^ (y v z)
     proofOrToAnd =
         PAndI
