@@ -333,6 +333,14 @@ testDnf =
             ~: doTestDNF
                 (FAnd (FNot FTrue) (FNot FFalse))
                 (FAnd FFalse FTrue)
+        , "and dist over or L"
+            ~: doTestDNF
+                (FAnd x (FOr y z))
+                (FOr (FAnd x y) (FAnd x z))
+        , "and dist over or R"
+            ~: doTestDNF
+                (FAnd (FOr y z) x)
+                (FOr (FAnd y x) (FAnd z x))
         ]
   where
     p = propVar "p"

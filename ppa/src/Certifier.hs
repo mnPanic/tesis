@@ -26,6 +26,8 @@ import NDProofs (
     proofAndAssoc,
     proofAndCongruence1,
     proofAndCongruence2,
+    proofAndDistOverOrL,
+    proofAndDistOverOrR,
     proofAndEProjection,
     proofDNegElim,
     proofImpElim,
@@ -155,6 +157,28 @@ Devuelve Nothing cuando F ya está en DNF.
 -- Pero es menos general.
 dnfStep :: EnvItem -> Maybe (EnvItem, Proof, Proof)
 {- Casos de reescritura -}
+-- x ^ (y v z) -|- (x ^ y) v (x ^ z)
+dnfStep (hAnd, FAnd x (FOr y z)) =
+    Just
+        ( (hOr, fOr)
+        , pAndToOrLLR
+        , pAndToOrLRL
+        )
+  where
+    fOr = FOr (FAnd x y) (FAnd x z)
+    hOr = hypForm fOr
+    (pAndToOrLLR, pAndToOrLRL) = proofAndDistOverOrL x y z hAnd hOr
+-- (y v z) ^ x -|- (y ^ x) v (z ^ x)
+dnfStep (hAnd, FAnd (FOr y z) x) =
+    Just
+        ( (hOr, fOr)
+        , pAndToOrRLR
+        , pAndToOrRRL
+        )
+  where
+    fOr = FOr (FAnd y x) (FAnd z x)
+    hOr = hypForm fOr
+    (pAndToOrRLR, pAndToOrRRL) = proofAndDistOverOrR x y z hAnd hOr
 -- ~T -|- F
 dnfStep (hNotTrue, FNot FTrue) =
     Just
