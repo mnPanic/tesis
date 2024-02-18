@@ -341,6 +341,12 @@ testDnf =
             ~: doTestDNF
                 (FAnd (FOr y z) x)
                 (FOr (FAnd y x) (FAnd z x))
+        , "~ ((x ^ (x => y)) => y)"
+            ~: doTestDNF
+                (FNot (FImp (FAnd x (FImp x y)) y))
+                ( fromDNF
+                    [[x, FNot x, FNot y], [x, y, FNot y]]
+                )
         ]
   where
     p = propVar "p"
