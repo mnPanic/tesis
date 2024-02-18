@@ -40,7 +40,7 @@ import NDProofs (
     proofNotTrue,
     proofOrAssoc,
     proofOrCongruence1,
-    proofOrCongruence2,
+    proofOrCongruence2, proofAndDistOverOrR,
  )
 
 import Test.HUnit (
@@ -682,6 +682,13 @@ testEquivalences =
             let fOr = FOr (FAnd x y) (FAnd x z)
             let (hAnd, hOr) = (hypForm fAnd, hypForm fOr)
             let (pLR, pRL) = proofAndDistOverOrL x y z hAnd hOr
+            checkEquiv hAnd fAnd hOr fOr pLR pRL
+        , "and dist over or R" ~: do
+            let (x, y, z) = (propVar "x", propVar "y", propVar "z")
+            let fAnd = FAnd (FOr y z) x
+            let fOr = FOr (FAnd y x) (FAnd z x)
+            let (hAnd, hOr) = (hypForm fAnd, hypForm fOr)
+            let (pLR, pRL) = proofAndDistOverOrR x y z hAnd hOr
             checkEquiv hAnd fAnd hOr fOr pLR pRL
         , "and congruence 1"
             ~: do

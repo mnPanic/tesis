@@ -256,18 +256,96 @@ proofAndDistOverOrL x y z hAnd hOr =
     hXAndY = hypForm (FAnd x y)
     hXAndZ = hypForm (FAnd x z)
 
--- Dem de (y v z) ^ x -|- (x ^ y) v (x ^ z)
+-- Dem de (y v z) ^ x -|- (y ^ x) v (z ^ x)
 proofAndDistOverOrR :: Form -> Form -> Form -> HypId -> HypId -> (Proof, Proof)
 proofAndDistOverOrR x y z hAnd hOr =
     ( PNamed "and dist over or R (LR)" proofAndToOr
     , PNamed "and dist over or R (RL)" proofOrToAnd
     )
   where
-    -- (y v z) ^ x |- (x ^ y) v (x ^ z)
-    proofAndToOr = undefined
-
-    -- (x ^ y) v (x ^ z) |- (y v z) ^ x
-    proofOrToAnd = undefined
+    -- (y v z) ^ x |- (y ^ x) v (z ^ x)
+    proofAndToOr =
+        POrE
+            { left = y
+            , right = z
+            , proofOr =
+                PAndE1
+                    { right = x
+                    , proofAnd = PAx hAnd
+                    }
+            , hypLeft = hY
+            , -- pruebo (y ^ x)
+              proofAssumingLeft =
+                POrI1
+                    { proofLeft =
+                        PAndI
+                            { proofLeft = PAx hY
+                            , proofRight =
+                                PAndE2
+                                    { left = FOr y z
+                                    , proofAnd = PAx hAnd
+                                    }
+                            }
+                    }
+            , -- pruebo (z ^ x)
+              hypRight = hZ
+            , proofAssumingRight =
+                POrI2
+                    { proofRight =
+                        PAndI
+                            { proofLeft = PAx hZ
+                            , proofRight =
+                                PAndE2
+                                    { left = FOr y z
+                                    , proofAnd = PAx hAnd
+                                    }
+                            }
+                    }
+            }
+    (hY, hZ) = (hypForm y, hypForm z)
+    -- (y ^ x) v (z ^ x) |- (y v z) ^ x
+    proofOrToAnd =
+        POrE
+            { left = FAnd y x
+            , right = FAnd z x
+            , proofOr = PAx hOr
+            , hypLeft = hYAndX
+            , proofAssumingLeft =
+                PAndI
+                    { proofLeft =
+                        POrI1
+                            { proofLeft =
+                                PAndE1
+                                    { right = x
+                                    , proofAnd = PAx hYAndX
+                                    }
+                            }
+                    , proofRight =
+                        PAndE2
+                            { left = y
+                            , proofAnd = PAx hYAndX
+                            }
+                    }
+            , hypRight = hZAndX
+            , proofAssumingRight =
+                PAndI
+                    { proofLeft =
+                        POrI2
+                            { proofRight =
+                                PAndE1
+                                    { right = x
+                                    , proofAnd = PAx hZAndX
+                                    }
+                            }
+                    , proofRight =
+                        PAndE2
+                            { left = z
+                            , proofAnd = PAx hZAndX
+                            }
+                    }
+            }
+    hYAndX = hypForm (FAnd y x)
+    hZAndX = hypForm (FAnd z x)
 
 -- Da una dem para ~T -|- F
 proofNotTrue :: HypId -> HypId -> (Proof, Proof)
