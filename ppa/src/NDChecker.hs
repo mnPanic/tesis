@@ -109,7 +109,7 @@ instance Show CheckResult where
         printf
             "Checking proof '%s': \n%s"
             name
-            (showInTree res)
+            (show res)
 
 showInTree :: CheckResult -> String
 showInTree (CheckError env proof form msg) =

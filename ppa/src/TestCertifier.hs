@@ -341,7 +341,7 @@ testDnf =
             ~: doTestDNF
                 (FAnd (FOr y z) x)
                 (FOr (FAnd y x) (FAnd z x))
-        , "~ ((x ^ (x => y)) => y)"
+        , "~ ((x ^ (x => y)) => y) / (x ^ ~x ^ ~y) v (x ^ y ^ ~y)"
             ~: doTestDNF
                 (FNot (FImp (FAnd x (FImp x y)) y))
                 ( fromDNF

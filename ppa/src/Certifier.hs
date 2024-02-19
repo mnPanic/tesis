@@ -293,7 +293,7 @@ dnfStep (hAnd, FAnd l r) = case dnfStep (hL, l) of
           where
             fAnd' = FAnd l r'
             hAnd' = hypForm fAnd'
-            (pAndCong2LR, pAndCong2RL) = proofAndCongruence2 l r r' hAnd hAnd' hL pRThenR' hR' pR'ThenR
+            (pAndCong2LR, pAndCong2RL) = proofAndCongruence2 l r r' hAnd hAnd' hR pRThenR' hR' pR'ThenR
   where
     hL = hypForm l
     hR = hypForm r
