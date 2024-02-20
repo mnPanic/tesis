@@ -61,7 +61,7 @@ data Token
     | TokenComma
     | TokenParenOpen
     | TokenParenClose
-    -- Teoremas
+    -- Programas
     | TokenAxiom
     | TokenSemicolon
     | TokenDoubleColon

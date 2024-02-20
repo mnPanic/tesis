@@ -25,12 +25,12 @@ import Lexer ( Token(..) )
     forall      { TokenForall }
     exists      { TokenExists }
     dot         { TokenDot }
-    comma       { TokenComma }
 
     id          { TokenId $$ }
     var         { TokenVar $$ }
     ';'         { TokenSemicolon }
     ':'         { TokenDoubleColon }
+    ','         { TokenComma }
     axiom       { TokenAxiom }   
     theorem     { TokenTheorem }
     proof       { TokenProof }
@@ -72,8 +72,8 @@ ProofStep : assume name ':' Form                { PSAssume $2 $4 }
           | thus Form by Justification          { PSThusBy $2 $4 }
 
 Justification :: { Justification }
-Justification : name Justification      { $1 : $2 }
-              | name                    { [$1] }              
+Justification : name ',' Justification          { $1 : $3 }
+              | name                            { [ $1 ] }              
 
 Form :: { Form }
 Form    : id TermArgs               { FPred $1 $2 }
@@ -97,7 +97,7 @@ TermArgs : {- empty -}              { [] }
 
 Terms :: { [Term] }
 Terms   : Term                      { [$1] }
-        | Term comma Terms          { $1 : $3 }
+        | Term ',' Terms          { $1 : $3 }
 
 {
 parseError :: ([Token], [String]) -> a

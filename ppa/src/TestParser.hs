@@ -2,9 +2,9 @@ module ParserTests where
 
 import Lexer (Token (..), lexer)
 
-import PPA (Decl (..), Program)
+import PPA (Decl (..), Program, ProofStep (PSAssume, PSThusBy))
 
-import ND (Form (..), Term (..))
+import ND (Form (..), Term (..), predVar, propVar)
 import Parser (parseExp)
 import Test.HUnit (
     Counts,
@@ -47,6 +47,31 @@ testParser :: Test
 testParser =
     test
         [ "forms" ~: testParseForms
+        , "programs" ~: testParserPrograms
+        ]
+
+testParserPrograms :: Test
+testParserPrograms =
+    test
+        [ "program"
+            ~: parse
+                "axiom \"some axiom\" : forall X . p(X) ^ q(X) => exists Y. r(Y)\
+                \theorem \"some thm\" : forall K. p\
+                \proof\
+                \   assume \"a\" : a;\
+                \   thus a by \"a\", \"some axiom\";\
+                \qed"
+            ~?= [ DAxiom
+                    "some axiom"
+                    ( FForall "X" $ FImp (FAnd (predVar "q" "X") (predVar "q" "X")) (FExists "Y" (predVar "r" "Y"))
+                    )
+                , DTheorem
+                    "some thm"
+                    (FForall "K" (propVar "p"))
+                    [ PSAssume "a" $ propVar "A"
+                    , PSThusBy (propVar "A") ["a", "some axiom"]
+                    ]
+                ]
         ]
 
 testParseForms :: Test

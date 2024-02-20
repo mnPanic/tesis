@@ -14631,63 +14631,63 @@ alex_actions = array (0 :: Int, 65)
   , (60,alex_action_9)
   , (59,alex_action_8)
   , (58,alex_action_7)
-  , (57,alex_action_25)
+  , (57,alex_action_26)
   , (56,alex_action_6)
   , (55,alex_action_5)
   , (54,alex_action_5)
   , (53,alex_action_4)
   , (52,alex_action_3)
   , (51,alex_action_2)
-  , (50,alex_action_25)
-  , (49,alex_action_25)
-  , (48,alex_action_25)
-  , (47,alex_action_25)
-  , (46,alex_action_25)
-  , (45,alex_action_25)
-  , (44,alex_action_25)
-  , (43,alex_action_25)
-  , (42,alex_action_25)
-  , (41,alex_action_25)
-  , (40,alex_action_25)
-  , (39,alex_action_25)
-  , (38,alex_action_25)
-  , (37,alex_action_25)
-  , (36,alex_action_25)
-  , (35,alex_action_25)
-  , (34,alex_action_25)
-  , (33,alex_action_25)
-  , (32,alex_action_25)
-  , (31,alex_action_25)
-  , (30,alex_action_25)
-  , (29,alex_action_25)
-  , (28,alex_action_25)
-  , (27,alex_action_25)
-  , (26,alex_action_25)
-  , (25,alex_action_25)
-  , (24,alex_action_25)
-  , (23,alex_action_25)
-  , (22,alex_action_25)
-  , (21,alex_action_25)
-  , (20,alex_action_25)
-  , (19,alex_action_25)
-  , (18,alex_action_25)
-  , (17,alex_action_25)
-  , (16,alex_action_25)
-  , (15,alex_action_25)
-  , (14,alex_action_24)
-  , (13,alex_action_24)
-  , (12,alex_action_23)
-  , (11,alex_action_22)
-  , (10,alex_action_21)
-  , (9,alex_action_25)
-  , (8,alex_action_20)
-  , (7,alex_action_25)
+  , (50,alex_action_26)
+  , (49,alex_action_26)
+  , (48,alex_action_26)
+  , (47,alex_action_26)
+  , (46,alex_action_26)
+  , (45,alex_action_26)
+  , (44,alex_action_26)
+  , (43,alex_action_26)
+  , (42,alex_action_26)
+  , (41,alex_action_26)
+  , (40,alex_action_26)
+  , (39,alex_action_26)
+  , (38,alex_action_26)
+  , (37,alex_action_26)
+  , (36,alex_action_26)
+  , (35,alex_action_26)
+  , (34,alex_action_26)
+  , (33,alex_action_26)
+  , (32,alex_action_26)
+  , (31,alex_action_26)
+  , (30,alex_action_26)
+  , (29,alex_action_26)
+  , (28,alex_action_26)
+  , (27,alex_action_26)
+  , (26,alex_action_26)
+  , (25,alex_action_26)
+  , (24,alex_action_26)
+  , (23,alex_action_26)
+  , (22,alex_action_26)
+  , (21,alex_action_26)
+  , (20,alex_action_26)
+  , (19,alex_action_26)
+  , (18,alex_action_26)
+  , (17,alex_action_26)
+  , (16,alex_action_26)
+  , (15,alex_action_26)
+  , (14,alex_action_25)
+  , (13,alex_action_25)
+  , (12,alex_action_24)
+  , (11,alex_action_23)
+  , (10,alex_action_22)
+  , (9,alex_action_26)
+  , (8,alex_action_21)
+  , (7,alex_action_26)
   , (6,alex_action_19)
   , (5,alex_action_18)
   , (4,alex_action_17)
   , (3,alex_action_16)
   , (2,alex_action_15)
-  , (1,alex_action_25)
+  , (1,alex_action_26)
   , (0,alex_action_14)
   ]
 
@@ -14709,12 +14709,13 @@ alex_action_16 = literal TokenProof
 alex_action_17 = literal TokenQED
 alex_action_18 = literal TokenSemicolon
 alex_action_19 = literal TokenDoubleColon
-alex_action_20 = literal TokenAssume
-alex_action_21 = literal TokenThus
-alex_action_22 = literal TokenBy
-alex_action_23 = \_ n -> TokenQuotedName (firstLast n)
-alex_action_24 = const TokenVar
-alex_action_25 = const TokenId
+alex_action_20 = literal TokenComma
+alex_action_21 = literal TokenAssume
+alex_action_22 = literal TokenThus
+alex_action_23 = literal TokenBy
+alex_action_24 = \_ n -> TokenQuotedName (firstLast n)
+alex_action_25 = const TokenVar
+alex_action_26 = const TokenId
 
 #define ALEX_NOPRED 1
 -- -----------------------------------------------------------------------------
@@ -14956,7 +14957,7 @@ alexRightContext IBOX(sc) user__ _ _ input__ =
         -- match when checking the right context, just
         -- the first match will do.
 #endif
-{-# LINE 39 "src/Lexer.x" #-}
+{-# LINE 40 "src/Lexer.x" #-}
 firstLast :: [a] -> [a]
 firstLast [] = []
 firstLast [x] = []
@@ -14981,7 +14982,7 @@ data Token
     | TokenComma
     | TokenParenOpen
     | TokenParenClose
-    -- Teoremas
+    -- Programas
     | TokenAxiom
     | TokenSemicolon
     | TokenDoubleColon
