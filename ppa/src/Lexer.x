@@ -9,33 +9,42 @@ module Lexer(lexer, Token(..), AlexPosn(..)) where
 tokens :-
     $white+         ;
     "//".*          ;
-    \.              { \_ _ -> TokenDot }
-    \,              { \_ _ -> TokenComma }
-    \&|\^           { \_ _ -> TokenAnd }
-    \||v            { \_ _ -> TokenOr }
-    true            { \_ _ -> TokenTrue }
-    false           { \_ _ -> TokenFalse }
-    =>              { \_ _ -> TokenImp }
-    (\¬|\~)         { \_ _ -> TokenNot }
-    exists          { \_ _ -> TokenExists }
-    forall          { \_ _ -> TokenForall }
-    \(              { \_ _ -> TokenParenOpen }
-    \)              { \_ _ -> TokenParenClose }
-    theorem         { \_ _ -> TokenTheorem }
-    proof           { \_ _ -> TokenProof }
-    qed             { \_ _ -> TokenQED }
-    \;              { \_ _ -> TokenSemicolon }
-    \:              { \_ _ -> TokenDoubleColon }
-    assume          { \_ _ -> TokenAssume }
-    thus            { \_ _ -> TokenThus }
-    by              { \_ _ -> TokenBy }
+    \.              { literal TokenDot }
+    \,              { literal TokenComma }
+    \&|\^           { literal TokenAnd }
+    \||v            { literal TokenOr }
+    true            { literal TokenTrue }
+    false           { literal TokenFalse }
+    =>              { literal TokenImp }
+    (\¬|\~)         { literal TokenNot }
+    exists          { literal TokenExists }
+    forall          { literal TokenForall }
+    \(              { literal TokenParenOpen }
+    \)              { literal TokenParenClose }
+    axiom           { literal TokenAxiom }
+    theorem         { literal TokenTheorem }
+    proof           { literal TokenProof }
+    qed             { literal TokenQED }
+    \;              { literal TokenSemicolon }
+    \:              { literal TokenDoubleColon }
+    assume          { literal TokenAssume }
+    thus            { literal TokenThus }
+    by              { literal TokenBy }
 
-    \".*\"          { const TokenQuotedName }
+    \".*\"          { \_ n -> TokenQuotedName (firstLast n)}
 
     (\_|[A-Z])[a-zA-Z0-9\_\-]*(\')*                      { const TokenVar }
     [a-zA-Z0-9\_\-\?!#\$\%&\*\+\<\>\=\?\@\^]+(\')*       { const TokenId }
     
 {
+firstLast :: [a] -> [a]
+firstLast [] = []
+firstLast [x] = []
+firstLast xs = tail (init xs)
+
+literal :: Token -> (AlexPosn -> String -> Token)
+literal t _ _ = t
+
 data Token 
     -- Fórmulas
     = TokenId String
@@ -53,6 +62,7 @@ data Token
     | TokenParenOpen
     | TokenParenClose
     -- Teoremas
+    | TokenAxiom
     | TokenSemicolon
     | TokenDoubleColon
     | TokenTheorem

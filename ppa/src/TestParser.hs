@@ -2,6 +2,8 @@ module ParserTests where
 
 import Lexer (Token (..), lexer)
 
+import PPA (Decl (..), Program)
+
 import ND (Form (..), Term (..))
 import Parser (parseExp)
 import Test.HUnit (
@@ -38,64 +40,82 @@ testLexer =
             ~?= [TokenNot, TokenNot, TokenOr, TokenOr, TokenAnd, TokenAnd, TokenImp, TokenExists, TokenDot, TokenParenOpen, TokenForall, TokenParenClose]
         ]
 
-parse :: String -> Form
+parse :: String -> Program
 parse = parseExp . lexer
 
 testParser :: Test
 testParser =
     test
+        [ "forms" ~: testParseForms
+        ]
+
+testParseForms :: Test
+testParseForms =
+    test
         [ "ambiguous exists and operator"
-            ~: parse "exists Y . exists X . f(X) | g(Y)"
-            ~?= FExists
-                "Y"
+            ~: doTestForm
+                "exists Y . exists X . f(X) | g(Y)"
                 ( FExists
-                    "X"
-                    ( FOr
-                        (FPred "f" [TVar "X"])
-                        (FPred "g" [TVar "Y"])
+                    "Y"
+                    ( FExists
+                        "X"
+                        ( FOr
+                            (FPred "f" [TVar "X"])
+                            (FPred "g" [TVar "Y"])
+                        )
                     )
                 )
         , "parens"
-            ~: parse "(p(X) => q(X)) v r(Y)"
-            ~?= FOr
-                ( FImp
-                    (FPred "p" [TVar "X"])
-                    (FPred "q" [TVar "X"])
+            ~: doTestForm
+                "(p(X) => q(X)) v r(Y)"
+                ( FOr
+                    ( FImp
+                        (FPred "p" [TVar "X"])
+                        (FPred "q" [TVar "X"])
+                    )
+                    (FPred "r" [TVar "Y"])
                 )
-                (FPred "r" [TVar "Y"])
         , "preds and funcs"
-            ~: parse "q v p(X, f(Y, K, q), W)"
-            ~?= FOr
-                (FPred "q" [])
-                ( FPred
-                    "p"
-                    [ TVar "X"
-                    , TFun "f" [TVar "Y", TVar "K", TFun "q" []]
-                    , TVar "W"
-                    ]
+            ~: doTestForm
+                "q v p(X, f(Y, K, q), W)"
+                ( FOr
+                    (FPred "q" [])
+                    ( FPred
+                        "p"
+                        [ TVar "X"
+                        , TFun "f" [TVar "Y", TVar "K", TFun "q" []]
+                        , TVar "W"
+                        ]
+                    )
                 )
         , "complete formula"
-            ~: parse
+            ~: doTestForm
                 "exists Y .forall _X .\
                 \~num_positivo(_X) => num_negativo(+(_X, Y)) & q(Y)\
                 \| a ^ (false v true)"
-            ~?= FExists
-                "Y"
-                ( FForall
-                    "_X"
-                    ( FImp
-                        (FNot (FPred "num_positivo" [TVar "_X"]))
-                        ( FAnd
-                            ( FOr
-                                ( FAnd
-                                    ( FPred "num_negativo" [TFun "+" [TVar "_X", TVar "Y"]]
+                ( FExists
+                    "Y"
+                    ( FForall
+                        "_X"
+                        ( FImp
+                            (FNot (FPred "num_positivo" [TVar "_X"]))
+                            ( FAnd
+                                ( FOr
+                                    ( FAnd
+                                        ( FPred "num_negativo" [TFun "+" [TVar "_X", TVar "Y"]]
+                                        )
+                                        (FPred "q" [TVar "Y"])
                                     )
-                                    (FPred "q" [TVar "Y"])
+                                    (FPred "a" [])
                                 )
-                                (FPred "a" [])
+                                (FOr FFalse FTrue)
                             )
-                            (FOr FFalse FTrue)
                         )
                     )
                 )
         ]
+
+doTestForm :: String -> Form -> Test
+doTestForm formStr form = parse axiomForm ~?= [DAxiom "foo" form]
+  where
+    axiomForm = "axiom \"foo\" : " ++ formStr

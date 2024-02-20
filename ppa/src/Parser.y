@@ -2,7 +2,7 @@
 module Parser(parseExp) where
 
 import ND ( Form(..), Term(..) )
-import Theory ( TProof, ProofStep(..), Theorem(..), Program(..) )
+import PPA ( TProof, ProofStep(..), Program(..), Decl(..), Justification )
 import Lexer ( Token(..) )
 }
 
@@ -31,6 +31,7 @@ import Lexer ( Token(..) )
     var         { TokenVar $$ }
     ';'         { TokenSemicolon }
     ':'         { TokenDoubleColon }
+    axiom       { TokenAxiom }   
     theorem     { TokenTheorem }
     proof       { TokenProof }
     qed         { TokenQED }
@@ -46,19 +47,33 @@ import Lexer ( Token(..) )
 %%
 
 Prog    :: { Program }
-Prog    : Theorem                   { ProgramT $1 }
-        | Form                      { ProgramF $1 }
+Prog    : Declarations                   { $1 }
 
-Theorem :: { Theorem }
-Theorem : theorem name ':' Form proof Proof qed   { Theorem $2 $4 $6 }
+Declarations :: { [Decl] }
+Declarations : Declaration Declarations         { $1 : $2}
+             | Declaration                      { [$1] }
+
+Declaration :: { Decl }
+Declaration : Axiom                     { $1 }
+            | Theorem                   { $1 }
+
+Axiom :: { Decl }
+Axiom : axiom name ':' Form             { DAxiom $2 $4 }
+
+Theorem :: { Decl }
+Theorem : theorem name ':' Form proof Proof qed   { DTheorem $2 $4 $6 }
 
 Proof   :: { TProof }
 Proof   : ProofStep ';' Proof       { $1 : $3 }
         | ProofStep ';'             { [ $1 ] }
 
-ProofStep       :: { ProofStep }
-ProofStep       : assume name ':' Form       { PSAssume $2 $4 }
-                | thus Form by name          { PSThus $2 $4 }
+ProofStep :: { ProofStep }
+ProofStep : assume name ':' Form                { PSAssume $2 $4 }
+          | thus Form by Justification          { PSThusBy $2 $4 }
+
+Justification :: { Justification }
+Justification : name Justification      { $1 : $2 }
+              | name                    { [$1] }              
 
 Form :: { Form }
 Form    : id TermArgs               { FPred $1 $2 }

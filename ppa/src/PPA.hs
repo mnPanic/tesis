@@ -5,6 +5,7 @@ module PPA (
     Context (..),
     Justification,
     Hypothesis (..),
+    Decl (..),
     findHyp,
     getForm,
 ) where
@@ -21,7 +22,7 @@ type Program = [Decl]
 data Decl
     = DAxiom HypId Form
     | DTheorem HypId Form TProof
-    deriving (Show)
+    deriving (Show, Eq)
 
 type TProof = [ProofStep]
 
@@ -29,7 +30,7 @@ data ProofStep
     = PSAssume String Form
     | PSThusBy Form Justification
     | PSThenBy Form HypId Justification -- TODO revisar
-    deriving (Show)
+    deriving (Show, Eq)
 
 type Justification = [HypId]
 
