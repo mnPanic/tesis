@@ -3,6 +3,7 @@ module Certifier (
     solve,
     toClause,
     fromClause,
+    certifyBy,
     fromDNF,
     findContradiction,
 ) where
@@ -80,6 +81,11 @@ checkPS (PSThus form hyp) thesis _
 -}
 
 {- Certifica que js => f
+
+Si las justificaciones son [h1, .., hn] y el contexto tiene {h1: f1, ... hn:
+fn}, da una demostración de que
+
+    (f1 ^ ... ^ fn) => f
 -}
 certifyBy :: Context -> Form -> Justification -> Result Proof
 certifyBy ctx f js = do
@@ -87,29 +93,29 @@ certifyBy ctx f js = do
     let justForms = map getForm justHyps
 
     let thesis = FImp (fromClause justForms) f
-    let negThesis = FNot thesis
-    let hNegThesis = hypForm negThesis
+    let fNotThesis = FNot thesis
+    let hNotThesis = hypForm fNotThesis
 
-    let (dnfNegThesis, dnfProof) = dnf (hNegThesis, negThesis)
+    let (fDNFNotThesis, dnfProof) = dnf (hNotThesis, fNotThesis)
 
-    let hDNFNegThesis = hypForm dnfNegThesis
+    let hDNFNotThesis = hypForm fDNFNotThesis
 
-    contradictionProof <- solve (hDNFNegThesis, dnfNegThesis)
+    contradictionProof <- solve (hDNFNotThesis, fDNFNotThesis)
     return
         PImpE
             { antecedent = dneg thesis
             , proofImp = doubleNegElim thesis
             , proofAntecedent =
                 PNotI
-                    { hyp = hNegThesis
+                    { hyp = hNotThesis
                     , -- Demostración de bottom (contradicción) asumiendo que no vale
                       -- la tesis. Primero convertimos a DNF y luego demostramos que
                       -- la version en DNF es refutable.
                       proofBot =
                         cut
-                            dnfNegThesis
+                            fDNFNotThesis
                             dnfProof
-                            hDNFNegThesis
+                            hDNFNotThesis
                             contradictionProof
                     }
             }
@@ -386,16 +392,26 @@ solveClause (h, rawClause) = do
     clause <- toClause rawClause
     contradictingForm <- findContradiction clause
     case contradictingForm of
-        FFalse -> proofAndEProjection (h, rawClause) FFalse
+        FFalse -> do
+            proofFalse <- proofAndEProjection (h, rawClause) FFalse
+            return
+                ( PNamed
+                    (printf "contradiction of %s by false" (show rawClause))
+                    proofFalse
+                )
         f -> do
             proofF <- proofAndEProjection (h, rawClause) f
             proofNotF <- proofAndEProjection (h, rawClause) (FNot f)
             return
-                PNotE
-                    { form = f
-                    , proofNotForm = proofNotF
-                    , proofForm = proofF
-                    }
+                ( PNamed
+                    (printf "contradiction of %s by %s and %s" (show rawClause) (show f) (show $ FNot f))
+                    ( PNotE
+                        { form = f
+                        , proofNotForm = proofNotF
+                        , proofForm = proofF
+                        }
+                    )
+                )
 
 -- Clause es una conjunción de literales
 type Clause = [Form]

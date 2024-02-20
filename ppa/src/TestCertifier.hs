@@ -1,6 +1,7 @@
 module TestCertifier where
 
 import Certifier (
+    certifyBy,
     dnf,
     findContradiction,
     fromClause,
@@ -29,9 +30,12 @@ import ND (
     propVar,
  )
 
+import PPA (Hypothesis (HAxiom))
+
 import Test.HUnit (
+    Assertion,
     Counts,
-    Test,
+    Test (..),
     Testable (test),
     assertEqual,
     assertFailure,
@@ -49,7 +53,8 @@ main = do runTestTT tests
 tests :: Test
 tests =
     test
-        [ "clauses" ~: testClause
+        [ "certifyBy" ~: testCertifyBy
+        , "clauses" ~: testClause
         , "findContradiction" ~: testFindContradiction
         , "solve" ~: testSolve
         , "dnf" ~: testDnf
@@ -61,26 +66,29 @@ testSolve =
         [ "refutable single clause w/ false"
             ~: doTestSolveEqCheck
                 ("h", fromClause [FFalse, propVar "Q"])
-                PAndE1
-                    { right = propVar "Q"
-                    , proofAnd = PAx "h"
-                    }
+                ( PNamed
+                    "contradiction of false ^ Q by false"
+                    PAndE1{right = propVar "Q", proofAnd = PAx "h"}
+                )
         , "refutable single clause w/ opposites"
             ~: doTestSolveEqCheck
                 ("h", fromClause [propVar "A", FNot $ propVar "A"])
-                PNotE
-                    { form = propVar "A"
-                    , proofNotForm =
-                        PAndE2
-                            { left = propVar "A"
-                            , proofAnd = PAx "h"
-                            }
-                    , proofForm =
-                        PAndE1
-                            { right = FNot $ propVar "A"
-                            , proofAnd = PAx "h"
-                            }
-                    }
+                ( PNamed
+                    "contradiction of A ^ ~A by A and ~A"
+                    PNotE
+                        { form = propVar "A"
+                        , proofNotForm =
+                            PAndE2
+                                { left = propVar "A"
+                                , proofAnd = PAx "h"
+                                }
+                        , proofForm =
+                            PAndE1
+                                { right = FNot $ propVar "A"
+                                , proofAnd = PAx "h"
+                                }
+                        }
+                )
         , "refutable dnf three clauses"
             ~: doTestSolveEqCheck
                 ( "h"
@@ -106,41 +114,47 @@ testSolve =
                             , proofOr = PAx "h L"
                             , hypLeft = "h L L"
                             , proofAssumingLeft =
-                                PNotE
-                                    { form = propVar "A"
-                                    , proofNotForm =
-                                        PAndE2
-                                            { left = propVar "A"
-                                            , proofAnd = PAx "h L L"
-                                            }
-                                    , proofForm =
-                                        PAndE1
-                                            { right = FNot $ propVar "A"
-                                            , proofAnd = PAx "h L L"
-                                            }
-                                    }
+                                PNamed
+                                    "contradiction of A ^ ~A by A and ~A"
+                                    PNotE
+                                        { form = propVar "A"
+                                        , proofNotForm =
+                                            PAndE2
+                                                { left = propVar "A"
+                                                , proofAnd = PAx "h L L"
+                                                }
+                                        , proofForm =
+                                            PAndE1
+                                                { right = FNot $ propVar "A"
+                                                , proofAnd = PAx "h L L"
+                                                }
+                                        }
                             , hypRight = "h L R"
                             , proofAssumingRight =
-                                PAndE1
-                                    { right = propVar "Q"
-                                    , proofAnd = PAx "h L R"
-                                    }
+                                PNamed
+                                    "contradiction of false ^ Q by false"
+                                    PAndE1
+                                        { right = propVar "Q"
+                                        , proofAnd = PAx "h L R"
+                                        }
                             }
                     , hypRight = "h R"
                     , proofAssumingRight =
-                        PNotE
-                            { form = propVar "B"
-                            , proofNotForm =
-                                PAndE1
-                                    { right = propVar "B"
-                                    , proofAnd = PAx "h R"
-                                    }
-                            , proofForm =
-                                PAndE2
-                                    { left = FNot $ propVar "B"
-                                    , proofAnd = PAx "h R"
-                                    }
-                            }
+                        PNamed
+                            "contradiction of ~B ^ B by B and ~B"
+                            PNotE
+                                { form = propVar "B"
+                                , proofNotForm =
+                                    PAndE1
+                                        { right = propVar "B"
+                                        , proofAnd = PAx "h R"
+                                        }
+                                , proofForm =
+                                    PAndE2
+                                        { left = FNot $ propVar "B"
+                                        , proofAnd = PAx "h R"
+                                        }
+                                }
                     }
         , "refutable long"
             ~: doTestSolveCheck
@@ -189,12 +203,48 @@ doTestSolveEqCheck i@(h, f) expectedProof = do
     let (Right proof) = result
     check (EExtend h f EEmpty) proof FFalse @?= CheckOK
 
-doTestSolveCheck :: Form -> IO ()
+doTestSolveCheck :: Form -> Assertion
 doTestSolveCheck f = do
     let result = solve ("h", f)
     case result of
         Right proof -> check (EExtend "h" f EEmpty) proof FFalse @?= CheckOK
         Left err -> assertFailure err
+
+testCertifyBy :: Test
+testCertifyBy =
+    test
+        [ "A by A" ~: do
+            let ctx = [HAxiom "A" a]
+            let result = certifyBy ctx a ["A"]
+            case result of
+                Left e -> assertFailure e
+                Right proof -> CheckOK @=? check EEmpty proof (FImp a a)
+        , "A by A ^ B" ~: do
+            let ctx = [HAxiom "A and B" (FAnd a b)]
+            let result = certifyBy ctx a ["A and B"]
+            case result of
+                Left e -> assertFailure e
+                Right proof -> CheckOK @=? check EEmpty proof (FImp (FAnd a b) a)
+        , "A by (A ^ B) v (A ^ C)" ~: do
+            let ax = FOr (FAnd a b) (FAnd a c)
+            let ctx = [HAxiom "ax" ax]
+            let result = certifyBy ctx a ["ax"]
+            case result of
+                Left e -> assertFailure e
+                Right proof -> CheckOK @=? check EEmpty proof (FImp ax a)
+        , "B by A, A => B" ~: do
+            let ctx =
+                    [ HAxiom "A is always true" a
+                    , HAxiom "A implies B" (FImp a b)
+                    ]
+            let result = certifyBy ctx b ["A is always true", "A implies B"]
+            case result of
+                Left e -> assertFailure e
+                Right proof -> do
+                    CheckOK @=? check EEmpty proof (FImp (FAnd a (FImp a b)) b)
+        ]
+  where
+    (a, b, c) = (propVar "A", propVar "B", propVar "C")
 
 testFindContradiction :: Test
 testFindContradiction =
@@ -347,6 +397,19 @@ testDnf =
                 ( fromDNF
                     [[x, FNot x, FNot y], [x, y, FNot y]]
                 )
+        , "exists and forall opaque: ~ [ (E x. (P => Q)) ^ (Y v Z) ]"
+            ~: do
+                let exists = FExists "x" (FImp p q)
+                let fall = FForall "y" (FImp p q)
+                doTestDNF
+                    ( FNot (FAnd exists (FAnd fall (FOr y z)))
+                    )
+                    ( fromDNF
+                        [ [FNot exists]
+                        , [FNot fall]
+                        , [FNot y, FNot z]
+                        ]
+                    )
         ]
   where
     p = propVar "p"
@@ -355,7 +418,7 @@ testDnf =
     y = propVar "y"
     z = propVar "z"
 
-doTestDNF :: Form -> Form -> IO ()
+doTestDNF :: Form -> Form -> Assertion
 doTestDNF f fDNF = do
     let hF = hypForm f
     let (fGotDNF, dnfProof) = dnf (hF, f)

@@ -4,7 +4,7 @@ module PPA (
     Program (..),
     Context (..),
     Justification,
-    Hypothesis,
+    Hypothesis (..),
     findHyp,
     getForm,
 ) where
