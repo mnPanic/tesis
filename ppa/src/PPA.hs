@@ -41,6 +41,7 @@ type Goal = (Context, Form)
 data Hypothesis
     = HAxiom HypId Form
     | HTheorem HypId Form Proof
+    deriving (Show, Eq)
 
 getHypId :: Hypothesis -> HypId
 getHypId (HAxiom h _) = h

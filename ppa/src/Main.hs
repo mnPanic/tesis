@@ -14,7 +14,8 @@ main = do
         [] -> getContents
         [f] -> readFile f
         _ -> error "expected max. 1 argument "
-    print $ execute $ parse raw
+    print $ certify $ parse raw
+    --print $ lexer raw
 
 parse :: String -> Program
 parse = parseExp . lexer

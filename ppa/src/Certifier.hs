@@ -5,6 +5,7 @@ module Certifier (
     fromClause,
     certifyBy,
     fromDNF,
+    certify,
     findContradiction,
 ) where
 
@@ -14,6 +15,7 @@ import PPA (
     Hypothesis (HAxiom, HTheorem),
     Justification,
     Program,
+    ProofStep (..),
     TProof,
     findHyp,
     getForm,
@@ -49,7 +51,7 @@ import ND (
     dneg,
  )
 
-import Data.List (find)
+import Data.List (find, partition)
 import Data.Maybe (fromJust, isNothing)
 import Text.Printf (printf)
 
@@ -76,8 +78,26 @@ certifyTheorem ctx (DTheorem h f p) = do
     ndProof <- certifyProof ctx f p
     return (HTheorem h f ndProof : ctx)
 
+-- TODO: Diffuse vs skeleton steps
+-- De acá en adelante hay que re-pensar
 certifyProof :: Context -> Form -> TProof -> Result Proof
-certifyProof = undefined
+certifyProof ctx f (p : ps) = certifyProofStep ctx f p ps
+
+certifyProofStep ::
+    Context -> Form -> ProofStep -> TProof -> Result Proof
+
+certifyProofStep ctx (FImp f1 f2) (PSAssume name form) ps
+    | form /= f1 = Left "can't assume"
+    | otherwise = do
+        sub <- certifyProof ctx f2 ps
+        return PImpI {
+           hypAntecedent= name,
+           proofConsequent= sub
+        }
+
+certifyProofStep ctx thesis (PSThusBy form js) ps
+    | form /= thesis = Left "form not thesis"
+    | otherwise = certifyBy ctx thesis js
 
 {-
 execute :: Program -> CheckResult

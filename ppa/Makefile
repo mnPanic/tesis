@@ -1,7 +1,7 @@
 .PHONY: all
 
 main:
-	ghc Main.hs
+	ghc src/Main.hs
 
 # TODO:
 # https://downloads.haskell.org/~ghc/6.0/docs/html/users_guide/options-output.html
