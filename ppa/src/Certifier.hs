@@ -10,7 +10,8 @@ module Certifier (
 
 import PPA (
     Context,
-    Hypothesis,
+    Decl (..),
+    Hypothesis (HAxiom, HTheorem),
     Justification,
     Program,
     TProof,
@@ -52,11 +53,28 @@ import Data.List (find)
 import Data.Maybe (fromJust, isNothing)
 import Text.Printf (printf)
 
-certify :: Program -> Context
-certify = undefined
-
 check :: Context -> Bool
 check = undefined
+
+certify :: Program -> Result Context
+certify = certify' []
+
+certify' :: Context -> Program -> Result Context
+certify' ctx (d : ds) = do
+    dCtx <- certifyDecl ctx d
+    certify' dCtx ds
+
+certifyDecl :: Context -> Decl -> Result Context
+certifyDecl ctx d@(DAxiom{}) = certifyAxiom ctx d
+certifyDecl ctx d@(DTheorem{}) = certifyTheorem ctx d
+
+certifyAxiom :: Context -> Decl -> Result Context
+certifyAxiom ctx (DAxiom h f) = return (HAxiom h f : ctx)
+
+certifyTheorem :: Context -> Decl -> Result Context
+certifyTheorem ctx (DTheorem h f p) = do
+    ndProof <- certifyProof ctx f p
+    return (HTheorem h f ndProof : ctx)
 
 certifyProof :: Context -> Form -> TProof -> Result Proof
 certifyProof = undefined
