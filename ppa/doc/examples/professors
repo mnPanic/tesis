@@ -1,0 +1,29 @@
+// https://www.cs.cornell.edu/courses/cs4700/2011fa/lectures/16_FirstOrderLogic.pdf
+
+// Lucy is a professor
+axiom LucyProf : is_professor(lucy);
+
+// All professors are people
+axiom ProfPeople : forall X. is_professor(X) => person(X);
+
+// John is the dean
+axiom JohnDean : dean(john);
+
+// Deans are professors
+axiom DeanProf : forall X. is_dean(X) => is_professor(X);
+
+// All professors consider the dean a friend or don't know him
+axiom ProfDeanFriend :
+  forall D. forall X. (is_dean(D) ^ is_professor(X)) => is_friend_of(X, D) v ~knows(X, D);
+
+// Everyone is a friend of someone
+axiom Friend : forall X. exists Y . is_friend_of(X, Y);
+
+// People only criticize other people that are not their friends
+axiom PeopleCriticize :
+  forall X . forall Y . (is_person(X) ^ is_person(Y) ^ criticize(X, Y)) => ~is_friend_of(X, Y);
+
+axiom LucyCritJohn : criticize(lucy, john);
+
+// Question: is john no friend of lucy?
+~is_friend_of(john, lucy)

@@ -1,42 +1,31 @@
-module Proofs where
+module TestProofs where
 
-import Prover (
+import ND (
     Form (FAnd, FExists, FFalse, FForall, FImp, FNot, FOr, FPred, FTrue),
+    HypId,
     PredId,
-    Proof (
-        PAndE1,
-        PAndE2,
-        PAndI,
-        PAx,
-        PExistsE,
-        PExistsI,
-        PFalseE,
-        PForallE,
-        PForallI,
-        PImpE,
-        PImpI,
-        PLEM,
-        PNotE,
-        PNotI,
-        POrE,
-        POrI1,
-        POrI2,
-        PTrueI
-    ),
+    Proof (..),
     Term (TVar),
     VarId,
+    dneg,
+    predVar,
+    propVar,
+ )
+
+import NDProofs (
+    Result,
+    cut,
+    doubleNegElim,
+    proofAndEProjection,
+ )
+
+import Certifier (
+    dnf,
+    solve,
  )
 
 -- Dems sacadas de ejercicios de Lectures on the Curry Howard Isomorphism
 -- Originalmente son para deducción natural de intuicionista.
-
--- Dado un id de predicado devuelve un predicado de aridad 0,
--- i.e una variable proposicional
-propVar :: PredId -> Form
-propVar pid = FPred pid []
-
-predVar :: PredId -> VarId -> Form
-predVar p v = FPred p [TVar v]
 
 -- A -> A
 f1 :: Form
@@ -276,48 +265,6 @@ p9 =
                 )
             )
         )
-
--- Dada una fórmula A da su doble negación
-dneg :: Form -> Form
-dneg f = FNot $ FNot f
-
--- Dada una fórmula A da una demostración de ~~A -> A
-doubleNegElim :: Form -> Proof
-doubleNegElim formA =
-    PImpI
-        "h ~~{A}"
-        ( -- Uso LEM de A v ~A
-          POrE
-            formA
-            (FNot formA)
-            PLEM
-            -- Dem de A asumiendo A
-            "h {A}"
-            (PAx "h {A}")
-            -- Dem de A asumiendo ~ A
-            "h ~{A}"
-            ( -- ~A y ~~A generan una contradicción
-              PFalseE
-                ( PNotE
-                    (FNot formA) -- Uso ~~A
-                    -- Dem de ~~A
-                    (PAx "h ~~{A}")
-                    -- Dem de ~A
-                    (PAx "h ~{A}")
-                )
-            )
-        )
-
--- doubleNegElim de A se puede usar para demostrar A por contradicción, asumiendo ~A
-{-
-    PImpE
-        dneg A
-        dnegEim A
-        -- Proof de ~~A
-        PNotI "h ~A"
-            -- Proof de bottom asumiendo ~A, es decir que asumir que no vale A
-            -- lleva a una contradicción.
--}
 
 -- De morgan
 
@@ -958,3 +905,345 @@ p24Vuelta =
                 )
             )
         )
+
+-----
+-- Demostraciones necesarias para el automatic proof del by
+
+-- Cut, como la transitividad de la implicación
+-- ((A => B) ^ (B => C)) ^ A => C
+f27 :: Form
+f27 =
+    FImp
+        ( FAnd
+            ( FAnd
+                (FImp (propVar "A") (propVar "B"))
+                (FImp (propVar "B") (propVar "C"))
+            )
+            (propVar "A")
+        )
+        (propVar "C")
+
+p27 :: Proof
+p27 =
+    PImpI
+        { hypAntecedent = "h ((A => B) ^ (B => C)) ^ A"
+        , -- Dem de C por transitividad
+          proofConsequent =
+            PImpE
+                { antecedent = propVar "B"
+                , -- Dem de B => C hay que meterse en el AND
+                  proofImp =
+                    PAndE2
+                        { left = FImp (propVar "A") (propVar "B")
+                        , proofAnd =
+                            PAndE1
+                                { right = propVar "A"
+                                , proofAnd = PAx "h ((A => B) ^ (B => C)) ^ A"
+                                }
+                        }
+                , -- Dem de B
+                  proofAntecedent =
+                    PImpE
+                        { antecedent = propVar "A"
+                        , proofImp =
+                            PAndE1
+                                { right = FImp (propVar "B") (propVar "C")
+                                , proofAnd =
+                                    PAndE1
+                                        { right = propVar "A"
+                                        , proofAnd = PAx "h ((A => B) ^ (B => C)) ^ A"
+                                        }
+                                }
+                        , proofAntecedent =
+                            PAndE2
+                                { left =
+                                    FAnd
+                                        (FImp (propVar "A") (propVar "B"))
+                                        (FImp (propVar "B") (propVar "C"))
+                                , proofAnd = PAx "h ((A => B) ^ (B => C)) ^ A"
+                                }
+                        }
+                }
+        }
+
+p27_andEProjection :: Result Proof
+p27_andEProjection = do
+    let ands =
+            ( "h ((A => B) ^ (B => C)) ^ A"
+            , FAnd
+                ( FAnd
+                    (FImp (propVar "A") (propVar "B"))
+                    (FImp (propVar "B") (propVar "C"))
+                )
+                (propVar "A")
+            )
+    proofBImpC <- proofAndEProjection ands (FImp (propVar "B") (propVar "C"))
+    proofAImpB <- proofAndEProjection ands (FImp (propVar "A") (propVar "B"))
+    proofA <- proofAndEProjection ands (propVar "A")
+    return
+        PImpI
+            { hypAntecedent = "h ((A => B) ^ (B => C)) ^ A"
+            , -- Dem de C por transitividad
+              proofConsequent =
+                PImpE
+                    { antecedent = propVar "B"
+                    , -- Dem de B => C hay que meterse en el AND
+                      proofImp = proofBImpC
+                    , -- Dem de B
+                      proofAntecedent =
+                        PImpE
+                            { antecedent = propVar "A"
+                            , proofImp = proofAImpB
+                            , proofAntecedent = proofA
+                            }
+                    }
+            }
+
+-- No tiene tanto sentido usar cut en este caso, porque las implicaciones no se
+-- prueban con otras funciones sino que son premisas, así que terminás dando más
+-- vueltas con PImpE. Para pasar de A |- B de vuelta a |- A -> B
+
+-- (X ^ Y) v (X ^ Z) => X ^ (Y v Z)
+f25 :: Form
+f25 =
+    FImp
+        ( FOr
+            (FAnd (propVar "X") (propVar "Y"))
+            (FAnd (propVar "X") (propVar "Z"))
+        )
+        (FAnd (propVar "X") (FOr (propVar "Y") (propVar "Z")))
+
+-- Devuelve una demostración para
+-- (X ^ Y) v (X ^ Z) => X ^ (Y v Z)
+-- TODO: Mejor nombre
+proofDistOrOverAnd :: Form -> Form -> Form -> Proof
+proofDistOrOverAnd fx fy fz =
+    PImpI
+        "h (X ^ Y) v (X ^ Z)"
+        -- Queremos demostrar X ^ (Y v Z), necesariamente se repite
+        -- o el POrE del antecedente o el PAndI del consecuente
+        ( POrE
+            { left = FAnd fx fy
+            , right = FAnd fx fz
+            , proofOr = PAx "h (X ^ Y) v (X ^ Z)"
+            , hypLeft = "h X ^ Y"
+            , proofAssumingLeft =
+                PAndI
+                    { proofLeft =
+                        PAndE1
+                            { right = fy
+                            , proofAnd = PAx "h X ^ Y"
+                            }
+                    , proofRight =
+                        POrI1
+                            { proofLeft =
+                                PAndE2
+                                    { left = fx
+                                    , proofAnd = PAx "h X ^ Y"
+                                    }
+                            }
+                    }
+            , hypRight = "h X ^ Z"
+            , proofAssumingRight =
+                PAndI
+                    { proofLeft =
+                        PAndE1
+                            { right = fz
+                            , proofAnd = PAx "h X ^ Z"
+                            }
+                    , proofRight =
+                        POrI2
+                            { proofRight =
+                                PAndE2
+                                    { left = fx
+                                    , proofAnd = PAx "h X ^ Z"
+                                    }
+                            }
+                    }
+            }
+        )
+
+-- X ^ (Y v Z) => (X ^ Y) v (X ^ Z)
+f25' :: Form
+f25' =
+    FImp
+        (FAnd (propVar "X") (FOr (propVar "Y") (propVar "Z")))
+        ( FOr
+            (FAnd (propVar "X") (propVar "Y"))
+            (FAnd (propVar "X") (propVar "Z"))
+        )
+
+p25' :: Proof
+p25' =
+    PImpI
+        "h X ^ (Y v Z)"
+        -- Dependiendo de si vale Y o Z pruebo el primero o el segundo (respectivamente)
+        ( POrE
+            { left = propVar "Y"
+            , right = propVar "Z"
+            , proofOr =
+                ( PAndE2
+                    { left = propVar "X"
+                    , proofAnd = PAx "h X ^ (Y v Z)"
+                    }
+                )
+            , hypLeft = "h Y"
+            , proofAssumingLeft =
+                POrI1
+                    { proofLeft =
+                        PAndI
+                            { proofLeft =
+                                PAndE1
+                                    { right = FOr (propVar "Y") (propVar "Z")
+                                    , proofAnd = PAx "h X ^ (Y v Z)"
+                                    }
+                            , proofRight = PAx "h Y"
+                            }
+                    }
+            , hypRight = "h Z"
+            , proofAssumingRight =
+                POrI2
+                    { proofRight =
+                        PAndI
+                            { proofLeft =
+                                PAndE1
+                                    { right = FOr (propVar "Y") (propVar "Z")
+                                    , proofAnd = PAx "h X ^ (Y v Z)"
+                                    }
+                            , proofRight = PAx "h Z"
+                            }
+                    }
+            }
+        )
+
+{- Dem de prueba con by
+
+thus B by A, A => B
+ = (A) ^ (A => B) => B
+
+Queremos demostrar por la negación, viendo que es refutable con dnegelim
+Para demostrar que la negación es refutable,
+ - eliminamos implicaciones
+ - pasamos a forma normal negada (negaciones más adentro posible)
+ - la pasamos a DNF con equivalencias
+ - refutás cada cláusula encontrando mismos literales sin negar y negados
+
+~ ( ( A ^ (A => B) ) => B )
+= ~ (~ (A ^ (A => B)) v B))         [ X => Y = ~X v Y ]
+= (~~(A ^ (A => B) ^ ~B))           [ ~(X v Y) = ~X ^ ~Y ]
+= A ^ (A => B) ^ ~B                 [ ~~X = X ]
+= { A ^ (~A v B) } ^ ~B             [ X => Y = ~X v Y ]
+= ((A ^ ~A) v (A ^ B)) ^ ~B         [ X ^ (Y v Z) = (X ^ Y) v (X ^ Z)]
+= (A ^ ~A ^ ~B) v (A ^ B ^ ~B)      [ (X v Y) ^ Z = (X ^ Z) v (Y ^ Z)]
+
+en DNF
+-}
+
+f26 :: Form
+f26 =
+    FImp
+        ( FAnd
+            (propVar "A")
+            (FImp (propVar "A") (propVar "B"))
+        )
+        (propVar "B")
+
+-- TODO arreglar esto que está mal DNF
+p26 :: Result Proof
+-- Primero doubleNegElim para demostrar por contradicción
+p26 = do
+    let (dnfNegThesis, dnfProof) = dnf ("h dnfThesis", FNot thesis)
+    contradictionProof <- solve ("h dnfThesis", dnfNegThesis)
+    return
+        PImpE
+            { antecedent = dneg thesis
+            , proofImp = doubleNegElim thesis
+            , proofAntecedent =
+                PNotI
+                    { hyp = "h ~((A) ^ (A => B) => B)"
+                    , -- Demostración de bottom (contradicción) asumiendo que no vale
+                      -- la tesis. Primero convertimos a DNF y luego demostramos que
+                      -- la version en DNF es refutable.
+                      proofBot =
+                        cut
+                            dnfNegThesis
+                            dnfProof
+                            "h dnfThesis"
+                            contradictionProof
+                    }
+            }
+  where
+    thesis =
+        FImp
+            ( FAnd
+                (propVar "A")
+                (FImp (propVar "A") (propVar "B"))
+            )
+            (propVar "B")
+
+-- (A ^ ~A ^ ~B) v (A ^ B ^ ~B) -> false (bot)
+f28_exampleSolve :: Form
+f28_exampleSolve =
+    FImp
+        ( FOr
+            ( FAnd
+                (propVar "A")
+                ( FAnd
+                    (FNot $ propVar "A")
+                    (FNot $ propVar "B")
+                )
+            )
+            ( FAnd
+                (propVar "A")
+                ( FAnd
+                    (propVar "B")
+                    (FNot $ propVar "B")
+                )
+            )
+        )
+        FFalse
+
+p28_exampleSolve :: Result Proof
+p28_exampleSolve = do
+    let left =
+            FAnd
+                (propVar "A")
+                ( FAnd
+                    (FNot $ propVar "A")
+                    (FNot $ propVar "B")
+                )
+    let right =
+            FAnd
+                (propVar "A")
+                ( FAnd
+                    (propVar "B")
+                    (FNot $ propVar "B")
+                )
+    proofLeftA <- proofAndEProjection ("h (A ^ ~A ^ ~B)", left) (propVar "A")
+    proofLeftNotA <- proofAndEProjection ("h (A ^ ~A ^ ~B)", left) (FNot $ propVar "A")
+    proofRightB <- proofAndEProjection ("h (A ^ B ^ ~B)", right) (propVar "B")
+    proofRightNotB <- proofAndEProjection ("h (A ^ B ^ ~B)", right) (FNot $ propVar "B")
+    return
+        PImpI
+            { hypAntecedent = "h (A ^ ~A ^ ~B) v (A ^ B ^ ~B)"
+            , proofConsequent =
+                POrE
+                    { left = left
+                    , right = right
+                    , proofOr = PAx "h (A ^ ~A ^ ~B) v (A ^ B ^ ~B)"
+                    , hypLeft = "h (A ^ ~A ^ ~B)"
+                    , proofAssumingLeft =
+                        PNotE
+                            { form = propVar "A"
+                            , proofNotForm = proofLeftNotA
+                            , proofForm = proofLeftA
+                            }
+                    , hypRight = "h (A ^ B ^ ~B)"
+                    , proofAssumingRight =
+                        PNotE
+                            { form = propVar "B"
+                            , proofNotForm = proofRightNotB
+                            , proofForm = proofRightB
+                            }
+                    }
+            }

@@ -1,7 +1,8 @@
 {
 module Parser(parseExp) where
 
-import Prover ( Form(..), Term(..) )
+import ND ( Form(..), Term(..) )
+import PPA ( TProof, ProofStep(..), Program(..), Decl(..), Justification )
 import Lexer ( Token(..) )
 }
 
@@ -24,10 +25,20 @@ import Lexer ( Token(..) )
     forall      { TokenForall }
     exists      { TokenExists }
     dot         { TokenDot }
-    comma       { TokenComma }
 
     id          { TokenId $$ }
     var         { TokenVar $$ }
+    ';'         { TokenSemicolon }
+    ':'         { TokenDoubleColon }
+    ','         { TokenComma }
+    axiom       { TokenAxiom }   
+    theorem     { TokenTheorem }
+    proof       { TokenProof }
+    qed         { TokenQED }
+    name        { TokenQuotedName $$ }
+    assume      { TokenAssume }
+    thus        { TokenThus }
+    by          { TokenBy }
 
 %right exists forall dot
 %right imp
@@ -35,7 +46,34 @@ import Lexer ( Token(..) )
 %nonassoc not
 %%
 
-Exp     : Form                      { $1 }
+Prog    :: { Program }
+Prog    : Declarations                   { $1 }
+
+Declarations :: { [Decl] }
+Declarations : Declaration Declarations         { $1 : $2}
+             | Declaration                      { [$1] }
+
+Declaration :: { Decl }
+Declaration : Axiom                     { $1 }
+            | Theorem                   { $1 }
+
+Axiom :: { Decl }
+Axiom : axiom name ':' Form             { DAxiom $2 $4 }
+
+Theorem :: { Decl }
+Theorem : theorem name ':' Form proof Proof qed   { DTheorem $2 $4 $6 }
+
+Proof   :: { TProof }
+Proof   : ProofStep ';' Proof       { $1 : $3 }
+        | ProofStep ';'             { [ $1 ] }
+
+ProofStep :: { ProofStep }
+ProofStep : assume name ':' Form                { PSAssume $2 $4 }
+          | thus Form by Justification          { PSThusBy $2 $4 }
+
+Justification :: { Justification }
+Justification : name ',' Justification          { $1 : $3 }
+              | name                            { [ $1 ] }              
 
 Form :: { Form }
 Form    : id TermArgs               { FPred $1 $2 }
@@ -59,7 +97,7 @@ TermArgs : {- empty -}              { [] }
 
 Terms :: { [Term] }
 Terms   : Term                      { [$1] }
-        | Term comma Terms          { $1 : $3 }
+        | Term ',' Terms          { $1 : $3 }
 
 {
 parseError :: ([Token], [String]) -> a
