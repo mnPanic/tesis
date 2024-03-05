@@ -1,5 +1,10 @@
 .PHONY: all
 
+clean:
+	rm src/*.hi
+	rm src/*.o
+	rm src/Main
+
 main:
 	ghc src/Main.hs
 
