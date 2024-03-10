@@ -1,9 +1,9 @@
 {-# OPTIONS_GHC -w #-}
-module Parser(parseExp) where
+module Parser(parseProgram) where
 
 import ND ( Form(..), Term(..) )
 import PPA ( TProof, ProofStep(..), Program(..), Decl(..), Justification )
-import Lexer ( Token(..) )
+import Lexer
 import qualified Data.Array as Happy_Data_Array
 import qualified Data.Bits as Bits
 import Control.Applicative(Applicative(..))
@@ -33,10 +33,10 @@ data HappyAbsSyn
 type HappyReduction m = 
 	   Prelude.Int 
 	-> (Token)
-	-> HappyState (Token) (HappyStk HappyAbsSyn -> [(Token)] -> m HappyAbsSyn)
-	-> [HappyState (Token) (HappyStk HappyAbsSyn -> [(Token)] -> m HappyAbsSyn)] 
+	-> HappyState (Token) (HappyStk HappyAbsSyn -> m HappyAbsSyn)
+	-> [HappyState (Token) (HappyStk HappyAbsSyn -> m HappyAbsSyn)] 
 	-> HappyStk HappyAbsSyn 
-	-> [(Token)] -> m HappyAbsSyn
+	-> m HappyAbsSyn
 -}
 
 action_0,
@@ -103,13 +103,13 @@ action_0,
  action_61,
  action_62,
  action_63,
- action_64 :: () => Prelude.Int -> ({-HappyReduction (HappyIdentity) = -}
+ action_64 :: () => Prelude.Int -> ({-HappyReduction (Alex) = -}
 	   Prelude.Int 
 	-> (Token)
-	-> HappyState (Token) (HappyStk HappyAbsSyn -> [(Token)] -> (HappyIdentity) HappyAbsSyn)
-	-> [HappyState (Token) (HappyStk HappyAbsSyn -> [(Token)] -> (HappyIdentity) HappyAbsSyn)] 
+	-> HappyState (Token) (HappyStk HappyAbsSyn -> (Alex) HappyAbsSyn)
+	-> [HappyState (Token) (HappyStk HappyAbsSyn -> (Alex) HappyAbsSyn)] 
 	-> HappyStk HappyAbsSyn 
-	-> [(Token)] -> (HappyIdentity) HappyAbsSyn)
+	-> (Alex) HappyAbsSyn)
 
 happyReduce_1,
  happyReduce_2,
@@ -139,13 +139,13 @@ happyReduce_1,
  happyReduce_26,
  happyReduce_27,
  happyReduce_28,
- happyReduce_29 :: () => ({-HappyReduction (HappyIdentity) = -}
+ happyReduce_29 :: () => ({-HappyReduction (Alex) = -}
 	   Prelude.Int 
 	-> (Token)
-	-> HappyState (Token) (HappyStk HappyAbsSyn -> [(Token)] -> (HappyIdentity) HappyAbsSyn)
-	-> [HappyState (Token) (HappyStk HappyAbsSyn -> [(Token)] -> (HappyIdentity) HappyAbsSyn)] 
+	-> HappyState (Token) (HappyStk HappyAbsSyn -> (Alex) HappyAbsSyn)
+	-> [HappyState (Token) (HappyStk HappyAbsSyn -> (Alex) HappyAbsSyn)] 
 	-> HappyStk HappyAbsSyn 
-	-> [(Token)] -> (HappyIdentity) HappyAbsSyn)
+	-> (Alex) HappyAbsSyn)
 
 happyExpList :: Happy_Data_Array.Array Prelude.Int Prelude.Int
 happyExpList = Happy_Data_Array.listArray (0,107) ([0,32768,1,0,384,0,0,0,0,384,0,0,0,0,0,0,0,8,0,2048,0,0,0,0,32,0,8192,0,0,0,32768,1520,0,61568,5,0,14,2,61568,5,32768,1520,0,0,0,0,0,0,0,8,0,2048,0,128,0,0,14,0,61568,5,32768,1520,0,61568,5,0,0,0,0,12,0,512,0,0,2,0,0,0,3840,0,0,0,48,0,1024,0,4096,0,0,2048,32768,1520,0,0,0,32768,1520,0,61568,5,0,16384,0,256,0,32768,0,0,0,0,0,14,0,0,0,0,0,0,0,0,0,0,0,0,12,0,14,0,3584,0,0,14,64,0,32,0,0,48,0,0,0,0,0,61568,5,0,0,8,0,0,0,0,0,0,64,0,14,0,0,2048,0,0,0,0
@@ -154,7 +154,7 @@ happyExpList = Happy_Data_Array.listArray (0,107) ([0,32768,1,0,384,0,0,0,0,384,
 {-# NOINLINE happyExpListPerState #-}
 happyExpListPerState st =
     token_strs_expected
-  where token_strs = ["error","%dummy","%start_parseExp","Prog","Declarations","Declaration","Axiom","Theorem","Proof","ProofStep","Justification","Form","Term","TermArgs","Terms","'('","')'","and","or","imp","not","true","false","forall","exists","dot","id","var","';'","':'","','","axiom","theorem","proof","qed","name","assume","thus","by","%eof"]
+  where token_strs = ["error","%dummy","%start_parse","Prog","Declarations","Declaration","Axiom","Theorem","Proof","ProofStep","Justification","Form","Term","TermArgs","Terms","'('","')'","and","or","imp","not","true","false","forall","exists","dot","id","var","';'","':'","','","axiom","theorem","proof","qed","name","assume","thus","by","%eof"]
         bit_start = st Prelude.* 40
         bit_end = (st Prelude.+ 1) Prelude.* 40
         read_bit = readArrayBit happyExpList
@@ -507,7 +507,7 @@ happyReduction_5 _  = notHappyAtAll
 happyReduce_6 = happyReduce 4 7 happyReduction_6
 happyReduction_6 ((HappyAbsSyn12  happy_var_4) `HappyStk`
 	_ `HappyStk`
-	(HappyTerminal (TokenQuotedName happy_var_2)) `HappyStk`
+	(HappyTerminal (Token _ (TokenQuotedName happy_var_2))) `HappyStk`
 	_ `HappyStk`
 	happyRest)
 	 = HappyAbsSyn6
@@ -520,7 +520,7 @@ happyReduction_7 (_ `HappyStk`
 	_ `HappyStk`
 	(HappyAbsSyn12  happy_var_4) `HappyStk`
 	_ `HappyStk`
-	(HappyTerminal (TokenQuotedName happy_var_2)) `HappyStk`
+	(HappyTerminal (Token _ (TokenQuotedName happy_var_2))) `HappyStk`
 	_ `HappyStk`
 	happyRest)
 	 = HappyAbsSyn6
@@ -547,7 +547,7 @@ happyReduction_9 _ _  = notHappyAtAll
 happyReduce_10 = happyReduce 4 10 happyReduction_10
 happyReduction_10 ((HappyAbsSyn12  happy_var_4) `HappyStk`
 	_ `HappyStk`
-	(HappyTerminal (TokenQuotedName happy_var_2)) `HappyStk`
+	(HappyTerminal (Token _ (TokenQuotedName happy_var_2))) `HappyStk`
 	_ `HappyStk`
 	happyRest)
 	 = HappyAbsSyn10
@@ -567,22 +567,22 @@ happyReduction_11 ((HappyAbsSyn11  happy_var_4) `HappyStk`
 happyReduce_12 = happySpecReduce_3  11 happyReduction_12
 happyReduction_12 (HappyAbsSyn11  happy_var_3)
 	_
-	(HappyTerminal (TokenQuotedName happy_var_1))
+	(HappyTerminal (Token _ (TokenQuotedName happy_var_1)))
 	 =  HappyAbsSyn11
 		 (happy_var_1 : happy_var_3
 	)
 happyReduction_12 _ _ _  = notHappyAtAll 
 
 happyReduce_13 = happySpecReduce_1  11 happyReduction_13
-happyReduction_13 (HappyTerminal (TokenQuotedName happy_var_1))
+happyReduction_13 (HappyTerminal (Token _ (TokenQuotedName happy_var_1)))
 	 =  HappyAbsSyn11
-		 ([happy_var_1]
+		 ([ happy_var_1 ]
 	)
 happyReduction_13 _  = notHappyAtAll 
 
 happyReduce_14 = happySpecReduce_2  12 happyReduction_14
 happyReduction_14 (HappyAbsSyn14  happy_var_2)
-	(HappyTerminal (TokenId happy_var_1))
+	(HappyTerminal (Token _ (TokenId happy_var_1)))
 	 =  HappyAbsSyn12
 		 (FPred happy_var_1 happy_var_2
 	)
@@ -626,7 +626,7 @@ happyReduction_18 _ _  = notHappyAtAll
 happyReduce_19 = happyReduce 4 12 happyReduction_19
 happyReduction_19 ((HappyAbsSyn12  happy_var_4) `HappyStk`
 	_ `HappyStk`
-	(HappyTerminal (TokenVar happy_var_2)) `HappyStk`
+	(HappyTerminal (Token _ (TokenVar happy_var_2))) `HappyStk`
 	_ `HappyStk`
 	happyRest)
 	 = HappyAbsSyn12
@@ -636,7 +636,7 @@ happyReduction_19 ((HappyAbsSyn12  happy_var_4) `HappyStk`
 happyReduce_20 = happyReduce 4 12 happyReduction_20
 happyReduction_20 ((HappyAbsSyn12  happy_var_4) `HappyStk`
 	_ `HappyStk`
-	(HappyTerminal (TokenVar happy_var_2)) `HappyStk`
+	(HappyTerminal (Token _ (TokenVar happy_var_2))) `HappyStk`
 	_ `HappyStk`
 	happyRest)
 	 = HappyAbsSyn12
@@ -665,7 +665,7 @@ happyReduction_23 _
 happyReduction_23 _ _ _  = notHappyAtAll 
 
 happyReduce_24 = happySpecReduce_1  13 happyReduction_24
-happyReduction_24 (HappyTerminal (TokenVar happy_var_1))
+happyReduction_24 (HappyTerminal (Token _ (TokenVar happy_var_1)))
 	 =  HappyAbsSyn13
 		 (TVar happy_var_1
 	)
@@ -673,7 +673,7 @@ happyReduction_24 _  = notHappyAtAll
 
 happyReduce_25 = happySpecReduce_2  13 happyReduction_25
 happyReduction_25 (HappyAbsSyn14  happy_var_2)
-	(HappyTerminal (TokenId happy_var_1))
+	(HappyTerminal (Token _ (TokenId happy_var_1)))
 	 =  HappyAbsSyn13
 		 (TFun happy_var_1 happy_var_2
 	)
@@ -709,74 +709,66 @@ happyReduction_29 (HappyAbsSyn14  happy_var_3)
 	)
 happyReduction_29 _ _ _  = notHappyAtAll 
 
-happyNewToken action sts stk [] =
-	action 40 40 notHappyAtAll (HappyState action) sts stk []
-
-happyNewToken action sts stk (tk:tks) =
-	let cont i = action i i tk (HappyState action) sts stk tks in
+happyNewToken action sts stk
+	= lexwrap(\tk -> 
+	let cont i = action i i tk (HappyState action) sts stk in
 	case tk of {
-	TokenParenOpen -> cont 16;
-	TokenParenClose -> cont 17;
-	TokenAnd -> cont 18;
-	TokenOr -> cont 19;
-	TokenImp -> cont 20;
-	TokenNot -> cont 21;
-	TokenTrue -> cont 22;
-	TokenFalse -> cont 23;
-	TokenForall -> cont 24;
-	TokenExists -> cont 25;
-	TokenDot -> cont 26;
-	TokenId happy_dollar_dollar -> cont 27;
-	TokenVar happy_dollar_dollar -> cont 28;
-	TokenSemicolon -> cont 29;
-	TokenDoubleColon -> cont 30;
-	TokenComma -> cont 31;
-	TokenAxiom -> cont 32;
-	TokenTheorem -> cont 33;
-	TokenProof -> cont 34;
-	TokenQED -> cont 35;
-	TokenQuotedName happy_dollar_dollar -> cont 36;
-	TokenAssume -> cont 37;
-	TokenThus -> cont 38;
-	TokenBy -> cont 39;
-	_ -> happyError' ((tk:tks), [])
-	}
+	Token _ TokenEOF -> action 40 40 tk (HappyState action) sts stk;
+	Token _ TokenParenOpen -> cont 16;
+	Token _ TokenParenClose -> cont 17;
+	Token _ TokenAnd -> cont 18;
+	Token _ TokenOr -> cont 19;
+	Token _ TokenImp -> cont 20;
+	Token _ TokenNot -> cont 21;
+	Token _ TokenTrue -> cont 22;
+	Token _ TokenFalse -> cont 23;
+	Token _ TokenForall -> cont 24;
+	Token _ TokenExists -> cont 25;
+	Token _ TokenDot -> cont 26;
+	Token _ (TokenId happy_dollar_dollar) -> cont 27;
+	Token _ (TokenVar happy_dollar_dollar) -> cont 28;
+	Token _ TokenSemicolon -> cont 29;
+	Token _ TokenDoubleColon -> cont 30;
+	Token _ TokenComma -> cont 31;
+	Token _ TokenAxiom -> cont 32;
+	Token _ TokenTheorem -> cont 33;
+	Token _ TokenProof -> cont 34;
+	Token _ TokenQED -> cont 35;
+	Token _ (TokenQuotedName happy_dollar_dollar) -> cont 36;
+	Token _ TokenAssume -> cont 37;
+	Token _ TokenThus -> cont 38;
+	Token _ TokenBy -> cont 39;
+	_ -> happyError' (tk, [])
+	})
 
-happyError_ explist 40 tk tks = happyError' (tks, explist)
-happyError_ explist _ tk tks = happyError' ((tk:tks), explist)
+happyError_ explist 40 tk = happyError' (tk, explist)
+happyError_ explist _ tk = happyError' (tk, explist)
 
-newtype HappyIdentity a = HappyIdentity a
-happyIdentity = HappyIdentity
-happyRunIdentity (HappyIdentity a) = a
-
-instance Prelude.Functor HappyIdentity where
-    fmap f (HappyIdentity a) = HappyIdentity (f a)
-
-instance Applicative HappyIdentity where
-    pure  = HappyIdentity
-    (<*>) = ap
-instance Prelude.Monad HappyIdentity where
-    return = pure
-    (HappyIdentity p) >>= q = q p
-
-happyThen :: () => HappyIdentity a -> (a -> HappyIdentity b) -> HappyIdentity b
+happyThen :: () => Alex a -> (a -> Alex b) -> Alex b
 happyThen = (Prelude.>>=)
-happyReturn :: () => a -> HappyIdentity a
+happyReturn :: () => a -> Alex a
 happyReturn = (Prelude.return)
-happyThen1 m k tks = (Prelude.>>=) m (\a -> k a tks)
-happyReturn1 :: () => a -> b -> HappyIdentity a
-happyReturn1 = \a tks -> (Prelude.return) a
-happyError' :: () => ([(Token)], [Prelude.String]) -> HappyIdentity a
-happyError' = HappyIdentity Prelude.. parseError
-parseExp tks = happyRunIdentity happySomeParser where
- happySomeParser = happyThen (happyParse action_0 tks) (\x -> case x of {HappyAbsSyn4 z -> happyReturn z; _other -> notHappyAtAll })
+happyThen1 :: () => Alex a -> (a -> Alex b) -> Alex b
+happyThen1 = happyThen
+happyReturn1 :: () => a -> Alex a
+happyReturn1 = happyReturn
+happyError' :: () => ((Token), [Prelude.String]) -> Alex a
+happyError' tk = parseError tk
+parse = happySomeParser where
+ happySomeParser = happyThen (happyParse action_0) (\x -> case x of {HappyAbsSyn4 z -> happyReturn z; _other -> notHappyAtAll })
 
 happySeq = happyDontSeq
 
 
-parseError :: ([Token], [String]) -> a
-parseError (r, n) = error (
-        "Parse error on " ++ show r ++ "\npossible tokens: " ++ show n)
+lexwrap :: (Token -> Alex a) -> Alex a
+lexwrap = (alexMonadScan' >>=)
+
+parseError :: (Token, [String]) -> Alex a
+parseError ((Token p t), next) =
+  alexError' p ("parse error at token '" ++ unLex t ++ "', possible tokens:" ++ show next)
+
+parseProgram :: FilePath -> String -> Either String Program
+parseProgram = runAlex' parse
 {-# LINE 1 "templates/GenericTemplate.hs" #-}
 -- $Id: GenericTemplate.hs,v 1.26 2005/01/14 14:47:22 simonmar Exp $
 

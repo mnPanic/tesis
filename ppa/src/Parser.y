@@ -1,44 +1,46 @@
 {
-module Parser(parseExp) where
+module Parser(parseProgram) where
 
 import ND ( Form(..), Term(..) )
 import PPA ( TProof, ProofStep(..), Program(..), Decl(..), Justification )
-import Lexer ( Token(..) )
+import Lexer
 }
 
-%name parseExp
+%name parse
 %tokentype { Token }
+%monad { Alex }
+%lexer { lexwrap } { Token _ TokenEOF }
 %error { parseError }
 
 -- % https://monlih.github.io/happy-docs/#_sec_errorhandlertype_directive
 %errorhandlertype explist
 
 %token
-    '('         { TokenParenOpen }
-    ')'         { TokenParenClose }
-    and         { TokenAnd }
-    or          { TokenOr }
-    imp         { TokenImp }
-    not         { TokenNot }
-    true        { TokenTrue }
-    false       { TokenFalse }
-    forall      { TokenForall }
-    exists      { TokenExists }
-    dot         { TokenDot }
+    '('         { Token _ TokenParenOpen }
+    ')'         { Token _ TokenParenClose }
+    and         { Token _ TokenAnd }
+    or          { Token _ TokenOr }
+    imp         { Token _ TokenImp }
+    not         { Token _ TokenNot }
+    true        { Token _ TokenTrue }
+    false       { Token _ TokenFalse }
+    forall      { Token _ TokenForall }
+    exists      { Token _ TokenExists }
+    dot         { Token _ TokenDot }
 
-    id          { TokenId $$ }
-    var         { TokenVar $$ }
-    ';'         { TokenSemicolon }
-    ':'         { TokenDoubleColon }
-    ','         { TokenComma }
-    axiom       { TokenAxiom }   
-    theorem     { TokenTheorem }
-    proof       { TokenProof }
-    qed         { TokenQED }
-    name        { TokenQuotedName $$ }
-    assume      { TokenAssume }
-    thus        { TokenThus }
-    by          { TokenBy }
+    id          { Token _ (TokenId $$) }
+    var         { Token _ (TokenVar $$) }
+    ';'         { Token _ TokenSemicolon }
+    ':'         { Token _ TokenDoubleColon }
+    ','         { Token _ TokenComma }
+    axiom       { Token _ TokenAxiom }   
+    theorem     { Token _ TokenTheorem }
+    proof       { Token _ TokenProof }
+    qed         { Token _ TokenQED }
+    name        { Token _ (TokenQuotedName $$) }
+    assume      { Token _ TokenAssume }
+    thus        { Token _ TokenThus }
+    by          { Token _ TokenBy }
 
 %right exists forall dot
 %right imp
@@ -100,7 +102,13 @@ Terms   : Term                      { [$1] }
         | Term ',' Terms          { $1 : $3 }
 
 {
-parseError :: ([Token], [String]) -> a
-parseError (r, n) = error (
-        "Parse error on " ++ show r ++ "\npossible tokens: " ++ show n)
+lexwrap :: (Token -> Alex a) -> Alex a
+lexwrap = (alexMonadScan' >>=)
+
+parseError :: (Token, [String]) -> Alex a
+parseError ((Token p t), next) =
+  alexError' p ("parse error at token '" ++ unLex t ++ "', possible tokens:" ++ show next)
+
+parseProgram :: FilePath -> String -> Either String Program
+parseProgram = runAlex' parse
 }

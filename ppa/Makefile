@@ -5,8 +5,11 @@ clean:
 	rm src/*.o
 	rm src/Main
 
+test:
+	cd src && ghc Test*.hs
+
 main:
-	ghc src/Main.hs
+	cd src && ghc Main.hs
 
 # TODO:
 # https://downloads.haskell.org/~ghc/6.0/docs/html/users_guide/options-output.html

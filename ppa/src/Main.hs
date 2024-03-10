@@ -1,21 +1,21 @@
 module Main where
 
 import Certifier (certify)
-import Lexer (lexer)
-import PPA (Program)
-import Parser (parseExp)
+import Parser (parseProgram)
 
 import System.Environment (getArgs)
 
 main :: IO ()
 main = do
     args <- getArgs
-    raw <- case args of
-        [] -> getContents
-        [f] -> readFile f
-        _ -> error "expected max. 1 argument "
-    print $ certify $ parse raw
-    --print $ lexer raw
+    let path = case args of
+            [] -> "<stdin>"
+            [f] -> f
+            _ -> error "expected max. 1 argument "
 
-parse :: String -> Program
-parse = parseExp . lexer
+    raw <- case path of
+        "<stdin>" -> getContents
+        f -> readFile f
+
+    let result = parseProgram path raw
+    either putStrLn (print . certify) result

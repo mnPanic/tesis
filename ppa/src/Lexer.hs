@@ -1,7 +1,21 @@
 {-# OPTIONS_GHC -fno-warn-unused-binds -fno-warn-missing-signatures #-}
 {-# LANGUAGE CPP #-}
 {-# LINE 1 "src/Lexer.x" #-}
-module Lexer(lexer, Token(..), AlexPosn(..)) where
+module Lexer(
+    Token(..)
+    , TokenClass(..)
+    , unLex
+    , AlexPosn(..)
+    , Alex(..)
+    , runAlex'
+    , runAlex
+    , alexMonadScan'
+    , alexError'
+    , alexInitUserState
+    ) where
+
+import Prelude hiding (lex)
+import Control.Monad ( liftM )
 #if __GLASGOW_HASKELL__ >= 603
 #include "ghcconfig.h"
 #elif defined(__GLASGOW_HASKELL__)
@@ -12,7 +26,8 @@ import Data.Array
 #else
 import Array
 #endif
-#define ALEX_POSN 1
+#define ALEX_MONAD 1
+#define ALEX_MONAD_USER_STATE 1
 -- -----------------------------------------------------------------------------
 -- Alex wrapper code.
 --
@@ -676,34 +691,34 @@ alex_base = listArray (0 :: Int, 88)
   , -32
   , -26
   , 4742
+  , 0
   , 4766
-  , 5012
-  , 5268
-  , 5269
-  , 5397
-  , 4855
-  , 5462
-  , 5575
+  , 5022
+  , 5023
+  , 5151
+  , 5215
+  , 5280
+  , 5393
   , 0
   , 0
   , 0
-  , 5798
-  , 5888
-  , 5978
-  , 6068
-  , 6158
+  , 5616
+  , 5706
+  , 5796
+  , 5886
+  , 5976
   , 0
   , 0
-  , 6248
-  , 6338
+  , 6066
+  , 6156
   , -158
-  , 6428
-  , 6518
-  , 6608
+  , 6246
+  , 6336
+  , 6426
   ]
 
 alex_table :: Array Int Int
-alex_table = listArray (0 :: Int, 6863)
+alex_table = listArray (0 :: Int, 6681)
   [ 0
   , 43
   , 43
@@ -5727,252 +5742,6 @@ alex_table = listArray (0 :: Int, 6863)
   , -1
   , -1
   , -1
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 65
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , 67
-  , 73
-  , 73
-  , 73
-  , 73
-  , 73
-  , 73
-  , 73
-  , 73
-  , 73
-  , 73
-  , 73
-  , 73
-  , 73
-  , 73
-  , 73
-  , 73
-  , 73
-  , 73
-  , 73
-  , 73
-  , 73
-  , 73
-  , 73
-  , 73
-  , 73
-  , 73
-  , 73
-  , 73
-  , 70
-  , 68
-  , 74
-  , 74
-  , 74
-  , 74
-  , 74
-  , 74
-  , 74
-  , 74
-  , 74
-  , 74
-  , 74
-  , 74
-  , 74
-  , 74
-  , 71
-  , 69
-  , 75
-  , 75
-  , 75
-  , 72
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
   , -1
   , -1
   , -1
@@ -6357,6 +6126,70 @@ alex_table = listArray (0 :: Int, 6863)
   , 74
   , 74
   , 74
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
   , 70
   , -1
   , -1
@@ -7571,7 +7404,7 @@ alex_table = listArray (0 :: Int, 6863)
   ]
 
 alex_check :: Array Int Int
-alex_check = listArray (0 :: Int, 6863)
+alex_check = listArray (0 :: Int, 6681)
   [ -1
   , 9
   , 10
@@ -12594,252 +12427,6 @@ alex_check = listArray (0 :: Int, 6863)
   , 253
   , 254
   , 255
-  , 10
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , 34
-  , 192
-  , 193
-  , 194
-  , 195
-  , 196
-  , 197
-  , 198
-  , 199
-  , 200
-  , 201
-  , 202
-  , 203
-  , 204
-  , 205
-  , 206
-  , 207
-  , 208
-  , 209
-  , 210
-  , 211
-  , 212
-  , 213
-  , 214
-  , 215
-  , 216
-  , 217
-  , 218
-  , 219
-  , 220
-  , 221
-  , 222
-  , 223
-  , 224
-  , 225
-  , 226
-  , 227
-  , 228
-  , 229
-  , 230
-  , 231
-  , 232
-  , 233
-  , 234
-  , 235
-  , 236
-  , 237
-  , 238
-  , 239
-  , 240
-  , 241
-  , 242
-  , 243
-  , 244
-  , 245
-  , 246
-  , 247
-  , 248
-  , 249
-  , 250
-  , 251
-  , 252
-  , 253
-  , 254
-  , 255
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , -1
-  , 128
-  , 129
-  , 130
-  , 131
-  , 132
-  , 133
-  , 134
-  , 135
-  , 136
-  , 137
-  , 138
-  , 139
-  , 140
-  , 141
-  , 142
-  , 143
-  , 144
-  , 145
-  , 146
-  , 147
-  , 148
-  , 149
-  , 150
-  , 151
-  , 152
-  , 153
-  , 154
-  , 155
-  , 156
-  , 157
-  , 158
-  , 159
-  , 160
-  , 161
-  , 162
-  , 163
-  , 164
-  , 165
-  , 166
-  , 167
-  , 168
-  , 169
-  , 170
-  , 171
-  , 172
-  , 173
-  , 174
-  , 175
-  , 176
-  , 177
-  , 178
-  , 179
-  , 180
-  , 181
-  , 182
-  , 183
-  , 184
-  , 185
-  , 186
-  , 187
-  , 188
-  , 189
-  , 190
-  , 191
-  , 192
-  , 193
-  , 194
-  , 195
-  , 196
-  , 197
-  , 198
-  , 199
-  , 200
-  , 201
-  , 202
-  , 203
-  , 204
-  , 205
-  , 206
-  , 207
-  , 208
-  , 209
-  , 210
-  , 211
-  , 212
-  , 213
-  , 214
-  , 215
-  , 216
-  , 217
-  , 218
-  , 219
-  , 220
-  , 221
-  , 222
-  , 223
-  , 224
-  , 225
-  , 226
-  , 227
-  , 228
-  , 229
-  , 230
-  , 231
-  , 232
-  , 233
-  , 234
-  , 235
-  , 236
-  , 237
-  , 238
-  , 239
-  , 240
-  , 241
-  , 242
-  , 243
-  , 244
-  , 245
-  , 246
-  , 247
-  , 248
-  , 249
-  , 250
-  , 251
-  , 252
-  , 253
-  , 254
-  , 255
   , 0
   , 1
   , 2
@@ -13161,6 +12748,70 @@ alex_check = listArray (0 :: Int, 6863)
   , 189
   , 190
   , 191
+  , 192
+  , 193
+  , 194
+  , 195
+  , 196
+  , 197
+  , 198
+  , 199
+  , 200
+  , 201
+  , 202
+  , 203
+  , 204
+  , 205
+  , 206
+  , 207
+  , 208
+  , 209
+  , 210
+  , 211
+  , 212
+  , 213
+  , 214
+  , 215
+  , 216
+  , 217
+  , 218
+  , 219
+  , 220
+  , 221
+  , 222
+  , 223
+  , 224
+  , 225
+  , 226
+  , 227
+  , 228
+  , 229
+  , 230
+  , 231
+  , 232
+  , 233
+  , 234
+  , 235
+  , 236
+  , 237
+  , 238
+  , 239
+  , 240
+  , 241
+  , 242
+  , 243
+  , 244
+  , 245
+  , 246
+  , 247
+  , 248
+  , 249
+  , 250
+  , 251
+  , 252
+  , 253
+  , 254
+  , 255
   , 192
   , 193
   , 194
@@ -14505,7 +14156,7 @@ alex_deflt = listArray (0 :: Int, 88)
   , -1
   , -1
   , -1
-  , 66
+  , -1
   , 66
   , 66
   , -1
@@ -14631,63 +14282,63 @@ alex_actions = array (0 :: Int, 65)
   , (60,alex_action_9)
   , (59,alex_action_8)
   , (58,alex_action_7)
-  , (57,alex_action_26)
+  , (57,alex_action_25)
   , (56,alex_action_6)
   , (55,alex_action_5)
   , (54,alex_action_5)
   , (53,alex_action_4)
   , (52,alex_action_3)
   , (51,alex_action_2)
-  , (50,alex_action_26)
-  , (49,alex_action_26)
-  , (48,alex_action_26)
-  , (47,alex_action_26)
-  , (46,alex_action_26)
-  , (45,alex_action_26)
-  , (44,alex_action_26)
-  , (43,alex_action_26)
-  , (42,alex_action_26)
-  , (41,alex_action_26)
-  , (40,alex_action_26)
-  , (39,alex_action_26)
-  , (38,alex_action_26)
-  , (37,alex_action_26)
-  , (36,alex_action_26)
-  , (35,alex_action_26)
-  , (34,alex_action_26)
-  , (33,alex_action_26)
-  , (32,alex_action_26)
-  , (31,alex_action_26)
-  , (30,alex_action_26)
-  , (29,alex_action_26)
-  , (28,alex_action_26)
-  , (27,alex_action_26)
-  , (26,alex_action_26)
-  , (25,alex_action_26)
-  , (24,alex_action_26)
-  , (23,alex_action_26)
-  , (22,alex_action_26)
-  , (21,alex_action_26)
-  , (20,alex_action_26)
-  , (19,alex_action_26)
-  , (18,alex_action_26)
-  , (17,alex_action_26)
-  , (16,alex_action_26)
-  , (15,alex_action_26)
-  , (14,alex_action_25)
-  , (13,alex_action_25)
-  , (12,alex_action_24)
-  , (11,alex_action_23)
-  , (10,alex_action_22)
-  , (9,alex_action_26)
-  , (8,alex_action_21)
-  , (7,alex_action_26)
+  , (50,alex_action_25)
+  , (49,alex_action_25)
+  , (48,alex_action_25)
+  , (47,alex_action_25)
+  , (46,alex_action_25)
+  , (45,alex_action_25)
+  , (44,alex_action_25)
+  , (43,alex_action_25)
+  , (42,alex_action_25)
+  , (41,alex_action_25)
+  , (40,alex_action_25)
+  , (39,alex_action_25)
+  , (38,alex_action_25)
+  , (37,alex_action_25)
+  , (36,alex_action_25)
+  , (35,alex_action_25)
+  , (34,alex_action_25)
+  , (33,alex_action_25)
+  , (32,alex_action_25)
+  , (31,alex_action_25)
+  , (30,alex_action_25)
+  , (29,alex_action_25)
+  , (28,alex_action_25)
+  , (27,alex_action_25)
+  , (26,alex_action_25)
+  , (25,alex_action_25)
+  , (24,alex_action_25)
+  , (23,alex_action_25)
+  , (22,alex_action_25)
+  , (21,alex_action_25)
+  , (20,alex_action_25)
+  , (19,alex_action_25)
+  , (18,alex_action_25)
+  , (17,alex_action_25)
+  , (16,alex_action_25)
+  , (15,alex_action_25)
+  , (14,alex_action_24)
+  , (13,alex_action_24)
+  , (12,alex_action_23)
+  , (11,alex_action_22)
+  , (10,alex_action_21)
+  , (9,alex_action_25)
+  , (8,alex_action_20)
+  , (7,alex_action_25)
   , (6,alex_action_19)
   , (5,alex_action_18)
   , (4,alex_action_17)
   , (3,alex_action_16)
   , (2,alex_action_15)
-  , (1,alex_action_26)
+  , (1,alex_action_25)
   , (0,alex_action_14)
   ]
 
@@ -14709,13 +14360,12 @@ alex_action_16 = literal TokenProof
 alex_action_17 = literal TokenQED
 alex_action_18 = literal TokenSemicolon
 alex_action_19 = literal TokenDoubleColon
-alex_action_20 = literal TokenComma
-alex_action_21 = literal TokenAssume
-alex_action_22 = literal TokenThus
-alex_action_23 = literal TokenBy
-alex_action_24 = \_ n -> TokenQuotedName (firstLast n)
-alex_action_25 = const TokenVar
-alex_action_26 = const TokenId
+alex_action_20 = literal TokenAssume
+alex_action_21 = literal TokenThus
+alex_action_22 = literal TokenBy
+alex_action_23 = lex (TokenQuotedName . firstLast)
+alex_action_24 = lex TokenVar
+alex_action_25 = lex TokenId
 
 #define ALEX_NOPRED 1
 -- -----------------------------------------------------------------------------
@@ -14957,18 +14607,28 @@ alexRightContext IBOX(sc) user__ _ _ input__ =
         -- match when checking the right context, just
         -- the first match will do.
 #endif
-{-# LINE 40 "src/Lexer.x" #-}
-firstLast :: [a] -> [a]
-firstLast [] = []
-firstLast [x] = []
-firstLast xs = tail (init xs)
+{-# LINE 54 "src/Lexer.x" #-}
+-- To improve error messages, We keep the path of the file we are
+-- lexing in our own state.
+data AlexUserState = AlexUserState { filePath :: FilePath }
 
-literal :: Token -> (AlexPosn -> String -> Token)
-literal t _ _ = t
+alexInitUserState :: AlexUserState
+alexInitUserState = AlexUserState "<unknown>"
 
-data Token 
+getFilePath :: Alex FilePath
+getFilePath = liftM filePath alexGetUserState
+
+setFilePath :: FilePath -> Alex ()
+setFilePath = alexSetUserState . AlexUserState
+
+-- The token type, consisting of the source code position and a token class.
+data Token = Token AlexPosn TokenClass
+  deriving ( Eq, Show )
+
+data TokenClass 
+    = TokenEOF
     -- Fórmulas
-    = TokenId String
+    | TokenId String
     | TokenVar String
     | TokenAnd
     | TokenOr
@@ -14995,4 +14655,76 @@ data Token
     | TokenBy
     deriving (Eq, Show)
 
-lexer = alexScanTokens
+unLex :: TokenClass -> String
+unLex TokenDot = "."
+unLex TokenComma = ","
+unLex TokenAnd = "&"
+unLex TokenOr = "v"
+unLex TokenTrue = "true"
+unLex TokenFalse = "false"
+unLex TokenImp = "=>"
+unLex TokenNot = "~"
+unLex TokenExists = "exists"
+unLex TokenForall = "forall"
+unLex TokenParenOpen = "("
+unLex TokenParenClose = ")"
+unLex TokenAxiom = "axiom"
+unLex TokenTheorem = "theorem"
+unLex TokenProof = "proof"
+unLex TokenQED = "qed"
+unLex TokenSemicolon = ";"
+unLex TokenDoubleColon = ":"
+unLex TokenAssume = "assume"
+unLex TokenThus = "thus"
+unLex TokenBy = "by"
+unLex (TokenQuotedName n) = "\"" ++ n ++ "\""
+unLex (TokenVar s) = "(var) " ++ s
+unLex (TokenId s) = "(id) " ++ s
+
+alexEOF :: Alex Token
+alexEOF = do
+  (p,_,_,_) <- alexGetInput
+  return $ Token p TokenEOF
+
+firstLast :: [a] -> [a]
+firstLast [] = []
+firstLast [x] = []
+firstLast xs = tail (init xs)
+
+-- Unfortunately, we have to extract the matching bit of string
+-- ourselves...
+lex :: (String -> TokenClass) -> AlexAction Token
+lex f = \(p,_,_,s) i -> return $ Token p (f (take i s))
+
+-- For constructing tokens that do not depend on
+-- the input
+literal :: TokenClass -> AlexAction Token
+literal = lex . const
+
+
+-- We rewrite alexMonadScan' to delegate to alexError' when lexing fails
+-- (the default implementation just returns an error message).
+alexMonadScan' :: Alex Token
+alexMonadScan' = do
+  inp <- alexGetInput
+  sc <- alexGetStartCode
+  case alexScan inp sc of
+    AlexEOF -> alexEOF
+    AlexError (p, _, _, s) ->
+        alexError' p ("lexical error at character '" ++ take 1 s ++ "'")
+    AlexSkip  inp' len -> do
+        alexSetInput inp'
+        alexMonadScan'
+    AlexToken inp' len action -> do
+        alexSetInput inp'
+        action (ignorePendingBytes inp) len
+
+-- Signal an error, including a commonly accepted source code position.
+alexError' :: AlexPosn -> String -> Alex a
+alexError' (AlexPn _ l c) msg = do
+  fp <- getFilePath
+  alexError (fp ++ ":" ++ show l ++ ":" ++ show c ++ ": " ++ msg)
+
+-- A variant of runAlex, keeping track of the path of the file we are lexing.
+runAlex' :: Alex a -> FilePath -> String -> Either String a
+runAlex' a fp input = runAlex input (setFilePath fp >> a)
