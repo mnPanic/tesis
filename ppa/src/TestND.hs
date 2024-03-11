@@ -14,8 +14,10 @@ import ND (
     propVar,
  )
 
+import Certifier (fromClause)
+
 import NDChecker (
-    CheckResult (CheckError, CheckOK),
+    CheckResult (CheckError, CheckErrorN, CheckOK),
     check,
     rootCause,
     subst,
@@ -28,7 +30,9 @@ import NDProofs (
     proofAndCongruence1,
     proofAndCongruence2,
     proofAndDistOverOrL,
+    proofAndDistOverOrR,
     proofAndEProjection,
+    proofAndIList,
     proofDNegElim,
     proofImpCongruence1,
     proofImpCongruence2,
@@ -40,7 +44,7 @@ import NDProofs (
     proofNotTrue,
     proofOrAssoc,
     proofOrCongruence1,
-    proofOrCongruence2, proofAndDistOverOrR,
+    proofOrCongruence2,
  )
 
 import Test.HUnit (
@@ -478,8 +482,17 @@ testGeneratedProofs =
     test
         [ "examples for by" ~: testByExamples
         , "andEProjection" ~: testAndEProjection
+        , "PAndI list" ~: testAndIList
         , "equivalences" ~: testEquivalences
         ]
+
+testAndIList :: Test
+testAndIList = do
+    let form = fromClause [propVar "A", propVar "B", propVar "C"]
+    let subproofs = [PAx "a", PAx "b", PAx "c"]
+    let env = EExtend "a" (propVar "A") (EExtend "b" (propVar "B") (EExtend "c" (propVar "C") EEmpty))
+    let proof = proofAndIList subproofs
+    check env proof form ~?= CheckOK
 
 testAndEProjection :: Test
 testAndEProjection =

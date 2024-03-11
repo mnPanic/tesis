@@ -215,33 +215,37 @@ testCertifyBy =
     test
         [ "A by A" ~: do
             let ctx = [HAxiom "A" a]
+            let env = EExtend "A" a EEmpty
             let result = certifyBy ctx a ["A"]
             case result of
                 Left e -> assertFailure e
-                Right proof -> CheckOK @=? check EEmpty proof (FImp a a)
+                Right proof -> CheckOK @=? check env proof a
         , "A by A ^ B" ~: do
             let ctx = [HAxiom "A and B" (FAnd a b)]
+            let env = EExtend "A and B" (FAnd a b) EEmpty
             let result = certifyBy ctx a ["A and B"]
             case result of
                 Left e -> assertFailure e
-                Right proof -> CheckOK @=? check EEmpty proof (FImp (FAnd a b) a)
+                Right proof -> CheckOK @=? check env proof a
         , "A by (A ^ B) v (A ^ C)" ~: do
             let ax = FOr (FAnd a b) (FAnd a c)
             let ctx = [HAxiom "ax" ax]
+            let env = EExtend "ax" ax EEmpty
             let result = certifyBy ctx a ["ax"]
             case result of
                 Left e -> assertFailure e
-                Right proof -> CheckOK @=? check EEmpty proof (FImp ax a)
+                Right proof -> CheckOK @=? check env proof a
         , "B by A, A => B" ~: do
             let ctx =
                     [ HAxiom "A is always true" a
                     , HAxiom "A implies B" (FImp a b)
                     ]
+            let env = EExtend "A is always true" a (EExtend "A implies B" (FImp a b) EEmpty)
             let result = certifyBy ctx b ["A is always true", "A implies B"]
             case result of
                 Left e -> assertFailure e
                 Right proof -> do
-                    CheckOK @=? check EEmpty proof (FImp (FAnd a (FImp a b)) b)
+                    CheckOK @=? check env proof b
         ]
   where
     (a, b, c) = (propVar "A", propVar "B", propVar "C")

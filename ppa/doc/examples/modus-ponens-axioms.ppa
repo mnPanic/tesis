@@ -1,0 +1,6 @@
+axiom "a": a
+axiom "a imp b": a => b
+theorem "b": b
+proof
+    thus b by "a", "a imp b";
+qed

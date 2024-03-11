@@ -3,6 +3,7 @@ module NDChecker (
     CheckResult (..),
     subst,
     rootCause,
+    checkResultIsErr,
 ) where
 
 import ND (
@@ -132,14 +133,14 @@ showInTree (CheckErrorN name res) =
         name
         (showInTree res)
 
-isErr :: CheckResult -> Bool
-isErr (CheckError{}) = True
-isErr (CheckErrorW{}) = True
-isErr (CheckErrorN{}) = True
-isErr (CheckOK{}) = False
+checkResultIsErr :: CheckResult -> Bool
+checkResultIsErr (CheckError{}) = True
+checkResultIsErr (CheckErrorW{}) = True
+checkResultIsErr (CheckErrorN{}) = True
+checkResultIsErr (CheckOK{}) = False
 
 -- rootCause grabs the errs root cause.
--- pre: isErr err = True
+-- pre: checkResultIsErr err = True
 rootCause :: CheckResult -> CheckResult
 rootCause e@(CheckError{}) = e
 rootCause (CheckErrorW _ _ _ _ e) = rootCause e
@@ -147,7 +148,7 @@ rootCause (CheckErrorN _ e) = rootCause e
 
 wrap :: CheckResult -> String -> Env -> Proof -> Form -> CheckResult
 wrap res msg env proof form = case res of
-    err | isErr err -> CheckErrorW msg env proof form err
+    err | checkResultIsErr err -> CheckErrorW msg env proof form err
     CheckOK -> CheckOK
 
 {- TODO:
@@ -155,7 +156,7 @@ wrap res msg env proof form = case res of
 -}
 check :: Env -> Proof -> Form -> CheckResult
 check env (PNamed name proof) f = case check env proof f of
-    err | isErr err -> CheckErrorN name err
+    err | checkResultIsErr err -> CheckErrorN name err
     CheckOK -> CheckOK
 -- TODO: handlearlo cuando es al reves, not A v A que es lo mismo
 check env PLEM form@(FOr f1 (FNot f2)) =
@@ -178,7 +179,7 @@ check env p@(PImpI hyp proofB) f@(FImp fA fB) =
 -- dem B con A -> B
 check env proof@(PImpE fA proofAImpB proofA) fB =
     case check env proofAImpB (FImp fA fB) of
-        err | isErr err -> CheckErrorW "proof imp" env proof fB err
+        err | checkResultIsErr err -> CheckErrorW "proof imp" env proof fB err
         CheckOK -> wrap (check env proofA fA) "proof antecedent" env proof fB
 -- dem not A
 check env (PNotI hyp proofFalse) (FNot f) =
@@ -186,14 +187,14 @@ check env (PNotI hyp proofFalse) (FNot f) =
 -- dem False con not A
 check env proof@(PNotE fA proofNotA proofA) FFalse =
     case check env proofNotA (FNot fA) of
-        err | isErr err -> CheckErrorW "proof not form" env proof FFalse err
+        err | checkResultIsErr err -> CheckErrorW "proof not form" env proof FFalse err
         CheckOK -> wrap (check env proofA fA) "proof form" env proof FFalse
 -- dem C con A v B
 check env proof@(POrE fA fB proofAorB hypA proofAC hypB proofBC) fC =
     case check env proofAorB (FOr fA fB) of
-        err | isErr err -> CheckErrorW "proof or" env proof fC err
+        err | checkResultIsErr err -> CheckErrorW "proof or" env proof fC err
         CheckOK -> case check (EExtend hypA fA env) proofAC fC of
-            err | isErr err -> CheckErrorW "proof assuming left" env proof fC err
+            err | checkResultIsErr err -> CheckErrorW "proof assuming left" env proof fC err
             CheckOK -> wrap (check (EExtend hypB fB env) proofBC fC) "proof assuming right" env proof fC
 -- dem A v B
 check env p@(POrI1 proofA) f@(FOr fA _) =
@@ -208,7 +209,7 @@ check env p@(PAndE2 fA proofAnB) fB =
 -- dem de A ^ B
 check env proof@(PAndI proofA proofB) f@(FAnd fA fB) =
     case check env proofA fA of
-        err | isErr err -> CheckErrorW "proof left" env proof f err
+        err | checkResultIsErr err -> CheckErrorW "proof left" env proof f err
         CheckOK -> wrap (check env proofB fB) "proof right" env proof f
 -- dem de Exists x. A, prueba A{x := t}
 check env p@(PExistsI t proofSubstA) fE@(FExists x f) =
@@ -218,7 +219,7 @@ check env proof@(PExistsE x fA proofExistsxA hypA proofB) fB
     | x `elem` fvE env = CheckError env proof fB (printf "env shouldn't contain fv '%s'" x)
     | x `elem` fv fB = CheckError env proof fB (printf "form to prove shoudln't contain fv '%s'" x)
     | otherwise = case check env proofExistsxA (FExists x fA) of
-        err | isErr err -> CheckErrorW "proof exists" env proof fB err
+        err | checkResultIsErr err -> CheckErrorW "proof exists" env proof fB err
         CheckOK -> wrap (check (EExtend hypA fA env) proofB fB) "proof assuming" env proof fB
 -- dem de Forall x. A
 check env proof@(PForallI proofA) form@(FForall x fA) =

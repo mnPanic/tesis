@@ -1,0 +1,7 @@
+axiom "a y b": a ^ b
+axiom "c y d": c ^ d
+
+theorem "a y d": a ^ d
+proof
+    thus a ^ d by "a y b", "c y d";
+qed

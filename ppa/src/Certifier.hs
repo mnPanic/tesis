@@ -6,6 +6,7 @@ module Certifier (
     certifyBy,
     fromDNF,
     certify,
+    checkContext,
     findContradiction,
 ) where
 
@@ -33,6 +34,7 @@ import NDProofs (
     proofAndDistOverOrL,
     proofAndDistOverOrR,
     proofAndEProjection,
+    proofAndIList,
     proofDNegElim,
     proofImpElim,
     proofNotCongruence,
@@ -46,37 +48,56 @@ import NDProofs (
  )
 
 import ND (
+    Env (..),
     Form (..),
     Proof (..),
     dneg,
  )
 
+import NDChecker (CheckResult (CheckOK), check, checkResultIsErr)
+
 import Data.List (find, partition)
 import Data.Maybe (fromJust, isNothing)
 import Text.Printf (printf)
 
-check :: Context -> Bool
-check = undefined
+-- En un contexto cada demostración de teorema es válida en el contexto que
+-- contiene el prefijo estricto anterior a él.
+checkContext :: Context -> Result ()
+checkContext hs = checkContext' hs EEmpty
+
+checkContext' :: Context -> Env -> Result ()
+checkContext' [] _ = return ()
+checkContext' ((HAxiom h f) : hs) e = checkContext' hs e'
+  where
+    e' = EExtend h f e
+-- TODO: que hacer con p? esta bien agregar al contexto los teoremas como si fueran axiomas? O deberíamos cada vez que se usa insertar la demostración?
+checkContext' ((HTheorem h f p) : hs) e = case check e p f of
+    err | checkResultIsErr err -> Left $ printf "can't prove theorem '%s': \n%s" h (show err)
+    CheckOK -> checkContext' hs e'
+  where
+    e' = EExtend h f e
 
 certify :: Program -> Result Context
 certify = certify' []
 
 certify' :: Context -> Program -> Result Context
+certify' ctx [] = return ctx
 certify' ctx (d : ds) = do
-    dCtx <- certifyDecl ctx d
-    certify' dCtx ds
+    h <- certifyDecl ctx d
+    let ctx' = ctx ++ [h]
+    certify' ctx' ds
 
-certifyDecl :: Context -> Decl -> Result Context
+certifyDecl :: Context -> Decl -> Result Hypothesis
 certifyDecl ctx d@(DAxiom{}) = certifyAxiom ctx d
 certifyDecl ctx d@(DTheorem{}) = certifyTheorem ctx d
 
-certifyAxiom :: Context -> Decl -> Result Context
-certifyAxiom ctx (DAxiom h f) = return (HAxiom h f : ctx)
+certifyAxiom :: Context -> Decl -> Result Hypothesis
+certifyAxiom ctx (DAxiom h f) = return (HAxiom h f)
 
-certifyTheorem :: Context -> Decl -> Result Context
+certifyTheorem :: Context -> Decl -> Result Hypothesis
 certifyTheorem ctx (DTheorem h f p) = do
     ndProof <- certifyProof ctx f p
-    return (HTheorem h f ndProof : ctx)
+    return (HTheorem h f ndProof)
 
 -- TODO: Diffuse vs skeleton steps
 -- De acá en adelante hay que re-pensar
@@ -85,52 +106,40 @@ certifyProof ctx f (p : ps) = certifyProofStep ctx f p ps
 
 certifyProofStep ::
     Context -> Form -> ProofStep -> TProof -> Result Proof
-
 certifyProofStep ctx (FImp f1 f2) (PSAssume name form) ps
     | form /= f1 = Left "can't assume"
     | otherwise = do
-        sub <- certifyProof ctx f2 ps
-        return PImpI {
-           hypAntecedent= name,
-           proofConsequent= sub
-        }
-
+        -- TODO: Está bien agregar al ctx la asunción? Sino no se puede hacer
+        -- diffuse.ppa
+        let ctx' = HAxiom name form : ctx
+        sub <- certifyProof ctx' f2 ps
+        return
+            PImpI
+                { hypAntecedent = name
+                , proofConsequent = sub
+                }
 certifyProofStep ctx thesis (PSThusBy form js) ps
     | form /= thesis = Left "form not thesis"
     | otherwise = certifyBy ctx thesis js
 
-{-
-execute :: Program -> CheckResult
-execute (ProgramT t) = checkT t
-
-checkT :: Theorem -> CheckResult
-checkT (Theorem _ f p) = check EEmpty (checkP p f) f
-
--- TODO: Hay que bancar diffuse reasoning
-checkP :: TProof -> Form -> Proof
-checkP (p : ps) thesis = checkPS p thesis ps
-
-checkPS :: ProofStep -> Form -> TProof -> Proof
-checkPS (PSAssume name form) (FImp f1 f2) ps = PImpI name (checkP ps f2)
-checkPS (PSThus form hyp) thesis _
-    | form /= thesis = error "form not thesis"
-    | otherwise = PAx hyp
-
--}
-
-{- Certifica que js => f
+{- Certifica que js |- f
 
 Si las justificaciones son [h1, .., hn] y el contexto tiene {h1: f1, ... hn:
 fn}, da una demostración de que
+
+    f1, ..., fn |- f
+
+pero en realidad por abajo demuestra
 
     (f1 ^ ... ^ fn) => f
 -}
 certifyBy :: Context -> Form -> Justification -> Result Proof
 certifyBy ctx f js = do
-    justHyps <- findJustification ctx js
-    let justForms = map getForm justHyps
+    jsHyps <- findJustification ctx js
+    let jsForms = map getForm jsHyps
 
-    let thesis = FImp (fromClause justForms) f
+    let antecedent = fromClause jsForms
+    let thesis = FImp antecedent f
     let fNotThesis = FNot thesis
     let hNotThesis = hypForm fNotThesis
 
@@ -139,23 +148,33 @@ certifyBy ctx f js = do
     let hDNFNotThesis = hypForm fDNFNotThesis
 
     contradictionProof <- solve (hDNFNotThesis, fDNFNotThesis)
+
     return
+        -- Dem de f con (f1 ... fn) => f
         PImpE
-            { antecedent = dneg thesis
-            , proofImp = doubleNegElim thesis
-            , proofAntecedent =
-                PNotI
-                    { hyp = hNotThesis
-                    , -- Demostración de bottom (contradicción) asumiendo que no vale
-                      -- la tesis. Primero convertimos a DNF y luego demostramos que
-                      -- la version en DNF es refutable.
-                      proofBot =
-                        cut
-                            fDNFNotThesis
-                            dnfProof
-                            hDNFNotThesis
-                            contradictionProof
+            { antecedent = antecedent
+            , -- Dem de (f1 ... fn) => f por el absurdo
+              proofImp =
+                PImpE
+                    { antecedent = dneg thesis
+                    , proofImp = doubleNegElim thesis
+                    , proofAntecedent =
+                        PNotI
+                            { hyp = hNotThesis
+                            , -- Demostración de bottom (contradicción) asumiendo que no vale
+                              -- la tesis. Primero convertimos a DNF y luego demostramos que
+                              -- la version en DNF es refutable.
+                              proofBot =
+                                cut
+                                    fDNFNotThesis
+                                    dnfProof
+                                    hDNFNotThesis
+                                    contradictionProof
+                            }
                     }
+            , -- Dem de f1 ^ ... ^ fn
+              -- TODO: Tal vez los teoremas no son PAx, sync con checkContext
+              proofAntecedent = proofAndIList (map PAx js)
             }
 
 findJustification :: Context -> Justification -> Result [Hypothesis]

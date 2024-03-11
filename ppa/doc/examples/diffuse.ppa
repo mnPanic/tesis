@@ -1,0 +1,7 @@
+theorem "=> transitivity":
+    (a => b) ^ (b => c) => (a => c)
+proof
+    assume "both imps" : (a => b) ^ (b => c);
+    assume "a" : a;
+    thus c by "both imps", "a";
+end

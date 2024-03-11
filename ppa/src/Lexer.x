@@ -39,7 +39,7 @@ tokens :-
     axiom           { literal TokenAxiom }
     theorem         { literal TokenTheorem }
     proof           { literal TokenProof }
-    qed             { literal TokenQED }
+    (qed)|(end)     { literal TokenQED }
     \;              { literal TokenSemicolon }
     \:              { literal TokenDoubleColon }
     assume          { literal TokenAssume }

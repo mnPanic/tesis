@@ -1,8 +1,10 @@
 module Main where
 
-import Certifier (certify)
+import Certifier (certify, checkContext)
 import Parser (parseProgram)
 
+import NDProofs (Result)
+import PPA (Program)
 import System.Environment (getArgs)
 
 main :: IO ()
@@ -18,4 +20,13 @@ main = do
         f -> readFile f
 
     let result = parseProgram path raw
-    either putStrLn (print . certify) result
+    case result of
+        Left err -> putStrLn err
+        Right prog -> case execute prog of
+            Left err -> putStrLn err
+            Right _ -> putStrLn "OK!"
+
+execute :: Program -> Result ()
+execute prog = do
+    ctx <- certify prog
+    checkContext ctx

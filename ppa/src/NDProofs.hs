@@ -21,6 +21,7 @@ module NDProofs (
     proofNotCongruence,
     proofImpCongruence1,
     proofImpCongruence2,
+    proofAndIList,
     Result,
     EnvItem,
 ) where
@@ -106,6 +107,19 @@ cut fA pA hypA pAtoB =
                 , proofConsequent = pAtoB
                 }
         , proofAntecedent = pA
+        }
+
+{- proofAndIList
+
+Dada una lista de demostraciones [p1, ..., pn] que demuestran (a1, ..., an)
+devuelve una demostración de a1 ^ ... ^ an asociada a izquierda.
+-}
+proofAndIList :: [Proof] -> Proof
+proofAndIList [p] = p
+proofAndIList ps =
+    PAndI
+        { proofLeft = proofAndIList (init ps)
+        , proofRight = last ps
         }
 
 {- proofAndEProjection
