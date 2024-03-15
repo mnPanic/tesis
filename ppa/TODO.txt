@@ -65,30 +65,3 @@ otras cosas de freek
 mathematical vernacular más interesante
 
 tal vez una idea de como una prueba se convierte a deducción natural?
-
--- reu 15/3/24
-
-fijarse assume sin : que tira index out of range
-
-suppose en vez de assume
-usar -> en vez de =>
-
-de la nada -> have
-then: azucar, have con el anterior
-
-thus . tesis
-hence . analogo a then pero con thus
-
-- que demostrar
-
-    todas las reglas de intro y elim
-
-- sin nombre le pone _, en el proximo usas _
-
-- thesis palabra clave que se refiere a lo que estás probando
-
-siempre con el nombre y con _, para que hence y then asuman que el anterior tiene ese y no hace falta propagar el nombre
-
-- by opcional
-
-- case: leer como lo hizo mizar, freek 
