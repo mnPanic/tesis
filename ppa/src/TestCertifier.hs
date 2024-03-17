@@ -1,4 +1,4 @@
-module TestCertifier where
+module TestCertifier (testCertifier) where
 
 import Certifier (
     certifyBy,
@@ -47,11 +47,8 @@ import Test.HUnit (
     (~?=),
  )
 
-main :: IO Counts
-main = do runTestTT tests
-
-tests :: Test
-tests =
+testCertifier :: Test
+testCertifier =
     test
         [ "certifyBy" ~: testCertifyBy
         , "clauses" ~: testClause

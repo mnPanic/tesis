@@ -1,4 +1,4 @@
-module ParserTests where
+module TestParser (testParserLexer) where
 
 import Lexer (Alex (Alex), Token (..), TokenClass (..), alexInitUserState, runAlex, runAlex')
 
@@ -16,11 +16,8 @@ import Test.HUnit (
     (~?=),
  )
 
-main :: IO Counts
-main = do runTestTT tests
-
-tests :: Test
-tests =
+testParserLexer :: Test
+testParserLexer =
     test
         [ "parser" ~: testParser
         -- , "lexer" ~: testLexer
