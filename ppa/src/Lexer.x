@@ -26,12 +26,12 @@ tokens :-
     "//".*          ;
     \.              { literal TokenDot }
     \,              { literal TokenComma }
-    \&|\^           { literal TokenAnd }
-    \||v            { literal TokenOr }
+    \&              { literal TokenAnd }
+    \|              { literal TokenOr }
     true            { literal TokenTrue }
     false           { literal TokenFalse }
-    =>              { literal TokenImp }
-    (\¬|\~)         { literal TokenNot }
+    \-\>              { literal TokenImp }
+    \~              { literal TokenNot }
     exists          { literal TokenExists }
     forall          { literal TokenForall }
     \(              { literal TokenParenOpen }
@@ -39,7 +39,7 @@ tokens :-
     axiom           { literal TokenAxiom }
     theorem         { literal TokenTheorem }
     proof           { literal TokenProof }
-    (qed)|(end)     { literal TokenQED }
+    end             { literal TokenQED }
     \;              { literal TokenSemicolon }
     \:              { literal TokenDoubleColon }
     assume          { literal TokenAssume }
