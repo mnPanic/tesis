@@ -1,7 +1,15 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module TestCertifier (testCertifier) where
 
+-- https://kseo.github.io/posts/2014-02-06-multi-line-strings-in-haskell.html
+-- https://hackage.haskell.org/package/raw-strings-qq
+import Text.RawString.QQ
+
 import Certifier (
+    certify,
     certifyBy,
+    checkContext,
     dnf,
     findContradiction,
     fromClause,
@@ -9,6 +17,8 @@ import Certifier (
     solve,
     toClause,
  )
+
+import Parser (parseProgram)
 
 import NDProofs (
     EnvItem,
@@ -47,14 +57,41 @@ import Test.HUnit (
     (~?=),
  )
 
+main :: IO Counts
+main = do runTestTT testCertifier
+
 testCertifier :: Test
 testCertifier =
     test
         [ "certifyBy" ~: testCertifyBy
+        , "commands" ~: testCommands
         , "clauses" ~: testClause
         , "findContradiction" ~: testFindContradiction
         , "solve" ~: testSolve
         , "dnf" ~: testDnf
+        ]
+
+testProgram :: String -> IO ()
+testProgram p = do
+    let result = parseProgram "test" p
+    case result of
+        Left err -> assertFailure err
+        Right prog -> case certify prog of
+            Left err -> assertFailure err
+            Right ctx -> checkContext ctx @?= Right ()
+
+testCommands :: Test
+testCommands =
+    test
+        [ "suppose"
+            ~: testProgram
+                [r|
+                theorem "a_implies_a" : a -> a
+                proof
+                    suppose "a" : a;
+                    thus a by "a";
+                end
+        |]
         ]
 
 testSolve :: Test

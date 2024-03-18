@@ -38,7 +38,7 @@ import Lexer
     proof       { Token _ TokenProof }
     qed         { Token _ TokenQED }
     name        { Token _ (TokenQuotedName $$) }
-    assume      { Token _ TokenAssume }
+    suppose     { Token _ TokenSuppose }
     thus        { Token _ TokenThus }
     by          { Token _ TokenBy }
 
@@ -70,7 +70,7 @@ Proof   : ProofStep ';' Proof       { $1 : $3 }
         | ProofStep ';'             { [ $1 ] }
 
 ProofStep :: { ProofStep }
-ProofStep : assume name ':' Form                { PSAssume $2 $4 }
+ProofStep : suppose name ':' Form               { PSSuppose $2 $4 }
           | thus Form by Justification          { PSThusBy $2 $4 }
 
 Justification :: { Justification }

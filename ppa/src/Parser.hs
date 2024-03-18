@@ -154,7 +154,7 @@ happyExpList = Happy_Data_Array.listArray (0,107) ([0,32768,1,0,384,0,0,0,0,384,
 {-# NOINLINE happyExpListPerState #-}
 happyExpListPerState st =
     token_strs_expected
-  where token_strs = ["error","%dummy","%start_parse","Prog","Declarations","Declaration","Axiom","Theorem","Proof","ProofStep","Justification","Form","Term","TermArgs","Terms","'('","')'","and","or","imp","not","true","false","forall","exists","dot","id","var","';'","':'","','","axiom","theorem","proof","qed","name","assume","thus","by","%eof"]
+  where token_strs = ["error","%dummy","%start_parse","Prog","Declarations","Declaration","Axiom","Theorem","Proof","ProofStep","Justification","Form","Term","TermArgs","Terms","'('","')'","and","or","imp","not","true","false","forall","exists","dot","id","var","';'","':'","','","axiom","theorem","proof","qed","name","suppose","thus","by","%eof"]
         bit_start = st Prelude.* 40
         bit_end = (st Prelude.+ 1) Prelude.* 40
         read_bit = readArrayBit happyExpList
@@ -551,7 +551,7 @@ happyReduction_10 ((HappyAbsSyn12  happy_var_4) `HappyStk`
 	_ `HappyStk`
 	happyRest)
 	 = HappyAbsSyn10
-		 (PSAssume happy_var_2 happy_var_4
+		 (PSSuppose happy_var_2 happy_var_4
 	) `HappyStk` happyRest
 
 happyReduce_11 = happyReduce 4 10 happyReduction_11
@@ -735,7 +735,7 @@ happyNewToken action sts stk
 	Token _ TokenProof -> cont 34;
 	Token _ TokenQED -> cont 35;
 	Token _ (TokenQuotedName happy_dollar_dollar) -> cont 36;
-	Token _ TokenAssume -> cont 37;
+	Token _ TokenSuppose -> cont 37;
 	Token _ TokenThus -> cont 38;
 	Token _ TokenBy -> cont 39;
 	_ -> happyError' (tk, [])

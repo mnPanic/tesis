@@ -30,7 +30,7 @@ tokens :-
     \|              { literal TokenOr }
     true            { literal TokenTrue }
     false           { literal TokenFalse }
-    \-\>              { literal TokenImp }
+    \-\>            { literal TokenImp }
     \~              { literal TokenNot }
     exists          { literal TokenExists }
     forall          { literal TokenForall }
@@ -42,7 +42,7 @@ tokens :-
     end             { literal TokenQED }
     \;              { literal TokenSemicolon }
     \:              { literal TokenDoubleColon }
-    assume          { literal TokenAssume }
+    suppose         { literal TokenSuppose }
     thus            { literal TokenThus }
     by              { literal TokenBy }
 
@@ -95,7 +95,7 @@ data TokenClass
     | TokenProof
     | TokenQED
     | TokenQuotedName String
-    | TokenAssume
+    | TokenSuppose
     | TokenThus
     | TokenBy
     deriving (Eq, Show)
@@ -104,10 +104,10 @@ unLex :: TokenClass -> String
 unLex TokenDot = "."
 unLex TokenComma = ","
 unLex TokenAnd = "&"
-unLex TokenOr = "v"
+unLex TokenOr = "|"
 unLex TokenTrue = "true"
 unLex TokenFalse = "false"
-unLex TokenImp = "=>"
+unLex TokenImp = "->"
 unLex TokenNot = "~"
 unLex TokenExists = "exists"
 unLex TokenForall = "forall"
@@ -119,7 +119,7 @@ unLex TokenProof = "proof"
 unLex TokenQED = "qed"
 unLex TokenSemicolon = ";"
 unLex TokenDoubleColon = ":"
-unLex TokenAssume = "assume"
+unLex TokenSuppose = "suppose"
 unLex TokenThus = "thus"
 unLex TokenBy = "by"
 unLex (TokenQuotedName n) = "\"" ++ n ++ "\""

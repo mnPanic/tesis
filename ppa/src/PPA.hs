@@ -27,7 +27,7 @@ data Decl
 type TProof = [ProofStep]
 
 data ProofStep
-    = PSAssume HypId Form
+    = PSSuppose HypId Form
     | PSThusBy Form Justification
     | PSThenBy Form HypId Justification -- TODO revisar
     deriving (Show, Eq)

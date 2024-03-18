@@ -106,7 +106,7 @@ certifyProof ctx f (p : ps) = certifyProofStep ctx f p ps
 
 certifyProofStep ::
     Context -> Form -> ProofStep -> TProof -> Result Proof
-certifyProofStep ctx (FImp f1 f2) (PSAssume name form) ps
+certifyProofStep ctx (FImp f1 f2) (PSSuppose name form) ps
     | form /= f1 = Left "can't assume"
     | otherwise = do
         -- TODO: Está bien agregar al ctx la asunción? Sino no se puede hacer
