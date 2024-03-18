@@ -86,11 +86,23 @@ testCommands =
         [ "suppose"
             ~: testProgram
                 [r|
-                theorem a_implies_a : a -> a
-                proof
-                    suppose "a" : a;
-                    thus a by a;
-                end
+            theorem a_implies_a : a -> a
+            proof
+                suppose "a" : a;
+                thus a by a;
+            end
+        |]
+        , "have"
+            ~: testProgram
+                [r|
+            theorem "ejemplo" : (a -> b -> c) -> (a -> b) -> a -> c
+            proof
+                suppose "P": a -> b -> c;
+                suppose "Q": a -> b;
+                suppose "R": a;
+                have "S": b by "Q", "R";
+                thus c   by "P", "R", "S";
+            end
         |]
         ]
 

@@ -7,6 +7,7 @@ module PPA (
     Hypothesis (..),
     Decl (..),
     findHyp,
+    getProof,
     getForm,
 ) where
 
@@ -28,8 +29,10 @@ type TProof = [ProofStep]
 
 data ProofStep
     = PSSuppose HypId Form
-    | PSThusBy Form Justification
-    | PSThenBy Form HypId Justification -- TODO revisar
+    | -- Thus prueba algo de la tesis
+      PSThusBy Form Justification
+    | -- Have prueba algo auxiliar
+      PSHaveBy HypId Form Justification
     deriving (Show, Eq)
 
 type Justification = [HypId]
@@ -50,6 +53,10 @@ getHypId (HTheorem h _ _) = h
 getForm :: Hypothesis -> Form
 getForm (HAxiom _ f) = f
 getForm (HTheorem _ f _) = f
+
+getProof :: Hypothesis -> Proof
+getProof (HAxiom h _) = PAx h
+getProof (HTheorem _ _ p) = p
 
 findHyp :: Context -> HypId -> Maybe Hypothesis
 findHyp ctx h = find (\h' -> getHypId h' == h) ctx

@@ -40,6 +40,9 @@ import Lexer
     name        { Token _ (TokenQuotedName $$) }
     suppose     { Token _ TokenSuppose }
     thus        { Token _ TokenThus }
+    then        { Token _ TokenThen }
+    hence       { Token _ TokenHence }
+    have        { Token _ TokenHave }
     by          { Token _ TokenBy }
 
 %right exists forall dot
@@ -72,6 +75,7 @@ Proof   : ProofStep ';' Proof       { $1 : $3 }
 ProofStep :: { ProofStep }
 ProofStep : suppose Name ':' Form               { PSSuppose $2 $4 }
           | thus Form by Justification          { PSThusBy $2 $4 }
+          | have Name ':' Form by Justification { PSHaveBy $2 $4 $6 }
 
 Justification :: { Justification }
 Justification : Name ',' Justification          { $1 : $3 }

@@ -44,6 +44,9 @@ tokens :-
     \:              { literal TokenDoubleColon }
     suppose         { literal TokenSuppose }
     thus            { literal TokenThus }
+    hence           { literal TokenHence }
+    have            { literal TokenHave }
+    then            { literal TokenThen }
     by              { literal TokenBy }
 
     \"[^\"]*\"          { lex (TokenQuotedName . firstLast) }
@@ -97,6 +100,9 @@ data TokenClass
     | TokenQuotedName String
     | TokenSuppose
     | TokenThus
+    | TokenThen
+    | TokenHence
+    | TokenHave
     | TokenBy
     deriving (Eq, Show)
 
@@ -122,6 +128,9 @@ unLex TokenDoubleColon = ":"
 unLex TokenSuppose = "suppose"
 unLex TokenThus = "thus"
 unLex TokenBy = "by"
+unLex TokenThen = "then"
+unLex TokenHence = "hence"
+unLex TokenHave = "have"
 unLex (TokenQuotedName n) = "\"" ++ n ++ "\""
 unLex (TokenVar s) = "(var) " ++ s
 unLex (TokenId s) = "(id) " ++ s

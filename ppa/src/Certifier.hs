@@ -20,6 +20,7 @@ import PPA (
     TProof,
     findHyp,
     getForm,
+    getProof,
  )
 
 import NDProofs (
@@ -107,10 +108,8 @@ certifyProof ctx f (p : ps) = certifyProofStep ctx f p ps
 certifyProofStep ::
     Context -> Form -> ProofStep -> TProof -> Result Proof
 certifyProofStep ctx (FImp f1 f2) (PSSuppose name form) ps
-    | form /= f1 = Left "can't assume"
+    | form /= f1 = Left $ printf "can't assume '%s' as it's different from antecedent '%s'" (show form) (show f1)
     | otherwise = do
-        -- TODO: Está bien agregar al ctx la asunción? Sino no se puede hacer
-        -- diffuse.ppa
         let ctx' = HAxiom name form : ctx
         sub <- certifyProof ctx' f2 ps
         return
@@ -118,8 +117,12 @@ certifyProofStep ctx (FImp f1 f2) (PSSuppose name form) ps
                 { hypAntecedent = name
                 , proofConsequent = sub
                 }
+certifyProofStep ctx thesis (PSHaveBy h f js) ps = do
+    proof <- certifyBy ctx f js
+    let ctx' = HTheorem h f proof : ctx
+    certifyProof ctx' thesis ps
 certifyProofStep ctx thesis (PSThusBy form js) ps
-    | form /= thesis = Left "form not thesis"
+    | form /= thesis = Left $ printf "form '%s' /= current thesis '%s'" (show form) (show thesis)
     | otherwise = certifyBy ctx thesis js
 
 {- Certifica que js |- f
@@ -174,7 +177,7 @@ certifyBy ctx f js = do
                     }
             , -- Dem de f1 ^ ... ^ fn
               -- TODO: Tal vez los teoremas no son PAx, sync con checkContext
-              proofAntecedent = proofAndIList (map PAx js)
+              proofAntecedent = proofAndIList (map getProof jsHyps)
             }
 
 findJustification :: Context -> Justification -> Result [Hypothesis]
