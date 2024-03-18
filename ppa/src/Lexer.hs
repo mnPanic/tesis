@@ -14338,7 +14338,7 @@ alex_action_13 = literal TokenParenClose
 alex_action_14 = literal TokenAxiom
 alex_action_15 = literal TokenTheorem
 alex_action_16 = literal TokenProof
-alex_action_17 = literal TokenQED
+alex_action_17 = literal TokenEnd
 alex_action_18 = literal TokenSemicolon
 alex_action_19 = literal TokenDoubleColon
 alex_action_20 = literal TokenSuppose
@@ -14629,7 +14629,7 @@ data TokenClass
     | TokenDoubleColon
     | TokenTheorem
     | TokenProof
-    | TokenQED
+    | TokenEnd
     | TokenQuotedName String
     | TokenSuppose
     | TokenThus
@@ -14652,7 +14652,7 @@ unLex TokenParenClose = ")"
 unLex TokenAxiom = "axiom"
 unLex TokenTheorem = "theorem"
 unLex TokenProof = "proof"
-unLex TokenQED = "qed"
+unLex TokenEnd = "qed"
 unLex TokenSemicolon = ";"
 unLex TokenDoubleColon = ":"
 unLex TokenSuppose = "suppose"

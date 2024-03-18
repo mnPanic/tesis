@@ -36,7 +36,7 @@ import Lexer
     axiom       { Token _ TokenAxiom }   
     theorem     { Token _ TokenTheorem }
     proof       { Token _ TokenProof }
-    qed         { Token _ TokenQED }
+    end         { Token _ TokenEnd }
     name        { Token _ (TokenQuotedName $$) }
     suppose     { Token _ TokenSuppose }
     thus        { Token _ TokenThus }
@@ -60,22 +60,26 @@ Declaration : Axiom                     { $1 }
             | Theorem                   { $1 }
 
 Axiom :: { Decl }
-Axiom : axiom name ':' Form             { DAxiom $2 $4 }
+Axiom : axiom Name ':' Form             { DAxiom $2 $4 }
 
 Theorem :: { Decl }
-Theorem : theorem name ':' Form proof Proof qed   { DTheorem $2 $4 $6 }
+Theorem : theorem Name ':' Form proof Proof end   { DTheorem $2 $4 $6 }
 
 Proof   :: { TProof }
 Proof   : ProofStep ';' Proof       { $1 : $3 }
         | ProofStep ';'             { [ $1 ] }
 
 ProofStep :: { ProofStep }
-ProofStep : suppose name ':' Form               { PSSuppose $2 $4 }
+ProofStep : suppose Name ':' Form               { PSSuppose $2 $4 }
           | thus Form by Justification          { PSThusBy $2 $4 }
 
 Justification :: { Justification }
-Justification : name ',' Justification          { $1 : $3 }
-              | name                            { [ $1 ] }              
+Justification : Name ',' Justification          { $1 : $3 }
+              | Name                            { [ $1 ] }              
+
+Name    :: { String }
+Name    : id               { $1 }
+        | name             { $1 }
 
 Form :: { Form }
 Form    : id TermArgs               { FPred $1 $2 }
@@ -99,7 +103,7 @@ TermArgs : {- empty -}              { [] }
 
 Terms :: { [Term] }
 Terms   : Term                      { [$1] }
-        | Term ',' Terms          { $1 : $3 }
+        | Term ',' Terms            { $1 : $3 }
 
 {
 lexwrap :: (Token -> Alex a) -> Alex a

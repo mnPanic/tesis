@@ -86,10 +86,10 @@ testCommands =
         [ "suppose"
             ~: testProgram
                 [r|
-                theorem "a_implies_a" : a -> a
+                theorem a_implies_a : a -> a
                 proof
                     suppose "a" : a;
-                    thus a by "a";
+                    thus a by a;
                 end
         |]
         ]

@@ -39,7 +39,7 @@ tokens :-
     axiom           { literal TokenAxiom }
     theorem         { literal TokenTheorem }
     proof           { literal TokenProof }
-    end             { literal TokenQED }
+    end             { literal TokenEnd }
     \;              { literal TokenSemicolon }
     \:              { literal TokenDoubleColon }
     suppose         { literal TokenSuppose }
@@ -93,7 +93,7 @@ data TokenClass
     | TokenDoubleColon
     | TokenTheorem
     | TokenProof
-    | TokenQED
+    | TokenEnd
     | TokenQuotedName String
     | TokenSuppose
     | TokenThus
@@ -116,7 +116,7 @@ unLex TokenParenClose = ")"
 unLex TokenAxiom = "axiom"
 unLex TokenTheorem = "theorem"
 unLex TokenProof = "proof"
-unLex TokenQED = "qed"
+unLex TokenEnd = "qed"
 unLex TokenSemicolon = ";"
 unLex TokenDoubleColon = ":"
 unLex TokenSuppose = "suppose"
