@@ -104,6 +104,34 @@ testCommands =
                 thus c   by "P", "R", "S";
             end
         |]
+        , "then + hence + optional hyp"
+            ~: testProgram
+                [r|
+            theorem "ejemplo" : (a -> b -> c) -> (a -> b) -> a -> c
+            proof
+                suppose "P": a -> b -> c;
+                suppose "Q": a -> b;
+                suppose "R": a;
+                then "S": b by "Q";
+                thus c   by "P", "R", "S";
+            end
+            theorem "ejemplo eq" : (a -> b -> c) -> (a -> b) -> a -> c
+            proof
+                suppose "P": a -> b -> c;
+                suppose "Q": a -> b;
+                suppose "R": a;
+                have "S": b by "Q", "_";
+                thus c   by "P", "R", "S";
+            end
+            theorem "ejemplo sin hyp id" : (a -> b -> c) -> (a -> b) -> a -> c
+            proof
+                suppose "P": a -> b -> c;
+                suppose "Q": a -> b;
+                suppose "R": a;
+                then b by "Q";
+                hence c by "P", "R";
+            end
+        |]
         ]
 
 testSolve :: Test

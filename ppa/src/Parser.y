@@ -73,13 +73,19 @@ Proof   : ProofStep ';' Proof       { $1 : $3 }
         | ProofStep ';'             { [ $1 ] }
 
 ProofStep :: { ProofStep }
-ProofStep : suppose Name ':' Form               { PSSuppose $2 $4 }
-          | thus Form by Justification          { PSThusBy $2 $4 }
-          | have Name ':' Form by Justification { PSHaveBy $2 $4 $6 }
+ProofStep : suppose OptionalName ':' Form                       { PSSuppose $2 $4 }
+          | thus Form by Justification                          { PSThusBy $2 $4 }
+          | hence Form by Justification                         { PSHenceBy $2 $4 }
+          | have OptionalName ':' Form by Justification         { PSHaveBy $2 $4 $6 }
+          | then OptionalName ':' Form by Justification         { PSThenBy $2 $4 $6 }
 
 Justification :: { Justification }
 Justification : Name ',' Justification          { $1 : $3 }
               | Name                            { [ $1 ] }              
+
+OptionalName    :: { String }
+OptionalName    : {- empty -}      { "" }
+                | Name             { $1 }
 
 Name    :: { String }
 Name    : id               { $1 }

@@ -51,6 +51,7 @@ import NDProofs (
 import ND (
     Env (..),
     Form (..),
+    HypId,
     Proof (..),
     dneg,
  )
@@ -100,8 +101,6 @@ certifyTheorem ctx (DTheorem h f p) = do
     ndProof <- certifyProof ctx f p
     return (HTheorem h f ndProof)
 
--- TODO: Diffuse vs skeleton steps
--- De acá en adelante hay que re-pensar
 certifyProof :: Context -> Form -> TProof -> Result Proof
 certifyProof ctx f (p : ps) = certifyProofStep ctx f p ps
 
@@ -110,7 +109,7 @@ certifyProofStep ::
 certifyProofStep ctx (FImp f1 f2) (PSSuppose name form) ps
     | form /= f1 = Left $ printf "can't assume '%s' as it's different from antecedent '%s'" (show form) (show f1)
     | otherwise = do
-        let ctx' = HAxiom name form : ctx
+        ctx' <- addToCtx ctx (HAxiom name form)
         sub <- certifyProof ctx' f2 ps
         return
             PImpI
@@ -119,11 +118,37 @@ certifyProofStep ctx (FImp f1 f2) (PSSuppose name form) ps
                 }
 certifyProofStep ctx thesis (PSHaveBy h f js) ps = do
     proof <- certifyBy ctx f js
-    let ctx' = HTheorem h f proof : ctx
+    ctx' <- addToCtx ctx (HTheorem h f proof)
+    certifyProof ctx' thesis ps
+certifyProofStep ctx thesis (PSThenBy h f js) ps = do
+    let js' = prevHypId : js
+    proof <- certifyBy ctx f js
+    ctx' <- addToCtx ctx (HTheorem h f proof)
     certifyProof ctx' thesis ps
 certifyProofStep ctx thesis (PSThusBy form js) ps
     | form /= thesis = Left $ printf "form '%s' /= current thesis '%s'" (show form) (show thesis)
     | otherwise = certifyBy ctx thesis js
+certifyProofStep ctx thesis (PSHenceBy form js) ps
+    | form /= thesis = Left $ printf "form '%s' /= current thesis '%s'" (show form) (show thesis)
+    | otherwise = certifyBy ctx thesis (prevHypId : js)
+
+-- Hipótesis reservada que se refiere a la anterior
+-- Para funcionar como tal, siempre que se agrega algo al contexto se agrega con
+-- dos nombres de hipótesis, la pasada y esta
+prevHypId :: HypId
+prevHypId = "_"
+
+-- Agrega la hipótesis al contexto con su propia hipótesis (si no es vacía) y con _
+-- No permite el uso de hipótesis reservadas
+addToCtx :: Context -> Hypothesis -> Result Context
+addToCtx c hyp@(HAxiom h f)
+    | h == prevHypId = Left "can't use reserved hyp '_'"
+    | h == "" = return $ HAxiom prevHypId f : c
+    | otherwise = return $ HAxiom prevHypId f : (hyp : c)
+addToCtx c hyp@(HTheorem h f p)
+    | h == prevHypId = Left "can't use reserved hyp '_'"
+    | h == "" = return $ HTheorem prevHypId f p : c
+    | otherwise = return $ HTheorem prevHypId f p : (hyp : c)
 
 {- Certifica que js |- f
 

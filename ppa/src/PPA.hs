@@ -31,14 +31,19 @@ data ProofStep
     = PSSuppose HypId Form
     | -- Thus prueba algo de la tesis
       PSThusBy Form Justification
+    | -- Hence es como thus, pero agregando la hipótesis anterior
+      PSHenceBy Form Justification
     | -- Have prueba algo auxiliar
       PSHaveBy HypId Form Justification
+    | -- Then es como have, pero agregando la hipótesis anterior
+      PSThenBy HypId Form Justification
     deriving (Show, Eq)
 
 type Justification = [HypId]
 
 type Context = [Hypothesis]
 
+-- TODO: No se usa?
 type Goal = (Context, Form)
 
 data Hypothesis
