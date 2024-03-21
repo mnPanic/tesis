@@ -18,7 +18,7 @@ import Certifier (
     toClause,
  )
 
-import Parser (parseProgram)
+import Parser (parseProgram')
 
 import NDProofs (
     EnvItem,
@@ -73,12 +73,19 @@ testCertifier =
 
 testProgram :: String -> IO ()
 testProgram p = do
-    let result = parseProgram "test" p
+    let result = parseProgram' "test" p
     case result of
         Left err -> assertFailure err
         Right prog -> case certify prog of
             Left err -> assertFailure err
             Right ctx -> checkContext ctx @?= Right ()
+
+testProgramError :: String -> String -> IO ()
+testProgramError p err = do
+    let result = parseProgram' "test" p
+    case result of
+        Left err -> assertFailure err
+        Right prog -> certify prog @?= Left err
 
 testCommands :: Test
 testCommands =
@@ -104,7 +111,17 @@ testCommands =
                 thus c   by "P", "R", "S";
             end
         |]
-        , "then + hence + optional hyp"
+        , "no contradicting literals error"
+            ~: testProgramError
+                [r|theorem "ejemplo" : (a -> b -> c) -> (a -> b) -> a -> c
+            proof
+                suppose "P": a -> b -> c;
+                suppose "Q": a -> b;
+                suppose "R": a;
+                have "S": b by "Q";
+            end|]
+                "finding contradiction for dnf form '(~a ^ ~b) v (b ^ ~b)' obtained from '~((a => b) => b)': [~a,~b] contains no contradicting literals or false"
+        , "then + hence"
             ~: testProgram
                 [r|
             theorem "ejemplo" : (a -> b -> c) -> (a -> b) -> a -> c
@@ -113,25 +130,20 @@ testCommands =
                 suppose "Q": a -> b;
                 suppose "R": a;
                 then "S": b by "Q";
-                thus c   by "P", "R", "S";
+                hence c   by "P", "R";
             end
-            theorem "ejemplo eq" : (a -> b -> c) -> (a -> b) -> a -> c
-            proof
-                suppose "P": a -> b -> c;
-                suppose "Q": a -> b;
-                suppose "R": a;
-                have "S": b by "Q", "_";
-                thus c   by "P", "R", "S";
-            end
+        |]
+        , "optional hyp"
+            ~: testProgram
+                [r|
             theorem "ejemplo sin hyp id" : (a -> b -> c) -> (a -> b) -> a -> c
             proof
                 suppose "P": a -> b -> c;
                 suppose "Q": a -> b;
                 suppose "R": a;
-                then b by "Q";
+                then b by "Q"; // no tiene hyp id
                 hence c by "P", "R";
-            end
-        |]
+            end|]
         ]
 
 testSolve :: Test

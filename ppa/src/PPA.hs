@@ -1,43 +1,44 @@
 module PPA (
-    TProof,
-    ProofStep (..),
-    Program (..),
-    Context (..),
-    Justification,
-    Hypothesis (..),
-    Decl (..),
-    findHyp,
-    getProof,
-    getForm,
+  TProof,
+  ProofStep (..),
+  Program (..),
+  Context (..),
+  Justification,
+  Hypothesis (..),
+  Decl (..),
+  findHyp,
+  getHypId,
+  getProof,
+  getForm,
 ) where
 
 import Data.List (find)
 import ND (Env (EEmpty), Form (..), HypId, Proof (..))
 import NDChecker (
-    CheckResult,
-    check,
+  CheckResult,
+  check,
  )
 
 type Program = [Decl]
 
 data Decl
-    = DAxiom HypId Form
-    | DTheorem HypId Form TProof
-    deriving (Show, Eq)
+  = DAxiom HypId Form
+  | DTheorem HypId Form TProof
+  deriving (Show, Eq)
 
 type TProof = [ProofStep]
 
 data ProofStep
-    = PSSuppose HypId Form
-    | -- Thus prueba algo de la tesis
-      PSThusBy Form Justification
-    | -- Hence es como thus, pero agregando la hipótesis anterior
-      PSHenceBy Form Justification
-    | -- Have prueba algo auxiliar
-      PSHaveBy HypId Form Justification
-    | -- Then es como have, pero agregando la hipótesis anterior
-      PSThenBy HypId Form Justification
-    deriving (Show, Eq)
+  = PSSuppose HypId Form
+  | -- Thus prueba algo de la tesis
+    PSThusBy Form Justification
+  | -- Hence es como thus, pero agregando la hipótesis anterior
+    PSHenceBy Form Justification
+  | -- Have prueba algo auxiliar
+    PSHaveBy HypId Form Justification
+  | -- Then es como have, pero agregando la hipótesis anterior
+    PSThenBy HypId Form Justification
+  deriving (Show, Eq)
 
 type Justification = [HypId]
 
@@ -47,9 +48,9 @@ type Context = [Hypothesis]
 type Goal = (Context, Form)
 
 data Hypothesis
-    = HAxiom HypId Form
-    | HTheorem HypId Form Proof
-    deriving (Show, Eq)
+  = HAxiom HypId Form
+  | HTheorem HypId Form Proof
+  deriving (Show, Eq)
 
 getHypId :: Hypothesis -> HypId
 getHypId (HAxiom h _) = h

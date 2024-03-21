@@ -1,6 +1,6 @@
 .PHONY: all
 
-all : lexer parser main
+all : lexer-parser main
 
 clean:
 	rm src/*.hi

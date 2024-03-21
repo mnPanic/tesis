@@ -1,9 +1,11 @@
 {
-module Parser(parseProgram) where
+module Parser(parseProgram, parseProgram') where
 
 import ND ( Form(..), Term(..) )
 import PPA ( TProof, ProofStep(..), Program(..), Decl(..), Justification )
 import Lexer
+import Data.List (intercalate)
+import Debug.Trace (trace)
 }
 
 %name parse
@@ -73,19 +75,19 @@ Proof   : ProofStep ';' Proof       { $1 : $3 }
         | ProofStep ';'             { [ $1 ] }
 
 ProofStep :: { ProofStep }
-ProofStep : suppose OptionalName ':' Form                       { PSSuppose $2 $4 }
-          | thus Form by Justification                          { PSThusBy $2 $4 }
-          | hence Form by Justification                         { PSHenceBy $2 $4 }
-          | have OptionalName ':' Form by Justification         { PSHaveBy $2 $4 $6 }
-          | then OptionalName ':' Form by Justification         { PSThenBy $2 $4 $6 }
+ProofStep : suppose Name ':' Form                       { PSSuppose $2 $4 }
+          | thus Form by Justification                  { PSThusBy $2 $4 }
+          | hence Form by Justification                 { PSHenceBy $2 $4 }
+          | have Name ':' Form by Justification         { PSHaveBy $2 $4 $6 }
+          | then Name ':' Form by Justification         { PSThenBy $2 $4 $6 }
 
 Justification :: { Justification }
 Justification : Name ',' Justification          { $1 : $3 }
               | Name                            { [ $1 ] }              
 
-OptionalName    :: { String }
-OptionalName    : {- empty -}      { "" }
-                | Name             { $1 }
+OptionalHyp    :: { String }
+OptionalHyp    : {- empty -}      { "" }
+               | Name ':'        { $1 }
 
 Name    :: { String }
 Name    : id               { $1 }
@@ -121,8 +123,12 @@ lexwrap = (alexMonadScan' >>=)
 
 parseError :: (Token, [String]) -> Alex a
 parseError ((Token p t), next) =
-  alexError' p ("parse error at token '" ++ unLex t ++ "', possible tokens:" ++ show next)
+        alexError' p ("parse error at token '" ++ unLex t ++ "', possible tokens:")
+        --alexError' p ("parse error at token '" ++ unLex t ++ "', possible tokens:" ++ trace ("a" ++ (show $ null next)) (show next))
 
-parseProgram :: FilePath -> String -> Either String Program
-parseProgram = runAlex' parse
+parseProgram' :: FilePath -> String -> Either String Program
+parseProgram' = runAlex' parse
+
+parseProgram :: String -> Either String Program
+parseProgram s = runAlex s parse
 }

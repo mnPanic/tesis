@@ -22,8 +22,9 @@ import Control.Monad ( liftM )
 
 -- Actions have type AlexPosn -> String -> Token
 tokens :-
-    $white+         ;
-    "//".*          ;
+    $white+                         ;
+    "//".*                          ;
+    "/*"(.|(\r\n|\r|\n))*"*/"       ; -- block comments
     \.              { literal TokenDot }
     \,              { literal TokenComma }
     \&              { literal TokenAnd }
@@ -134,6 +135,7 @@ unLex TokenHave = "have"
 unLex (TokenQuotedName n) = "\"" ++ n ++ "\""
 unLex (TokenVar s) = "(var) " ++ s
 unLex (TokenId s) = "(id) " ++ s
+unLex t = show t
 
 alexEOF :: Alex Token
 alexEOF = do

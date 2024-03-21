@@ -20,6 +20,7 @@ import PPA (
     TProof,
     findHyp,
     getForm,
+    getHypId,
     getProof,
  )
 
@@ -46,6 +47,7 @@ import NDProofs (
     proofOrAssoc,
     proofOrCongruence1,
     proofOrCongruence2,
+    wrapR,
  )
 
 import ND (
@@ -61,6 +63,8 @@ import NDChecker (CheckResult (CheckOK), check, checkResultIsErr)
 import Data.List (find, partition)
 import Data.Maybe (fromJust, isNothing)
 import Text.Printf (printf)
+
+import Debug.Trace
 
 -- En un contexto cada demostración de teorema es válida en el contexto que
 -- contiene el prefijo estricto anterior a él.
@@ -109,7 +113,7 @@ certifyProofStep ::
 certifyProofStep ctx (FImp f1 f2) (PSSuppose name form) ps
     | form /= f1 = Left $ printf "can't assume '%s' as it's different from antecedent '%s'" (show form) (show f1)
     | otherwise = do
-        ctx' <- addToCtx ctx (HAxiom name form)
+        let ctx' = HAxiom name form : ctx
         sub <- certifyProof ctx' f2 ps
         return
             PImpI
@@ -118,37 +122,27 @@ certifyProofStep ctx (FImp f1 f2) (PSSuppose name form) ps
                 }
 certifyProofStep ctx thesis (PSHaveBy h f js) ps = do
     proof <- certifyBy ctx f js
-    ctx' <- addToCtx ctx (HTheorem h f proof)
+    let ctx' = HTheorem h f proof : ctx
     certifyProof ctx' thesis ps
 certifyProofStep ctx thesis (PSThenBy h f js) ps = do
-    let js' = prevHypId : js
-    proof <- certifyBy ctx f js
-    ctx' <- addToCtx ctx (HTheorem h f proof)
+    prevHyp <- prevHypId ctx
+    proof <- certifyBy ctx f (prevHyp : js)
+    let ctx' = HTheorem h f proof : ctx
     certifyProof ctx' thesis ps
 certifyProofStep ctx thesis (PSThusBy form js) ps
     | form /= thesis = Left $ printf "form '%s' /= current thesis '%s'" (show form) (show thesis)
     | otherwise = certifyBy ctx thesis js
 certifyProofStep ctx thesis (PSHenceBy form js) ps
     | form /= thesis = Left $ printf "form '%s' /= current thesis '%s'" (show form) (show thesis)
-    | otherwise = certifyBy ctx thesis (prevHypId : js)
+    | otherwise = do
+        prevHyp <- prevHypId ctx
+        certifyBy ctx thesis (prevHyp : js)
 
--- Hipótesis reservada que se refiere a la anterior
--- Para funcionar como tal, siempre que se agrega algo al contexto se agrega con
--- dos nombres de hipótesis, la pasada y esta
-prevHypId :: HypId
-prevHypId = "_"
-
--- Agrega la hipótesis al contexto con su propia hipótesis (si no es vacía) y con _
--- No permite el uso de hipótesis reservadas
-addToCtx :: Context -> Hypothesis -> Result Context
-addToCtx c hyp@(HAxiom h f)
-    | h == prevHypId = Left "can't use reserved hyp '_'"
-    | h == "" = return $ HAxiom prevHypId f : c
-    | otherwise = return $ HAxiom prevHypId f : (hyp : c)
-addToCtx c hyp@(HTheorem h f p)
-    | h == prevHypId = Left "can't use reserved hyp '_'"
-    | h == "" = return $ HTheorem prevHypId f p : c
-    | otherwise = return $ HTheorem prevHypId f p : (hyp : c)
+-- Devuelve la última hipótesis que se agregó al contexto
+prevHypId :: Context -> Result HypId
+prevHypId ctx
+    | null ctx = Left "can't get prev hyp from empty ctx"
+    | otherwise = return $ getHypId $ head ctx
 
 {- Certifica que js |- f
 
@@ -162,6 +156,7 @@ pero en realidad por abajo demuestra
     (f1 ^ ... ^ fn) => f
 -}
 certifyBy :: Context -> Form -> Justification -> Result Proof
+-- certifyBy ctx f js | trace (printf "certifyBy %s %s %s" (show ctx) (show f) (show js)) False = undefined
 certifyBy ctx f js = do
     jsHyps <- findJustification ctx js
     let jsForms = map getForm jsHyps
@@ -175,7 +170,9 @@ certifyBy ctx f js = do
 
     let hDNFNotThesis = hypForm fDNFNotThesis
 
-    contradictionProof <- solve (hDNFNotThesis, fDNFNotThesis)
+    contradictionProof <-
+        wrapR (printf "finding contradiction for dnf form '%s' obtained from '%s'" (show fDNFNotThesis) (show fNotThesis))
+            $ solve (hDNFNotThesis, fDNFNotThesis)
 
     return
         -- Dem de f con (f1 ... fn) => f
