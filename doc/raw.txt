@@ -1,0 +1,12 @@
+Historia
+
+1. Deducción natural
+
+    - Demostraciones del libro?
+
+2. Frontend, lenguaje
+
+    - contar equivalencias entre comandos y deducción natural (prueba.ppa)
+    - dnf, implementación por pasos y reescritura, poner la gramática
+
+3. Traducción de friedman

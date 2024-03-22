@@ -133,18 +133,30 @@ testCommands =
                 hence c   by "P", "R";
             end
         |]
-        , "optional hyp"
+        , "and discharge"
             ~: testProgram
                 [r|
-            theorem "ejemplo sin hyp id" : (a -> b -> c) -> (a -> b) -> a -> c
+            theorem "andi_variant" : a -> b -> (a & b)
             proof
-                suppose "P": a -> b -> c;
-                suppose "Q": a -> b;
-                suppose "R": a;
-                then b by "Q"; // no tiene hyp id
-                hence c by "P", "R";
-            end|]
+                suppose "a" : a;
+                suppose "b" : b;
+                thus a by "a";
+                thus b by "b";
+            end
+        |]
         ]
+
+-- , "optional hyp"
+--     ~: testProgram
+--         [r|
+--     theorem "ejemplo sin hyp id" : (a -> b -> c) -> (a -> b) -> a -> c
+--     proof
+--         suppose "P": a -> b -> c;
+--         suppose "Q": a -> b;
+--         suppose "R": a;
+--         then b by "Q"; // no tiene hyp id
+--         hence c by "P", "R";
+--     end|]
 
 testSolve :: Test
 testSolve =
