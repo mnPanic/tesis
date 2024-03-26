@@ -60,7 +60,7 @@ import ND (
 
 import NDChecker (CheckResult (CheckOK), check, checkResultIsErr)
 
-import Data.List (find, partition)
+import Data.List (find, nub, partition, (\\))
 import Data.Maybe (fromJust, isNothing)
 import Text.Printf (printf)
 
@@ -129,20 +129,73 @@ certifyProofStep ctx thesis (PSThenBy h f js) ps = do
     proof <- certifyBy ctx f (prevHyp : js)
     let ctx' = HTheorem h f proof : ctx
     certifyProof ctx' thesis ps
-certifyProofStep ctx thesis (PSThusBy form js) ps
-    | form /= thesis = Left $ printf "form '%s' /= current thesis '%s'" (show form) (show thesis)
-    | otherwise = certifyBy ctx thesis js
-certifyProofStep ctx thesis (PSHenceBy form js) ps
-    | form /= thesis = Left $ printf "form '%s' /= current thesis '%s'" (show form) (show thesis)
-    | otherwise = do
-        prevHyp <- prevHypId ctx
-        certifyBy ctx thesis (prevHyp : js)
+certifyProofStep ctx thesis (PSThusBy form js) ps = certifyThesisBy ctx thesis form js ps
+-- \| form /= thesis = Left $ printf "form '%s' /= current thesis '%s'" (show form) (show thesis)
+-- \| otherwise = certifyBy ctx thesis js
+certifyProofStep ctx thesis (PSHenceBy form js) ps = do
+    prevHyp <- prevHypId ctx
+    certifyThesisBy ctx thesis form (prevHyp : js) ps
 
 -- Devuelve la última hipótesis que se agregó al contexto
 prevHypId :: Context -> Result HypId
 prevHypId ctx
     | null ctx = Left "can't get prev hyp from empty ctx"
     | otherwise = return $ getHypId $ head ctx
+
+{- Certifica que f sea una parte de la tesis y una consecuencia de las justificaciones
+-}
+certifyThesisBy :: Context -> Form -> Form -> Justification -> TProof -> Result Proof
+certifyThesisBy ctx thesis f js ps = do
+    remainder <-
+        wrapR "not part of thesis"
+            $ checkFormIncluded f thesis
+    case remainder of
+        -- No queda nada para demostrar, la tesis es f (modulo permutaciones)
+        -- certificamos la tesis directo para evitar demostrar las permutaciones
+        -- o asociatividades
+        Nothing -> certifyBy ctx thesis js
+        -- Tenemos que demostrar que thesis <=> f ^ f'
+        Just remForms -> do
+            let thesis' = FAnd f remForms
+            proofThesis'ThenThesis <- solveImp thesis' thesis
+
+            proofF <- certifyBy ctx f js
+            -- Por acá continua
+            proofRemForms <- certifyProof ctx remForms ps
+
+            return
+                PImpE
+                    { antecedent = thesis'
+                    , proofImp = proofThesis'ThenThesis
+                    , proofAntecedent =
+                        PAndI
+                            { proofLeft = proofF
+                            , proofRight = proofRemForms
+                            }
+                    }
+
+-- Chequea que f este incluido en g y devuelve la diferencia
+-- Por ejemplo
+--  checkFormIncluded (a ^ b) ^ ((c ^ d) ^ e) (a ^ e) -> Right b ^ (c ^ d)
+checkFormIncluded :: Form -> Form -> Result (Maybe Form)
+checkFormIncluded f g
+    | subset fL gL = return $ case nub gL \\ fL of
+        [] -> Nothing
+        fs -> Just $ fromAndList fs
+    | otherwise = Left $ printf "%s (%s) not contained in %s (%s)" (show f) (show fL) (show g) (show gL)
+  where
+    (fL, gL) = (toAndList f, toAndList g)
+
+subset :: (Eq a) => [a] -> [a] -> Bool
+subset xs ys = all (`elem` ys) xs
+
+toAndList :: Form -> [Form]
+toAndList (FAnd f1 f2) = toAndList f1 ++ toAndList f2
+toAndList f = [f]
+
+-- Left assoc
+fromAndList :: [Form] -> Form
+fromAndList = foldl1 FAnd
 
 {- Certifica que js |- f
 
@@ -162,43 +215,16 @@ certifyBy ctx f js = do
     let jsForms = map getForm jsHyps
 
     let antecedent = fromClause jsForms
-    let thesis = FImp antecedent f
-    let fNotThesis = FNot thesis
-    let hNotThesis = hypForm fNotThesis
 
-    let (fDNFNotThesis, dnfProof) = dnf (hNotThesis, fNotThesis)
-
-    let hDNFNotThesis = hypForm fDNFNotThesis
-
-    contradictionProof <-
-        wrapR (printf "finding contradiction for dnf form '%s' obtained from '%s'" (show fDNFNotThesis) (show fNotThesis))
-            $ solve (hDNFNotThesis, fDNFNotThesis)
+    proofAntecedentImpF <- solveImp antecedent f
 
     return
         -- Dem de f con (f1 ... fn) => f
         PImpE
             { antecedent = antecedent
             , -- Dem de (f1 ... fn) => f por el absurdo
-              proofImp =
-                PImpE
-                    { antecedent = dneg thesis
-                    , proofImp = doubleNegElim thesis
-                    , proofAntecedent =
-                        PNotI
-                            { hyp = hNotThesis
-                            , -- Demostración de bottom (contradicción) asumiendo que no vale
-                              -- la tesis. Primero convertimos a DNF y luego demostramos que
-                              -- la version en DNF es refutable.
-                              proofBot =
-                                cut
-                                    fDNFNotThesis
-                                    dnfProof
-                                    hDNFNotThesis
-                                    contradictionProof
-                            }
-                    }
+              proofImp = proofAntecedentImpF
             , -- Dem de f1 ^ ... ^ fn
-              -- TODO: Tal vez los teoremas no son PAx, sync con checkContext
               proofAntecedent = proofAndIList (map getProof jsHyps)
             }
 
@@ -212,6 +238,45 @@ findJustification ctx js
   where
     hyps = zip js $ map (findHyp ctx) js
     missingHyps = filter (\(h, r) -> isNothing r) hyps
+
+{- solveImp encuentra una demostración automáticamente para f => g
+
+Lo hace por el absurdo, niega la implicación, la pasa a DNF y encuentra una
+contradicción. Este procedimiento es completo para proposicional.
+-}
+solveImp :: Form -> Form -> Result Proof
+solveImp f g = do
+    let thesis = FImp f g
+    let fNotThesis = FNot thesis
+    let hNotThesis = hypForm fNotThesis
+
+    let (fDNFNotThesis, dnfProof) = dnf (hNotThesis, fNotThesis)
+
+    let hDNFNotThesis = hypForm fDNFNotThesis
+
+    contradictionProof <-
+        wrapR (printf "finding contradiction for dnf form '%s' obtained from '%s'" (show fDNFNotThesis) (show fNotThesis))
+            $ solve (hDNFNotThesis, fDNFNotThesis)
+
+    -- Dem de f => g por el absurdo
+    return
+        PImpE
+            { antecedent = dneg thesis
+            , proofImp = doubleNegElim thesis
+            , proofAntecedent =
+                PNotI
+                    { hyp = hNotThesis
+                    , -- Demostración de bottom (contradicción) asumiendo que no vale
+                      -- la tesis. Primero convertimos a DNF y luego demostramos que
+                      -- la version en DNF es refutable.
+                      proofBot =
+                        cut
+                            fDNFNotThesis
+                            dnfProof
+                            hDNFNotThesis
+                            contradictionProof
+                    }
+            }
 
 {- dnf
 

@@ -140,8 +140,35 @@ testCommands =
             proof
                 suppose "a" : a;
                 suppose "b" : b;
+                hence b by "b"; // TODO: sacar el by cuando sea opcional
+                thus a by "a";
+            end
+        |]
+        , "and repeteated"
+            ~: testProgram
+                [r|
+            theorem "andi_variant" : a -> b -> (a & (a & (b & a)) & a)
+            proof
+                suppose "a" : a;
+                suppose "b" : b;
+                // A pesar de haber más de un a, se sacan los repetidos
                 thus a by "a";
                 thus b by "b";
+            end
+        |]
+        , "and discharge complex"
+            ~: testProgram
+                [r|
+            axiom "a": a
+            axiom "b": b
+            axiom "c": c
+            axiom "d": d
+            axiom "e": e
+            theorem "andi_variant" : (a & b) & ((c & d) & e)
+            proof
+                thus a & e by "a", "e";
+                thus d by "d";
+                thus b & c by "b", "c";
             end
         |]
         ]
