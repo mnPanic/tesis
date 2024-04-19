@@ -1,14 +1,18 @@
 # PPA Syntax
 
-## Programs
+PPA (Pani's Proof Assistant) es un lenguaje que permite escribir demostraciones
+en LPO. Al ejecutarse, certifica las demostraciones generando demostraciones en
+deducción natural (DN).
 
-Programs are a list of declarations, which can be
+## Programas
 
-- **Axioms**
+Los programas están compuestos por **declaraciones**, que pueden ser
+
+- **Axiomas**
 
   `axiom <name> : <form>`
 
-- **Theorems**
+- **Teoremas**
 
   ```text
   theorem <name> : <form>
@@ -17,12 +21,146 @@ Programs are a list of declarations, which can be
   end
   ```
 
-## Proofs
+## Fórmulas y términos
 
-Proofs are a list of *steps*, which can be
+Las fórmulas y términos de primer orden son
 
-- **Suppose**: Corresponds to implication introduction (=>-I)
+**Identificadores**:
+
+- Variables (`<var>`): Comienzan por `_` o mayúsculas y siguen con alfanuméricos.
+  Opcionalmente terminan en `'`
+
+  `(\_|[A-Z])[a-zA-Z0-9\_\-]*(\')*`
+
+- Funciones y predicados (`<id>`): Todo lo que no son variables, con más símbolos
+
+  `[a-zA-Z0-9\_\-\?!#\$\%&\*\+\<\>\=\?\@\^]+(\')*`
+
+- Nombres (`<name>`): Pueden ser o bien identificadores, o si están entre
+  comillas pueden tener cualquier símbolo dentro (incluso espacios).
+
+**Fórmulas**:
+
+- **Predicados**: `<id>(<term>, ..., <term>)`
+
+  > Los argumentos son opcionales
+
+- **Conectivos binarios**: and, or, implicación
+
+  ```text
+  <form> or <form>
+  <form> and <form>
+  <form> imp <form>
+  ```
+
+- **Negación**: `not <form>`
+- **Cuantificadores**: `exists <var> . <form>`, `forall <var> . <form>`
+- **Paréntesis**: `( <form> )`
+- `true`, `false`
+
+Términos:
+
+- **Funciones**: `<id>(<term>, ..., <term>)`
+- **Variables**: `<var>`
+
+## Comentarios
+
+Se pueden dejar comentarios de una sola línea (`//`) o multilínea (`/* ... */`)
+
+## Demostraciones
+
+Las demostraciones están compuestas por *pasos*, que deben probar la *tesis*.
+Los pasos corresponden a *comandos*. Están separados por `;`.
+
+### Comandos
+
+Para demostrar una tesis, hay que transformarla mediante comandos hasta que
+quede vacía.
+
+#### By
+
+El principal mecanismo de demostración es el **by**, que afirma que un hecho es
+consecuencia de una lista de hipótesis. Puede usarse de dos formas principales
+
+- `thus <form> by <justification>`: Si form es *parte* de la tesis (ver
+  [descarga de conjunciones](#descarga-de-conjunciones)), y es
+  consecuencia lógica de las justificaciones, lo demuestra automáticamente y lo
+  descarga de la tesis.
+
+  Por ejemplo,
+
+  ```text
+  axiom ax_1 : a -> b
+  axiom ax_2 : b -> c
+  theorem t1 : a -> c 
+  proof
+      suppose a : a;
+      // La tesis ahora es c
+      thus c by a, ax_1, ax_2;
+  end
+  ```
+
+- `have <form> by <justification>`: Es como `thus` pero para afirmaciones
+  *auxiliares* que no son parte de la tesis.
+
+  Por ejemplo,
+
+  ```text
+  theorem "ejemplo" : (a -> b -> c) -> (a -> b) -> a -> c
+  proof
+      suppose "P": a -> b -> c;
+      suppose "Q": a -> b;
+      suppose "R": a;
+      have "S": b by "Q", "R";
+      thus c   by "P", "R", "S";
+  end
+  ```
+
+Ambas tienen su contraparte con azúcar sintáctico que agrega automáticamente la
+hipótesis anterior a la justificación.
+
+| **Comando** | **Azúcar** | **Afecta la tesis** |
+| ----------- | ---------- | ------------------- |
+| `thus`      | `hence`    | Si                  |
+| `have`      | `then`     | No                  |
+
+### Otros comandos
+
+- **Suppose**: Corresponde a la introducción de la implicación en DN (`=>-I`)
 
   `suppose <hyp name> <form>`
 
-- **Thus by**
+  Si la tesis es `A -> B`, asume `A` y la tesis se convierte en `B`.
+
+### Descarga de conjunciones
+
+Si la tesis es una conjunción, se puede probar solo una parte de ella. Por ejemplo,
+
+```text
+theorem "and discharge" : a -> b -> (a & b)
+proof
+    suppose "a" : a;
+    suppose "b" : b;
+    // La tesis es a & b
+    hence b by "b";
+
+    // La tesis es a
+    thus a by "a";
+end
+```
+
+Y también puede ser de forma más compleja, parcialmente y en cualquier órden
+
+```text
+axiom "a": a
+axiom "b": b
+axiom "c": c
+axiom "d": d
+axiom "e": e
+theorem "and discharge" : (a & b) & ((c & d) & e)
+proof
+    thus a & e by "a", "e";
+    thus d by "d";
+    thus b & c by "b", "c";
+end
+```

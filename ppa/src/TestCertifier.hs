@@ -99,6 +99,18 @@ testCommands =
                 thus a by a;
             end
         |]
+        , "suppose 2, transitivity"
+            ~: testProgram
+                [r|
+            axiom ax_1 : a -> b
+            axiom ax_2 : b -> c
+            theorem t1 : a -> c 
+            proof
+                suppose a : a;
+                // La tesis ahora es c
+                hence c by a, ax_1, ax_2;
+            end
+            |]
         , "have"
             ~: testProgram
                 [r|
