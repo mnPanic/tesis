@@ -48,12 +48,12 @@ Las fórmulas y términos de primer orden son
 - **Conectivos binarios**: and, or, implicación
 
   ```text
-  <form> or <form>
-  <form> and <form>
-  <form> imp <form>
+  <form> | <form>
+  <form> & <form>
+  <form> -> <form>
   ```
 
-- **Negación**: `not <form>`
+- **Negación**: `~ <form>`
 - **Cuantificadores**: `exists <var> . <form>`, `forall <var> . <form>`
 - **Paréntesis**: `( <form> )`
 - `true`, `false`
@@ -74,8 +74,7 @@ Los pasos corresponden a *comandos*. Están separados por `;`.
 
 ### Comandos
 
-Para demostrar una tesis, hay que transformarla mediante comandos hasta que
-quede vacía.
+Para demostrar una tesis, hay que **reducirla** mediante comandos hasta agotarla.
 
 #### By
 
@@ -101,7 +100,7 @@ consecuencia de una lista de hipótesis. Puede usarse de dos formas principales
   ```
 
 - `have <form> by <justification>`: Es como `thus` pero para afirmaciones
-  *auxiliares* que no son parte de la tesis.
+  *auxiliares* que no son parte de la tesis. No reduce la tesis.
 
   Por ejemplo,
 
@@ -119,7 +118,7 @@ consecuencia de una lista de hipótesis. Puede usarse de dos formas principales
 Ambas tienen su contraparte con azúcar sintáctico que agrega automáticamente la
 hipótesis anterior a la justificación.
 
-| **Comando** | **Azúcar** | **Afecta la tesis** |
+| **Comando** | **Azúcar** | **Reduce la tesis** |
 | ----------- | ---------- | ------------------- |
 | `thus`      | `hence`    | Si                  |
 | `have`      | `then`     | No                  |
@@ -128,13 +127,14 @@ hipótesis anterior a la justificación.
 
 - **Suppose**: Corresponde a la introducción de la implicación en DN (`=>-I`)
 
-  `suppose <hyp name> <form>`
+  `suppose <hyp name> : <form>`
 
   Si la tesis es `A -> B`, asume `A` y la tesis se convierte en `B`.
 
 ### Descarga de conjunciones
 
-Si la tesis es una conjunción, se puede probar solo una parte de ella. Por ejemplo,
+Si la tesis es una conjunción, se puede probar solo una parte de ella y luego la
+tesis se reduce al resto. Por ejemplo,
 
 ```text
 theorem "and discharge" : a -> b -> (a & b)

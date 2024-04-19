@@ -183,6 +183,19 @@ testCommands =
                 thus b & c by "b", "c";
             end
         |]
+        , -- https://www.cs.ru.nl/~freek/notes/mv.pdf p2
+          "freek vernacular"
+            ~: testProgram
+                [r|
+                axiom "a then c": a -> c
+                axiom "b then d": b -> d
+
+                theorem t: a & b -> c & d
+                proof
+                    suppose h : a & b;
+                    hence c & d by "a then c", "b then d";
+                end
+            |]
         ]
 
 -- , "optional hyp"
