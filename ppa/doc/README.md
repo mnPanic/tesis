@@ -125,11 +125,23 @@ hipótesis anterior a la justificación.
 
 ### Otros comandos
 
-- **Suppose**: Corresponde a la introducción de la implicación en DN (`=>-I`)
+- **`suppose`**: Corresponde a la introducción de la implicación en DN (`=>-I`)
 
   `suppose <hyp name> : <form>`
 
   Si la tesis es `A -> B`, asume `A` y la tesis se convierte en `B`.
+
+- **`equivalently`**: Permite reducir la tesis a una fórmula equivalente
+
+  Ejemplo:
+
+  ```text
+  theorem "ejemplo" : ¬(a | b)
+  proof
+    equivalently (¬a & ¬b);
+    ...
+  end
+  ```
 
 ### Descarga de conjunciones
 
