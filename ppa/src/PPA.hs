@@ -40,6 +40,8 @@ data ProofStep
     PSThenBy HypId Form Justification
   | -- Tesis es equivalente a otra fórmula
     PSEquiv Form
+  | -- Afirmación auxiliar con su demostración
+    PSClaim HypId Form TProof
   deriving (Show, Eq)
 
 type Justification = [HypId]

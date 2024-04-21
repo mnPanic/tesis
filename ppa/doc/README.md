@@ -143,6 +143,22 @@ hipótesis anterior a la justificación.
   end
   ```
 
+- **`claim`**: Permite hacer una afirmación auxiliar, junto con su demostración
+
+  Ejemplo:
+
+  ```text
+  theorem "ejemplo" : ¬(a | b)
+  proof
+    claim "c" : (¬a & ¬b)
+    proof
+      ...
+    end
+    thus ¬(a | b) by "c";
+  end
+  ```
+
+
 ### Descarga de conjunciones
 
 Si la tesis es una conjunción, se puede probar solo una parte de ella y luego la

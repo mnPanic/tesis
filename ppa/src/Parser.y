@@ -47,6 +47,7 @@ import Debug.Trace (trace)
     have                { Token _ TokenHave }
     by                  { Token _ TokenBy }
     equivalently        { Token _ TokenEquivalently }
+    claim               { Token _ TokenClaim }
 
 %right exists forall dot
 %right imp
@@ -74,6 +75,9 @@ Theorem : theorem Name ':' Form proof Proof end   { DTheorem $2 $4 $6 }
 Proof   :: { TProof }
 Proof   : ProofStep ';' Proof       { $1 : $3 }
         | ProofStep ';'             { [ $1 ] }
+        -- Sin separador porque termina con end
+        | ProofStepBlock Proof      { $1 : $2 }
+        | ProofStepBlock            { [ $1 ] }
 
 ProofStep :: { ProofStep }
 ProofStep : suppose Name ':' Form                       { PSSuppose $2 $4 }
@@ -81,7 +85,10 @@ ProofStep : suppose Name ':' Form                       { PSSuppose $2 $4 }
           | hence Form by Justification                 { PSHenceBy $2 $4 }
           | have Name ':' Form by Justification         { PSHaveBy $2 $4 $6 }
           | then Name ':' Form by Justification         { PSThenBy $2 $4 $6 }
-          | equivalently Form                           { PSEquiv $2 }        
+          | equivalently Form                           { PSEquiv $2 }
+
+ProofStepBlock :: { ProofStep }
+ProofStepBlock : claim Name ':' Form proof Proof end    { PSClaim $2 $4 $6 }
 
 Justification :: { Justification }
 Justification : Name ',' Justification          { $1 : $3 }

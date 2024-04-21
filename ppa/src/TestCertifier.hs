@@ -209,6 +209,21 @@ testCommands =
                     thus ~b by "no b";
                 end
             |]
+        , "claim"
+            ~: testProgram
+                [r|
+                axiom "no a": ~a
+                axiom "no b": ~b
+                theorem "ejemplo" : ~(a | b)
+                proof
+                    claim "c" : (~a & ~b)
+                    proof
+                        thus ~a by "no a";
+                        thus ~b by "no b";
+                    end
+                    thus ~(a | b) by "c";
+                end
+        |]
         ]
 
 -- , "optional hyp"
