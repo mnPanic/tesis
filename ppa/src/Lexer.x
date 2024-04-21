@@ -49,6 +49,7 @@ tokens :-
     have            { literal TokenHave }
     then            { literal TokenThen }
     by              { literal TokenBy }
+    equivalently    { literal TokenEquivalently }
 
     \"[^\"]*\"          { lex (TokenQuotedName . firstLast) }
 
@@ -105,6 +106,7 @@ data TokenClass
     | TokenHence
     | TokenHave
     | TokenBy
+    | TokenEquivalently
     deriving (Eq, Show)
 
 unLex :: TokenClass -> String
@@ -132,6 +134,7 @@ unLex TokenBy = "by"
 unLex TokenThen = "then"
 unLex TokenHence = "hence"
 unLex TokenHave = "have"
+unLex TokenEquivalently = "equivalently"
 unLex (TokenQuotedName n) = "\"" ++ n ++ "\""
 unLex (TokenVar s) = "(var) " ++ s
 unLex (TokenId s) = "(id) " ++ s

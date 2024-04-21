@@ -196,6 +196,19 @@ testCommands =
                     hence c & d by "a then c", "b then d";
                 end
             |]
+        , "equivalently"
+            ~: testProgram
+                [r|
+                // Reducir la tesis a una fórmula equivalente
+                axiom "no a": ~a
+                axiom "no b": ~b
+                theorem "ejemplo equiv" : ~(a | b)
+                proof
+                    equivalently (~a & ~b);
+                    thus ~a by "no a";
+                    thus ~b by "no b";
+                end
+            |]
         ]
 
 -- , "optional hyp"

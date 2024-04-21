@@ -38,6 +38,8 @@ data ProofStep
     PSHaveBy HypId Form Justification
   | -- Then es como have, pero agregando la hipótesis anterior
     PSThenBy HypId Form Justification
+  | -- Tesis es equivalente a otra fórmula
+    PSEquiv Form
   deriving (Show, Eq)
 
 type Justification = [HypId]

@@ -30,22 +30,23 @@ import Debug.Trace (trace)
     exists      { Token _ TokenExists }
     dot         { Token _ TokenDot }
 
-    id          { Token _ (TokenId $$) }
-    var         { Token _ (TokenVar $$) }
-    ';'         { Token _ TokenSemicolon }
-    ':'         { Token _ TokenDoubleColon }
-    ','         { Token _ TokenComma }
-    axiom       { Token _ TokenAxiom }   
-    theorem     { Token _ TokenTheorem }
-    proof       { Token _ TokenProof }
-    end         { Token _ TokenEnd }
-    name        { Token _ (TokenQuotedName $$) }
-    suppose     { Token _ TokenSuppose }
-    thus        { Token _ TokenThus }
-    then        { Token _ TokenThen }
-    hence       { Token _ TokenHence }
-    have        { Token _ TokenHave }
-    by          { Token _ TokenBy }
+    id                  { Token _ (TokenId $$) }
+    var                 { Token _ (TokenVar $$) }
+    ';'                 { Token _ TokenSemicolon }
+    ':'                 { Token _ TokenDoubleColon }
+    ','                 { Token _ TokenComma }
+    axiom               { Token _ TokenAxiom }   
+    theorem             { Token _ TokenTheorem }
+    proof               { Token _ TokenProof }
+    end                 { Token _ TokenEnd }
+    name                { Token _ (TokenQuotedName $$) }
+    suppose             { Token _ TokenSuppose }
+    thus                { Token _ TokenThus }
+    then                { Token _ TokenThen }
+    hence               { Token _ TokenHence }
+    have                { Token _ TokenHave }
+    by                  { Token _ TokenBy }
+    equivalently        { Token _ TokenEquivalently }
 
 %right exists forall dot
 %right imp
@@ -80,6 +81,7 @@ ProofStep : suppose Name ':' Form                       { PSSuppose $2 $4 }
           | hence Form by Justification                 { PSHenceBy $2 $4 }
           | have Name ':' Form by Justification         { PSHaveBy $2 $4 $6 }
           | then Name ':' Form by Justification         { PSThenBy $2 $4 $6 }
+          | equivalently Form                           { PSEquiv $2 }        
 
 Justification :: { Justification }
 Justification : Name ',' Justification          { $1 : $3 }

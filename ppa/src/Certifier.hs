@@ -130,11 +130,10 @@ certifyProofStep ctx thesis (PSThenBy h f js) ps = do
     let ctx' = HTheorem h f proof : ctx
     certifyProof ctx' thesis ps
 certifyProofStep ctx thesis (PSThusBy form js) ps = certifyThesisBy ctx thesis form js ps
--- \| form /= thesis = Left $ printf "form '%s' /= current thesis '%s'" (show form) (show thesis)
--- \| otherwise = certifyBy ctx thesis js
 certifyProofStep ctx thesis (PSHenceBy form js) ps = do
     prevHyp <- prevHypId ctx
     certifyThesisBy ctx thesis form (prevHyp : js) ps
+certifyProofStep ctx thesis (PSEquiv form) ps = certifyEquivalently ctx thesis form ps
 
 -- Devuelve la última hipótesis que se agregó al contexto
 prevHypId :: Context -> Result HypId
@@ -173,6 +172,18 @@ certifyThesisBy ctx thesis f js ps = do
                             , proofRight = proofRemForms
                             }
                     }
+
+-- Certifica que f es equivalente a f' automáticamente
+certifyEquivalently :: Context -> Form -> Form -> TProof -> Result Proof
+certifyEquivalently ctx thesis thesis' ps = do
+    proofThesis'ThenThesis <- solveImp thesis' thesis
+    proofThesis' <- certifyProof ctx thesis' ps
+    return
+        PImpE
+            { antecedent = thesis'
+            , proofImp = proofThesis'ThenThesis
+            , proofAntecedent = proofThesis'
+            }
 
 -- Chequea que f este incluido en g y devuelve la diferencia
 -- Por ejemplo
