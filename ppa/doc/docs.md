@@ -116,7 +116,7 @@ consecuencia de una lista de hipótesis. Puede usarse de dos formas principales
   ```
 
 Ambas tienen su contraparte con azúcar sintáctico que agrega automáticamente la
-hipótesis anterior a la justificación.
+hipótesis anterior a la justificación, a la que también se puede referir con `-`.
 
 | **Comando** | **Azúcar** | **Reduce la tesis** |
 | ----------- | ---------- | ------------------- |
@@ -157,7 +157,6 @@ hipótesis anterior a la justificación.
     thus ¬(a | b) by "c";
   end
   ```
-
 
 ### Descarga de conjunciones
 

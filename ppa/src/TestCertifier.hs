@@ -123,6 +123,13 @@ testCommands =
                 thus c   by "P", "R", "S";
             end
         |]
+        , "justification not in context error"
+            ~: testProgramError
+                [r|theorem "ejemplo" : a
+                proof
+                    thus a by "-", foo;
+                end|]
+                "finding hyps in context: can't get prev hyp from empty ctx; 'foo' not present in ctx"
         , "no contradicting literals error"
             ~: testProgramError
                 [r|theorem "ejemplo" : (a -> b -> c) -> (a -> b) -> a -> c
@@ -143,6 +150,15 @@ testCommands =
                 suppose "R": a;
                 then "S": b by "Q";
                 hence c   by "P", "R";
+            end
+            theorem "thus -, have -" : (a -> b -> c) -> (a -> b) -> a -> c
+            proof
+                suppose "P": a -> b -> c;
+                suppose "Q": a -> b;
+                suppose "R": a;
+                // Sin el sugar, hence == thus -/then == have -
+                have "S": b by "Q", -;
+                thus c   by -, "P", "R";
             end
         |]
         , "and discharge"

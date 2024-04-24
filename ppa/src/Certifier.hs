@@ -60,10 +60,11 @@ import ND (
 
 import NDChecker (CheckResult (CheckOK), check, checkResultIsErr)
 
-import Data.List (find, nub, partition, (\\))
+import Data.List (find, intercalate, nub, partition, (\\))
 import Data.Maybe (fromJust, isNothing)
 import Text.Printf (printf)
 
+import Data.Either (fromLeft, fromRight, isLeft)
 import Debug.Trace
 
 -- En un contexto cada demostración de teorema es válida en el contexto que
@@ -124,15 +125,8 @@ certifyProofStep ctx thesis (PSHaveBy h f js) ps = do
     proof <- certifyBy ctx f js
     let ctx' = HTheorem h f proof : ctx
     certifyProof ctx' thesis ps
-certifyProofStep ctx thesis (PSThenBy h f js) ps = do
-    prevHyp <- prevHypId ctx
-    proof <- certifyBy ctx f (prevHyp : js)
-    let ctx' = HTheorem h f proof : ctx
-    certifyProof ctx' thesis ps
-certifyProofStep ctx thesis (PSThusBy form js) ps = certifyThesisBy ctx thesis form js ps
-certifyProofStep ctx thesis (PSHenceBy form js) ps = do
-    prevHyp <- prevHypId ctx
-    certifyThesisBy ctx thesis form (prevHyp : js) ps
+certifyProofStep ctx thesis (PSThusBy form js) ps =
+    certifyThesisBy ctx thesis form js ps
 certifyProofStep ctx thesis (PSEquiv thesis') ps = do
     proofThesis'ThenThesis <- solveImp thesis' thesis
     proofThesis' <- certifyProof ctx thesis' ps
@@ -146,12 +140,6 @@ certifyProofStep ctx thesis (PSClaim h f ps') ps = do
     proofClaim <- certifyProof ctx f ps'
     let ctx' = HTheorem h f proofClaim : ctx
     certifyProof ctx' thesis ps
-
--- Devuelve la última hipótesis que se agregó al contexto
-prevHypId :: Context -> Result HypId
-prevHypId ctx
-    | null ctx = Left "can't get prev hyp from empty ctx"
-    | otherwise = return $ getHypId $ head ctx
 
 {- Certifica que f sea una parte de la tesis y una consecuencia de las justificaciones
 -}
@@ -242,13 +230,11 @@ certifyBy ctx f js = do
 findJustification :: Context -> Justification -> Result [Hypothesis]
 findJustification ctx js
     | not (null missingHyps) =
-        Left
-            $ "justifications not present in context: "
-            ++ show (map fst missingHyps)
-    | otherwise = Right (map (fromJust . snd) hyps)
+        Left $ "finding hyps in context: " ++ intercalate "; " (map (\(h, Left err) -> err) missingHyps)
+    | otherwise = Right $ map (\(h, Right hyp) -> hyp) hyps
   where
     hyps = zip js $ map (findHyp ctx) js
-    missingHyps = filter (\(h, r) -> isNothing r) hyps
+    missingHyps = filter (\(h, r) -> isLeft r) hyps
 
 {- solveImp encuentra una demostración automáticamente para f => g
 

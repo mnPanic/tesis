@@ -813,7 +813,7 @@ happyReduction_14 ((HappyAbsSyn12  happy_var_4) `HappyStk`
 	_ `HappyStk`
 	happyRest)
 	 = HappyAbsSyn10
-		 (PSHenceBy happy_var_2 happy_var_4
+		 (PSThusBy happy_var_2 (["-"] ++ happy_var_4)
 	) `HappyStk` happyRest
 
 happyReduce_15 = happyReduce 6 10 happyReduction_15
@@ -837,7 +837,7 @@ happyReduction_16 ((HappyAbsSyn12  happy_var_6) `HappyStk`
 	_ `HappyStk`
 	happyRest)
 	 = HappyAbsSyn10
-		 (PSThenBy happy_var_2 happy_var_4 happy_var_6
+		 (PSHaveBy happy_var_2 happy_var_4 (["-"] ++ happy_var_6)
 	) `HappyStk` happyRest
 
 happyReduce_17 = happySpecReduce_2  10 happyReduction_17

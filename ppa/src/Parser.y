@@ -82,9 +82,9 @@ Proof   : ProofStep ';' Proof       { $1 : $3 }
 ProofStep :: { ProofStep }
 ProofStep : suppose Name ':' Form                       { PSSuppose $2 $4 }
           | thus Form by Justification                  { PSThusBy $2 $4 }
-          | hence Form by Justification                 { PSHenceBy $2 $4 }
+          | hence Form by Justification                 { PSThusBy $2 (["-"] ++ $4) }
           | have Name ':' Form by Justification         { PSHaveBy $2 $4 $6 }
-          | then Name ':' Form by Justification         { PSThenBy $2 $4 $6 }
+          | then Name ':' Form by Justification         { PSHaveBy $2 $4 (["-"] ++ $6) }
           | equivalently Form                           { PSEquiv $2 }
 
 ProofStepBlock :: { ProofStep }
