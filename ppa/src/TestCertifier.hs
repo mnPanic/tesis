@@ -123,6 +123,26 @@ testCommands =
                 thus c   by "P", "R", "S";
             end
         |]
+        , "incomplete proof"
+            ~: test
+                [ "empty"
+                    ~: testProgramError
+                        [r|
+                        theorem "error": a -> b
+                        proof
+                        end
+                        |]
+                        "incomplete proof, still have a -> b as thesis"
+                , "incomplete"
+                    ~: testProgramError
+                        [r|
+                        theorem "error": a -> b
+                        proof
+                            suppose a:a;
+                        end
+                        |]
+                        "incomplete proof, still have b as thesis"
+                ]
         , "justification not in context error"
             ~: testProgramError
                 [r|theorem "ejemplo" : a
@@ -139,7 +159,7 @@ testCommands =
                 suppose "R": a;
                 have "S": b by "Q";
             end|]
-                "finding contradiction for dnf form '(~a ^ ~b) v (b ^ ~b)' obtained from '~((a => b) => b)': [~a,~b] contains no contradicting literals or false"
+                "finding contradiction for dnf form '(~a & ~b) | (b & ~b)' obtained from '~((a -> b) -> b)': [~a,~b] contains no contradicting literals or false"
         , "then + hence"
             ~: testProgram
                 [r|
@@ -261,14 +281,14 @@ testSolve =
             ~: doTestSolveEqCheck
                 ("h", fromClause [FFalse, propVar "Q"])
                 ( PNamed
-                    "contradiction of false ^ Q by false"
+                    "contradiction of false & Q by false"
                     PAndE1{right = propVar "Q", proofAnd = PAx "h"}
                 )
         , "refutable single clause w/ opposites"
             ~: doTestSolveEqCheck
                 ("h", fromClause [propVar "A", FNot $ propVar "A"])
                 ( PNamed
-                    "contradiction of A ^ ~A by A and ~A"
+                    "contradiction of A & ~A by A and ~A"
                     PNotE
                         { form = propVar "A"
                         , proofNotForm =
@@ -309,7 +329,7 @@ testSolve =
                             , hypLeft = "h L L"
                             , proofAssumingLeft =
                                 PNamed
-                                    "contradiction of A ^ ~A by A and ~A"
+                                    "contradiction of A & ~A by A and ~A"
                                     PNotE
                                         { form = propVar "A"
                                         , proofNotForm =
@@ -326,7 +346,7 @@ testSolve =
                             , hypRight = "h L R"
                             , proofAssumingRight =
                                 PNamed
-                                    "contradiction of false ^ Q by false"
+                                    "contradiction of false & Q by false"
                                     PAndE1
                                         { right = propVar "Q"
                                         , proofAnd = PAx "h L R"
@@ -335,7 +355,7 @@ testSolve =
                     , hypRight = "h R"
                     , proofAssumingRight =
                         PNamed
-                            "contradiction of ~B ^ B by B and ~B"
+                            "contradiction of ~B & B by B and ~B"
                             PNotE
                                 { form = propVar "B"
                                 , proofNotForm =
@@ -387,7 +407,7 @@ testSolve =
                     ]
                 )
             ~?= Left "[X,true] contains no contradicting literals or false"
-        , "not dnf" ~: solve ("h", FImp FTrue FFalse) ~?= Left "convert to clause: true => false is not a literal"
+        , "not dnf" ~: solve ("h", FImp FTrue FFalse) ~?= Left "convert to clause: true -> false is not a literal"
         ]
 
 doTestSolveEqCheck :: EnvItem -> Proof -> IO ()
@@ -414,14 +434,14 @@ testCertifyBy =
             case result of
                 Left e -> assertFailure e
                 Right proof -> CheckOK @=? check env proof a
-        , "A by A ^ B" ~: do
+        , "A by A & B" ~: do
             let ctx = [HAxiom "A and B" (FAnd a b)]
             let env = EExtend "A and B" (FAnd a b) EEmpty
             let result = certifyBy ctx a ["A and B"]
             case result of
                 Left e -> assertFailure e
                 Right proof -> CheckOK @=? check env proof a
-        , "A by (A ^ B) v (A ^ C)" ~: do
+        , "A by (A & B) v (A & C)" ~: do
             let ax = FOr (FAnd a b) (FAnd a c)
             let ctx = [HAxiom "ax" ax]
             let env = EExtend "ax" ax EEmpty
@@ -487,7 +507,7 @@ testClause =
         [ "not clause error"
             ~: toClause (FOr (propVar "A") (propVar "B"))
             ~?= Left
-                "convert to clause: A v B is not a literal"
+                "convert to clause: A | B is not a literal"
         , "not literals error"
             ~: toClause (FNot FTrue)
             ~?= Left "convert to clause: ~true is not a literal"

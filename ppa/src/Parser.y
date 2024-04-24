@@ -78,6 +78,7 @@ Proof   : ProofStep ';' Proof       { $1 : $3 }
         -- Sin separador porque termina con end
         | ProofStepBlock Proof      { $1 : $2 }
         | ProofStepBlock            { [ $1 ] }
+        | {- empty -}               { [] } -- Error manejado por Certifier
 
 ProofStep :: { ProofStep }
 ProofStep : suppose Name ':' Form                       { PSSuppose $2 $4 }

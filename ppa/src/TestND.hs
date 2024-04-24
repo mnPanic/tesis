@@ -526,10 +526,10 @@ testAndEProjection =
                             , proofAnd = PAx "h And"
                             }
                     }
-        , "err A ^ B |- C"
+        , "err A & B |- C"
             ~: proofAndEProjection ("h", FAnd (propVar "A") (propVar "B")) (propVar "C")
-            ~?= Left "A ^ B |- C not possible by left (A /= C) or right (B /= C)"
-        , "err ((A ^ (B ^ C)) ^ D) ^ E |- Q"
+            ~?= Left "A & B |- C not possible by left (A /= C) or right (B /= C)"
+        , "err ((A & (B & C)) & D) & E |- Q"
             ~: proofAndEProjection
                 ( "h"
                 , FAnd
@@ -543,7 +543,7 @@ testAndEProjection =
                     (propVar "E")
                 )
                 (propVar "Q")
-            ~?= Left "((A ^ (B ^ C)) ^ D) ^ E |- Q not possible by left ((A ^ (B ^ C)) ^ D |- Q not possible by left (A ^ (B ^ C) |- Q not possible by left (A /= Q) or right (B ^ C |- Q not possible by left (B /= Q) or right (C /= Q))) or right (D /= Q)) or right (E /= Q)"
+            ~?= Left "((A & (B & C)) & D) & E |- Q not possible by left ((A & (B & C)) & D |- Q not possible by left (A & (B & C) |- Q not possible by left (A /= Q) or right (B & C |- Q not possible by left (B /= Q) or right (C /= Q))) or right (D /= Q)) or right (E /= Q)"
         ]
 
 testAndEProj :: Form -> HypId -> Form -> Proof -> IO ()
@@ -557,24 +557,24 @@ testAndEProj fAnd hAnd f expectedProof = do
 testByExamples :: Test
 testByExamples =
     test
-        [ "X ^ (Y v Z) => (X ^ Y) v (X ^ Z)"
+        [ "X & (Y v Z) -> (X & Y) v (X & Z)"
             ~: check EEmpty p25' f25'
             ~?= CheckOK
-        , "(X ^ Y) v (X ^ Z) => X ^ (Y v Z) with macro"
+        , "(X & Y) v (X & Z) -> X & (Y v Z) with macro"
             ~: check EEmpty (proofDistOrOverAnd (propVar "X") (propVar "Y") (propVar "Z")) f25
             ~?= CheckOK
         , -- andEProj
-          "trans no proj ((A => B) ^ (B => C)) ^ A => C"
+          "trans no proj ((A -> B) & (B -> C)) & A -> C"
             ~: check EEmpty p27 f27
             ~?= CheckOK
-        , "trans w/ andEProj ((A => B) ^ (B => C)) ^ A => C"
+        , "trans w/ andEProj ((A -> B) & (B -> C)) & A -> C"
             ~: case p27_andEProjection of
                 (Left e) -> assertFailure e
                 (Right p) -> check EEmpty p f27 @?= CheckOK
-        , "example solve contradiction manually (A ^ ~A ^ ~B) v (A ^ B ^ ~B) -> false (bot)" ~: case p28_exampleSolve of
+        , "example solve contradiction manually (A & ~A & ~B) v (A & B & ~B) -> false (bot)" ~: case p28_exampleSolve of
             (Left e) -> assertFailure e
             (Right p) -> check EEmpty p f28_exampleSolve @?= CheckOK
-            -- , "by manually: ( ( A ^ (A => B) ) => B )" f26 p26
+            -- , "by manually: ( ( A ^ (A -> B) ) -> B )" f26 p26
         ]
 
 -- Test de demostraciones de equivalencias necesarias para dnf

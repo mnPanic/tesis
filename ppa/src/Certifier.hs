@@ -107,6 +107,7 @@ certifyTheorem ctx (DTheorem h f p) = do
     return (HTheorem h f ndProof)
 
 certifyProof :: Context -> Form -> TProof -> Result Proof
+certifyProof ctx f [] = Left $ printf "incomplete proof, still have %s as thesis" (show f)
 certifyProof ctx f (p : ps) = certifyProofStep ctx f p ps
 
 certifyProofStep ::

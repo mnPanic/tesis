@@ -2,7 +2,7 @@ module TestParser (testParserLexer) where
 
 import Lexer (Alex (Alex), Token (..), TokenClass (..), alexInitUserState, runAlex, runAlex')
 
-import PPA (Decl (..), Program, ProofStep (PSAssume, PSSuppose, PSThusBy))
+import PPA (Decl (..), Program, ProofStep (PSSuppose, PSThusBy))
 
 import ND (Form (..), Term (..), predVar, propVar)
 import Parser (parseProgram)
@@ -52,7 +52,7 @@ testParser =
         ]
 
 parseProgram' :: String -> Either String Program
-parseProgram' s = parseProgram s s
+parseProgram' = parseProgram
 
 testParserPrograms :: Test
 testParserPrograms =
@@ -62,7 +62,7 @@ testParserPrograms =
                 "axiom \"some axiom\" : forall X . p(X) & q(X) -> exists Y. r(Y) \
                 \theorem \"some thm\" : forall K. p \
                 \proof \
-                \   assume \"a\" : a; \
+                \   suppose \"a\" : a; \
                 \   thus a by \"a\", \"some axiom\"; \
                 \end"
             ~?= Right

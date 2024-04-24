@@ -93,9 +93,9 @@ data Form
 
 instance Show Form where
     show (FPred p ts) = p ++ showArgs ts
-    show (FAnd l r) = showBinParen l ++ " ^ " ++ showBinParen r
-    show (FOr l r) = showBinParen l ++ " v " ++ showBinParen r
-    show (FImp a c) = showBinParen a ++ " => " ++ showBinParen c
+    show (FAnd l r) = showBinParen l ++ " & " ++ showBinParen r
+    show (FOr l r) = showBinParen l ++ " | " ++ showBinParen r
+    show (FImp a c) = showBinParen a ++ " -> " ++ showBinParen c
     show (FNot f) = "~" ++ showBinParen f
     show FTrue = "true"
     show FFalse = "false"
