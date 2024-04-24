@@ -1,8 +1,8 @@
-module ParserTests where
+module TestParser (testParserLexer) where
 
 import Lexer (Alex (Alex), Token (..), TokenClass (..), alexInitUserState, runAlex, runAlex')
 
-import PPA (Decl (..), Program, ProofStep (PSAssume, PSThusBy))
+import PPA (Decl (..), Program, ProofStep (PSSuppose, PSThusBy))
 
 import ND (Form (..), Term (..), predVar, propVar)
 import Parser (parseProgram)
@@ -16,11 +16,8 @@ import Test.HUnit (
     (~?=),
  )
 
-main :: IO Counts
-main = do runTestTT tests
-
-tests :: Test
-tests =
+testParserLexer :: Test
+testParserLexer =
     test
         [ "parser" ~: testParser
         -- , "lexer" ~: testLexer
@@ -55,19 +52,19 @@ testParser =
         ]
 
 parseProgram' :: String -> Either String Program
-parseProgram' s = parseProgram s s
+parseProgram' = parseProgram
 
 testParserPrograms :: Test
 testParserPrograms =
     test
         [ "program"
             ~: parseProgram'
-                "axiom \"some axiom\" : forall X . p(X) ^ q(X) => exists Y. r(Y) \
+                "axiom \"some axiom\" : forall X . p(X) & q(X) -> exists Y. r(Y) \
                 \theorem \"some thm\" : forall K. p \
                 \proof \
-                \   assume \"a\" : a; \
+                \   suppose \"a\" : a; \
                 \   thus a by \"a\", \"some axiom\"; \
-                \qed"
+                \end"
             ~?= Right
                 [ DAxiom
                     "some axiom"
@@ -76,7 +73,7 @@ testParserPrograms =
                 , DTheorem
                     "some thm"
                     (FForall "K" (propVar "p"))
-                    [ PSAssume "a" $ propVar "a"
+                    [ PSSuppose "a" $ propVar "a"
                     , PSThusBy (propVar "a") ["a", "some axiom"]
                     ]
                 ]
@@ -100,7 +97,7 @@ testParseForms =
                 )
         , "parens"
             ~: doTestForm
-                "(p(X) => q(X)) v r(Y)"
+                "(p(X) -> q(X)) | r(Y)"
                 ( FOr
                     ( FImp
                         (FPred "p" [TVar "X"])
@@ -110,7 +107,7 @@ testParseForms =
                 )
         , "preds and funcs"
             ~: doTestForm
-                "q v p(X, f(Y, K, q), W)"
+                "q | p(X, f(Y, K, q), W)"
                 ( FOr
                     (FPred "q" [])
                     ( FPred
@@ -124,8 +121,8 @@ testParseForms =
         , "complete formula"
             ~: doTestForm
                 "exists Y .forall _X .\
-                \~num_positivo(_X) => num_negativo(+(_X, Y)) & q(Y)\
-                \| a ^ (false v true)"
+                \~num_positivo(_X) -> num_negativo(+(_X, Y)) & q(Y)\
+                \| a & (false | true)"
                 ( FExists
                     "Y"
                     ( FForall

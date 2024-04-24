@@ -1,13 +1,14 @@
 module Main where
 
 import Certifier (certify, checkContext)
-import Parser (parseProgram)
+import Parser (parseProgram')
 
+import GHC.Stack (HasCallStack)
 import NDProofs (Result)
 import PPA (Program)
 import System.Environment (getArgs)
 
-main :: IO ()
+main :: (HasCallStack) => IO ()
 main = do
     args <- getArgs
     let path = case args of
@@ -19,7 +20,7 @@ main = do
         "<stdin>" -> getContents
         f -> readFile f
 
-    let result = parseProgram path raw
+    let result = parseProgram' path raw
     case result of
         Left err -> putStrLn err
         Right prog -> case execute prog of

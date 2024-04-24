@@ -1,9 +1,11 @@
 {
-module Parser(parseProgram) where
+module Parser(parseProgram, parseProgram') where
 
 import ND ( Form(..), Term(..) )
 import PPA ( TProof, ProofStep(..), Program(..), Decl(..), Justification )
 import Lexer
+import Data.List (intercalate)
+import Debug.Trace (trace)
 }
 
 %name parse
@@ -28,19 +30,24 @@ import Lexer
     exists      { Token _ TokenExists }
     dot         { Token _ TokenDot }
 
-    id          { Token _ (TokenId $$) }
-    var         { Token _ (TokenVar $$) }
-    ';'         { Token _ TokenSemicolon }
-    ':'         { Token _ TokenDoubleColon }
-    ','         { Token _ TokenComma }
-    axiom       { Token _ TokenAxiom }   
-    theorem     { Token _ TokenTheorem }
-    proof       { Token _ TokenProof }
-    qed         { Token _ TokenQED }
-    name        { Token _ (TokenQuotedName $$) }
-    assume      { Token _ TokenAssume }
-    thus        { Token _ TokenThus }
-    by          { Token _ TokenBy }
+    id                  { Token _ (TokenId $$) }
+    var                 { Token _ (TokenVar $$) }
+    ';'                 { Token _ TokenSemicolon }
+    ':'                 { Token _ TokenDoubleColon }
+    ','                 { Token _ TokenComma }
+    axiom               { Token _ TokenAxiom }   
+    theorem             { Token _ TokenTheorem }
+    proof               { Token _ TokenProof }
+    end                 { Token _ TokenEnd }
+    name                { Token _ (TokenQuotedName $$) }
+    suppose             { Token _ TokenSuppose }
+    thus                { Token _ TokenThus }
+    then                { Token _ TokenThen }
+    hence               { Token _ TokenHence }
+    have                { Token _ TokenHave }
+    by                  { Token _ TokenBy }
+    equivalently        { Token _ TokenEquivalently }
+    claim               { Token _ TokenClaim }
 
 %right exists forall dot
 %right imp
@@ -60,22 +67,41 @@ Declaration : Axiom                     { $1 }
             | Theorem                   { $1 }
 
 Axiom :: { Decl }
-Axiom : axiom name ':' Form             { DAxiom $2 $4 }
+Axiom : axiom Name ':' Form             { DAxiom $2 $4 }
 
 Theorem :: { Decl }
-Theorem : theorem name ':' Form proof Proof qed   { DTheorem $2 $4 $6 }
+Theorem : theorem Name ':' Form proof Proof end   { DTheorem $2 $4 $6 }
 
 Proof   :: { TProof }
 Proof   : ProofStep ';' Proof       { $1 : $3 }
         | ProofStep ';'             { [ $1 ] }
+        -- Sin separador porque termina con end
+        | ProofStepBlock Proof      { $1 : $2 }
+        | ProofStepBlock            { [ $1 ] }
+        | {- empty -}               { [] } -- Error manejado por Certifier
 
 ProofStep :: { ProofStep }
-ProofStep : assume name ':' Form                { PSAssume $2 $4 }
-          | thus Form by Justification          { PSThusBy $2 $4 }
+ProofStep : suppose Name ':' Form                       { PSSuppose $2 $4 }
+          | thus Form by Justification                  { PSThusBy $2 $4 }
+          | hence Form by Justification                 { PSThusBy $2 (["-"] ++ $4) }
+          | have Name ':' Form by Justification         { PSHaveBy $2 $4 $6 }
+          | then Name ':' Form by Justification         { PSHaveBy $2 $4 (["-"] ++ $6) }
+          | equivalently Form                           { PSEquiv $2 }
+
+ProofStepBlock :: { ProofStep }
+ProofStepBlock : claim Name ':' Form proof Proof end    { PSClaim $2 $4 $6 }
 
 Justification :: { Justification }
-Justification : name ',' Justification          { $1 : $3 }
-              | name                            { [ $1 ] }              
+Justification : Name ',' Justification          { $1 : $3 }
+              | Name                            { [ $1 ] }              
+
+OptionalHyp    :: { String }
+OptionalHyp    : {- empty -}      { "" }
+               | Name ':'        { $1 }
+
+Name    :: { String }
+Name    : id               { $1 }
+        | name             { $1 }
 
 Form :: { Form }
 Form    : id TermArgs               { FPred $1 $2 }
@@ -99,7 +125,7 @@ TermArgs : {- empty -}              { [] }
 
 Terms :: { [Term] }
 Terms   : Term                      { [$1] }
-        | Term ',' Terms          { $1 : $3 }
+        | Term ',' Terms            { $1 : $3 }
 
 {
 lexwrap :: (Token -> Alex a) -> Alex a
@@ -107,8 +133,12 @@ lexwrap = (alexMonadScan' >>=)
 
 parseError :: (Token, [String]) -> Alex a
 parseError ((Token p t), next) =
-  alexError' p ("parse error at token '" ++ unLex t ++ "', possible tokens:" ++ show next)
+        alexError' p ("parse error at token '" ++ unLex t ++ "', possible tokens:")
+        --alexError' p ("parse error at token '" ++ unLex t ++ "', possible tokens:" ++ trace ("a" ++ (show $ null next)) (show next))
 
-parseProgram :: FilePath -> String -> Either String Program
-parseProgram = runAlex' parse
+parseProgram' :: FilePath -> String -> Either String Program
+parseProgram' = runAlex' parse
+
+parseProgram :: String -> Either String Program
+parseProgram s = runAlex s parse
 }

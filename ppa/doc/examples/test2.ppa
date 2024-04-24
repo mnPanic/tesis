@@ -1,0 +1,16 @@
+theorem "ejemplo" : (a -> b -> c) -> (a -> b) -> a -> c
+proof
+    suppose "P": a -> b -> c;
+    suppose "Q": a -> b;
+    suppose "R": a;
+    then "S": b by "Q";
+    thus c   by "P", "R", "S";
+end
+theorem "ejemplo eq" : (a -> b -> c) -> (a -> b) -> a -> c
+proof
+    suppose "P": a -> b -> c;
+    suppose "Q": a -> b;
+    suppose "R": a;
+    have "S": b by "Q", "R";
+    thus c   by "P", "R", "S";
+end

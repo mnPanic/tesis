@@ -1,0 +1,106 @@
+
+axiom a : p(X)
+
+theorem b : p(a)
+proof
+  ....
+  claim h : p(X)
+  proof
+    ...
+  end
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+theorem b : forall X. (p(X) & q(X))
+proof
+  let x;
+  p(x) & q(x)
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+// theorem deMorgan : ~(a & b) -> (~a | ~b)
+
+theorem deMorgan1 : (~a | ~b) -> ~(a & b)
+proof
+  suppose h1 : (~a | ~b);
+  equivalently ((a & b) -> false);
+  suppose h2 : (a & b);
+  thus false by h1, h2;
+end
+
+theorem deMorgan2 : ~(a & b) -> (~a | ~b)
+proof
+  suppose h1 : ~(a & b);
+  equivalently (~(~a | ~b) -> false);
+  suppose h2 : ~(~a | ~b);
+  have    h3 : (a & b) by h2; 
+  thus false by h1, h3;
+end
+
+axiom axA : a
+axiom axB : b
+axiom axC : c
+
+theorem coso3 : (a & b) & (c & b)
+proof
+  thus (c & a) by axA, axC;
+  thus b by axB;
+
+
+axiom todos_p : forall X . p(X) 
+
+theorem p_de_a : p(a)
+proof
+  thus p(a) by todos_p;
+end
+
+
+*/

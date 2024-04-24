@@ -22,16 +22,17 @@ import Control.Monad ( liftM )
 
 -- Actions have type AlexPosn -> String -> Token
 tokens :-
-    $white+         ;
-    "//".*          ;
+    $white+                         ;
+    "//".*                          ;
+    "/*"(.|(\r\n|\r|\n))*"*/"       ; -- block comments
     \.              { literal TokenDot }
     \,              { literal TokenComma }
-    \&|\^           { literal TokenAnd }
-    \||v            { literal TokenOr }
+    \&              { literal TokenAnd }
+    \|              { literal TokenOr }
     true            { literal TokenTrue }
     false           { literal TokenFalse }
-    =>              { literal TokenImp }
-    (\¬|\~)         { literal TokenNot }
+    \-\>            { literal TokenImp }
+    \~              { literal TokenNot }
     exists          { literal TokenExists }
     forall          { literal TokenForall }
     \(              { literal TokenParenOpen }
@@ -39,12 +40,17 @@ tokens :-
     axiom           { literal TokenAxiom }
     theorem         { literal TokenTheorem }
     proof           { literal TokenProof }
-    (qed)|(end)     { literal TokenQED }
+    end             { literal TokenEnd }
     \;              { literal TokenSemicolon }
     \:              { literal TokenDoubleColon }
-    assume          { literal TokenAssume }
+    suppose         { literal TokenSuppose }
     thus            { literal TokenThus }
+    hence           { literal TokenHence }
+    have            { literal TokenHave }
+    then            { literal TokenThen }
     by              { literal TokenBy }
+    equivalently    { literal TokenEquivalently }
+    claim           { literal TokenClaim }
 
     \"[^\"]*\"          { lex (TokenQuotedName . firstLast) }
 
@@ -93,21 +99,26 @@ data TokenClass
     | TokenDoubleColon
     | TokenTheorem
     | TokenProof
-    | TokenQED
+    | TokenEnd
     | TokenQuotedName String
-    | TokenAssume
+    | TokenSuppose
     | TokenThus
+    | TokenThen
+    | TokenHence
+    | TokenHave
     | TokenBy
+    | TokenEquivalently
+    | TokenClaim
     deriving (Eq, Show)
 
 unLex :: TokenClass -> String
 unLex TokenDot = "."
 unLex TokenComma = ","
 unLex TokenAnd = "&"
-unLex TokenOr = "v"
+unLex TokenOr = "|"
 unLex TokenTrue = "true"
 unLex TokenFalse = "false"
-unLex TokenImp = "=>"
+unLex TokenImp = "->"
 unLex TokenNot = "~"
 unLex TokenExists = "exists"
 unLex TokenForall = "forall"
@@ -116,15 +127,21 @@ unLex TokenParenClose = ")"
 unLex TokenAxiom = "axiom"
 unLex TokenTheorem = "theorem"
 unLex TokenProof = "proof"
-unLex TokenQED = "qed"
+unLex TokenEnd = "qed"
 unLex TokenSemicolon = ";"
 unLex TokenDoubleColon = ":"
-unLex TokenAssume = "assume"
+unLex TokenSuppose = "suppose"
 unLex TokenThus = "thus"
 unLex TokenBy = "by"
+unLex TokenThen = "then"
+unLex TokenHence = "hence"
+unLex TokenHave = "have"
+unLex TokenEquivalently = "equivalently"
+unLex TokenClaim = "claim"
 unLex (TokenQuotedName n) = "\"" ++ n ++ "\""
 unLex (TokenVar s) = "(var) " ++ s
 unLex (TokenId s) = "(id) " ++ s
+unLex t = show t
 
 alexEOF :: Alex Token
 alexEOF = do

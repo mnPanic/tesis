@@ -1,0 +1,4 @@
+theorem "e": a
+proof
+    then b by "Q";
+end

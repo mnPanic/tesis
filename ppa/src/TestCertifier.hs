@@ -1,7 +1,15 @@
-module TestCertifier where
+{-# LANGUAGE QuasiQuotes #-}
+
+module TestCertifier (testCertifier) where
+
+-- https://kseo.github.io/posts/2014-02-06-multi-line-strings-in-haskell.html
+-- https://hackage.haskell.org/package/raw-strings-qq
+import Text.RawString.QQ
 
 import Certifier (
+    certify,
     certifyBy,
+    checkContext,
     dnf,
     findContradiction,
     fromClause,
@@ -9,6 +17,8 @@ import Certifier (
     solve,
     toClause,
  )
+
+import Parser (parseProgram')
 
 import NDProofs (
     EnvItem,
@@ -48,17 +58,221 @@ import Test.HUnit (
  )
 
 main :: IO Counts
-main = do runTestTT tests
+main = do runTestTT testCertifier
 
-tests :: Test
-tests =
+testCertifier :: Test
+testCertifier =
     test
         [ "certifyBy" ~: testCertifyBy
+        , "commands" ~: testCommands
         , "clauses" ~: testClause
         , "findContradiction" ~: testFindContradiction
         , "solve" ~: testSolve
         , "dnf" ~: testDnf
         ]
+
+testProgram :: String -> IO ()
+testProgram p = do
+    let result = parseProgram' "test" p
+    case result of
+        Left err -> assertFailure err
+        Right prog -> case certify prog of
+            Left err -> assertFailure err
+            Right ctx -> checkContext ctx @?= Right ()
+
+testProgramError :: String -> String -> IO ()
+testProgramError p err = do
+    let result = parseProgram' "test" p
+    case result of
+        Left err -> assertFailure err
+        Right prog -> certify prog @?= Left err
+
+testCommands :: Test
+testCommands =
+    test
+        [ "suppose"
+            ~: testProgram
+                [r|
+            theorem a_implies_a : a -> a
+            proof
+                suppose "a" : a;
+                thus a by a;
+            end
+        |]
+        , "suppose 2, transitivity"
+            ~: testProgram
+                [r|
+            axiom ax_1 : a -> b
+            axiom ax_2 : b -> c
+            theorem t1 : a -> c 
+            proof
+                suppose a : a;
+                // La tesis ahora es c
+                hence c by a, ax_1, ax_2;
+            end
+            |]
+        , "have"
+            ~: testProgram
+                [r|
+            theorem "ejemplo" : (a -> b -> c) -> (a -> b) -> a -> c
+            proof
+                suppose "P": a -> b -> c;
+                suppose "Q": a -> b;
+                suppose "R": a;
+                have "S": b by "Q", "R";
+                thus c   by "P", "R", "S";
+            end
+        |]
+        , "incomplete proof"
+            ~: test
+                [ "empty"
+                    ~: testProgramError
+                        [r|
+                        theorem "error": a -> b
+                        proof
+                        end
+                        |]
+                        "incomplete proof, still have a -> b as thesis"
+                , "incomplete"
+                    ~: testProgramError
+                        [r|
+                        theorem "error": a -> b
+                        proof
+                            suppose a:a;
+                        end
+                        |]
+                        "incomplete proof, still have b as thesis"
+                ]
+        , "justification not in context error"
+            ~: testProgramError
+                [r|theorem "ejemplo" : a
+                proof
+                    thus a by "-", foo;
+                end|]
+                "finding hyps in context: can't get prev hyp from empty ctx; 'foo' not present in ctx"
+        , "no contradicting literals error"
+            ~: testProgramError
+                [r|theorem "ejemplo" : (a -> b -> c) -> (a -> b) -> a -> c
+            proof
+                suppose "P": a -> b -> c;
+                suppose "Q": a -> b;
+                suppose "R": a;
+                have "S": b by "Q";
+            end|]
+                "finding contradiction for dnf form '(~a & ~b) | (b & ~b)' obtained from '~((a -> b) -> b)': [~a,~b] contains no contradicting literals or false"
+        , "then + hence"
+            ~: testProgram
+                [r|
+            theorem "ejemplo" : (a -> b -> c) -> (a -> b) -> a -> c
+            proof
+                suppose "P": a -> b -> c;
+                suppose "Q": a -> b;
+                suppose "R": a;
+                then "S": b by "Q";
+                hence c   by "P", "R";
+            end
+            theorem "thus -, have -" : (a -> b -> c) -> (a -> b) -> a -> c
+            proof
+                suppose "P": a -> b -> c;
+                suppose "Q": a -> b;
+                suppose "R": a;
+                // Sin el sugar, hence == thus -/then == have -
+                have "S": b by "Q", -;
+                thus c   by -, "P", "R";
+            end
+        |]
+        , "and discharge"
+            ~: testProgram
+                [r|
+            theorem "andi_variant" : a -> b -> (a & b)
+            proof
+                suppose "a" : a;
+                suppose "b" : b;
+                hence b by "b"; // TODO: sacar el by cuando sea opcional
+                thus a by "a";
+            end
+        |]
+        , "and repeteated"
+            ~: testProgram
+                [r|
+            theorem "andi_variant" : a -> b -> (a & (a & (b & a)) & a)
+            proof
+                suppose "a" : a;
+                suppose "b" : b;
+                // A pesar de haber más de un a, se sacan los repetidos
+                thus a by "a";
+                thus b by "b";
+            end
+        |]
+        , "and discharge complex"
+            ~: testProgram
+                [r|
+            axiom "a": a
+            axiom "b": b
+            axiom "c": c
+            axiom "d": d
+            axiom "e": e
+            theorem "andi_variant" : (a & b) & ((c & d) & e)
+            proof
+                thus a & e by "a", "e";
+                thus d by "d";
+                thus b & c by "b", "c";
+            end
+        |]
+        , -- https://www.cs.ru.nl/~freek/notes/mv.pdf p2
+          "freek vernacular"
+            ~: testProgram
+                [r|
+                axiom "a then c": a -> c
+                axiom "b then d": b -> d
+
+                theorem t: a & b -> c & d
+                proof
+                    suppose h : a & b;
+                    hence c & d by "a then c", "b then d";
+                end
+            |]
+        , "equivalently"
+            ~: testProgram
+                [r|
+                // Reducir la tesis a una fórmula equivalente
+                axiom "no a": ~a
+                axiom "no b": ~b
+                theorem "ejemplo equiv" : ~(a | b)
+                proof
+                    equivalently (~a & ~b);
+                    thus ~a by "no a";
+                    thus ~b by "no b";
+                end
+            |]
+        , "claim"
+            ~: testProgram
+                [r|
+                axiom "no a": ~a
+                axiom "no b": ~b
+                theorem "ejemplo" : ~(a | b)
+                proof
+                    claim "c" : (~a & ~b)
+                    proof
+                        thus ~a by "no a";
+                        thus ~b by "no b";
+                    end
+                    thus ~(a | b) by "c";
+                end
+        |]
+        ]
+
+-- , "optional hyp"
+--     ~: testProgram
+--         [r|
+--     theorem "ejemplo sin hyp id" : (a -> b -> c) -> (a -> b) -> a -> c
+--     proof
+--         suppose "P": a -> b -> c;
+--         suppose "Q": a -> b;
+--         suppose "R": a;
+--         then b by "Q"; // no tiene hyp id
+--         hence c by "P", "R";
+--     end|]
 
 testSolve :: Test
 testSolve =
@@ -67,14 +281,14 @@ testSolve =
             ~: doTestSolveEqCheck
                 ("h", fromClause [FFalse, propVar "Q"])
                 ( PNamed
-                    "contradiction of false ^ Q by false"
+                    "contradiction of false & Q by false"
                     PAndE1{right = propVar "Q", proofAnd = PAx "h"}
                 )
         , "refutable single clause w/ opposites"
             ~: doTestSolveEqCheck
                 ("h", fromClause [propVar "A", FNot $ propVar "A"])
                 ( PNamed
-                    "contradiction of A ^ ~A by A and ~A"
+                    "contradiction of A & ~A by A and ~A"
                     PNotE
                         { form = propVar "A"
                         , proofNotForm =
@@ -115,7 +329,7 @@ testSolve =
                             , hypLeft = "h L L"
                             , proofAssumingLeft =
                                 PNamed
-                                    "contradiction of A ^ ~A by A and ~A"
+                                    "contradiction of A & ~A by A and ~A"
                                     PNotE
                                         { form = propVar "A"
                                         , proofNotForm =
@@ -132,7 +346,7 @@ testSolve =
                             , hypRight = "h L R"
                             , proofAssumingRight =
                                 PNamed
-                                    "contradiction of false ^ Q by false"
+                                    "contradiction of false & Q by false"
                                     PAndE1
                                         { right = propVar "Q"
                                         , proofAnd = PAx "h L R"
@@ -141,7 +355,7 @@ testSolve =
                     , hypRight = "h R"
                     , proofAssumingRight =
                         PNamed
-                            "contradiction of ~B ^ B by B and ~B"
+                            "contradiction of ~B & B by B and ~B"
                             PNotE
                                 { form = propVar "B"
                                 , proofNotForm =
@@ -193,7 +407,7 @@ testSolve =
                     ]
                 )
             ~?= Left "[X,true] contains no contradicting literals or false"
-        , "not dnf" ~: solve ("h", FImp FTrue FFalse) ~?= Left "convert to clause: true => false is not a literal"
+        , "not dnf" ~: solve ("h", FImp FTrue FFalse) ~?= Left "convert to clause: true -> false is not a literal"
         ]
 
 doTestSolveEqCheck :: EnvItem -> Proof -> IO ()
@@ -220,14 +434,14 @@ testCertifyBy =
             case result of
                 Left e -> assertFailure e
                 Right proof -> CheckOK @=? check env proof a
-        , "A by A ^ B" ~: do
+        , "A by A & B" ~: do
             let ctx = [HAxiom "A and B" (FAnd a b)]
             let env = EExtend "A and B" (FAnd a b) EEmpty
             let result = certifyBy ctx a ["A and B"]
             case result of
                 Left e -> assertFailure e
                 Right proof -> CheckOK @=? check env proof a
-        , "A by (A ^ B) v (A ^ C)" ~: do
+        , "A by (A & B) v (A & C)" ~: do
             let ax = FOr (FAnd a b) (FAnd a c)
             let ctx = [HAxiom "ax" ax]
             let env = EExtend "ax" ax EEmpty
@@ -293,7 +507,7 @@ testClause =
         [ "not clause error"
             ~: toClause (FOr (propVar "A") (propVar "B"))
             ~?= Left
-                "convert to clause: A v B is not a literal"
+                "convert to clause: A | B is not a literal"
         , "not literals error"
             ~: toClause (FNot FTrue)
             ~?= Left "convert to clause: ~true is not a literal"
