@@ -95,8 +95,8 @@ testCommands =
                 [r|
             theorem a_implies_a : a -> a
             proof
-                suppose "a" : a;
-                thus a by a;
+                suppose "a" : a
+                thus a by a
             end
         |]
         , "suppose 2, transitivity"
@@ -106,9 +106,9 @@ testCommands =
             axiom ax_2 : b -> c
             theorem t1 : a -> c 
             proof
-                suppose a : a;
+                suppose a : a
                 // La tesis ahora es c
-                hence c by a, ax_1, ax_2;
+                hence c by a, ax_1, ax_2
             end
             |]
         , "have"
@@ -116,11 +116,11 @@ testCommands =
                 [r|
             theorem "ejemplo" : (a -> b -> c) -> (a -> b) -> a -> c
             proof
-                suppose "P": a -> b -> c;
-                suppose "Q": a -> b;
-                suppose "R": a;
-                have "S": b by "Q", "R";
-                thus c   by "P", "R", "S";
+                suppose "P": a -> b -> c
+                suppose "Q": a -> b
+                suppose "R": a
+                have "S": b by "Q", "R"
+                thus c   by "P", "R", "S"
             end
         |]
         , "incomplete proof"
@@ -138,7 +138,7 @@ testCommands =
                         [r|
                         theorem "error": a -> b
                         proof
-                            suppose a:a;
+                            suppose a:a
                         end
                         |]
                         "incomplete proof, still have b as thesis"
@@ -147,17 +147,17 @@ testCommands =
             ~: testProgramError
                 [r|theorem "ejemplo" : a
                 proof
-                    thus a by "-", foo;
+                    thus a by "-", foo
                 end|]
                 "finding hyps in context: can't get prev hyp from empty ctx; 'foo' not present in ctx"
         , "no contradicting literals error"
             ~: testProgramError
                 [r|theorem "ejemplo" : (a -> b -> c) -> (a -> b) -> a -> c
             proof
-                suppose "P": a -> b -> c;
-                suppose "Q": a -> b;
-                suppose "R": a;
-                have "S": b by "Q";
+                suppose "P": a -> b -> c
+                suppose "Q": a -> b
+                suppose "R": a
+                have "S": b by "Q"
             end|]
                 "finding contradiction for dnf form '(~a & ~b) | (b & ~b)' obtained from '~((a -> b) -> b)': [~a,~b] contains no contradicting literals or false"
         , "then + hence"
@@ -165,20 +165,20 @@ testCommands =
                 [r|
             theorem "ejemplo" : (a -> b -> c) -> (a -> b) -> a -> c
             proof
-                suppose "P": a -> b -> c;
-                suppose "Q": a -> b;
-                suppose "R": a;
-                then "S": b by "Q";
-                hence c   by "P", "R";
+                suppose "P": a -> b -> c
+                suppose "Q": a -> b
+                suppose "R": a
+                then "S": b by "Q"
+                hence c   by "P", "R"
             end
             theorem "thus -, have -" : (a -> b -> c) -> (a -> b) -> a -> c
             proof
-                suppose "P": a -> b -> c;
-                suppose "Q": a -> b;
-                suppose "R": a;
+                suppose "P": a -> b -> c
+                suppose "Q": a -> b
+                suppose "R": a
                 // Sin el sugar, hence == thus -/then == have -
-                have "S": b by "Q", -;
-                thus c   by -, "P", "R";
+                have "S": b by "Q", -
+                thus c   by -, "P", "R"
             end
         |]
         , "and discharge + optional by"
@@ -186,10 +186,10 @@ testCommands =
                 [r|
             theorem "andi_variant" : a -> b -> (a & b)
             proof
-                suppose "a" : a;
-                suppose "b" : b;
-                hence b;
-                thus a by "a";
+                suppose "a" : a
+                suppose "b" : b
+                hence b
+                thus a by "a"
             end
         |]
         , "tautology + optional by"
@@ -198,14 +198,14 @@ testCommands =
             theorem "taut" : ~(a | b) -> ~a & ~b
             proof
                 // Resuelve solo el solver, sin by
-                thus ~(a | b) -> ~a & ~b;
+                thus ~(a | b) -> ~a & ~b
             end
 
             // Demo alternativa pero con have + hence
             theorem "taut con have": ~(a | b) & c -> ~a & ~b & c
             proof
-                have "distributiva del not sobre or": ~(a | b) -> ~a & ~b;
-                hence ~(a | b) & c -> ~a & ~b & c;
+                have "distributiva del not sobre or": ~(a | b) -> ~a & ~b
+                hence ~(a | b) & c -> ~a & ~b & c
             end
         |]
         , "and repeteated"
@@ -213,11 +213,11 @@ testCommands =
                 [r|
             theorem "andi_variant" : a -> b -> (a & (a & (b & a)) & a)
             proof
-                suppose "a" : a;
-                suppose "b" : b;
+                suppose "a" : a
+                suppose "b" : b
                 // A pesar de haber más de un a, se sacan los repetidos
-                thus a by "a";
-                thus b by "b";
+                thus a by "a"
+                thus b by "b"
             end
         |]
         , "and discharge complex"
@@ -230,9 +230,9 @@ testCommands =
             axiom "e": e
             theorem "andi_variant" : (a & b) & ((c & d) & e)
             proof
-                thus a & e by "a", "e";
-                thus d by "d";
-                thus b & c by "b", "c";
+                thus a & e by "a", "e"
+                thus d by "d"
+                thus b & c by "b", "c"
             end
         |]
         , -- https://www.cs.ru.nl/~freek/notes/mv.pdf p2
@@ -244,8 +244,8 @@ testCommands =
 
                 theorem t: a & b -> c & d
                 proof
-                    suppose h : a & b;
-                    hence c & d by "a then c", "b then d";
+                    suppose h : a & b
+                    hence c & d by "a then c", "b then d"
                 end
             |]
         , "equivalently"
@@ -256,9 +256,9 @@ testCommands =
                 axiom "no b": ~b
                 theorem "ejemplo equiv" : ~(a | b)
                 proof
-                    equivalently (~a & ~b);
-                    thus ~a by "no a";
-                    thus ~b by "no b";
+                    equivalently (~a & ~b)
+                    thus ~a by "no a"
+                    thus ~b by "no b"
                 end
             |]
         , "claim"
@@ -270,10 +270,10 @@ testCommands =
                 proof
                     claim "c" : (~a & ~b)
                     proof
-                        thus ~a by "no a";
-                        thus ~b by "no b";
+                        thus ~a by "no a"
+                        thus ~b by "no b"
                     end
-                    thus ~(a | b) by "c";
+                    thus ~(a | b) by "c"
                 end
         |]
         ]
@@ -283,11 +283,11 @@ testCommands =
 --         [r|
 --     theorem "ejemplo sin hyp id" : (a -> b -> c) -> (a -> b) -> a -> c
 --     proof
---         suppose "P": a -> b -> c;
---         suppose "Q": a -> b;
---         suppose "R": a;
---         then b by "Q"; // no tiene hyp id
---         hence c by "P", "R";
+--         suppose "P": a -> b -> c
+--         suppose "Q": a -> b
+--         suppose "R": a
+--         then b by "Q" // no tiene hyp id
+--         hence c by "P", "R"
 --     end|]
 
 testSolve :: Test

@@ -32,7 +32,6 @@ import Debug.Trace (trace)
 
     id                  { Token _ (TokenId $$) }
     var                 { Token _ (TokenVar $$) }
-    ';'                 { Token _ TokenSemicolon }
     ':'                 { Token _ TokenDoubleColon }
     ','                 { Token _ TokenComma }
     axiom               { Token _ TokenAxiom }   
@@ -77,11 +76,8 @@ ProofStart : Proof              { $1 }
            | {- empty -}        { [] } -- Error manejado por Certifier
 
 Proof   :: { TProof }
-Proof   : ProofStep ';' Proof       { $1 : $3 }
-        | ProofStep ';'             { [ $1 ] }
-        -- Sin separador porque termina con end
-        | ProofStepBlock Proof      { $1 : $2 }
-        | ProofStepBlock            { [ $1 ] }
+Proof   : ProofStep Proof       { $1 : $2 }
+        | ProofStep             { [ $1 ] }
 
 ProofStep :: { ProofStep }
 ProofStep : suppose Name ':' Form                 { PSSuppose $2 $4 }
@@ -90,13 +86,11 @@ ProofStep : suppose Name ':' Form                 { PSSuppose $2 $4 }
           | have Name ':' Form OptionalBy         { PSHaveBy $2 $4 $5 }
           | then Name ':' Form OptionalBy         { PSHaveBy $2 $4 (["-"] ++ $5) }
           | equivalently Form                     { PSEquiv $2 }
+          | claim Name ':' Form proof Proof end    { PSClaim $2 $4 $6 }
 
 OptionalBy :: { Justification }
 OptionalBy : by Justification      { $2 }
 OptionalBy : {- empty -}           { [] }
-
-ProofStepBlock :: { ProofStep }
-ProofStepBlock : claim Name ':' Form proof Proof end    { PSClaim $2 $4 $6 }
 
 Justification :: { Justification }
 Justification : Name ',' Justification          { $1 : $3 }

@@ -62,8 +62,8 @@ testParserPrograms =
                 "axiom \"some axiom\" : forall X . p(X) & q(X) -> exists Y. r(Y) \
                 \theorem \"some thm\" : forall K. p \
                 \proof \
-                \   suppose \"a\" : a; \
-                \   thus a by \"a\", \"some axiom\"; \
+                \   suppose \"a\" : a \
+                \   thus a by \"a\", \"some axiom\" \
                 \end"
             ~?= Right
                 [ DAxiom
