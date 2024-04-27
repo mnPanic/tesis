@@ -70,7 +70,7 @@ Se pueden dejar comentarios de una sola línea (`//`) o multilínea (`/* ... */`
 ## Demostraciones
 
 Las demostraciones están compuestas por *pasos*, que deben probar la *tesis*.
-Los pasos corresponden a *comandos*. Están separados por `;`.
+Los pasos corresponden a *comandos*.
 
 ### Comandos
 
@@ -122,6 +122,8 @@ hipótesis anterior a la justificación, a la que también se puede referir con 
 | ----------- | ---------- | ------------------- |
 | `thus`      | `hence`    | Si                  |
 | `have`      | `then`     | No                  |
+
+El by es opcional en ambos. En caso de no especificarlo, debe ser una tautología.
 
 ### Otros comandos
 
