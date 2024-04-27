@@ -14,7 +14,7 @@ import Certifier (
     findContradiction,
     fromClause,
     fromDNF,
-    solve,
+    solveContradiction,
     toClause,
  )
 
@@ -181,15 +181,31 @@ testCommands =
                 thus c   by -, "P", "R";
             end
         |]
-        , "and discharge"
+        , "and discharge + optional by"
             ~: testProgram
                 [r|
             theorem "andi_variant" : a -> b -> (a & b)
             proof
                 suppose "a" : a;
                 suppose "b" : b;
-                hence b by "b"; // TODO: sacar el by cuando sea opcional
+                hence b;
                 thus a by "a";
+            end
+        |]
+        , "tautology + optional by"
+            ~: testProgram
+                [r|
+            theorem "taut" : ~(a | b) -> ~a & ~b
+            proof
+                // Resuelve solo el solver, sin by
+                thus ~(a | b) -> ~a & ~b;
+            end
+
+            // Demo alternativa pero con have + hence
+            theorem "taut con have": ~(a | b) & c -> ~a & ~b & c
+            proof
+                have "distributiva del not sobre or": ~(a | b) -> ~a & ~b;
+                hence ~(a | b) & c -> ~a & ~b & c;
             end
         |]
         , "and repeteated"
@@ -389,10 +405,10 @@ testSolve =
                     ]
                 ]
         , "clause too short not refutable"
-            ~: solve ("h", fromDNF [[propVar "X"]])
+            ~: solveContradiction ("h", fromDNF [[propVar "X"]])
             ~?= Left "[X] contains no contradicting literals or false"
         , "one clause not refutable"
-            ~: solve
+            ~: solveContradiction
                 ( "h"
                 , fromDNF
                     [
@@ -407,19 +423,19 @@ testSolve =
                     ]
                 )
             ~?= Left "[X,true] contains no contradicting literals or false"
-        , "not dnf" ~: solve ("h", FImp FTrue FFalse) ~?= Left "convert to clause: true -> false is not a literal"
+        , "not dnf" ~: solveContradiction ("h", FImp FTrue FFalse) ~?= Left "convert to clause: true -> false is not a literal"
         ]
 
 doTestSolveEqCheck :: EnvItem -> Proof -> IO ()
 doTestSolveEqCheck i@(h, f) expectedProof = do
-    let result = solve i
+    let result = solveContradiction i
     result @?= Right expectedProof
     let (Right proof) = result
     check (EExtend h f EEmpty) proof FFalse @?= CheckOK
 
 doTestSolveCheck :: Form -> Assertion
 doTestSolveCheck f = do
-    let result = solve ("h", f)
+    let result = solveContradiction ("h", f)
     case result of
         Right proof -> check (EExtend "h" f EEmpty) proof FFalse @?= CheckOK
         Left err -> assertFailure err

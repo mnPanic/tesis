@@ -70,7 +70,11 @@ Axiom :: { Decl }
 Axiom : axiom Name ':' Form             { DAxiom $2 $4 }
 
 Theorem :: { Decl }
-Theorem : theorem Name ':' Form proof Proof end   { DTheorem $2 $4 $6 }
+Theorem : theorem Name ':' Form proof ProofStart end   { DTheorem $2 $4 $6 }
+
+ProofStart :: { TProof }
+ProofStart : Proof              { $1 }
+           | {- empty -}        { [] } -- Error manejado por Certifier
 
 Proof   :: { TProof }
 Proof   : ProofStep ';' Proof       { $1 : $3 }
@@ -78,15 +82,18 @@ Proof   : ProofStep ';' Proof       { $1 : $3 }
         -- Sin separador porque termina con end
         | ProofStepBlock Proof      { $1 : $2 }
         | ProofStepBlock            { [ $1 ] }
-        | {- empty -}               { [] } -- Error manejado por Certifier
 
 ProofStep :: { ProofStep }
-ProofStep : suppose Name ':' Form                       { PSSuppose $2 $4 }
-          | thus Form by Justification                  { PSThusBy $2 $4 }
-          | hence Form by Justification                 { PSThusBy $2 (["-"] ++ $4) }
-          | have Name ':' Form by Justification         { PSHaveBy $2 $4 $6 }
-          | then Name ':' Form by Justification         { PSHaveBy $2 $4 (["-"] ++ $6) }
-          | equivalently Form                           { PSEquiv $2 }
+ProofStep : suppose Name ':' Form                 { PSSuppose $2 $4 }
+          | thus Form OptionalBy                  { PSThusBy $2 $3 }
+          | hence Form OptionalBy                 { PSThusBy $2 (["-"] ++ $3) }
+          | have Name ':' Form OptionalBy         { PSHaveBy $2 $4 $5 }
+          | then Name ':' Form OptionalBy         { PSHaveBy $2 $4 (["-"] ++ $5) }
+          | equivalently Form                     { PSEquiv $2 }
+
+OptionalBy :: { Justification }
+OptionalBy : by Justification      { $2 }
+OptionalBy : {- empty -}           { [] }
 
 ProofStepBlock :: { ProofStep }
 ProofStepBlock : claim Name ':' Form proof Proof end    { PSClaim $2 $4 $6 }

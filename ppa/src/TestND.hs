@@ -19,7 +19,7 @@ import ND (
 import Certifier (
     dnf,
     fromClause,
-    solve,
+    solveContradiction,
  )
 
 import NDChecker (
@@ -1882,7 +1882,7 @@ p26 :: Result Proof
 -- Primero doubleNegElim para demostrar por contradicción
 p26 = do
     let (dnfNegThesis, dnfProof) = dnf ("h dnfThesis", FNot thesis)
-    contradictionProof <- solve ("h dnfThesis", dnfNegThesis)
+    contradictionProof <- solveContradiction ("h dnfThesis", dnfNegThesis)
     return
         PImpE
             { antecedent = dneg thesis

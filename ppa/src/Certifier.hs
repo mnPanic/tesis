@@ -1,6 +1,6 @@
 module Certifier (
     dnf,
-    solve,
+    solveContradiction,
     toClause,
     fromClause,
     certifyBy,
@@ -129,7 +129,7 @@ certifyProofStep ctx thesis (PSHaveBy h f js) ps = do
 certifyProofStep ctx thesis (PSThusBy form js) ps =
     certifyThesisBy ctx thesis form js ps
 certifyProofStep ctx thesis (PSEquiv thesis') ps = do
-    proofThesis'ThenThesis <- solveImp thesis' thesis
+    proofThesis'ThenThesis <- solve (FImp thesis' thesis)
     proofThesis' <- certifyProof ctx thesis' ps
     return
         PImpE
@@ -157,7 +157,7 @@ certifyThesisBy ctx thesis f js ps = do
         -- Tenemos que demostrar que thesis <=> f ^ f'
         Just remForms -> do
             let thesis' = FAnd f remForms
-            proofThesis'ThenThesis <- solveImp thesis' thesis
+            proofThesis'ThenThesis <- solve (FImp thesis' thesis)
 
             proofF <- certifyBy ctx f js
             -- Por acá continua
@@ -209,6 +209,7 @@ pero en realidad por abajo demuestra
     (f1 ^ ... ^ fn) => f
 -}
 certifyBy :: Context -> Form -> Justification -> Result Proof
+certifyBy ctx f [] = solve f
 -- certifyBy ctx f js | trace (printf "certifyBy %s %s %s" (show ctx) (show f) (show js)) False = undefined
 certifyBy ctx f js = do
     jsHyps <- findJustification ctx js
@@ -216,7 +217,7 @@ certifyBy ctx f js = do
 
     let antecedent = fromClause jsForms
 
-    proofAntecedentImpF <- solveImp antecedent f
+    proofAntecedentImpF <- solve (FImp antecedent f)
 
     return
         -- Dem de f con (f1 ... fn) => f
@@ -237,14 +238,13 @@ findJustification ctx js
     hyps = zip js $ map (findHyp ctx) js
     missingHyps = filter (\(h, r) -> isLeft r) hyps
 
-{- solveImp encuentra una demostración automáticamente para f => g
+{- solve encuentra una demostración automáticamente para thesis.
 
-Lo hace por el absurdo, niega la implicación, la pasa a DNF y encuentra una
+Lo hace por el absurdo, la niega, la pasa a DNF y encuentra una
 contradicción. Este procedimiento es completo para proposicional.
 -}
-solveImp :: Form -> Form -> Result Proof
-solveImp f g = do
-    let thesis = FImp f g
+solve :: Form -> Result Proof
+solve thesis = do
     let fNotThesis = FNot thesis
     let hNotThesis = hypForm fNotThesis
 
@@ -254,9 +254,9 @@ solveImp f g = do
 
     contradictionProof <-
         wrapR (printf "finding contradiction for dnf form '%s' obtained from '%s'" (show fDNFNotThesis) (show fNotThesis))
-            $ solve (hDNFNotThesis, fDNFNotThesis)
+            $ solveContradiction (hDNFNotThesis, fDNFNotThesis)
 
-    -- Dem de f => g por el absurdo
+    -- Dem de thesis por el absurdo
     return
         PImpE
             { antecedent = dneg thesis
@@ -499,19 +499,19 @@ dnfStep (h, f)
     | isLiteral f = Nothing
     | otherwise = error $ printf "unexpected case '%s':'%s'" h (show f)
 
-{- solve demuestra una contradicción de una fórmula que se asume que está en
-DNF. Para ello refuta cada cláusula, buscando o el mismo literal negado y sin
-negar, o que tenga false.
+{- solveContradiction demuestra una contradicción de una fórmula que se asume
+que está en DNF. Para ello refuta cada cláusula, buscando o el mismo literal
+negado y sin negar, o que tenga false.
 
 Devuelve una demostración de
     f |- bot
 -}
-solve :: EnvItem -> Result Proof
-solve (hOr, FOr l r) = do
+solveContradiction :: EnvItem -> Result Proof
+solveContradiction (hOr, FOr l r) = do
     let hLeft = hOr ++ " L"
     let hRight = hOr ++ " R"
-    proofLeft <- solve (hLeft, l)
-    proofRight <- solve (hRight, r)
+    proofLeft <- solveContradiction (hLeft, l)
+    proofRight <- solveContradiction (hRight, r)
     return
         POrE
             { left = l
@@ -522,7 +522,7 @@ solve (hOr, FOr l r) = do
             , hypRight = hRight
             , proofAssumingRight = proofRight
             }
-solve i = solveClause i
+solveContradiction i = solveClause i
 
 {- solveClause intenta demostrar que una cláusula es contradictoria.
 
