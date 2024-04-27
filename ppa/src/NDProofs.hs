@@ -49,8 +49,10 @@ wrapR msg (Left err) = Left (msg ++ ": " ++ err)
 type EnvItem = (HypId, Form)
 
 -- Genera un nombre para una hipótesis a partir de una fórmula
+-- El prefijo __h es una forma best-effort de evitar colisiones con los hypID de
+-- los usuarios
 hypForm :: Form -> HypId
-hypForm f = "h " ++ show f
+hypForm f = "__h " ++ show f
 
 {- doubleNegElim dada una fórmula A da una demostración de ~~A -> A
 

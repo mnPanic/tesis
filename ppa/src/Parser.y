@@ -100,11 +100,7 @@ ProofStepBlock : claim Name ':' Form proof Proof end    { PSClaim $2 $4 $6 }
 
 Justification :: { Justification }
 Justification : Name ',' Justification          { $1 : $3 }
-              | Name                            { [ $1 ] }              
-
-OptionalHyp    :: { String }
-OptionalHyp    : {- empty -}      { "" }
-               | Name ':'        { $1 }
+              | Name                            { [ $1 ] }
 
 Name    :: { String }
 Name    : id               { $1 }
