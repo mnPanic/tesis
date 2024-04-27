@@ -4,6 +4,7 @@ module NDProofs (
     cut,
     proofImpElim,
     hypForm,
+    hypAndForm,
     proofNotTrue,
     proofNotFalse,
     proofAndAssoc,
@@ -53,6 +54,10 @@ type EnvItem = (HypId, Form)
 -- los usuarios
 hypForm :: Form -> HypId
 hypForm f = "__h " ++ show f
+
+-- Encapsula un patrón común de generar una fórmula y obtener su hipótesis
+hypAndForm :: Form -> (Form, HypId)
+hypAndForm f = (f, hypForm f)
 
 {- doubleNegElim dada una fórmula A da una demostración de ~~A -> A
 

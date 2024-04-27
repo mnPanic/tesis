@@ -51,11 +51,13 @@ tokens :-
     by              { literal TokenBy }
     equivalently    { literal TokenEquivalently }
     claim           { literal TokenClaim }
+    cases           { literal TokenCases }
+    case            { literal TokenCase }
 
     \"[^\"]*\"          { lex (TokenQuotedName . firstLast) }
 
     (\_|[A-Z])[a-zA-Z0-9\_\-]*(\')*                      { lex TokenVar }
-    [a-zA-Z0-9\_\-\?!#\$\%&\*\+\<\>\=\?\@\^]+(\')*       { lex TokenId }
+    [a-zA-Z0-9\_\-\?!#\$\%\*\+\<\>\=\?\@\^]+(\')*       { lex TokenId }
     
 {
 
@@ -109,6 +111,8 @@ data TokenClass
     | TokenBy
     | TokenEquivalently
     | TokenClaim
+    | TokenCase
+    | TokenCases
     deriving (Eq, Show)
 
 unLex :: TokenClass -> String
@@ -138,6 +142,8 @@ unLex TokenHence = "hence"
 unLex TokenHave = "have"
 unLex TokenEquivalently = "equivalently"
 unLex TokenClaim = "claim"
+unLex TokenCase = "case"
+unLex TokenCases = "cases"
 unLex (TokenQuotedName n) = "\"" ++ n ++ "\""
 unLex (TokenVar s) = "(var) " ++ s
 unLex (TokenId s) = "(id) " ++ s

@@ -276,6 +276,40 @@ testCommands =
                     thus ~(a | b) by "c"
                 end
         |]
+        , "cases"
+            ~: test
+                [ "2 cases"
+                    ~: testProgram
+                        [r|
+                        theorem "ejemplo cases": (a & b) | (c & a) -> a
+                        proof
+                            suppose h : (a & b) | (c & a)
+                            cases by h
+                                case a&b
+                                    hence a
+                                case a&c // no tiene que ser igual
+                                    hence a
+                            end
+                        end
+                    |]
+                , "3 cases"
+                    ~: testProgram
+                        [r|
+                        axiom d_imp_a : d -> a
+                        theorem "3 casos": (a & b) | (c & a) | d -> a
+                        proof
+                            suppose h : (a & b) | (c & a) | d
+                            cases by h
+                                case a & b
+                                    hence a
+                                case c2 : a & c
+                                    thus a by c2
+                                case d
+                                    hence a by d_imp_a
+                            end
+                        end
+                    |]
+                ]
         ]
 
 -- , "optional hyp"

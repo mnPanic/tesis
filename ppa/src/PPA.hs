@@ -6,6 +6,7 @@ module PPA (
   Justification,
   Hypothesis (..),
   Decl (..),
+  Case,
   findHyp,
   getHypId,
   getProof,
@@ -30,6 +31,8 @@ data Decl
 
 type TProof = [ProofStep]
 
+type Case = (HypId, Form, TProof)
+
 data ProofStep
   = PSSuppose HypId Form
   | -- Thus prueba algo de la tesis
@@ -40,6 +43,7 @@ data ProofStep
     PSEquiv Form
   | -- Afirmación auxiliar con su demostración
     PSClaim HypId Form TProof
+  | PSCases Justification [Case]
   deriving (Show, Eq)
 
 type Justification = [HypId]
@@ -68,9 +72,7 @@ getProof (HTheorem _ _ p) = p
 
 findHyp :: Context -> HypId -> Result Hypothesis
 findHyp ctx h
-  | h == prevHypId = do
-      prev <- getPrevHypId ctx
-      findHyp ctx prev
+  | h == prevHypId = getPrevHyp ctx
   | otherwise = case find (\h' -> getHypId h' == h) ctx of
       Just hyp -> Right hyp
       Nothing -> Left $ printf "'%s' not present in ctx" h
@@ -80,7 +82,7 @@ prevHypId :: String
 prevHypId = "-"
 
 -- Devuelve la última hipótesis que se agregó al contexto
-getPrevHypId :: Context -> Result HypId
-getPrevHypId ctx
+getPrevHyp :: Context -> Result Hypothesis
+getPrevHyp ctx
   | null ctx = Left "can't get prev hyp from empty ctx"
-  | otherwise = return $ getHypId $ head ctx
+  | otherwise = return $ head ctx

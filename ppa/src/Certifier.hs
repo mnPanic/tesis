@@ -11,6 +11,7 @@ module Certifier (
 ) where
 
 import PPA (
+    Case,
     Context,
     Decl (..),
     Hypothesis (HAxiom, HTheorem),
@@ -29,6 +30,7 @@ import NDProofs (
     Result,
     cut,
     doubleNegElim,
+    hypAndForm,
     hypForm,
     proofAndAssoc,
     proofAndCongruence1,
@@ -107,6 +109,7 @@ certifyTheorem ctx (DTheorem h f p) = do
     return (HTheorem h f ndProof)
 
 certifyProof :: Context -> Form -> TProof -> Result Proof
+-- certifyProof ctx f ps | trace (printf "certifyProof %s %s %s" (show ctx) (show f) (show ps)) False = undefined
 certifyProof ctx f [] = Left $ printf "incomplete proof, still have %s as thesis" (show f)
 certifyProof ctx f (p : ps) = certifyProofStep ctx f p ps
 
@@ -141,6 +144,48 @@ certifyProofStep ctx thesis (PSClaim h f ps') ps = do
     proofClaim <- certifyProof ctx f ps'
     let ctx' = HTheorem h f proofClaim : ctx
     certifyProof ctx' thesis ps
+certifyProofStep ctx thesis (PSCases js cs) ps = certifyCases ctx thesis js cs ps
+
+-- Certifica el cases
+-- Para cada caso, sigue con la demostración asumiendo la fórmula.
+certifyCases :: Context -> Form -> Justification -> [Case] -> TProof -> Result Proof
+-- certifyCases ctx thesis js cases ps | trace (printf "certifyCases %s %s %s %s %s" (show ctx) (show thesis) (show js) (show cases) (show ps)) False = undefined
+certifyCases _ _ _ [] _ = Left "empty cases"
+certifyCases _ _ _ [_] _ = Left "must have more than one case"
+certifyCases ctx thesis js cases ps = do
+    let fOr = orFromCases cases
+    proofOr <- certifyBy ctx fOr js
+    (_, proofCases) <- certifyCases' ctx thesis proofOr cases ps
+    return PNamed{name = "proof cases", proof = proofCases}
+
+certifyCases' :: Context -> Form -> Proof -> [Case] -> TProof -> Result (HypId, Proof)
+-- certifyCases' ctx thesis proofOr cases ps | trace (printf "certifyCases' %s %s %s %s %s" (show ctx) (show thesis) (show proofOr) (show cases) (show ps)) False = undefined
+certifyCases' ctx thesis _ [(h, f, p)] ps = do
+    proof <- certifyProof (HAxiom h f : ctx) thesis p
+    return (h, proof)
+certifyCases' ctx thesis proofOr cases@((h, f, p) : cs) ps = do
+    let hOr = hypForm $ orFromCases cases
+    let (fOrR, hOrR) = hypAndForm $ orFromCases cs
+
+    proofAssumingF <- certifyProof (HAxiom h f : ctx) thesis p
+    (hOrRest, proofRest) <- certifyCases' ctx thesis (PAx hOrR) cs ps
+
+    return
+        ( hOr
+        , POrE
+            { left = f
+            , right = fOrR
+            , proofOr = proofOr
+            , hypLeft = h
+            , proofAssumingLeft = proofAssumingF
+            , hypRight = hOrRest
+            , proofAssumingRight = proofRest
+            }
+        )
+
+-- Dados los casos de un cases, devuelve el or que representan (right assoc)
+orFromCases :: [Case] -> Form
+orFromCases cs = fromOrListR $ map (\(h, f, p) -> f) cs
 
 {- Certifica que f sea una parte de la tesis y una consecuencia de las justificaciones
 -}
@@ -197,6 +242,10 @@ toAndList f = [f]
 fromAndList :: [Form] -> Form
 fromAndList = foldl1 FAnd
 
+-- Right assoc
+fromOrListR :: [Form] -> Form
+fromOrListR = foldr1 FOr
+
 {- Certifica que js |- f
 
 Si las justificaciones son [h1, .., hn] y el contexto tiene {h1: f1, ... hn:
@@ -209,8 +258,8 @@ pero en realidad por abajo demuestra
     (f1 ^ ... ^ fn) => f
 -}
 certifyBy :: Context -> Form -> Justification -> Result Proof
-certifyBy ctx f [] = solve f
 -- certifyBy ctx f js | trace (printf "certifyBy %s %s %s" (show ctx) (show f) (show js)) False = undefined
+certifyBy ctx f [] = solve f
 certifyBy ctx f js = do
     jsHyps <- findJustification ctx js
     let jsForms = map getForm jsHyps
@@ -244,6 +293,7 @@ Lo hace por el absurdo, la niega, la pasa a DNF y encuentra una
 contradicción. Este procedimiento es completo para proposicional.
 -}
 solve :: Form -> Result Proof
+-- solve thesis | trace (printf "solve %s" (show thesis)) False = undefined
 solve thesis = do
     let fNotThesis = FNot thesis
     let hNotThesis = hypForm fNotThesis
@@ -307,6 +357,7 @@ Devuelve Nothing cuando F ya está en DNF.
 -- acá y no se conoce de antemano. Se podrían devolver siempre acá las hips?
 -- Pero es menos general.
 dnfStep :: EnvItem -> Maybe (EnvItem, Proof, Proof)
+-- dnfStep i | trace (printf "dnfStep %s" (show i)) False = undefined
 {- Casos de reescritura -}
 -- x ^ (y v z) -|- (x ^ y) v (x ^ z)
 dnfStep (hAnd, FAnd x (FOr y z)) =

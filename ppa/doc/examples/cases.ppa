@@ -1,0 +1,10 @@
+theorem "ejemplo cases": (a & b) | (c & a) -> a
+proof
+    suppose h : (a & b) | (c & a)
+    cases by h
+        case a&b
+            hence a
+        case a&c // no tiene que ser igual
+            hence a
+    end
+end
