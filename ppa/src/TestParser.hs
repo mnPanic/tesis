@@ -2,7 +2,7 @@ module TestParser (testParserLexer) where
 
 import Lexer (Alex (Alex), Token (..), TokenClass (..), alexInitUserState, runAlex, runAlex')
 
-import PPA (Decl (..), Program, ProofStep (PSSuppose, PSThusBy))
+import PPA (Decl (..), Program, ProofStep (PSAssume, PSThusBy))
 
 import ND (Form (..), Term (..), predVar, propVar)
 import Parser (parseProgram)
@@ -73,7 +73,7 @@ testParserPrograms =
                 , DTheorem
                     "some thm"
                     (FForall "K" (propVar "p"))
-                    [ PSSuppose "a" $ propVar "a"
+                    [ PSAssume "a" $ propVar "a"
                     , PSThusBy (propVar "a") ["a", "some axiom"]
                     ]
                 ]

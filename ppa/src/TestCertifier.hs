@@ -91,26 +91,59 @@ testCommands :: Test
 testCommands =
     test
         [ "suppose"
-            ~: testProgram
-                [r|
-            theorem a_implies_a : a -> a
-            proof
-                suppose "a" : a
-                thus a by a
-            end
-        |]
-        , "suppose 2, transitivity"
-            ~: testProgram
-                [r|
-            axiom ax_1 : a -> b
-            axiom ax_2 : b -> c
-            theorem t1 : a -> c 
-            proof
-                suppose a : a
-                // La tesis ahora es c
-                hence c by a, ax_1, ax_2
-            end
-            |]
+            ~: test
+                [ "simple"
+                    ~: testProgram
+                        [r|
+                        theorem a_implies_a : a -> a
+                        proof
+                            suppose "a" : a
+                            thus a by a
+                        end
+                    |]
+                , "transitivity"
+                    ~: testProgram
+                        [r|
+                        axiom ax_1 : a -> b
+                        axiom ax_2 : b -> c
+                        theorem t1 : a -> c 
+                        proof
+                            suppose a : a
+                            // La tesis ahora es c
+                            hence c by a, ax_1, ax_2
+                        end
+                    |]
+                , "wrong formula"
+                    ~: testProgramError
+                        [r|
+                            theorem t1: a
+                            proof
+                                suppose a : a
+                            end
+                        |]
+                        "can't use command 'suppose a : a' with form 'a', must be implication or negation"
+                , "not intro"
+                    ~: testProgram
+                        [r|
+                        theorem ej : a -> ~~a
+                        proof
+                            suppose a : a
+                            suppose "no a" : ~a
+                            thus false by a, "no a"
+                        end
+                    |]
+                , "not intro contrapositive"
+                    ~: testProgram
+                        [r|
+                        axiom a_implies_b : a -> b
+                        theorem contrapositive : ~b -> ~a
+                        proof
+                            suppose not_b : ~b
+                            suppose a : a
+                            thus false by a, a_implies_b, not_b
+                        end
+                    |]
+                ]
         , "have"
             ~: testProgram
                 [r|

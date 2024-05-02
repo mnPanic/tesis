@@ -115,16 +115,7 @@ certifyProof ctx f (p : ps) = certifyProofStep ctx f p ps
 
 certifyProofStep ::
     Context -> Form -> ProofStep -> TProof -> Result Proof
-certifyProofStep ctx (FImp f1 f2) (PSSuppose name form) ps
-    | form /= f1 = Left $ printf "can't assume '%s' as it's different from antecedent '%s'" (show form) (show f1)
-    | otherwise = do
-        let ctx' = HAxiom name form : ctx
-        sub <- certifyProof ctx' f2 ps
-        return
-            PImpI
-                { hypAntecedent = name
-                , proofConsequent = sub
-                }
+certifyProofStep ctx f s@(PSSuppose _ _) ps = certifySuppose ctx f s ps
 certifyProofStep ctx thesis (PSHaveBy h f js) ps = do
     proof <- certifyBy ctx f js
     let ctx' = HTheorem h f proof : ctx
@@ -145,6 +136,48 @@ certifyProofStep ctx thesis (PSClaim h f ps') ps = do
     let ctx' = HTheorem h f proofClaim : ctx
     certifyProof ctx' thesis ps
 certifyProofStep ctx thesis (PSCases js cs) ps = certifyCases ctx thesis js cs ps
+
+-- Certifica el suppose
+certifySuppose :: Context -> Form -> ProofStep -> TProof -> Result Proof
+certifySuppose ctx (FImp f1 f2) (PSSuppose name form) ps
+    | form /= f1 =
+        Left
+            $ printf
+                "can't suppose '%s : %s' as it's different from antecedent '%s'"
+                name
+                (show form)
+                (show f1)
+    | otherwise = do
+        let ctx' = HAxiom name form : ctx
+        proofConsequent <- certifyProof ctx' f2 ps
+        return
+            PImpI
+                { hypAntecedent = name
+                , proofConsequent = proofConsequent
+                }
+certifySuppose ctx (FNot f) (PSSuppose name form) ps
+    | form /= f =
+        Left
+            $ printf
+                "to prove by contradiction you must suppose the form without negation, but '%s' != '%s : %s'"
+                (show f)
+                name
+                (show form)
+    | otherwise = do
+        let ctx' = HAxiom name form : ctx
+        proofBot <- certifyProof ctx' FFalse ps
+        return
+            PNotI
+                { hyp = name
+                , proofBot = proofBot
+                }
+certifySuppose ctx f (PSSuppose name form) ps =
+    Left
+        $ printf
+            "can't use command 'suppose %s : %s' with form '%s', must be implication or negation"
+            name
+            (show form)
+            (show f)
 
 -- Certifica el cases
 -- Para cada caso, sigue con la demostración asumiendo la fórmula.
