@@ -127,11 +127,38 @@ El by es opcional en ambos. En caso de no especificarlo, debe ser una tautologí
 
 ### Otros comandos
 
-- **`suppose`**: Corresponde a la introducción de la implicación en DN (`=>-I`)
+- **`suppose`**: Corresponde a la introducción de la implicación (`=>-I`)
 
   `suppose <hyp name> : <form>`
 
   Si la tesis es `A -> B`, asume `A` y la tesis se convierte en `B`.
+
+  Viendo a la negación como implicación, `~A = A -> bot`, se puede usar
+  `suppose` para razonar por el absurdo.
+
+  ```text
+  // proof de ~A
+  suppose - : A
+  // ... proof de false
+  ```
+
+- **`cases`**: Corresponde a la eliminación de la disyunción (`v-E`)
+
+  Permite razonar por casos. Para cada uno de ellos se debe demostrar la tesis
+  en su totalidad por separado.
+  
+  ```text
+  theorem "ejemplo cases": (a & b) | (c & a) -> a
+  proof
+      suppose h : (a & b) | (c & a)
+      cases by h
+          case a&b
+              hence a
+          case a&c // no tiene que ser igual
+              hence a
+      end
+  end
+  ```
 
 - **`equivalently`**: Permite reducir la tesis a una fórmula equivalente
 
