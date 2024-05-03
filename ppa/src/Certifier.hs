@@ -60,7 +60,7 @@ import ND (
     dneg,
  )
 
-import NDChecker (CheckResult (CheckOK), check, checkResultIsErr)
+import NDChecker (CheckResult (CheckOK), check, checkResultIsErr, subst)
 
 import Data.List (find, intercalate, nub, partition, (\\))
 import Data.Maybe (fromJust, isNothing)
@@ -136,6 +136,20 @@ certifyProofStep ctx thesis (PSClaim h f ps') ps = do
     let ctx' = HTheorem h f proofClaim : ctx
     certifyProof ctx' thesis ps
 certifyProofStep ctx thesis (PSCases js cs) ps = certifyCases ctx thesis js cs ps
+certifyProofStep ctx thesis s@(PSTake _ _) ps = certifyTake ctx thesis s ps
+
+certifyTake :: Context -> Form -> ProofStep -> TProof -> Result Proof
+certifyTake ctx (FExists x f) (PSTake x' t) ps
+    | x /= x' = Left $ printf "take: can't take var '%s', different from thesis var '%s'" x' x
+    | otherwise = do
+        let f' = subst x t f
+        proof <- certifyProof ctx f' ps
+        return
+            PExistsI
+                { inst = t
+                , proofFormWithInst = proof
+                }
+certifyTake _ f (PSTake _ _) _ = Left $ printf "take: can't use on form '%s', not exists" (show f)
 
 -- Certifica el suppose
 certifySuppose :: Context -> Form -> ProofStep -> TProof -> Result Proof

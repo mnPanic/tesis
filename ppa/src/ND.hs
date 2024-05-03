@@ -265,7 +265,9 @@ data Proof
         }
     | PLEM
     | -- V x . A
-      PForallI Proof -- de A
+      PForallI
+        { proofForm :: Proof -- de A
+        }
     | PForallE
         VarId -- x
         Form -- A (sin sust)
@@ -273,13 +275,15 @@ data Proof
         Term -- t
         -- E x . A
     | PExistsI
-        Term -- t
-        Proof -- de A con x reemplazado por t
-        -- E x . A deduce B
-    | PExistsE
-        VarId -- x
-        Form -- A
-        Proof -- de E x. A
-        HypId -- x:A
-        Proof -- de B con A como hyp
+        { inst :: Term -- t
+        , proofFormWithInst :: Proof -- de A con x reemplazado por t
+        }
+    | -- E x . A deduce B
+      PExistsE
+        { var :: VarId -- x
+        , form :: Form -- A
+        , proofExists :: Proof -- de E x. A
+        , hyp :: HypId -- x:A
+        , proofAssuming :: Proof -- de B con A como hyp
+        }
     deriving (Show, Eq)

@@ -343,6 +343,37 @@ testCommands =
                         end
                     |]
                 ]
+        , "take"
+            ~: test
+                [ "ok"
+                    ~: testProgram
+                        [r|
+                        axiom zero_is_zero : isZero(zero)
+                        theorem "zero exists": exists X. isZero(X)
+                        proof
+                            take X := zero
+                            thus isZero(zero) by zero_is_zero
+                        end
+                |]
+                , "error invalid var"
+                    ~: testProgramError
+                        [r|
+                        theorem "zero exists": exists X. isZero(X)
+                        proof
+                            take Y := zero
+                        end
+                |]
+                        "take: can't take var 'Y', different from thesis var 'X'"
+                , "error invalid form"
+                    ~: testProgramError
+                        [r|
+                        theorem "zero exists": a
+                        proof
+                            take Y := zero
+                        end
+                |]
+                        "take: can't use on form 'a', not exists"
+                ]
         ]
 
 -- , "optional hyp"

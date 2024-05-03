@@ -125,7 +125,7 @@ hipótesis anterior a la justificación, a la que también se puede referir con 
 
 El by es opcional en ambos. En caso de no especificarlo, debe ser una tautología.
 
-### Otros comandos
+### Comandos y reglas de inferencia
 
 - **`suppose`**: Corresponde a la introducción de la implicación (`=>-I`)
 
@@ -159,6 +159,13 @@ El by es opcional en ambos. En caso de no especificarlo, debe ser una tautologí
       end
   end
   ```
+
+- **`take`** o introducción del existencial
+
+  Para probar un existencial se usa el comando `take`. Si la tesis es `exists x.
+  p(x)`, luego del comando `take x := a` la tesis se reduce a `p(a)`
+
+### Otros comandos
 
 - **`equivalently`**: Permite reducir la tesis a una fórmula equivalente
 

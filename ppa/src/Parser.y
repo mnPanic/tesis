@@ -49,6 +49,8 @@ import Debug.Trace (trace)
     claim               { Token _ TokenClaim }
     case                { Token _ TokenCase }
     cases               { Token _ TokenCases }
+    take                { Token _ TokenTake }
+    ':='                { Token _ TokenAssign }
 
 %right exists forall dot
 %right imp
@@ -86,6 +88,7 @@ ProofStep : suppose Name ':' Form                       { PSSuppose $2 $4 }
           | equivalently Form                           { PSEquiv $2 }
           | claim Name ':' Form proof Proof end         { PSClaim $2 $4 $6 }
           | cases by Justification Cases end            { PSCases $3 $4 }
+          | take var ':=' Term                          { PSTake $2 $4 }
 
 Cases   :: { [Case] }
 Cases   : Case Cases      { $1 : $2 }

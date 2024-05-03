@@ -14,7 +14,14 @@ module PPA (
 ) where
 
 import Data.List (find)
-import ND (Env (EEmpty), Form (..), HypId, Proof (..))
+import ND (
+  Env (EEmpty),
+  Form (..),
+  HypId,
+  Proof (..),
+  Term,
+  VarId,
+ )
 import NDChecker (
   CheckResult,
   check,
@@ -44,6 +51,7 @@ data ProofStep
   | -- Afirmación auxiliar con su demostración
     PSClaim HypId Form TProof
   | PSCases Justification [Case]
+  | PSTake VarId Term
   deriving (Show, Eq)
 
 type Justification = [HypId]
