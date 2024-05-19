@@ -57,6 +57,7 @@ tokens :-
     \:\=            { literal TokenAssign }
     st              { literal TokenSuchThat }
     consider        { literal TokenConsider }
+    let             { literal TokenLet }
 
     \"[^\"]*\"          { lex (TokenQuotedName . firstLast) }
 
@@ -121,6 +122,7 @@ data TokenClass
     | TokenAssign
     | TokenConsider
     | TokenSuchThat
+    | TokenLet
     deriving (Eq, Show)
 
 unLex :: TokenClass -> String
@@ -132,6 +134,7 @@ unLex TokenTrue = "true"
 unLex TokenFalse = "false"
 unLex TokenImp = "->"
 unLex TokenNot = "~"
+unLex TokenLet = "let"
 unLex TokenExists = "exists"
 unLex TokenForall = "forall"
 unLex TokenParenOpen = "("

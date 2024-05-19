@@ -58,6 +58,7 @@ import ND (
     Form (..),
     HypId,
     Proof (..),
+    Term (TVar),
     dneg,
     fv,
  )
@@ -138,8 +139,25 @@ certifyProofStep ctx thesis (PSClaim h f ps') ps = do
     let ctx' = HTheorem h f proofClaim : ctx
     certifyProof ctx' thesis ps
 certifyProofStep ctx thesis (PSCases js cs) ps = certifyCases ctx thesis js cs ps
-certifyProofStep ctx thesis s@(PSTake _ _) ps = certifyTake ctx thesis s ps
+certifyProofStep ctx thesis s@(PSTake{}) ps = certifyTake ctx thesis s ps
 certifyProofStep ctx thesis s@(PSConsider{}) ps = certifyConsider ctx thesis s ps
+certifyProofStep ctx thesis s@(PSLet{}) ps = certifyLet ctx thesis s ps
+
+-- let X := Y
+-- para demostrar forall X . f
+-- X no debe aparecer libre en el contexto que lo precede
+certifyLet :: Context -> Form -> ProofStep -> TProof -> Result Proof
+certifyLet ctx (FForall x f) (PSLet x' y) ps
+    | x /= x' = Left $ printf "let: assinged var (%s) must be the same as in thesis (%s)" x' x
+    | y `elem` fvC ctx = Left $ printf "let: new var (%s) must not appear free in preceding context (%s)" y (show ctx)
+    | otherwise = do
+        nextProof <- certifyProof ctx (subst x (TVar y) f) ps
+        return PForallI{proofForm = nextProof}
+certifyLet ctx thesis (PSLet x y) ps =
+    Left
+        $ printf
+            "let: can't use with form '%s', must be an universal quantifier (forall)"
+            (show thesis)
 
 -- consider X st h : f by ...
 -- by debe justificar el exists X . f

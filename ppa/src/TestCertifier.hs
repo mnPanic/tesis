@@ -413,6 +413,29 @@ testCommands =
                 |]
                         "consider: can't use an exist whose variable (Y) appears free in the preceding context ([(axiom) h2 : a(Y),(axiom) h1 : exists Y . b(Y),(axiom) a1 : exists Y . a(Y)])"
                 ]
+        , "let"
+            ~: [ "err var in context"
+                    ~: testProgramError
+                        [r|
+                    axiom a1: exists X . a(X)
+                    theorem "let" : forall X . a(X)
+                    proof
+                        consider X st h : a(X) by a1
+                        let X := X // está X libre en el ctx por el consider
+                        thus a(X) by a1
+                    end
+                |]
+                        "let: new var (X) must not appear free in preceding context ([(axiom) h : a(X),(axiom) a1 : exists X . a(X)])"
+               , "wrong form"
+                    ~: testProgramError
+                        [r|
+                    theorem "let err" : a -> b
+                    proof
+                        let X := X
+                    end
+                |]
+                        "let: can't use with form 'a -> b', must be an universal quantifier (forall)"
+               ]
         ]
 
 -- , "optional hyp"

@@ -165,6 +165,14 @@ El by es opcional en ambos. En caso de no especificarlo, debe ser una tautologí
   Para probar un existencial se usa el comando `take`. Si la tesis es `exists x.
   p(x)`, luego del comando `take x := a` la tesis se reduce a `p(a)`
 
+- **`consider`** o eliminación del existencial
+
+  Si se puede justificar `exists x . f`, se puede razonar sobre ese x.
+  
+  El comando `consider x st h : f by ...` agrega f al contexto para el resto de la demostración siempre y cuando x no aparezca libre en la tesis o el contexto hasta el momento.
+
+  El `by` debe jusitificar `exists x . f`.
+
 ### Otros comandos
 
 - **`equivalently`**: Permite reducir la tesis a una fórmula equivalente

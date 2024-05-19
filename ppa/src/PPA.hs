@@ -57,6 +57,7 @@ data ProofStep
   | PSCases Justification [Case]
   | PSTake VarId Term
   | PSConsider VarId HypId Form Justification
+  | PSLet VarId VarId
   deriving (Show, Eq)
 
 type Justification = [HypId]

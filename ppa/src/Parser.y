@@ -53,6 +53,7 @@ import Debug.Trace (trace)
     ':='                { Token _ TokenAssign }
     consider            { Token _ TokenConsider }
     st                  { Token _ TokenSuchThat }
+    let                 { Token _ TokenLet }       
 
 %right exists forall dot
 %right imp
@@ -92,6 +93,7 @@ ProofStep : suppose Name ':' Form                               { PSSuppose $2 $
           | cases by Justification Cases end                    { PSCases $3 $4 }
           | take var ':=' Term                                  { PSTake $2 $4 }
           | consider var st Name ':' Form by Justification      { PSConsider $2 $4 $6 $8 }
+          | let var ':=' var                                    { PSLet $2 $4 }
 
 Cases   :: { [Case] }
 Cases   : Case Cases      { $1 : $2 }
