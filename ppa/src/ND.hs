@@ -99,8 +99,8 @@ instance Show Form where
     show (FNot f) = "~" ++ showBinParen f
     show FTrue = "true"
     show FFalse = "false"
-    show (FForall x f) = "forall x. " ++ showBinParen f
-    show (FExists x f) = "exists x. " ++ showBinParen f
+    show (FForall x f) = "forall " ++ x ++ " . " ++ showBinParen f
+    show (FExists x f) = "exists " ++ x ++ " . " ++ showBinParen f
 
 -- muestra las binarias con paréntesis, para evitar supérfluos en show
 showBinParen :: Form -> String

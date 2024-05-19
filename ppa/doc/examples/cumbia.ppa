@@ -1,0 +1,9 @@
+axiom all_rock_or_cumbia: forall P. rock(P) | cumbia(P)
+axiom exists_not_cumbia: exists P. ~cumbia(P)
+
+theorem exists_rock: exists P. rock(P)
+proof
+    take P := y
+    consider Y st ~cumbia(Y) by exists_not_cumbia
+    thus rock(y) by all_rock_or_cumbia, -
+end

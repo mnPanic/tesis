@@ -1,0 +1,7 @@
+theorem "consider simple ex": (exists Y . a(Y) & b(Y)) -> exists Q . b(Q)
+proof
+    suppose h1 : exists Y . a(Y) & b(Y)
+    take Q := Y
+    consider Y st h2 : a(Y) & b(Y) by h1
+    thus b(Y) by -
+end

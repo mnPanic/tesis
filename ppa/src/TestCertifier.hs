@@ -374,6 +374,45 @@ testCommands =
                 |]
                         "take: can't use on form 'a', not exists"
                 ]
+        , "consider"
+            ~: test
+                [ "ok"
+                    ~: testProgram
+                        [r|
+                    theorem "consider simple ex": (exists Y . a(Y) & b(Y)) -> exists Q . b(Q)
+                    proof
+                        suppose h1 : exists Y . a(Y) & b(Y)
+                        consider Y st h2 : a(Y) & b(Y) by h1
+                        take Q := Y
+                        thus b(Y) by -
+                    end
+                |]
+                , "err var free in form"
+                    ~: testProgramError
+                        [r|
+                    theorem "consider": (exists Y . a(Y) & b(Y)) -> exists Q . b(Q)
+                    proof
+                        suppose h1 : exists Y . a(Y) & b(Y)
+                        // Alcanza con invertir estas dos fórmulas para que falle
+                        take Q := Y
+                        consider Y st h2 : a(Y) & b(Y) by h1
+                        thus b(Y) by -
+                    end
+                |]
+                        "consider: can't use an exist whose variable (Y) appears free in the thesis (b(Y))"
+                , "err var free in ctx"
+                    ~: testProgramError
+                        [r|
+                    axiom a1 : exists Y . a(Y)
+                    theorem "consider": (exists Y . b(Y)) -> exists Y . c(Y)
+                    proof
+                        suppose h1 : exists Y . b(Y)
+                        consider Y st h2 : a(Y) by a1
+                        consider Y st h3 : b(Y) by h1 // está libre en el contexto
+                    end
+                |]
+                        "consider: can't use an exist whose variable (Y) appears free in the preceding context ([(axiom) h2 : a(Y),(axiom) h1 : exists Y . b(Y),(axiom) a1 : exists Y . a(Y)])"
+                ]
         ]
 
 -- , "optional hyp"

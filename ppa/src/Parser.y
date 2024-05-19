@@ -51,6 +51,8 @@ import Debug.Trace (trace)
     cases               { Token _ TokenCases }
     take                { Token _ TokenTake }
     ':='                { Token _ TokenAssign }
+    consider            { Token _ TokenConsider }
+    st                  { Token _ TokenSuchThat }
 
 %right exists forall dot
 %right imp
@@ -80,15 +82,16 @@ Proof   : ProofStep Proof       { $1 : $2 }
         | {- empty -}           { [] }
 
 ProofStep :: { ProofStep }
-ProofStep : suppose Name ':' Form                       { PSSuppose $2 $4 }
-          | thus Form OptionalBy                        { PSThusBy $2 $3 }
-          | hence Form OptionalBy                       { PSThusBy $2 (["-"] ++ $3) }
-          | have Name ':' Form OptionalBy               { PSHaveBy $2 $4 $5 }
-          | then Name ':' Form OptionalBy               { PSHaveBy $2 $4 (["-"] ++ $5) }
-          | equivalently Form                           { PSEquiv $2 }
-          | claim Name ':' Form proof Proof end         { PSClaim $2 $4 $6 }
-          | cases by Justification Cases end            { PSCases $3 $4 }
-          | take var ':=' Term                          { PSTake $2 $4 }
+ProofStep : suppose Name ':' Form                               { PSSuppose $2 $4 }
+          | thus Form OptionalBy                                { PSThusBy $2 $3 }
+          | hence Form OptionalBy                               { PSThusBy $2 (["-"] ++ $3) }
+          | have Name ':' Form OptionalBy                       { PSHaveBy $2 $4 $5 }
+          | then Name ':' Form OptionalBy                       { PSHaveBy $2 $4 (["-"] ++ $5) }
+          | equivalently Form                                   { PSEquiv $2 }
+          | claim Name ':' Form proof Proof end                 { PSClaim $2 $4 $6 }
+          | cases by Justification Cases end                    { PSCases $3 $4 }
+          | take var ':=' Term                                  { PSTake $2 $4 }
+          | consider var st Name ':' Form by Justification      { PSConsider $2 $4 $6 $8 }
 
 Cases   :: { [Case] }
 Cases   : Case Cases      { $1 : $2 }

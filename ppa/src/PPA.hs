@@ -11,6 +11,7 @@ module PPA (
   getHypId,
   getProof,
   getForm,
+  fvC,
 ) where
 
 import Data.List (find)
@@ -21,6 +22,7 @@ import ND (
   Proof (..),
   Term,
   VarId,
+  fv,
  )
 import NDChecker (
   CheckResult,
@@ -28,6 +30,8 @@ import NDChecker (
  )
 import NDProofs (Result)
 import Text.Printf (printf)
+
+import Data.Set qualified as Set
 
 type Program = [Decl]
 
@@ -52,6 +56,7 @@ data ProofStep
     PSClaim HypId Form TProof
   | PSCases Justification [Case]
   | PSTake VarId Term
+  | PSConsider VarId HypId Form Justification
   deriving (Show, Eq)
 
 type Justification = [HypId]
@@ -64,7 +69,11 @@ type Goal = (Context, Form)
 data Hypothesis
   = HAxiom HypId Form
   | HTheorem HypId Form Proof
-  deriving (Show, Eq)
+  deriving (Eq)
+
+instance Show Hypothesis where
+  show (HAxiom h f) = printf "(axiom) %s : %s" h (show f)
+  show (HTheorem h f p) = printf "(theorem) %s : %s . Proof = %s" h (show f) (show p)
 
 getHypId :: Hypothesis -> HypId
 getHypId (HAxiom h _) = h
@@ -94,3 +103,6 @@ getPrevHyp :: Context -> Result Hypothesis
 getPrevHyp ctx
   | null ctx = Left "can't get prev hyp from empty ctx"
   | otherwise = return $ head ctx
+
+fvC :: Context -> Set.Set VarId
+fvC = foldr (Set.union . fv . getForm) Set.empty

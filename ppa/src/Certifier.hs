@@ -20,6 +20,7 @@ import PPA (
     ProofStep (..),
     TProof,
     findHyp,
+    fvC,
     getForm,
     getHypId,
     getProof,
@@ -58,6 +59,7 @@ import ND (
     HypId,
     Proof (..),
     dneg,
+    fv,
  )
 
 import NDChecker (CheckResult (CheckOK), check, checkResultIsErr, subst)
@@ -137,6 +139,29 @@ certifyProofStep ctx thesis (PSClaim h f ps') ps = do
     certifyProof ctx' thesis ps
 certifyProofStep ctx thesis (PSCases js cs) ps = certifyCases ctx thesis js cs ps
 certifyProofStep ctx thesis s@(PSTake _ _) ps = certifyTake ctx thesis s ps
+certifyProofStep ctx thesis s@(PSConsider{}) ps = certifyConsider ctx thesis s ps
+
+-- consider X st h : f by ...
+-- by debe justificar el exists X . f
+-- X no debe aparecer libre en la tesis ni en el contexto
+certifyConsider :: Context -> Form -> ProofStep -> TProof -> Result Proof
+certifyConsider ctx thesis (PSConsider x h f js) ps
+    | x `elem` fv thesis = Left $ printf "consider: can't use an exist whose variable (%s) appears free in the thesis (%s)" x (show thesis)
+    | x `elem` fvC ctx = Left $ printf "consider: can't use an exist whose variable (%s) appears free in the preceding context (%s)" x (show ctx)
+    | otherwise = do
+        proofExists <- certifyBy ctx (FExists x f) js
+        -- TODO: checks que fallarian en ND
+        let ctx' = HAxiom h f : ctx
+        nextProof <- certifyProof ctx' thesis ps
+
+        return
+            PExistsE
+                { var = x
+                , form = f
+                , proofExists = proofExists
+                , hyp = h
+                , proofAssuming = nextProof
+                }
 
 certifyTake :: Context -> Form -> ProofStep -> TProof -> Result Proof
 certifyTake ctx (FExists x f) (PSTake x' t) ps

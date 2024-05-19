@@ -55,6 +55,8 @@ tokens :-
     case            { literal TokenCase }
     take            { literal TokenTake }
     \:\=            { literal TokenAssign }
+    st              { literal TokenSuchThat }
+    consider        { literal TokenConsider }
 
     \"[^\"]*\"          { lex (TokenQuotedName . firstLast) }
 
@@ -117,6 +119,8 @@ data TokenClass
     | TokenCases
     | TokenTake
     | TokenAssign
+    | TokenConsider
+    | TokenSuchThat
     deriving (Eq, Show)
 
 unLex :: TokenClass -> String
@@ -150,6 +154,8 @@ unLex TokenCase = "case"
 unLex TokenCases = "cases"
 unLex TokenTake = "take"
 unLex TokenAssign = ":="
+unLex TokenConsider = "consider"
+unLex TokenSuchThat = "st"
 unLex (TokenQuotedName n) = "\"" ++ n ++ "\""
 unLex (TokenVar s) = "(var) " ++ s
 unLex (TokenId s) = "(id) " ++ s
