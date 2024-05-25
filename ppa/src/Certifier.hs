@@ -58,9 +58,10 @@ import ND (
     Form (..),
     HypId,
     Proof (..),
-    Term (TVar),
+    Term (TMetavar, TVar),
     dneg,
     fv,
+    isForall,
  )
 
 import NDChecker (CheckResult (CheckOK), check, checkResultIsErr, subst)
@@ -69,7 +70,7 @@ import Data.List (find, intercalate, nub, partition, (\\))
 import Data.Maybe (fromJust, isNothing)
 import Text.Printf (printf)
 
-import Data.Either (fromLeft, fromRight, isLeft)
+import Data.Either (fromLeft, fromRight, isLeft, isRight)
 import Debug.Trace
 
 -- En un contexto cada demostración de teorema es válida en el contexto que
@@ -380,7 +381,8 @@ findJustification ctx js
 {- solve encuentra una demostración automáticamente para thesis.
 
 Lo hace por el absurdo, la niega, la pasa a DNF y encuentra una
-contradicción. Este procedimiento es completo para proposicional.
+contradicción. Este procedimiento es completo para proposicional y heurístico
+para LPO.
 -}
 solve :: Form -> Result Proof
 -- solve thesis | trace (printf "solve %s" (show thesis)) False = undefined
@@ -642,7 +644,8 @@ dnfStep (h, f)
 
 {- solveContradiction demuestra una contradicción de una fórmula que se asume
 que está en DNF. Para ello refuta cada cláusula, buscando o el mismo literal
-negado y sin negar, o que tenga false.
+negado y sin negar, que tenga false, o instanciando cuantificadores universales
+y re-convirtiendo a dnf.
 
 Devuelve una demostración de
     f |- bot
@@ -669,9 +672,14 @@ solveContradiction i = solveClause i
 
     p1 ^ p2 ^ ... ^ p_n |- bot
 
-busca el mismo literal opuesto, o que alguno sea false.
 Asume que la fórmula es una cláusula: Una conjunción de literales (predicados,
-true y false)
+true/false y cuantificadores)
+
+Hay 3 casos
+
+- Algún literal es false
+- Hay dos literales opuestos
+- Sino, intenta eliminando universales
 -}
 solveClause :: EnvItem -> Result Proof
 solveClause (h, rawClause) = do
@@ -699,8 +707,25 @@ solveClause (h, rawClause) = do
                     )
                 )
 
+-- return (
+--     PNamed "" (
+--         PNotE {
+--             form = f,
+--             proofNotForm = undefined,
+--             proofForm = undefined
+--          }
+--     )
+
+-- )
+
 -- Clause es una conjunción de literales
 type Clause = [Form]
+
+data Contradiction
+    = CNone
+    | CFalse
+    | COpposingLiterals Form
+    | CForallElim Form
 
 -- Encuentra dos literales opuestos o false. Devuelve una sola fórmula, que es o
 -- bien false o una que se contradice con su negación.
@@ -713,7 +738,35 @@ findContradiction fs
         (f : _) -> Right f
         [] -> Left $ printf "%s contains no contradicting literals or false" (show fs)
   where
+    -- No hay dos opuestas, probamos eliminar foralls
+
     hasOpposite f = FNot f `elem` fs
+
+findForallContradiction :: Clause -> Result Proof
+findForallContradiction cl
+    | null foralls = Left "contains no foralls" -- TODO mejor msj
+    | otherwise =
+        let allProofs = zip foralls (map (contradictEliminatingForall cl) foralls)
+         in case find (\(_, r) -> isRight r) allProofs of
+                Just (f, Right proof) -> undefined -- TODO: como pegar las demos, forallE necesita el termino a reemplazar (con lo que unificas, como se propaga?)
+                Nothing -> Left "no foralls useful for contradictions" -- TODO msj
+  where
+    foralls = filter isForall cl
+
+contradictEliminatingForall :: Clause -> Form -> Result Proof
+contradictEliminatingForall cl f@(FForall x g) =
+    do
+        let g' = subst x TMetavar g
+        let cl' = replaceFirst cl f g'
+        -- TODO: cambiar hyp por proof
+        let (dnfCl, proofDnf) = dnf ("h", fromClause cl')
+        solveContradiction ("h", dnfCl)
+
+replaceFirst :: (Eq a) => [a] -> a -> a -> [a]
+replaceFirst (x : xs) old new
+    | x == old = new : xs
+    | otherwise = x : replaceFirst xs old new
+replaceFirst [] _ _ = []
 
 toClause :: Form -> Result Clause
 toClause (FAnd l r) = do

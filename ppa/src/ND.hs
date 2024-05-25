@@ -17,6 +17,7 @@ module ND (
     propVar,
     predVar,
     dneg,
+    isForall,
 ) where
 
 import Data.Map qualified as Map
@@ -49,6 +50,7 @@ type Subst = Map.Map String String
 
 data Term
     = TVar VarId
+    | TMetavar
     | TFun FunId [Term]
 
 instance Show Term where
@@ -172,6 +174,10 @@ fv FTrue = Set.empty
 fv FFalse = Set.empty
 fv (FForall y f1) = Set.delete y (fv f1)
 fv (FExists y f1) = Set.delete y (fv f1)
+
+isForall :: Form -> Bool
+isForall (FForall{}) = True
+isForall _ = False
 
 data Env
     = EEmpty
