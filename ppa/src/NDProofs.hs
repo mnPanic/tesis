@@ -110,13 +110,13 @@ Permite evitar Imp-E y Imp-I para demostrar a partir de una implicación conocid
 (A -> B)
 -}
 cut :: Form -> Proof -> HypId -> Proof -> Proof
-cut fA pA hypA pAtoB =
+cut fA pA hypA pAThenB =
     PImpE
         { antecedent = fA
         , proofImp =
             PImpI
                 { hypAntecedent = hypA
-                , proofConsequent = pAtoB
+                , proofConsequent = pAThenB
                 }
         , proofAntecedent = pA
         }
