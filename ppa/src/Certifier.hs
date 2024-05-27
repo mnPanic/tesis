@@ -67,7 +67,7 @@ import ND (
 import NDChecker (CheckResult (CheckOK), check, checkResultIsErr, subst)
 
 import Data.List (find, intercalate, nub, partition, (\\))
-import Data.Maybe (fromJust, isNothing)
+import Data.Maybe (fromJust, isJust, isNothing)
 import Text.Printf (printf)
 
 import Data.Either (fromLeft, fromRight, isLeft, isRight)
@@ -742,52 +742,109 @@ Para ello, para cada forall intenta:
   términos, hay que ver que unifiquen (y propagar la sustitución para arriba)
 -}
 trySolveClauseElimForall :: EnvItem -> Result Proof
-trySolveClauseElimForall (h, rawClause)
-    | null foralls = Left "contains no foralls" -- TODO mejor msj
-    | otherwise =
-        let allProofs = map (solveClauseElimForall cl) foralls
-         in case find isRight allProofs of
-                Nothing -> Left "no foralls useful for contradictions" -- TODO msj
-                Just (Right proof) -> Right proof
-  where
-    cl = toClause rawClause
-    foralls = filter isForall cl
+trySolveClauseElimForall (h, rawClause) =
+    do
+        cl <- toClause rawClause
+        let foralls = filter isForall cl
+        if null foralls
+            then Left "contains no foralls" -- TODO mejor msj
+            else do
+                let allProofs = map (solveClauseElimForall (h, rawClause)) foralls
+                case find isRight allProofs of
+                    Nothing -> Left "no foralls useful for contradictions" -- TODO msj
+                    Just (Right proof) -> Right proof
 
--- TODO: como pegar las demos, forallE necesita el termino a reemplazar (con lo que unificas, como se propaga?)
+-- TODO: como pegar las demos, forallE necesita el termino a reemplazar (con lo
+-- que unificas, como se propaga?)
+{- solveClauseElimForall refuta una cláusula mediante la eliminación de un
+forall.
+
+- Genera la demostración de la refutación generando la sustitución, pero la demo
+  asume que ya está sustituido
+
+- P
+
+-}
 solveClauseElimForall :: EnvItem -> Form -> Result Proof
 solveClauseElimForall (hClause, rawClause) f@(FForall x g) =
     do
-        let cl = toClause rawClause
+        cl <- toClause rawClause
         let g' = subst x TMetavar g
-        let (hcl', cl') = hypAndForm $ replaceFirst cl f g'
-        -- TODO: cambiar hyp por proof
-        let (dnfCl, proofDnf) = dnf (hClause, cl')
-        solveContradiction ("h", dnfCl)
+        let (cl', hcl') = hypAndForm $ fromClause $ replaceFirst cl f g'
 
-        cut
-            dnfCl
-            proofDnf
-            hDNFNotThesis
-            contradictionProof
+        let (dnfCl', proofDnf) = dnf (hcl', cl')
+        let hdnfCl' = hypForm dnfCl'
+        (sub, contradictionProof) <- solveContradictionUnifying SSEmpty (hdnfCl', dnfCl')
+
+        -- Ya sé por qué tengo que sustituir la var del forall cuando lo
+        -- elimine, así que lo pego con cut a la fórmula con eso eliminado y
+        -- sigo por ahí
+        let newTerm = case sub of SSEmpty -> TVar x; SSTerm t -> t
+        let gReplaced = subst x newTerm g
+        let (clReplaced, hclReplaced) = hypAndForm $ fromClause $ replaceFirst cl f gReplaced
+
+        proofClReplacedList <- proveClauseWithForallReplaced (hClause, rawClause) newTerm cl f
+        let proofClReplaced = proofAndIList proofClReplacedList
+        -- TODO: forall repetido?
+
+        let proofDNFToContradiction =
+                cut
+                    dnfCl'
+                    proofDnf
+                    hdnfCl'
+                    contradictionProof
+
+        return
+            $ cut
+                clReplaced
+                proofClReplaced
+                hcl'
+                proofDNFToContradiction
+
+{-
+proveClauseWithForallReplaced demuestra la cláusula resultante de eliminar el
+forall
+
+f1 & f2 & (forall x. f(x)) & f3 |- f1 & f2 & f(a) & f3
+-}
+proveClauseWithForallReplaced :: EnvItem -> Term -> Clause -> Form -> Result [Proof]
+proveClauseWithForallReplaced i newTerm (f : fs) forall@(FForall x g) =
+    do
+        proofRest <- proveClauseWithForallReplaced i newTerm fs forall
+        if f == forall
+            then do
+                proofForall <- proofAndEProjection i forall
+                let proofForallReplaced =
+                        PForallE
+                            { var = x
+                            , form = g
+                            , proofForall = proofForall
+                            , termReplace = newTerm
+                            }
+
+                return (proofForallReplaced : proofRest)
+            else do
+                proofF <- proofAndEProjection i f
+                proofRest <- proveClauseWithForallReplaced i newTerm fs forall
+                return (proofF : proofRest)
 
 data SingleSubst = SSEmpty | SSTerm Term
 
-unifySubsts :: SingleSubst -> SingleSubst -> Result SingleSubst
-unifySubsts SSEmpty s = return s
-unifySubsts s SSEmpty = return s
-unifySubsts (SSTerm t1) (SSTerm t2)
-    | t1 == t2 = return SSTerm t1
-    | t1 \= t2 = Left $ printf "substitutions not compatible, left needs %s != %s from right" (show t1) (show t2)
+-- unifySubsts :: SingleSubst -> SingleSubst -> Result SingleSubst
+-- unifySubsts SSEmpty s = return s
+-- unifySubsts s SSEmpty = return s
+-- unifySubsts (SSTerm t1) (SSTerm t2)
+--     | t1 == t2 = return SSTerm t1
+--     | t1 \= t2 = Left $ printf "substitutions not compatible, left needs %s != %s from right" (show t1) (show t2)
 
-solveContradictionUnifying :: EnvItem -> Result (SingleSubst, Proof)
-solveContradictionUnifying (hOr, FOr l r) = do
+solveContradictionUnifying :: SingleSubst -> EnvItem -> Result (SingleSubst, Proof)
+solveContradictionUnifying s (hOr, FOr l r) = do
     let hLeft = hOr ++ " L"
     let hRight = hOr ++ " R"
-    (substLeft, proofLeft) <- solveContradictionUnifying (hLeft, l)
-    (substRight, proofRight) <- solveContradictionUnifying (hRight, r)
-    subst <- unifySubsts substLeft substRight
+    (sL, proofLeft) <- solveContradictionUnifying s (hLeft, l)
+    (sR, proofRight) <- solveContradictionUnifying sL (hRight, r)
     return
-        ( subst
+        ( sR
         , POrE
             { left = l
             , right = r
@@ -798,25 +855,28 @@ solveContradictionUnifying (hOr, FOr l r) = do
             , proofAssumingRight = proofRight
             }
         )
-solveContradictionUnifying i = solveClauseUnifying i
+solveContradictionUnifying s i = solveClauseUnifying s i
 
-solveClauseUnifying :: EnvItem -> Result (SingleSubst, Proof)
-solveClause (h, rawClause) = do
+solveClauseUnifying :: SingleSubst -> EnvItem -> Result (SingleSubst, Proof)
+solveClauseUnifying s (h, rawClause) = do
     clause <- toClause rawClause
-    case findContradictionUnifying clause of
-        Just FFalse -> do
+    case findContradictionUnifying s clause of
+        CNothing -> Left "no false or unifying opposite forms"
+        CFalse -> do
             proofFalse <- proofAndEProjection (h, rawClause) FFalse
             return
-                ( PNamed
+                ( s
+                , PNamed
                     (printf "contradiction of %s by false" (show rawClause))
                     proofFalse
                 )
-        Just f -> do
+        COpposites f fNot s' -> do
             proofF <- proofAndEProjection (h, rawClause) f
-            proofNotF <- proofAndEProjection (h, rawClause) (FNot f)
+            proofNotF <- proofAndEProjection (h, rawClause) fNot
             return
-                ( PNamed
-                    (printf "contradiction of %s by %s and %s" (show rawClause) (show f) (show $ FNot f))
+                ( s'
+                , PNamed
+                    (printf "contradiction of %s by %s {%s} and %s" (show rawClause) (show f) (show fNot) (show s'))
                     ( PNotE
                         { form = f
                         , proofNotForm = proofNotF
@@ -824,25 +884,39 @@ solveClause (h, rawClause) = do
                         }
                     )
                 )
-        -- No contradicting literals or false, try by eliminating foralls
-        Nothing -> trySolveClauseElimForall (h, rawClause)
 
--- Encuentra dos literales opuestos o false. Devuelve una sola fórmula, que es o
--- bien false o una que se contradice con su negación.
-findContradictionUnifying :: Clause -> Maybe (SingleSubst, Form)
-findContradictionUnifying fs
+data ContradictionResult
+    = CNothing
+    | CFalse
+    | COpposites
+        { f :: Form
+        , fNot :: Form -- Necesitamos devolver el fNot por separado (no es FNot f) porque puede tener metavars
+        , s :: SingleSubst
+        }
+
+-- Encuentra dos literales opuestos que unifican o false.
+-- Devuelve
+findContradictionUnifying :: SingleSubst -> Clause -> ContradictionResult
+findContradictionUnifying s fs
     -- Contradicción por false
-    | FFalse `elem` fs = Just (SSEmpty, FFalse)
+    | FFalse `elem` fs = CFalse
     -- No hay por false, buscamos dos opuestas que unifiquen
-    | otherwise = case find unifiesWithOpposite fs of
-        (f : _) -> Just f
-        [] -> Nothing
-  where
-    unifiesWithOpposite f = find (\f' -> isRight $ unify (FNot f) f') fs
+    | otherwise = case find isJust (map (findFirstUnifyingWithOpposite s fs) fs) of
+        Just (Just (f, fNot, s)) -> COpposites f fNot s
+        Nothing -> CNothing
+
+findFirstUnifyingWithOpposite :: SingleSubst -> [Form] -> Form -> Maybe (Form, Form, SingleSubst)
+findFirstUnifyingWithOpposite s (f' : fs) f = case unifyF s (FNot f) f' of
+    Left _ -> findFirstUnifyingWithOpposite s fs f
+    Right s -> Just (f, f', s)
+findFirstUnifyingWithOpposite _ [] _ = Nothing
+
+unifyF :: SingleSubst -> Form -> Form -> Result SingleSubst
+unifyF = undefined
 
 -- TODO: resolver bien
-unify :: SingleSubst -> Term -> Term -> Result SingleSubst
-unify = undefined
+unifyT :: SingleSubst -> Term -> Term -> Result SingleSubst
+unifyT = undefined
 
 replaceFirst :: (Eq a) => [a] -> a -> a -> [a]
 replaceFirst (x : xs) old new

@@ -275,12 +275,13 @@ data Proof
         { proofForm :: Proof -- de A
         }
     | PForallE
-        VarId -- x
-        Form -- A (sin sust)
-        Proof -- de V x . A
-        Term -- t
-        -- E x . A
-    | PExistsI
+        { var :: VarId -- x
+        , form :: Form -- A (sin sust)
+        , proofForall :: Proof -- de V x . A
+        , termReplace :: Term -- t
+        }
+    | -- E x . A
+      PExistsI
         { inst :: Term -- t
         , proofFormWithInst :: Proof -- de A con x reemplazado por t
         }
