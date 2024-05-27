@@ -58,11 +58,13 @@ import ND (
     Form (..),
     HypId,
     Proof (..),
-    Term (TMetavar, TVar),
+    Term (TFun, TMetavar, TVar),
     dneg,
     fv,
     isForall,
  )
+
+import Unifier (SingleSubst (..), unifyF, unifyT)
 
 import NDChecker (CheckResult (CheckOK), check, checkResultIsErr, subst)
 
@@ -828,15 +830,6 @@ proveClauseWithForallReplaced i newTerm (f : fs) forall@(FForall x g) =
                 proofRest <- proveClauseWithForallReplaced i newTerm fs forall
                 return (proofF : proofRest)
 
-data SingleSubst = SSEmpty | SSTerm Term
-
--- unifySubsts :: SingleSubst -> SingleSubst -> Result SingleSubst
--- unifySubsts SSEmpty s = return s
--- unifySubsts s SSEmpty = return s
--- unifySubsts (SSTerm t1) (SSTerm t2)
---     | t1 == t2 = return SSTerm t1
---     | t1 \= t2 = Left $ printf "substitutions not compatible, left needs %s != %s from right" (show t1) (show t2)
-
 solveContradictionUnifying :: SingleSubst -> EnvItem -> Result (SingleSubst, Proof)
 solveContradictionUnifying s (hOr, FOr l r) = do
     let hLeft = hOr ++ " L"
@@ -910,13 +903,6 @@ findFirstUnifyingWithOpposite s (f' : fs) f = case unifyF s (FNot f) f' of
     Left _ -> findFirstUnifyingWithOpposite s fs f
     Right s -> Just (f, f', s)
 findFirstUnifyingWithOpposite _ [] _ = Nothing
-
-unifyF :: SingleSubst -> Form -> Form -> Result SingleSubst
-unifyF = undefined
-
--- TODO: resolver bien
-unifyT :: SingleSubst -> Term -> Term -> Result SingleSubst
-unifyT = undefined
 
 replaceFirst :: (Eq a) => [a] -> a -> a -> [a]
 replaceFirst (x : xs) old new

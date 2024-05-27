@@ -70,6 +70,10 @@ import Test.HUnit (
  )
 
 import Data.Set qualified as Set
+import Unifier (SingleSubst (..), unifyF)
+
+main :: IO Counts
+main = do runTestTT testND
 
 testND :: Test
 testND =
@@ -80,6 +84,7 @@ testND =
         , "subst" ~: testSubst
         , "fv" ~: testFV
         , "alphaEq" ~: testAlphaEq
+        , "unify" ~: testUnify
         ]
 
 exampleEnv :: Env
@@ -116,6 +121,12 @@ testFV =
 
 testTerm :: Term
 testTerm = TFun "f" [TVar "y"]
+
+testUnify :: Test
+testUnify =
+    test
+        [ "preds" ~: unifyF SSEmpty (FPred "p" [TMetavar]) (FPred "p" [TVar "x"]) ~?= Right (SSTerm (TVar "x"))
+        ]
 
 testAlphaEq :: Test
 testAlphaEq =
