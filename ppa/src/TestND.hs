@@ -70,7 +70,7 @@ import Test.HUnit (
  )
 
 import Data.Set qualified as Set
-import Unifier (SingleSubst (..), unifyF)
+import Unifier (SingleSubst (..), unifyF, unifyT)
 
 main :: IO Counts
 main = do runTestTT testND
@@ -125,7 +125,66 @@ testTerm = TFun "f" [TVar "y"]
 testUnify :: Test
 testUnify =
     test
-        [ "preds" ~: unifyF SSEmpty (FPred "p" [TMetavar]) (FPred "p" [TVar "x"]) ~?= Right (SSTerm (TVar "x"))
+        [ "terms"
+            ~: test
+                [ "equal vars"
+                    ~: unifyT SSEmpty (TVar "x") (TVar "x")
+                    ~?= Right SSEmpty
+                , "diff vars"
+                    ~: unifyT SSEmpty (TVar "x") (TVar "y")
+                    ~?= Left "different var names: x /= y"
+                , "diff fun names"
+                    ~: unifyT SSEmpty (TFun "f" []) (TFun "g" [])
+                    ~?= Left "different function names: f /= g"
+                , "composed error"
+                    ~: unifyT SSEmpty (TFun "g" [TVar "x"]) (TFun "g" [TVar "y"])
+                    ~?= Left "different var names: x /= y"
+                , "unification OK"
+                    ~: unifyT
+                        SSEmpty
+                        (TFun "g" [TVar "x", TMetavar, TVar "y"])
+                        (TFun "g" [TVar "x", TFun "w" [TVar "z"], TVar "y"])
+                    ~?= Right (SSTerm (TFun "w" [TVar "z"]))
+                ]
+        , "complex form"
+            ~: unifyF
+                SSEmpty
+                ( FAnd
+                    (FOr (predVar "p" "x") (FOr FTrue FFalse))
+                    ( FImp
+                        (FNot $ FPred "p" [TVar "x", TVar "g"])
+                        ( FAnd
+                            (FForall "x" (FPred "p" [TMetavar])) -- Puede capturar
+                            (FExists "y" (predVar "q" "y"))
+                        )
+                    )
+                )
+                ( FAnd
+                    (FOr (FPred "p" [TMetavar]) (FOr FTrue FFalse))
+                    ( FImp
+                        (FNot $ FPred "p" [TMetavar, TVar "g"])
+                        ( FAnd
+                            (FForall "x" (predVar "p" "x"))
+                            (FExists "y" (predVar "q" "y"))
+                        )
+                    )
+                )
+            ~?= Right (SSTerm (TVar "x"))
+        , "error different forms"
+            ~: unifyF
+                SSEmpty
+                (FPred "p" [])
+                FTrue
+            ~?= Left "different form types: p /= true"
+        , "error don't unify"
+            ~: unifyF
+                SSEmpty
+                (FAnd (predVar "f" "x") (FPred "g" [TMetavar]))
+                (FAnd (FPred "f" [TMetavar]) (predVar "g" "y"))
+            ~?= Left "different var names: x /= y"
+        , "preds"
+            ~: unifyF SSEmpty (FPred "p" [TMetavar]) (FPred "p" [TVar "x"])
+            ~?= Right (SSTerm (TVar "x"))
         ]
 
 testAlphaEq :: Test

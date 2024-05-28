@@ -42,7 +42,7 @@ unifyF s f0 g0 = case (f0, g0) of
     (FExists x f1, FExists y f2)
         | x == y -> unifyF s f1 f2
         | otherwise -> Left $ printf "different vars (%s /= %s)" x y
-    (f0, g0) -> Left $ printf "different form types: %s /= %s" (show f0) (show f0)
+    (f0, g0) -> Left $ printf "different form types: %s /= %s" (show f0) (show g0)
 
 -- TODO: resolver bien
 unifyT :: SingleSubst -> Term -> Term -> Result SingleSubst
@@ -65,7 +65,7 @@ unifyT subst t0 s0 =
                 | x1 == x2 -> Right subst
                 | otherwise -> Left $ printf "different var names: %s /= %s" x1 x2
             (TFun f1 ts1, TFun f2 ts2)
-                | f1 /= f2 -> Left $ printf "different predicate name: %s /= %s" f1
+                | f1 /= f2 -> Left $ printf "different function names: %s /= %s" f1 f2
                 | otherwise -> unifyTs subst ts1 ts2
             (t, s) -> Left $ printf "different term types: %s /= %s" (show t) (show s)
 

@@ -810,12 +810,12 @@ forall
 f1 & f2 & (forall x. f(x)) & f3 |- f1 & f2 & f(a) & f3
 -}
 proveClauseWithForallReplaced :: EnvItem -> Term -> Clause -> Form -> Result [Proof]
-proveClauseWithForallReplaced i newTerm (f : fs) forall@(FForall x g) =
+proveClauseWithForallReplaced i newTerm (f : fs) fForall@(FForall x g) =
     do
-        proofRest <- proveClauseWithForallReplaced i newTerm fs forall
-        if f == forall
+        proofRest <- proveClauseWithForallReplaced i newTerm fs fForall
+        if f == fForall
             then do
-                proofForall <- proofAndEProjection i forall
+                proofForall <- proofAndEProjection i fForall
                 let proofForallReplaced =
                         PForallE
                             { var = x
@@ -827,7 +827,7 @@ proveClauseWithForallReplaced i newTerm (f : fs) forall@(FForall x g) =
                 return (proofForallReplaced : proofRest)
             else do
                 proofF <- proofAndEProjection i f
-                proofRest <- proveClauseWithForallReplaced i newTerm fs forall
+                proofRest <- proveClauseWithForallReplaced i newTerm fs fForall
                 return (proofF : proofRest)
 
 solveContradictionUnifying :: SingleSubst -> EnvItem -> Result (SingleSubst, Proof)
