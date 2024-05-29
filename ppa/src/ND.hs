@@ -18,6 +18,10 @@ module ND (
     predVar,
     dneg,
     isForall,
+    varN,
+    tFun0,
+    tFun1,
+    fPred1,
 ) where
 
 import Data.Map qualified as Map
@@ -37,7 +41,16 @@ propVar :: PredId -> Form
 propVar pid = FPred pid []
 
 predVar :: PredId -> VarId -> Form
-predVar p v = FPred p [TVar v]
+predVar p v = fPred1 p (TVar v)
+
+fPred1 :: PredId -> Term -> Form
+fPred1 p t = FPred p [t]
+
+tFun0 :: FunId -> Term
+tFun0 f = TFun f []
+
+tFun1 :: FunId -> Term -> Term
+tFun1 f t = TFun f [t]
 
 -- Tipos de identificadores
 type VarId = String

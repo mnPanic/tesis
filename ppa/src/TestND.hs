@@ -9,11 +9,14 @@ import ND (
     Term (..),
     VarId,
     dneg,
+    fPred1,
     fv,
     fvE,
     get,
     predVar,
     propVar,
+    tFun0,
+    tFun1,
  )
 
 import Certifier (
@@ -128,22 +131,22 @@ testUnify =
         [ "terms"
             ~: test
                 [ "equal vars"
-                    ~: unifyT SSEmpty (TVar "x") (TVar "x")
+                    ~: unifyF SSEmpty (fPred1 "p" (TVar "x")) (fPred1 "p" (TVar "x"))
                     ~?= Right SSEmpty
                 , "diff vars"
-                    ~: unifyT SSEmpty (TVar "x") (TVar "y")
+                    ~: unifyF SSEmpty (fPred1 "p" (TVar "x")) (fPred1 "p" (TVar "y"))
                     ~?= Left "different var names: x /= y"
                 , "diff fun names"
-                    ~: unifyT SSEmpty (TFun "f" []) (TFun "g" [])
+                    ~: unifyF SSEmpty (fPred1 "p" (tFun0 "f")) (fPred1 "p" (tFun0 "g"))
                     ~?= Left "different function names: f /= g"
                 , "composed error"
-                    ~: unifyT SSEmpty (TFun "g" [TVar "x"]) (TFun "g" [TVar "y"])
+                    ~: unifyF SSEmpty (fPred1 "p" (TFun "g" [TVar "x"])) (fPred1 "p" (tFun1 "g" (TVar "y")))
                     ~?= Left "different var names: x /= y"
                 , "unification OK"
-                    ~: unifyT
+                    ~: unifyF
                         SSEmpty
-                        (TFun "g" [TVar "x", TMetavar, TVar "y"])
-                        (TFun "g" [TVar "x", TFun "w" [TVar "z"], TVar "y"])
+                        (FPred "p" [TFun "g" [TVar "x", TMetavar, TVar "y"]])
+                        (FPred "p" [TFun "g" [TVar "x", TFun "w" [TVar "z"], TVar "y"]])
                     ~?= Right (SSTerm (TFun "w" [TVar "z"]))
                 ]
         , "complex form"
@@ -185,6 +188,33 @@ testUnify =
         , "preds"
             ~: unifyF SSEmpty (FPred "p" [TMetavar]) (FPred "p" [TVar "x"])
             ~?= Right (SSTerm (TVar "x"))
+        , "alpha eq"
+            ~: test
+                [ "ok"
+                    ~: unifyF
+                        SSEmpty
+                        (FForall "z" (FAnd (fPred1 "p" (TVar "z")) (fPred1 "g" TMetavar)))
+                        (FForall "y" (FAnd (fPred1 "p" (TVar "y")) (fPred1 "g" (tFun0 "a"))))
+                    ~?= Right (SSTerm (tFun0 "a"))
+                , "err capture simple single var"
+                    ~: unifyF
+                        SSEmpty
+                        (FForall "x" (fPred1 "p" TMetavar))
+                        (FForall "y" (predVar "p" "y"))
+                    ~?= Left "Rename check: 'y' has free variables that were renamed for alpha equivalence"
+                , "err capture func"
+                    ~: unifyF
+                        SSEmpty
+                        (FForall "x" (fPred1 "p" TMetavar))
+                        (FForall "y" (fPred1 "p" (tFun1 "f" (TVar "y"))))
+                    ~?= Left "Rename check: 'f(y)' has free variables that were renamed for alpha equivalence"
+                , "err capture full"
+                    ~: unifyF
+                        SSEmpty
+                        (FForall "y" (FAnd (FForall "x" (fPred1 "p" TMetavar)) (predVar "g" "x")))
+                        (FForall "x" (FAnd (FForall "x" (fPred1 "p" (TVar "x"))) (fPred1 "g" TMetavar)))
+                    ~?= Left "Rename check: 'x' has free variables that were renamed for alpha equivalence"
+                ]
         ]
 
 testAlphaEq :: Test
