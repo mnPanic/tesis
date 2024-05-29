@@ -1,3 +1,11 @@
+axiom a: forall X. f(X)
+
+theorem t: f(n)
+proof
+    thus f(n) by a
+end
+
+/*
 axiom all_rock_or_cumbia: forall P. rock(P) | cumbia(P)
 axiom exists_not_cumbia: exists P. ~cumbia(P)
 
@@ -7,3 +15,4 @@ proof
     consider Y st ~cumbia(Y) by exists_not_cumbia
     thus rock(y) by all_rock_or_cumbia, -
 end
+*/

@@ -69,17 +69,20 @@ data Term
 instance Show Term where
     show (TVar x) = x
     show (TFun f ts) = f ++ showArgs ts
+    show TMetavar = "?"
 
 -- Free variables de un término
 fvTerm :: Term -> Set.Set VarId
 fvTerm (TVar x) = Set.singleton x
 fvTerm (TFun _ ts) = foldr (Set.union . fvTerm) Set.empty ts
+fvTerm TMetavar = Set.empty
 
 instance Eq Term where
     (==) = alphaEqTerm Map.empty Map.empty
 
 alphaEqTerm :: Subst -> Subst -> Term -> Term -> Bool
 alphaEqTerm m1 m2 t u = case (t, u) of
+    (TMetavar, TMetavar) -> True
     (TVar x, TVar y)
         | x == y -> True
         | otherwise -> case Map.lookup x m1 of

@@ -72,7 +72,7 @@ import Data.List (find, intercalate, nub, partition, (\\))
 import Data.Maybe (fromJust, isJust, isNothing)
 import Text.Printf (printf)
 
-import Data.Either (fromLeft, fromRight, isLeft, isRight)
+import Data.Either (fromLeft, fromRight, isLeft, isRight, lefts)
 import Debug.Trace
 
 -- En un contexto cada demostración de teorema es válida en el contexto que
@@ -749,15 +749,18 @@ trySolveClauseElimForall (h, rawClause) =
         cl <- toClause rawClause
         let foralls = filter isForall cl
         if null foralls
-            then Left "contains no foralls" -- TODO mejor msj
+            then Left "form contains no foralls to eliminate"
             else do
-                let allProofs = map (solveClauseElimForall (h, rawClause)) foralls
-                case find isRight allProofs of
-                    Nothing -> Left "no foralls useful for contradictions" -- TODO msj
-                    Just (Right proof) -> Right proof
+                let allProofs = zip foralls (map (solveClauseElimForall (h, rawClause)) foralls)
+                case find (isRight . snd) allProofs of
+                    Nothing ->
+                        let
+                            errs = map (fromLeft "" . snd) allProofs
+                            errMsgs = intercalate "\n" errs
+                         in
+                            Left ("no foralls useful for contradictions:\n" ++ errMsgs)
+                    Just (_, Right proof) -> Right proof
 
--- TODO: como pegar las demos, forallE necesita el termino a reemplazar (con lo
--- que unificas, como se propaga?)
 {- solveClauseElimForall refuta una cláusula mediante la eliminación de un
 forall.
 
@@ -768,7 +771,13 @@ forall.
 
 -}
 solveClauseElimForall :: EnvItem -> Form -> Result Proof
-solveClauseElimForall (hClause, rawClause) f@(FForall x g) =
+solveClauseElimForall i f =
+    wrapR
+        (printf "try eliminating from '%s', '%s'" (show i) (show f))
+        (solveClauseElimForall' i f)
+
+solveClauseElimForall' :: EnvItem -> Form -> Result Proof
+solveClauseElimForall' (hClause, rawClause) f@(FForall x g) =
     do
         cl <- toClause rawClause
         let g' = subst x TMetavar g
@@ -807,7 +816,9 @@ solveClauseElimForall (hClause, rawClause) f@(FForall x g) =
 proveClauseWithForallReplaced demuestra la cláusula resultante de eliminar el
 forall
 
-f1 & f2 & (forall x. f(x)) & f3 |- f1 & f2 & f(a) & f3
+Por ejemplo,
+
+    f1 & f2 & (forall x. f(x)) & f3 |- f1 & f2 & f(a) & f3
 -}
 proveClauseWithForallReplaced :: EnvItem -> Term -> Clause -> Form -> Result [Proof]
 proveClauseWithForallReplaced i newTerm (f : fs) fForall@(FForall x g) =
@@ -888,7 +899,6 @@ data ContradictionResult
         }
 
 -- Encuentra dos literales opuestos que unifican o false.
--- Devuelve
 findContradictionUnifying :: SingleSubst -> Clause -> ContradictionResult
 findContradictionUnifying s fs
     -- Contradicción por false
