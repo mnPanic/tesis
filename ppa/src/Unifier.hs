@@ -6,6 +6,7 @@ module Unifier (
 
 import ND (
     Form (..),
+    Subst,
     Term (..),
  )
 
@@ -13,14 +14,15 @@ import NDProofs (
     Result (..),
  )
 
+import Data.Map qualified as Map
 import Text.Printf (printf)
 
+-- Sustitución de metavariables, usado para unificación (unifyF, unifyT)
 data SingleSubst = SSEmpty | SSTerm Term
     deriving (Show, Eq)
 
--- TODO: Considerar alpha igualdad para unificación.
-unifyF :: SingleSubst -> Form -> Form -> Result SingleSubst
-unifyF s f0 g0 = case (f0, g0) of
+unifyF :: Subst -> Subst -> SingleSubst -> Form -> Form -> Result SingleSubst
+unifyF m1 m2 s f0 g0 = case (f0, g0) of
     (FTrue, FTrue) -> return SSEmpty
     (FFalse, FFalse) -> return SSEmpty
     (FPred p1 ts1, FPred p2 ts2)
@@ -44,9 +46,8 @@ unifyF s f0 g0 = case (f0, g0) of
         | otherwise -> Left $ printf "different vars (%s /= %s)" x y
     (f0, g0) -> Left $ printf "different form types: %s /= %s" (show f0) (show g0)
 
--- TODO: resolver bien
-unifyT :: SingleSubst -> Term -> Term -> Result SingleSubst
-unifyT subst t0 s0 =
+unifyT :: Subst -> Subst -> SingleSubst -> Term -> Term -> Result SingleSubst
+unifyT r1 r2 subst t0 s0 =
     let t = representative subst t0
         s = representative subst s0
      in case (t, s) of
@@ -57,13 +58,21 @@ unifyT subst t0 s0 =
             -- que t, acá estaría comparando contra eso y no una metavar.
             (TMetavar, t)
                 | occurs t -> Left $ printf "Occurs check: %s has metavars, can't {?\\%s}" (show t) (show t)
+                | occursInRename r2 t -> Left $ printf "Rename check: '%s' has free variables that were renamed for alpha equivalence (%s)" (show t) (show r2)
                 | otherwise -> Right $ SSTerm t
             (t, TMetavar)
                 | occurs t -> Left $ printf "Occurs check: %s has metavars, can't {?\\%s}" (show t) (show t)
+                | occursInRename r1 t -> Left $ printf "Rename check: '%s' has free variables that were renamed for alpha equivalence (%s)" (show t) (show r1)
                 | otherwise -> Right $ SSTerm t
             (TVar x1, TVar x2)
                 | x1 == x2 -> Right subst
-                | otherwise -> Left $ printf "different var names: %s /= %s" x1 x2
+                | otherwise -> case Map.lookup x1 r1 of
+                    Nothing -> Left $ printf "different var names: %s /= %s" x1 x2
+                    Just x1' -> case Map.lookup x2 r2 of
+                        Nothing -> Left $ printf "different var names: %s (%s) /= %s" x1 x1' x2
+                        Just x2'
+                            | x1' == x2' -> Right subst
+                            | otherwise -> Left $ printf "different var names: %s (%s) /= %s (%s)" x1 x1' x2 x2'
             (TFun f1 ts1, TFun f2 ts2)
                 | f1 /= f2 -> Left $ printf "different function names: %s /= %s" f1 f2
                 | otherwise -> unifyTs subst ts1 ts2
@@ -76,6 +85,19 @@ occurs t = case t of
     TMetavar -> True
     TVar _ -> False
     TFun _ ts -> any occurs ts
+
+{- Chequea que el término al cual instanciar una metavar no tenga variables
+libres que aparezcan en su dominio de renombre.
+Esto sirve para evitar instanciar metavars en variables ligadas fuera del scope
+del cuantificador, por ej.
+
+forall y. (forall x. ?) & x =.=
+forall x. (forall x. x) & ?
+
+si se unificara ?=x, entonces se ligaría erróneamente en la 2da fórmula
+-}
+occursInRename :: Subst -> Term -> Bool
+occursInRename r t = any (elem keys r) (fvTerm t)
 
 unifyTs :: SingleSubst -> [Term] -> [Term] -> Result SingleSubst
 unifyTs subst [] [] = Right subst
