@@ -21,7 +21,11 @@ import Text.Printf (printf)
 
 -- Sustitución de metavariables, usado para unificación (unifyF, unifyT)
 data SingleSubst = SSEmpty | SSTerm Term
-    deriving (Show, Eq)
+    deriving (Eq)
+
+instance Show SingleSubst where
+    show SSEmpty = "{}"
+    show (SSTerm t) = printf "{%s = %s}" (show TMetavar) (show t)
 
 unifyF :: SingleSubst -> Form -> Form -> Result SingleSubst
 unifyF = unifyF' 0 Map.empty Map.empty

@@ -783,9 +783,10 @@ solveClauseElimForall' (hClause, rawClause) f@(FForall x g) =
         let g' = subst x TMetavar g
         let (cl', hcl') = hypAndForm $ fromClause $ replaceFirst cl f g'
 
-        let (dnfCl', proofDnf) = dnf (hcl', cl')
+        -- TODO: Simplificar esto para que no haga demostraciones
+        let (dnfCl', _) = dnf (hcl', cl')
         let hdnfCl' = hypForm dnfCl'
-        (sub, contradictionProof) <- solveContradictionUnifying SSEmpty (hdnfCl', dnfCl')
+        (sub, _) <- solveContradictionUnifying SSEmpty (hdnfCl', dnfCl')
 
         -- Ya sé por qué tengo que sustituir la var del forall cuando lo
         -- elimine, así que lo pego con cut a la fórmula con eso eliminado y
@@ -794,23 +795,33 @@ solveClauseElimForall' (hClause, rawClause) f@(FForall x g) =
         let gReplaced = subst x newTerm g
         let (clReplaced, hclReplaced) = hypAndForm $ fromClause $ replaceFirst cl f gReplaced
 
+        contradictionProof <- solveContradiction (hclReplaced, clReplaced)
+
         proofClReplacedList <- proveClauseWithForallReplaced (hClause, rawClause) newTerm cl f
         let proofClReplaced = proofAndIList proofClReplacedList
         -- TODO: forall repetido?
 
+        let (dnfClReplaced, proofDnfClReplaced) = dnf (hclReplaced, clReplaced)
+        let hdnfClReplaced = hypForm dnfCl'
+
         let proofDNFToContradiction =
-                cut
-                    dnfCl'
-                    proofDnf
-                    hdnfCl'
-                    contradictionProof
+                PNamed "dnf to contradiction"
+                    $ cut
+                        dnfClReplaced
+                        proofDnfClReplaced
+                        hdnfClReplaced
+                        contradictionProof
 
         return
-            $ cut
-                clReplaced
-                proofClReplaced
-                hcl'
-                proofDNFToContradiction
+            ( PNamed
+                "forall elimination to dnf"
+                ( cut
+                    clReplaced
+                    proofClReplaced
+                    hclReplaced
+                    proofDNFToContradiction
+                )
+            )
 
 {-
 proveClauseWithForallReplaced demuestra la cláusula resultante de eliminar el
@@ -821,12 +832,13 @@ Por ejemplo,
     f1 & f2 & (forall x. f(x)) & f3 |- f1 & f2 & f(a) & f3
 -}
 proveClauseWithForallReplaced :: EnvItem -> Term -> Clause -> Form -> Result [Proof]
-proveClauseWithForallReplaced i newTerm (f : fs) fForall@(FForall x g) =
+proveClauseWithForallReplaced _ _ [] _ = Right []
+proveClauseWithForallReplaced clause newTerm (f : fs) fForall@(FForall x g) =
     do
-        proofRest <- proveClauseWithForallReplaced i newTerm fs fForall
+        proofRest <- proveClauseWithForallReplaced clause newTerm fs fForall
         if f == fForall
             then do
-                proofForall <- proofAndEProjection i fForall
+                proofForall <- proofAndEProjection clause fForall
                 let proofForallReplaced =
                         PForallE
                             { var = x
@@ -837,8 +849,7 @@ proveClauseWithForallReplaced i newTerm (f : fs) fForall@(FForall x g) =
 
                 return (proofForallReplaced : proofRest)
             else do
-                proofF <- proofAndEProjection i f
-                proofRest <- proveClauseWithForallReplaced i newTerm fs fForall
+                proofF <- proofAndEProjection clause f
                 return (proofF : proofRest)
 
 solveContradictionUnifying :: SingleSubst -> EnvItem -> Result (SingleSubst, Proof)
@@ -880,7 +891,7 @@ solveClauseUnifying s (h, rawClause) = do
             return
                 ( s'
                 , PNamed
-                    (printf "contradiction of %s by %s {%s} and %s" (show rawClause) (show f) (show fNot) (show s'))
+                    (printf "contradiction of %s by %s and %s (with %s)" (show rawClause) (show f) (show fNot) (show s'))
                     ( PNotE
                         { form = f
                         , proofNotForm = proofNotF
