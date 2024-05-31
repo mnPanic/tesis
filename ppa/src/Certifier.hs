@@ -773,36 +773,31 @@ forall.
 solveClauseElimForall :: EnvItem -> Form -> Result Proof
 solveClauseElimForall i f =
     wrapR
-        (printf "try eliminating from '%s', '%s'" (show i) (show f))
+        (printf "try eliminating '%s' from '%s'" (show f) (show i))
         (solveClauseElimForall' i f)
 
 solveClauseElimForall' :: EnvItem -> Form -> Result Proof
 solveClauseElimForall' (hClause, rawClause) f@(FForall x g) =
     do
+        -- Primero encontramos por qué reemplazar x para que sea refutable
         cl <- toClause rawClause
-        let g' = subst x TMetavar g
-        let (cl', hcl') = hypAndForm $ fromClause $ replaceFirst cl f g'
-
-        -- TODO: Simplificar esto para que no haga demostraciones
-        let (dnfCl', _) = dnf (hcl', cl')
-        let hdnfCl' = hypForm dnfCl'
-        (sub, _) <- solveContradictionUnifying SSEmpty (hdnfCl', dnfCl')
+        sub <- findSubstToSolveContradiction cl f
+        let x' = case sub of SSEmpty -> TVar x; SSTerm t -> t
 
         -- Ya sé por qué tengo que sustituir la var del forall cuando lo
         -- elimine, así que lo pego con cut a la fórmula con eso eliminado y
         -- sigo por ahí
-        let newTerm = case sub of SSEmpty -> TVar x; SSTerm t -> t
-        let gReplaced = subst x newTerm g
+        let gReplaced = subst x x' g
         let (clReplaced, hclReplaced) = hypAndForm $ fromClause $ replaceFirst cl f gReplaced
 
-        contradictionProof <- solveContradiction (hclReplaced, clReplaced)
+        let (dnfClReplaced, proofDnfClReplaced) = dnf (hclReplaced, clReplaced)
+        let hdnfClReplaced = hypForm dnfClReplaced
 
-        proofClReplacedList <- proveClauseWithForallReplaced (hClause, rawClause) newTerm cl f
+        contradictionProof <- solveContradiction (hdnfClReplaced, dnfClReplaced)
+
+        proofClReplacedList <- proveClauseWithForallReplaced (hClause, rawClause) x' cl f
         let proofClReplaced = proofAndIList proofClReplacedList
         -- TODO: forall repetido?
-
-        let (dnfClReplaced, proofDnfClReplaced) = dnf (hclReplaced, clReplaced)
-        let hdnfClReplaced = hypForm dnfCl'
 
         let proofDNFToContradiction =
                 PNamed "dnf to contradiction"
@@ -824,7 +819,7 @@ solveClauseElimForall' (hClause, rawClause) f@(FForall x g) =
             )
 
 {-
-proveClauseWithForallReplaced demuestra la cláusula resultante de eliminar el
+proveClauseWithForallReplaced demuestra la cláusula resultante de eliminar un
 forall
 
 Por ejemplo,
@@ -852,72 +847,53 @@ proveClauseWithForallReplaced clause newTerm (f : fs) fForall@(FForall x g) =
                 proofF <- proofAndEProjection clause f
                 return (proofF : proofRest)
 
-solveContradictionUnifying :: SingleSubst -> EnvItem -> Result (SingleSubst, Proof)
-solveContradictionUnifying s (hOr, FOr l r) = do
-    let hLeft = hOr ++ " L"
-    let hRight = hOr ++ " R"
-    (sL, proofLeft) <- solveContradictionUnifying s (hLeft, l)
-    (sR, proofRight) <- solveContradictionUnifying sL (hRight, r)
-    return
-        ( sR
-        , POrE
-            { left = l
-            , right = r
-            , proofOr = PAx hOr
-            , hypLeft = hLeft
-            , proofAssumingLeft = proofLeft
-            , hypRight = hRight
-            , proofAssumingRight = proofRight
-            }
-        )
+{-
+Como el contenido de forall pegado con el resto de la cláusula puede no
+resultar en una fórmula en DNF, hay que re-convertir
+
+Por ej.
+    (forall x . a | b) & c
+    --> (a|b) & c
+
+que no está en dnf
+
+    (dnf) (a & c) | (b & c)
+-}
+findSubstToSolveContradiction :: Clause -> Form -> Result SingleSubst
+findSubstToSolveContradiction cl f@(FForall x g) = do
+    -- Reemplazo la variable por una metavariable así unificando encontramos la
+    -- sustitución que permite refutarla (en caso de que exista)
+    let gMeta = subst x TMetavar g
+    let clMeta = fromClause $ replaceFirst cl f gMeta
+
+    -- Convierto la nueva cláusula a DNF
+    let (dnfClMeta, _) = dnf ("h", clMeta) -- No importa la demo
+    wrapR 
+        (printf "solving clause with metavar in dnf '%s'" (show dnfClMeta))
+        (solveContradictionUnifying SSEmpty dnfClMeta)
+
+-- solveContradictionUnifying encuentra la sustitución que hace a la fórmula
+-- refutable (en caso de que exista).
+-- Asume que la fórmula está en DNF.
+solveContradictionUnifying :: SingleSubst -> Form -> Result SingleSubst
+solveContradictionUnifying s (FOr l r) = do
+    sL <- solveContradictionUnifying s l
+    solveContradictionUnifying sL r
+
 solveContradictionUnifying s i = solveClauseUnifying s i
 
-solveClauseUnifying :: SingleSubst -> EnvItem -> Result (SingleSubst, Proof)
-solveClauseUnifying s (h, rawClause) = do
+-- Encuentra la sustitución que permite una contradicción: dos literales
+-- opuestos que unifican o false.
+solveClauseUnifying :: SingleSubst -> Form -> Result SingleSubst
+solveClauseUnifying s rawClause = do
     clause <- toClause rawClause
-    case findContradictionUnifying s clause of
-        CNothing -> Left "no false or unifying opposite forms"
-        CFalse -> do
-            proofFalse <- proofAndEProjection (h, rawClause) FFalse
-            return
-                ( s
-                , PNamed
-                    (printf "contradiction of %s by false" (show rawClause))
-                    proofFalse
-                )
-        COpposites f fNot s' -> do
-            proofF <- proofAndEProjection (h, rawClause) f
-            proofNotF <- proofAndEProjection (h, rawClause) fNot
-            return
-                ( s'
-                , PNamed
-                    (printf "contradiction of %s by %s and %s (with %s)" (show rawClause) (show f) (show fNot) (show s'))
-                    ( PNotE
-                        { form = f
-                        , proofNotForm = proofNotF
-                        , proofForm = proofF
-                        }
-                    )
-                )
-
-data ContradictionResult
-    = CNothing
-    | CFalse
-    | COpposites
-        { f :: Form
-        , fNot :: Form -- Necesitamos devolver el fNot por separado (no es FNot f) porque puede tener metavars
-        , s :: SingleSubst
-        }
-
--- Encuentra dos literales opuestos que unifican o false.
-findContradictionUnifying :: SingleSubst -> Clause -> ContradictionResult
-findContradictionUnifying s fs
     -- Contradicción por false
-    | FFalse `elem` fs = CFalse
+    if FFalse `elem` clause then return SSEmpty
     -- No hay por false, buscamos dos opuestas que unifiquen
-    | otherwise = case find isJust (map (findFirstUnifyingWithOpposite s fs) fs) of
-        Just (Just (f, fNot, s)) -> COpposites f fNot s
-        Nothing -> CNothing
+    else case find isJust (map (findFirstUnifyingWithOpposite s clause) clause) of
+        Just (Just (f, fNot, s)) -> return s
+        Nothing -> Left "no opposites that unify"
+
 
 findFirstUnifyingWithOpposite :: SingleSubst -> [Form] -> Form -> Maybe (Form, Form, SingleSubst)
 findFirstUnifyingWithOpposite s (f' : fs) f = case unifyF s (FNot f) f' of

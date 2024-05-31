@@ -171,7 +171,7 @@ El by es opcional en ambos. En caso de no especificarlo, debe ser una tautologí
   
   El comando `consider x st h : f by ...` agrega f al contexto para el resto de la demostración siempre y cuando x no aparezca libre en la tesis o el contexto hasta el momento.
 
-  El `by` debe jusitificar `exists x . f`.
+  El `by` debe justificar `exists x . f`.
 
 ### Otros comandos
 
