@@ -309,6 +309,14 @@ testCommands =
                     thus ~(a | b) by "c"
                 end
         |]
+        , "LEM"
+            ~: testProgram
+                [r|
+                theorem lem: p | ~p
+                proof
+                    thus p | ~p
+                end
+                |]
         , "cases"
             ~: test
                 [ "2 cases"
@@ -341,6 +349,22 @@ testCommands =
                                     hence a by d_imp_a
                             end
                         end
+                    |]
+                , "optional by"
+                    ~: testProgram
+                        [r|
+                    axiom a1: p -> q
+                    axiom a2: ~p -> q
+
+                    theorem always_q: q
+                    proof
+                        cases
+                        case p
+                            thus q by a1, -
+                        case ~p
+                            thus q by a2, -
+                        end
+                    end
                     |]
                 ]
         , "take"

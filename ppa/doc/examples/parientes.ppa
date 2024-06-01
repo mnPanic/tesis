@@ -1,0 +1,12 @@
+// Parientes
+
+axiom todos_tienen_padre: forall P. exists Q. padre(P, Q)
+axiom abuelo_def:
+    forall P. forall Q. forall R.
+        (padre(P, Q) & padre(Q, R)) -> abuelo(P, R)
+
+theorem todos_tienen_abuelo: forall A. exists B. abuelo(A, B)
+proof
+    let A := A
+    have 
+end

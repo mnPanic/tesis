@@ -1,0 +1,19 @@
+// https://en.wikipedia.org/wiki/Drinker_paradox
+
+theorem drinkers_paradox: exists X. (drinks(X) -> (forall Y. drinks(Y)))
+proof
+    cases
+        case h: forall Y. drinks(Y)
+            take X := t
+            suppose -:drinks(t)
+            thus forall Y. drinks(Y) by h
+
+        case ~(forall Y. drinks(Y))
+            have -: exists Y. ~drinks(Y) by - // No se puede demostrar
+            consider Y st h: ~drinks(Y) by -
+            take X := Y
+
+            equivalently ~drinks(Y) | (forall Y. drinks(Y))
+            thus ~drinks(Y) | (forall Y. drinks(Y)) by h
+    end
+end

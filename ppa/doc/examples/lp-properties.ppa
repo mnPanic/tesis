@@ -1,0 +1,23 @@
+theorem "=> transitivity":
+    (a => b) ^ (b => c) => (a => c)
+proof
+    assume "both imps" : (a => b) ^ (b => c);
+    assume "a" : a;
+    thus c by "both imps", "a";
+end
+
+/************************* Modus Tollens ****************************/
+// (A -> B) -> (~B -> ~A)
+theorem "modus tollens explicit": (a -> b) -> (~b -> ~a)
+proof
+    suppose a_imp_b: a -> b
+    suppose no_b: ~b
+    suppose -: a
+    thus false by -, a_imp_b, no_b
+end
+
+// Obviamente, como es valido en LP, lo demuestra solo el by
+theorem "modus tollens with by": (a -> b) -> (~b -> ~a)
+proof
+    thus (a -> b) -> (~b -> ~a)
+end

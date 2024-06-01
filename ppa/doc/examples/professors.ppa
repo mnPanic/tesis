@@ -7,7 +7,7 @@ axiom LucyProf : is_professor(lucy);
 axiom ProfPeople : forall X. is_professor(X) => person(X);
 
 // John is the dean
-axiom JohnDean : dean(john);
+axiom JohnDean : is_dean(john);
 
 // Deans are professors
 axiom DeanProf : forall X. is_dean(X) => is_professor(X);

@@ -90,7 +90,7 @@ ProofStep : suppose Name ':' Form                               { PSSuppose $2 $
           | then Name ':' Form OptionalBy                       { PSHaveBy $2 $4 (["-"] ++ $5) }
           | equivalently Form                                   { PSEquiv $2 }
           | claim Name ':' Form proof Proof end                 { PSClaim $2 $4 $6 }
-          | cases by Justification Cases end                    { PSCases $3 $4 }
+          | cases OptionalBy Cases end                          { PSCases $2 $3 }
           | take var ':=' Term                                  { PSTake $2 $4 }
           | consider var st Name ':' Form by Justification      { PSConsider $2 $4 $6 $8 }
           | let var ':=' var                                    { PSLet $2 $4 }

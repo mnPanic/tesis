@@ -167,11 +167,14 @@ El by es opcional en ambos. En caso de no especificarlo, debe ser una tautologí
       cases by h
           case a&b
               hence a
-          case a&c // no tiene que ser igual
-              hence a
+          case h:a&c // no tiene que ser igual
+              thus a by h
       end
   end
   ```
+
+  El `by` es opcional, para casos en donde la disyunción es provable sin
+  antecedentes (por ejemplo si tiene la forma `a | ~a` (LEM))
 
 - **`take`** o introducción del existencial
 
