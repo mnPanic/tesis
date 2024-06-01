@@ -79,23 +79,36 @@ Para demostrar una tesis, hay que **reducirla** mediante comandos hasta agotarla
 #### By
 
 El principal mecanismo de demostración es el **by**, que afirma que un hecho es
-consecuencia de una lista de hipótesis. Puede usarse de dos formas principales
+consecuencia de una lista de hipótesis. Esto permite eliminar universales e implicaciones.
+
+Puede usarse de dos formas principales
 
 - `thus <form> by <justification>`: Si form es *parte* de la tesis (ver
   [descarga de conjunciones](#descarga-de-conjunciones)), y es
   consecuencia lógica de las justificaciones, lo demuestra automáticamente y lo
   descarga de la tesis.
 
-  Por ejemplo,
+  Por ejemplo, para eliminación de implicaciones
 
   ```text
   axiom ax_1 : a -> b
   axiom ax_2 : b -> c
   theorem t1 : a -> c 
   proof
-      suppose a : a;
+      suppose a : a
       // La tesis ahora es c
-      thus c by a, ax_1, ax_2;
+      thus c by a, ax_1, ax_2
+  end
+  ```
+
+  Y para eliminación de cuantificadores universales,
+
+  ```text
+  axiom ax_1 : forall X . f(X)
+  
+  theorem t1: f(n)
+  proof
+    thus f(n) by ax_1
   end
   ```
 
@@ -107,11 +120,11 @@ consecuencia de una lista de hipótesis. Puede usarse de dos formas principales
   ```text
   theorem "ejemplo" : (a -> b -> c) -> (a -> b) -> a -> c
   proof
-      suppose "P": a -> b -> c;
-      suppose "Q": a -> b;
-      suppose "R": a;
-      have "S": b by "Q", "R";
-      thus c   by "P", "R", "S";
+      suppose "P": a -> b -> c
+      suppose "Q": a -> b
+      suppose "R": a
+      have "S": b by "Q", "R"
+      thus c   by "P", "R", "S"
   end
   ```
 
@@ -162,16 +175,16 @@ El by es opcional en ambos. En caso de no especificarlo, debe ser una tautologí
 
 - **`take`** o introducción del existencial
 
-  Para probar un existencial se usa el comando `take`. Si la tesis es `exists x.
-  p(x)`, luego del comando `take x := a` la tesis se reduce a `p(a)`
+  Para probar un existencial se usa el comando `take`. Si la tesis es `exists X.
+  p(X)`, luego del comando `take X := a` la tesis se reduce a `p(a)`
 
 - **`consider`** o eliminación del existencial
 
-  Si se puede justificar `exists x . f`, se puede razonar sobre ese x.
+  Si se puede justificar `exists X . f`, se puede razonar sobre ese x.
   
-  El comando `consider x st h : f by ...` agrega f al contexto para el resto de la demostración siempre y cuando x no aparezca libre en la tesis o el contexto hasta el momento.
+  El comando `consider X st h : f by ...` agrega f al contexto para el resto de la demostración siempre y cuando `X` no aparezca libre en la tesis o el contexto hasta el momento.
 
-  El `by` debe justificar `exists x . f`.
+  El `by` debe justificar `exists X . f`.
 
 ### Otros comandos
 
@@ -182,7 +195,7 @@ El by es opcional en ambos. En caso de no especificarlo, debe ser una tautologí
   ```text
   theorem "ejemplo" : ¬(a | b)
   proof
-    equivalently (¬a & ¬b);
+    equivalently (¬a & ¬b)
     ...
   end
   ```
@@ -198,7 +211,7 @@ El by es opcional en ambos. En caso de no especificarlo, debe ser una tautologí
     proof
       ...
     end
-    thus ¬(a | b) by "c";
+    thus ¬(a | b) by "c"
   end
   ```
 
@@ -210,13 +223,13 @@ tesis se reduce al resto. Por ejemplo,
 ```text
 theorem "and discharge" : a -> b -> (a & b)
 proof
-    suppose "a" : a;
-    suppose "b" : b;
+    suppose "a" : a
+    suppose "b" : b
     // La tesis es a & b
-    hence b by "b";
+    hence b by "b"
 
     // La tesis es a
-    thus a by "a";
+    thus a by "a"
 end
 ```
 
@@ -230,8 +243,8 @@ axiom "d": d
 axiom "e": e
 theorem "and discharge" : (a & b) & ((c & d) & e)
 proof
-    thus a & e by "a", "e";
-    thus d by "d";
-    thus b & c by "b", "c";
+    thus a & e by "a", "e"
+    thus d by "d"
+    thus b & c by "b", "c"
 end
 ```

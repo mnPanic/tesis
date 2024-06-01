@@ -708,7 +708,10 @@ solveClause (h, rawClause) = do
                     )
                 )
         -- No contradicting literals or false, try by eliminating foralls
-        Nothing -> wrapR "no contradicting literals or false, and eliminating foralls" $ trySolveClauseElimForall (h, rawClause)
+        Nothing ->
+            wrapR
+                (printf "'%s' contains no contradicting literals or false, and trying to eliminate foralls" (show rawClause))
+                (trySolveClauseElimForall (h, rawClause))
 
 -- Clause es una conjunción de literales
 type Clause = [Form]
@@ -773,7 +776,7 @@ forall.
 solveClauseElimForall :: EnvItem -> Form -> Result Proof
 solveClauseElimForall i f =
     wrapR
-        (printf "try eliminating '%s' from '%s'" (show f) (show i))
+        (printf "try eliminating '%s'" (show f))
         (solveClauseElimForall' i f)
 
 solveClauseElimForall' :: EnvItem -> Form -> Result Proof
@@ -868,7 +871,7 @@ findSubstToSolveContradiction cl f@(FForall x g) = do
 
     -- Convierto la nueva cláusula a DNF
     let (dnfClMeta, _) = dnf ("h", clMeta) -- No importa la demo
-    wrapR 
+    wrapR
         (printf "solving clause with metavar in dnf '%s'" (show dnfClMeta))
         (solveContradictionUnifying SSEmpty dnfClMeta)
 
@@ -879,7 +882,6 @@ solveContradictionUnifying :: SingleSubst -> Form -> Result SingleSubst
 solveContradictionUnifying s (FOr l r) = do
     sL <- solveContradictionUnifying s l
     solveContradictionUnifying sL r
-
 solveContradictionUnifying s i = solveClauseUnifying s i
 
 -- Encuentra la sustitución que permite una contradicción: dos literales
@@ -888,12 +890,12 @@ solveClauseUnifying :: SingleSubst -> Form -> Result SingleSubst
 solveClauseUnifying s rawClause = do
     clause <- toClause rawClause
     -- Contradicción por false
-    if FFalse `elem` clause then return SSEmpty
-    -- No hay por false, buscamos dos opuestas que unifiquen
-    else case find isJust (map (findFirstUnifyingWithOpposite s clause) clause) of
-        Just (Just (f, fNot, s)) -> return s
-        Nothing -> Left "no opposites that unify"
-
+    if FFalse `elem` clause
+        then return SSEmpty
+        else -- No hay por false, buscamos dos opuestas que unifiquen
+        case find isJust (map (findFirstUnifyingWithOpposite s clause) clause) of
+            Just (Just (f, fNot, s)) -> return s
+            Nothing -> Left "no opposites that unify"
 
 findFirstUnifyingWithOpposite :: SingleSubst -> [Form] -> Form -> Maybe (Form, Form, SingleSubst)
 findFirstUnifyingWithOpposite s (f' : fs) f = case unifyF s (FNot f) f' of

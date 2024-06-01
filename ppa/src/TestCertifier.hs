@@ -192,7 +192,7 @@ testCommands =
                 suppose "R": a
                 have "S": b by "Q"
             end|]
-                "finding contradiction for dnf form '(~a & ~b) | (b & ~b)' obtained from '~((a -> b) -> b)': [~a,~b] contains no contradicting literals or false"
+                "finding contradiction for dnf form '(~a & ~b) | (b & ~b)' obtained from '~((a -> b) -> b)': '~a & ~b' contains no contradicting literals or false, and trying to eliminate foralls: form contains no foralls to eliminate"
         , "then + hence"
             ~: testProgram
                 [r|
@@ -436,6 +436,86 @@ testCommands =
                 |]
                         "let: can't use with form 'a -> b', must be an universal quantifier (forall)"
                ]
+        , "forall elim"
+            ~: test
+                [ "simple ex OK"
+                    ~: testProgram
+                        [r|
+                    axiom a: forall X. f(X)
+                    theorem t: f(a)
+                    proof
+                        thus f(a) by a
+                    end
+                |]
+                , "ok more than one"
+                    ~: testProgram
+                        [r|
+                    axiom a0: forall Y. g(Y)
+                    axiom a: forall X. f(X)
+                    theorem t: f(a)
+                    proof
+                        thus f(a) by a0, a
+                    end
+                |]
+                , "dnf OK"
+                    ~: testProgram
+                        [r|
+                    // Al instanciar la X, queda una fórmula que no está en DNF
+                    //  ~(f(X) | g(X)) & ~f(a) & ~g(a)
+                    // y hay que re-convertir
+
+                    axiom a: forall X. ~(f(X) | g(X))
+                    theorem t: ~f(a) & ~g(a)
+                    proof
+                        thus ~f(a) & ~g(a) by a
+                    end
+                |]
+                , "with imp"
+                    ~: testProgram
+                        [r|
+                    axiom a: forall X. f(X) | g(X)
+                    theorem t: ~g(a) -> f(a)
+                    proof
+                        suppose h: ~g(a)
+                        thus f(a) by -, a
+                    end
+                |]
+                , "no vars inside forall"
+                    ~: testProgram
+                        [r|
+                    axiom a: forall X. f(a)
+                    theorem t: f(a)
+                    proof
+                        thus f(a) by a
+                    end
+
+                    axiom a2: forall X. false
+                    theorem t2: f(b)
+                    proof
+                        thus f(b) by a2
+                    end
+                |]
+                , "ok alpha equiv"
+                    ~: testProgram
+                        [r|
+                    axiom a1: forall X. forall Y. f(X) & g(Y)
+                    theorem t: forall Z. f(a) & g(Z)
+                    proof
+                        thus forall Z. f(a) & g(Z) by a1
+                    end
+                |]
+                , "err no foralls"
+                    ~: testProgramError
+                        [r|
+                    axiom a1: forall X. f(X)
+                    axiom a2: forall Y. g(Y)
+                    theorem t: h(a)
+                    proof
+                        thus h(a) by a1, a2
+                    end
+                |]
+                        "finding contradiction for dnf form '(forall X . f(X) & forall Y . g(Y)) & ~h(a)' obtained from '~((forall X . f(X) & forall Y . g(Y)) -> h(a))': '(forall X . f(X) & forall Y . g(Y)) & ~h(a)' contains no contradicting literals or false, and trying to eliminate foralls: no foralls useful for contradictions:\ntry eliminating 'forall X . f(X)': solving clause with metavar in dnf '(f(?) & forall Y . g(Y)) & ~h(a)': no opposites that unify\ntry eliminating 'forall Y . g(Y)': solving clause with metavar in dnf '(forall X . f(X) & g(?)) & ~h(a)': no opposites that unify"
+                ]
         ]
 
 -- , "optional hyp"
@@ -566,7 +646,7 @@ testSolve =
                 ]
         , "clause too short not refutable"
             ~: solveContradiction ("h", fromDNF [[propVar "X"]])
-            ~?= Left "[X] contains no contradicting literals or false"
+            ~?= Left "'X' contains no contradicting literals or false, and trying to eliminate foralls: form contains no foralls to eliminate"
         , "one clause not refutable"
             ~: solveContradiction
                 ( "h"
@@ -582,7 +662,7 @@ testSolve =
                     , [propVar "X", FTrue]
                     ]
                 )
-            ~?= Left "[X,true] contains no contradicting literals or false"
+            ~?= Left "'X & true' contains no contradicting literals or false, and trying to eliminate foralls: form contains no foralls to eliminate"
         , "not dnf" ~: solveContradiction ("h", FImp FTrue FFalse) ~?= Left "convert to clause: true -> false is not a literal"
         ]
 
@@ -649,7 +729,7 @@ testFindContradiction =
                 , propVar "B"
                 , FFalse
                 ]
-            ~?= Right
+            ~?= Just
                 FFalse
         , "no contradiction"
             ~: findContradiction
@@ -657,7 +737,7 @@ testFindContradiction =
                 , propVar "B"
                 , propVar "C"
                 ]
-            ~?= Left "[A,B,C] contains no contradicting literals or false"
+            ~?= Nothing
         , "literals contradicting"
             ~: findContradiction
                 [ propVar "A"
@@ -665,7 +745,7 @@ testFindContradiction =
                 , FNot $ propVar "A"
                 , propVar "C"
                 ]
-            ~?= Right (propVar "A")
+            ~?= Just (propVar "A")
         , "more than one literal contradicting returns first"
             ~: findContradiction
                 [ FForall "x" (propVar "A")
@@ -674,7 +754,7 @@ testFindContradiction =
                 , propVar "C"
                 , FNot $ FForall "x" (propVar "A")
                 ]
-            ~?= Right (FForall "x" (propVar "A"))
+            ~?= Just (FForall "x" (propVar "A"))
         ]
 
 testClause :: Test
