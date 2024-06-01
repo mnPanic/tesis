@@ -151,7 +151,7 @@ certifyProofStep ctx thesis s@(PSLet{}) ps = certifyLet ctx thesis s ps
 -- X no debe aparecer libre en el contexto que lo precede
 certifyLet :: Context -> Form -> ProofStep -> TProof -> Result Proof
 certifyLet ctx (FForall x f) (PSLet x' y) ps
-    | x /= x' = Left $ printf "let: assinged var (%s) must be the same as in thesis (%s)" x' x
+    | x /= x' = Left $ printf "let: assinged var (%s) must be the same as in thesis (%s)" x' x -- TODO: cambiar
     | y `elem` fvC ctx = Left $ printf "let: new var (%s) must not appear free in preceding context (%s)" y (show ctx)
     | otherwise = do
         nextProof <- certifyProof ctx (subst x (TVar y) f) ps

@@ -7,5 +7,6 @@ proof
     // (forall Y. p(a,Y)) -> (forall Y. p(Y,a))
     assume h: forall Y. p(a, Y)
     // forall Y. p(Y,a)
-    // me falta let!
+    let Y := Y
+    // p(Y, a)
 end
