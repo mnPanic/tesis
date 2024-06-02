@@ -121,7 +121,7 @@ testCommands =
                                 suppose a : a
                             end
                         |]
-                        "can't use command 'suppose a : a' with form 'a', must be implication or negation"
+                        "theorem 't1': suppose: can't suppose 'a : a' with form 'a', must be implication or negation"
                 , "not intro"
                     ~: testProgram
                         [r|
@@ -144,6 +144,12 @@ testCommands =
                         end
                     |]
                 ]
+        , "invalid axiom free vars"
+            ~: testProgramError
+                [r|
+            axiom a: p(X) & g(Y)
+        |]
+                "axiom 'a': can't have free vars but have {X,Y}"
         , "have"
             ~: testProgram
                 [r|
@@ -165,7 +171,7 @@ testCommands =
                         proof
                         end
                         |]
-                        "incomplete proof, still have a -> b as thesis"
+                        "theorem 'error': incomplete proof, still have a -> b as thesis"
                 , "incomplete"
                     ~: testProgramError
                         [r|
@@ -174,7 +180,7 @@ testCommands =
                             suppose a:a
                         end
                         |]
-                        "incomplete proof, still have b as thesis"
+                        "theorem 'error': suppose: incomplete proof, still have b as thesis"
                 ]
         , "justification not in context error"
             ~: testProgramError
@@ -182,7 +188,7 @@ testCommands =
                 proof
                     thus a by "-", foo
                 end|]
-                "finding hyps in context: can't get prev hyp from empty ctx; 'foo' not present in ctx"
+                "theorem 'ejemplo': thusBy: finding hyps in context: can't get prev hyp from empty ctx; 'foo' not present in ctx"
         , "no contradicting literals error"
             ~: testProgramError
                 [r|theorem "ejemplo" : (a -> b -> c) -> (a -> b) -> a -> c
@@ -192,7 +198,7 @@ testCommands =
                 suppose "R": a
                 have "S": b by "Q"
             end|]
-                "finding contradiction for dnf form '(~a & ~b) | (b & ~b)' obtained from '~((a -> b) -> b)': '~a & ~b' contains no contradicting literals or false, and trying to eliminate foralls: form contains no foralls to eliminate"
+                "theorem 'ejemplo': suppose: suppose: suppose: haveBy: finding contradiction for dnf form '(~a & ~b) | (b & ~b)' obtained from '~((a -> b) -> b)': '~a & ~b' contains no contradicting literals or false, and trying to eliminate foralls: form contains no foralls to eliminate"
         , "then + hence"
             ~: testProgram
                 [r|
@@ -387,7 +393,7 @@ testCommands =
                             take Y := zero
                         end
                 |]
-                        "take: can't take var 'Y', different from thesis var 'X'"
+                        "theorem 'zero exists': take: can't take var 'Y', different from thesis var 'X'"
                 , "error invalid form"
                     ~: testProgramError
                         [r|
@@ -396,7 +402,7 @@ testCommands =
                             take Y := zero
                         end
                 |]
-                        "take: can't use on form 'a', not exists"
+                        "theorem 'zero exists': take: can't use on form 'a', not exists"
                 ]
         , "consider"
             ~: test
@@ -423,7 +429,7 @@ testCommands =
                         thus b(Y) by -
                     end
                 |]
-                        "consider: can't use an exist whose variable (Y) appears free in the thesis (b(Y))"
+                        "theorem 'consider': suppose: take: consider: can't use an exist whose variable (Y) appears free in the thesis (b(Y))"
                 , "err var free in ctx"
                     ~: testProgramError
                         [r|
@@ -435,7 +441,7 @@ testCommands =
                         consider Y st h3 : b(Y) by h1 // está libre en el contexto
                     end
                 |]
-                        "consider: can't use an exist whose variable (Y) appears free in the preceding context ([(axiom) h2 : a(Y),(axiom) h1 : exists Y . b(Y),(axiom) a1 : exists Y . a(Y)])"
+                        "theorem 'consider': suppose: consider: consider: can't use an exist whose variable (Y) appears free in the preceding context ([(axiom) h2 : a(Y),(axiom) h1 : exists Y . b(Y),(axiom) a1 : exists Y . a(Y)])"
                 ]
         , "let"
             ~: [ "err var in context"
@@ -449,7 +455,7 @@ testCommands =
                         thus a(X) by a1
                     end
                 |]
-                        "let: new var (X) must not appear free in preceding context ([(axiom) h : a(X),(axiom) a1 : exists X . a(X)])"
+                        "theorem 'let': consider: let: new var (X) must not appear free in preceding context ([(axiom) h : a(X),(axiom) a1 : exists X . a(X)])"
                , "wrong form"
                     ~: testProgramError
                         [r|
@@ -458,7 +464,7 @@ testCommands =
                         let X := X
                     end
                 |]
-                        "let: can't use with form 'a -> b', must be an universal quantifier (forall)"
+                        "theorem 'let err': let: can't use with form 'a -> b', must be an universal quantifier (forall)"
                ]
         , "forall elim"
             ~: test
@@ -538,7 +544,7 @@ testCommands =
                         thus h(a) by a1, a2
                     end
                 |]
-                        "finding contradiction for dnf form '(forall X . f(X) & forall Y . g(Y)) & ~h(a)' obtained from '~((forall X . f(X) & forall Y . g(Y)) -> h(a))': '(forall X . f(X) & forall Y . g(Y)) & ~h(a)' contains no contradicting literals or false, and trying to eliminate foralls: no foralls useful for contradictions:\ntry eliminating 'forall X . f(X)': solving clause with metavar in dnf '(f(?) & forall Y . g(Y)) & ~h(a)': no opposites that unify\ntry eliminating 'forall Y . g(Y)': solving clause with metavar in dnf '(forall X . f(X) & g(?)) & ~h(a)': no opposites that unify"
+                        "theorem 't': thusBy: finding contradiction for dnf form '(forall X . f(X) & forall Y . g(Y)) & ~h(a)' obtained from '~((forall X . f(X) & forall Y . g(Y)) -> h(a))': '(forall X . f(X) & forall Y . g(Y)) & ~h(a)' contains no contradicting literals or false, and trying to eliminate foralls: no foralls useful for contradictions:\ntry eliminating 'forall X . f(X)': solving clause with metavar in dnf '(f(?) & forall Y . g(Y)) & ~h(a)': no opposites that unify\ntry eliminating 'forall Y . g(Y)': solving clause with metavar in dnf '(forall X . f(X) & g(?)) & ~h(a)': no opposites that unify"
                 ]
         ]
 

@@ -24,6 +24,7 @@ import PPA (
     getForm,
     getHypId,
     getProof,
+    psName,
  )
 
 import NDProofs (
@@ -70,6 +71,7 @@ import NDChecker (CheckResult (CheckOK), check, checkResultIsErr, subst)
 
 import Data.List (find, intercalate, nub, partition, (\\))
 import Data.Maybe (fromJust, isJust, isNothing)
+import Data.Set (Set)
 import Text.Printf (printf)
 
 import Data.Either (fromLeft, fromRight, isLeft, isRight, lefts)
@@ -107,17 +109,25 @@ certifyDecl ctx d@(DAxiom{}) = certifyAxiom ctx d
 certifyDecl ctx d@(DTheorem{}) = certifyTheorem ctx d
 
 certifyAxiom :: Context -> Decl -> Result Hypothesis
-certifyAxiom ctx (DAxiom h f) = return (HAxiom h f)
+certifyAxiom ctx (DAxiom h f)
+    | not (null (fv f)) = Left $ printf "axiom '%s': can't have free vars but have %s" h (showSet (fv f))
+    | otherwise = return (HAxiom h f)
 
 certifyTheorem :: Context -> Decl -> Result Hypothesis
 certifyTheorem ctx (DTheorem h f p) = do
-    ndProof <- certifyProof ctx f p
+    ndProof <-
+        wrapR
+            (printf "theorem '%s'" h)
+            (certifyProof ctx f p)
     return (HTheorem h f ndProof)
 
 certifyProof :: Context -> Form -> TProof -> Result Proof
 -- certifyProof ctx f ps | trace (printf "certifyProof %s %s %s" (show ctx) (show f) (show ps)) False = undefined
 certifyProof ctx f [] = Left $ printf "incomplete proof, still have %s as thesis" (show f)
-certifyProof ctx f (p : ps) = certifyProofStep ctx f p ps
+certifyProof ctx f (p : ps) = certifyProofStep' ctx f p ps
+
+certifyProofStep' :: Context -> Form -> ProofStep -> TProof -> Result Proof
+certifyProofStep' ctx f s ps = wrapR (psName s) (certifyProofStep ctx f s ps)
 
 certifyProofStep ::
     Context -> Form -> ProofStep -> TProof -> Result Proof
@@ -151,15 +161,15 @@ certifyProofStep ctx thesis s@(PSLet{}) ps = certifyLet ctx thesis s ps
 -- X no debe aparecer libre en el contexto que lo precede
 certifyLet :: Context -> Form -> ProofStep -> TProof -> Result Proof
 certifyLet ctx (FForall x f) (PSLet x' y) ps
-    | x /= x' = Left $ printf "let: assinged var (%s) must be the same as in thesis (%s)" x' x -- TODO: cambiar
-    | y `elem` fvC ctx = Left $ printf "let: new var (%s) must not appear free in preceding context (%s)" y (show ctx)
+    | x /= x' = Left $ printf "assinged var (%s) must be the same as in thesis (%s)" x' x -- TODO: cambiar
+    | y `elem` fvC ctx = Left $ printf "new var (%s) must not appear free in preceding context (%s)" y (show ctx)
     | otherwise = do
         nextProof <- certifyProof ctx (subst x (TVar y) f) ps
         return PForallI{proofForm = nextProof}
 certifyLet ctx thesis (PSLet x y) ps =
     Left
         $ printf
-            "let: can't use with form '%s', must be an universal quantifier (forall)"
+            "can't use with form '%s', must be an universal quantifier (forall)"
             (show thesis)
 
 -- consider X st h : f by ...
@@ -167,8 +177,8 @@ certifyLet ctx thesis (PSLet x y) ps =
 -- X no debe aparecer libre en la tesis ni en el contexto
 certifyConsider :: Context -> Form -> ProofStep -> TProof -> Result Proof
 certifyConsider ctx thesis (PSConsider x h f js) ps
-    | x `elem` fv thesis = Left $ printf "consider: can't use an exist whose variable (%s) appears free in the thesis (%s)" x (show thesis)
-    | x `elem` fvC ctx = Left $ printf "consider: can't use an exist whose variable (%s) appears free in the preceding context (%s)" x (show ctx)
+    | x `elem` fv thesis = Left $ printf "can't use an exist whose variable (%s) appears free in the thesis (%s)" x (show thesis)
+    | x `elem` fvC ctx = Left $ printf "can't use an exist whose variable (%s) appears free in the preceding context (%s)" x (show ctx)
     | otherwise = do
         proofExists <- certifyBy ctx (FExists x f) js
         -- TODO: checks que fallarian en ND
@@ -186,7 +196,7 @@ certifyConsider ctx thesis (PSConsider x h f js) ps
 
 certifyTake :: Context -> Form -> ProofStep -> TProof -> Result Proof
 certifyTake ctx (FExists x f) (PSTake x' t) ps
-    | x /= x' = Left $ printf "take: can't take var '%s', different from thesis var '%s'" x' x
+    | x /= x' = Left $ printf "can't take var '%s', different from thesis var '%s'" x' x
     | otherwise = do
         let f' = subst x t f
         proof <- certifyProof ctx f' ps
@@ -195,7 +205,7 @@ certifyTake ctx (FExists x f) (PSTake x' t) ps
                 { inst = t
                 , proofFormWithInst = proof
                 }
-certifyTake _ f (PSTake _ _) _ = Left $ printf "take: can't use on form '%s', not exists" (show f)
+certifyTake _ f (PSTake _ _) _ = Left $ printf "can't use on form '%s', not exists" (show f)
 
 -- Certifica el suppose
 certifySuppose :: Context -> Form -> ProofStep -> TProof -> Result Proof
@@ -234,7 +244,7 @@ certifySuppose ctx (FNot f) (PSSuppose name form) ps
 certifySuppose ctx f (PSSuppose name form) ps =
     Left
         $ printf
-            "can't use command 'suppose %s : %s' with form '%s', must be implication or negation"
+            "can't suppose '%s : %s' with form '%s', must be implication or negation"
             name
             (show form)
             (show f)
@@ -942,3 +952,6 @@ isNotLiteral (FPred _ _) = True
 isNotLiteral (FForall _ _) = True
 isNotLiteral (FExists _ _) = True
 isNotLiteral _ = False
+
+showSet :: Data.Set.Set String -> String
+showSet s = "{" ++ intercalate "," (foldr (:) [] s) ++ "}"

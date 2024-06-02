@@ -12,6 +12,7 @@ module PPA (
   getProof,
   getForm,
   fvC,
+  psName,
 ) where
 
 import Data.List (find)
@@ -59,6 +60,18 @@ data ProofStep
   | PSConsider VarId HypId Form Justification
   | PSLet VarId VarId
   deriving (Show, Eq)
+
+psName :: ProofStep -> String
+psName ps = case ps of
+  (PSSuppose{}) -> "suppose"
+  (PSThusBy{}) -> "thusBy"
+  (PSHaveBy{}) -> "haveBy"
+  (PSEquiv{}) -> "equiv"
+  (PSClaim{}) -> "claim"
+  (PSCases{}) -> "cases"
+  (PSTake{}) -> "take"
+  (PSConsider{}) -> "consider"
+  (PSLet{}) -> "let"
 
 type Justification = [HypId]
 
