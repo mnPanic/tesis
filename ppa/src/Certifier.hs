@@ -176,22 +176,24 @@ certifyLet ctx thesis (PSLet{}) ps =
             "can't use with form '%s', must be an universal quantifier (forall)"
             (show thesis)
 
--- consider X st h : f by ...
+-- consider X := Y st h : f by ...
 -- by debe justificar el exists X . f
--- X no debe aparecer libre en la tesis ni en el contexto
+-- Y no debe aparecer libre en la tesis ni en el contexto
 certifyConsider :: Context -> Form -> ProofStep -> TProof -> Result Proof
 certifyConsider ctx thesis (PSConsider (x, x') h f js) ps
     | x `elem` fv thesis = Left $ printf "can't use an exist whose variable (%s) appears free in the thesis (%s)" x (show thesis)
     | x `elem` fvC ctx = Left $ printf "can't use an exist whose variable (%s) appears free in the preceding context (%s)" x (show ctx)
     | otherwise = do
-        proofExists <- certifyBy ctx (FExists x f) js
-        -- TODO: checks que fallarian en ND
+        let fOrig = subst x' (TVar x) f
+        proofExists <- certifyBy ctx (FExists x fOrig) js
+
         let ctx' = HAxiom h f : ctx
         nextProof <- certifyProof ctx' thesis ps
 
         return
             PExistsE
                 { var = x
+                , newVar = x'
                 , form = f
                 , proofExists = proofExists
                 , hyp = h

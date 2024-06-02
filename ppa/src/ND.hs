@@ -309,7 +309,8 @@ data Proof
         { var :: VarId -- x
         , form :: Form -- A
         , proofExists :: Proof -- de E x. A
-        , hyp :: HypId -- x:A
-        , proofAssuming :: Proof -- de B con A como hyp
+        , newVar :: VarId -- x'
+        , hyp :: HypId -- x: A {x := x'}
+        , proofAssuming :: Proof -- de B con A {x:=x'} como hyp
         }
     deriving (Show, Eq)

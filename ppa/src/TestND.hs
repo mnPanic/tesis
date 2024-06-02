@@ -1476,6 +1476,7 @@ p19 =
                 (predVar "B" "x")
             )
             (PAx "h Exists x. A(x) ^ B(x)")
+            "x"
             "h A(x) ^ B(x)"
             -- Dem Exists y. A(y)
             ( PExistsI
@@ -1640,6 +1641,7 @@ p23Ida =
                 "x"
                 (FNot $ predVar "A" "x")
                 (PAx "h E x. ~A(x)")
+                "x"
                 "h ~A(x)"
                 -- Contradicción de ~A(x) y A(x)
                 ( PNotE
@@ -1707,6 +1709,7 @@ p24Ida =
                 "x"
                 (predVar "A" "x")
                 (PAx "h E x. A(x)")
+                "x"
                 "h A(x)"
                 ( PNotE
                     (predVar "A" "x")
