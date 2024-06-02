@@ -465,6 +465,28 @@ testCommands =
                     end
                 |]
                         "theorem 'let err': let: can't use with form 'a -> b', must be an universal quantifier (forall)"
+               , "ok"
+                    ~: testProgram
+                        [r|
+                    axiom a1: forall X . p(X) & q(X)
+                    theorem "let" : forall X . p(X)
+                    proof
+                        let X
+                        thus p(X) by a1
+                    end
+
+                    theorem "let same rename" : forall X . p(X)
+                    proof
+                        let X := X
+                        thus p(X) by a1
+                    end
+
+                    theorem "let rename" : forall X . p(X)
+                    proof
+                        let X := Y
+                        thus p(Y) by a1
+                    end
+               |]
                ]
         , "forall elim"
             ~: test

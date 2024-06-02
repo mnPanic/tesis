@@ -13,6 +13,7 @@ module PPA (
   getForm,
   fvC,
   psName,
+  VarRename,
 ) where
 
 import Data.List (find)
@@ -43,6 +44,8 @@ data Decl
 
 type TProof = [ProofStep]
 
+type VarRename = (VarId, VarId)
+
 type Case = (HypId, Form, TProof)
 
 data ProofStep
@@ -57,8 +60,8 @@ data ProofStep
     PSClaim HypId Form TProof
   | PSCases Justification [Case]
   | PSTake VarId Term
-  | PSConsider VarId HypId Form Justification
-  | PSLet VarId VarId
+  | PSConsider VarRename HypId Form Justification
+  | PSLet VarRename
   deriving (Show, Eq)
 
 psName :: ProofStep -> String

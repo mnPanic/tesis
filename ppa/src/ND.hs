@@ -290,7 +290,8 @@ data Proof
     | PLEM
     | -- V x . A
       PForallI
-        { proofForm :: Proof -- de A
+        { newVar :: VarId -- x'
+        , proofForm :: Proof -- de A { x := x'}
         }
     | PForallE
         { var :: VarId -- x

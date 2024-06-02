@@ -472,6 +472,9 @@ testCheckExamples =
           "Good(y) => Exists x. Good(x)" ~: check EEmpty p18 f18 ~?= CheckOK
         , "Exists x. A(x) ^ B(x) => Exists y. A(y)" ~: check EEmpty p19 f19 ~?= CheckOK
         , "Forall x. A(x) ^ B(x) => Forall x. A(x)" ~: check EEmpty p20 f20 ~?= CheckOK
+        , "Forall x. A(x) ^ B(x) => Forall x. A(x) with rename in forallI"
+            ~: check EEmpty p20_2 f20
+            ~?= CheckOK
         , "Forall x. A(x) ^ B(x) => Forall y. A(y)" ~: check EEmpty p20' f20' ~?= CheckOK
         , "Forall x. A(x) => Exists x. B(x)"
             ~: rootCause (check EEmpty p22 f22)
@@ -484,7 +487,7 @@ testCheckExamples =
             ~: rootCause (check EEmpty p21 f21)
             ~?= CheckError
                 (EExtend "h A(x)" (FPred "A" [TVar "x"]) EEmpty)
-                (PForallI (PAx "h A(x)"))
+                (PForallI "x" (PAx "h A(x)"))
                 (FForall "x" (FPred "A" [TVar "x"]))
                 "env shouldn't contain fv 'x'"
         , -- DeMorgan de Exists y Forall
@@ -506,7 +509,7 @@ testCheckExamples =
                 EEmpty
                 ( PExistsI
                     (TVar "x") -- generaria captura con V x
-                    (PForallI (POrI2 PTrueI))
+                    (PForallI "x" (POrI2 PTrueI))
                 )
                 (FExists "y" (FForall "x" (FOr (predVar "A" "z") FTrue)))
             ~?= CheckOK
@@ -1507,6 +1510,7 @@ p20 =
     PImpI
         "h Forall x. A(x) ^ B(x)"
         ( PForallI
+            "x"
             ( -- Proof A(x)
               PAndE1
                 bx
@@ -1522,23 +1526,41 @@ p20 =
     ax = FPred "A" [TVar "x"]
     bx = FPred "B" [TVar "x"]
 
+p20_2 :: Proof
+p20_2 =
+    PImpI
+        { hypAntecedent = "h forall"
+        , proofConsequent =
+            PForallI
+                { newVar = "y"
+                , proofForm =
+                    PAndE1
+                        { right = predVar "B" "y"
+                        , proofAnd =
+                            PForallE
+                                { var = "x"
+                                , form = FAnd (predVar "A" "x") (predVar "B" "x")
+                                , proofForall = PAx "h forall"
+                                , termReplace = TVar "y"
+                                }
+                        }
+                }
+        }
+
 -- Var diferente, debería ser lo mismo
 -- Forall x. A(x) ^ B(x) => Forall y. A(y)
 f20' :: Form
 f20' =
     FImp
-        (FForall "x" (FAnd ax bx))
-        (FForall "y" ay)
-  where
-    ax = FPred "A" [TVar "x"]
-    ay = FPred "A" [TVar "y"]
-    bx = FPred "B" [TVar "x"]
+        (FForall "x" (FAnd (predVar "A" "x") (predVar "B" "x")))
+        (FForall "y" (predVar "A" "y"))
 
 p20' :: Proof
 p20' =
     PImpI
         "h Forall x. A(x) ^ B(x)"
         ( PForallI
+            "y"
             ( -- Proof A(y)
               PAndE1
                 by -- tengo que cambiar en ambos
@@ -1565,7 +1587,7 @@ f21 =
         (FForall "x" (FPred "A" [TVar "x"]))
 
 p21 :: Proof
-p21 = PImpI "h A(x)" (PForallI (PAx "h A(x)"))
+p21 = PImpI "h A(x)" (PForallI "x" (PAx "h A(x)"))
 
 -- Dem inválida de eliminación de forall, en donde el término a demostrar no
 -- A{x := t} sino que otra cosa
@@ -1647,6 +1669,7 @@ p23Vuelta =
     PImpI
         "h ~E x. ~A(x)"
         ( PForallI
+            "x"
             ( -- Dem de A(x), por absurdo, asumo ~A(x) mediante dnegelim
               PImpE
                 (dneg $ predVar "A" "x")
@@ -1722,6 +1745,7 @@ p24Vuelta =
                     (PAx "h ~V x. ~A(x)")
                     -- Dem de V x. ~A(x) (usando que no existe x. A(x))
                     ( PForallI
+                        "x"
                         ( PNotI
                             "h A(x)"
                             ( PNotE
