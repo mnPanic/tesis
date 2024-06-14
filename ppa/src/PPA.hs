@@ -44,6 +44,8 @@ data Decl
 
 type TProof = [ProofStep]
 
+-- old, new
+-- Pueden ser iguales
 type VarRename = (VarId, VarId)
 
 type Case = (HypId, Form, TProof)

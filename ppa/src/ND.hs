@@ -302,7 +302,7 @@ data Proof
     | -- E x . A
       PExistsI
         { inst :: Term -- t
-        , proofFormWithInst :: Proof -- de A con x reemplazado por t
+        , proofFormWithInst :: Proof -- de A {x := t}
         }
     | -- E x . A deduce B
       PExistsE

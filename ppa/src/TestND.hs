@@ -471,6 +471,9 @@ testCheckExamples =
         , -- Exists y forall
           "Good(y) => Exists x. Good(x)" ~: check EEmpty p18 f18 ~?= CheckOK
         , "Exists x. A(x) ^ B(x) => Exists y. A(y)" ~: check EEmpty p19 f19 ~?= CheckOK
+        , "Exists x. A(x) ^ B(x) => Exists y. A(y) con renombre"
+            ~: check EEmpty p19_rename f19
+            ~?= CheckOK
         , "Forall x. A(x) ^ B(x) => Forall x. A(x)" ~: check EEmpty p20 f20 ~?= CheckOK
         , "Forall x. A(x) ^ B(x) => Forall x. A(x) with rename in forallI"
             ~: check EEmpty p20_2 f20
@@ -1488,6 +1491,33 @@ p19 =
                 )
             )
         )
+
+-- Exists x. A(x) ^ B(x) -> Exists y. A(y)
+p19_rename :: Proof
+p19_rename =
+    PImpI
+        { hypAntecedent = "h Exists x. A(x) ^ B(x)"
+        , proofConsequent =
+            PExistsE
+                { var = "x"
+                , form =
+                    FAnd
+                        (predVar "A" "x")
+                        (predVar "B" "x")
+                , proofExists = PAx "h Exists x. A(x) ^ B(x)"
+                , newVar = "y"
+                , hyp = "h A(y) ^ B(y)"
+                , proofAssuming -- Dem Exists y. A(y)
+                  =
+                    PExistsI
+                        (TVar "y")
+                        -- Dem A(y)
+                        ( PAndE1
+                            (predVar "B" "y")
+                            (PAx "h A(y) ^ B(y)")
+                        )
+                }
+        }
 
 -- Es necesario primero hacer eliminación del exists y después PExistsI, PAndE1, porque sino al revés
 -- se querría probar A(x) ^ B(x) con ExistsE pero no se puede porque tiene x libre.

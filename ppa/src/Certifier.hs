@@ -158,7 +158,7 @@ certifyProofStep ctx thesis s@(PSLet{}) ps = certifyLet ctx thesis s ps
 
 -- let X := Y
 -- para demostrar forall X . f
--- X no debe aparecer libre en el contexto que lo precede
+-- Y no debe aparecer libre en el contexto que lo precede
 certifyLet :: Context -> Form -> ProofStep -> TProof -> Result Proof
 certifyLet ctx (FForall x f) (PSLet (x', y)) ps
     | x /= x' = Left $ printf "assinged var (%s) must be the same as in thesis (%s)" x' x
@@ -180,6 +180,7 @@ certifyLet ctx thesis (PSLet{}) ps =
 -- by debe justificar el exists X . f
 -- Y no debe aparecer libre en la tesis ni en el contexto
 certifyConsider :: Context -> Form -> ProofStep -> TProof -> Result Proof
+certifyConsider ctx thesis s@(PSConsider (x, x') h f js) ps | trace (printf "certifyConsider %s %s %s %s %s %s" (show ctx) (show thesis) (show s) h (show f) (show js)) False = undefined
 certifyConsider ctx thesis (PSConsider (x, x') h f js) ps
     | x `elem` fv thesis = Left $ printf "can't use an exist whose variable (%s) appears free in the thesis (%s)" x (show thesis)
     | x `elem` fvC ctx = Left $ printf "can't use an exist whose variable (%s) appears free in the preceding context (%s)" x (show ctx)
