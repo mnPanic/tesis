@@ -1,9 +1,9 @@
-theorem "=> transitivity":
-    (a => b) ^ (b => c) => (a => c)
+theorem "implication transitivity":
+    (a -> b) & (b -> c) -> (a -> c)
 proof
-    assume "both imps" : (a => b) ^ (b => c);
-    assume "a" : a;
-    thus c by "both imps", "a";
+    suppose h1: (a -> b) & (b -> c)
+    suppose h2: a
+    thus c by h1, h2
 end
 
 /************************* Modus Tollens ****************************/
