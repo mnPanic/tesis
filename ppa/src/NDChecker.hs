@@ -215,14 +215,12 @@ check env proof@(PAndI proofA proofB) f@(FAnd fA fB) =
 check env p@(PExistsI t proofSubstA) fE@(FExists x f) =
     wrap (check env proofSubstA (subst x t f)) "proof A{x := t}" env p fE
 -- del de B con Exists x. A
-check env proof@(PExistsE x fA proofExistsxA x' hypA proofB) fB
-    | x' `elem` fvE env = CheckError env proof fB (printf "env shouldn't contain fv '%s'" x)
-    | x' `elem` fv fB = CheckError env proof fB (printf "form to prove shoudln't contain fv '%s'" x)
+check env proof@(PExistsE x fA proofExistsxA hypA proofB) fB
+    | x `elem` fvE env = CheckError env proof fB (printf "env shouldn't contain fv '%s'" x)
+    | x `elem` fv fB = CheckError env proof fB (printf "form to prove shoudln't contain fv '%s'" x)
     | otherwise = case check env proofExistsxA (FExists x fA) of
         err | checkResultIsErr err -> CheckErrorW "proof exists" env proof fB err
-        CheckOK ->
-            let fA' = subst x (TVar x') fA
-             in wrap (check (EExtend hypA fA' env) proofB fB) "proof assuming" env proof fB
+        CheckOK -> wrap (check (EExtend hypA fA env) proofB fB) "proof assuming" env proof fB
 -- dem de Forall x. A
 check env proof@(PForallI x' proofA) form@(FForall x fA) =
     if x' `elem` fvE env

@@ -406,6 +406,12 @@ testCheckExamples =
         , "A |- B invalid"
             ~: rootCause (check exampleEnv (PAx "h1") FFalse)
             ~?= CheckError exampleEnv (PAx "h1") FFalse "env has hyp 'h1' for different form 'true'"
+        , "PAx alpha eq"
+            ~: check
+                (EExtend "h" (FExists "x" (predVar "p" "x")) EEmpty)
+                (PAx "h")
+                (FExists "y" (predVar "p" "y"))
+            ~?= CheckOK
         , -- PImpI
           "A -> A" ~: check EEmpty p1 f1 ~?= CheckOK
         , "A -> (B -> A)" ~: check EEmpty p2 f2 ~?= CheckOK
@@ -1479,7 +1485,6 @@ p19 =
                 (predVar "B" "x")
             )
             (PAx "h Exists x. A(x) ^ B(x)")
-            "x"
             "h A(x) ^ B(x)"
             -- Dem Exists y. A(y)
             ( PExistsI
@@ -1493,19 +1498,20 @@ p19 =
         )
 
 -- Exists x. A(x) ^ B(x) -> Exists y. A(y)
+-- Banca renombres implícitos por alpha igualdad, en PAx Exists x. p(x)
+-- demuestra Exists y . p(y)
 p19_rename :: Proof
 p19_rename =
     PImpI
         { hypAntecedent = "h Exists x. A(x) ^ B(x)"
         , proofConsequent =
             PExistsE
-                { var = "x"
+                { var = "y"
                 , form =
                     FAnd
-                        (predVar "A" "x")
-                        (predVar "B" "x")
+                        (predVar "A" "y")
+                        (predVar "B" "y")
                 , proofExists = PAx "h Exists x. A(x) ^ B(x)"
-                , newVar = "y"
                 , hyp = "h A(y) ^ B(y)"
                 , proofAssuming -- Dem Exists y. A(y)
                   =
@@ -1671,7 +1677,6 @@ p23Ida =
                 "x"
                 (FNot $ predVar "A" "x")
                 (PAx "h E x. ~A(x)")
-                "x"
                 "h ~A(x)"
                 -- Contradicción de ~A(x) y A(x)
                 ( PNotE
@@ -1739,7 +1744,6 @@ p24Ida =
                 "x"
                 (predVar "A" "x")
                 (PAx "h E x. A(x)")
-                "x"
                 "h A(x)"
                 ( PNotE
                     (predVar "A" "x")

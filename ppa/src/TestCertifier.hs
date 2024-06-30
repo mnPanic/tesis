@@ -423,7 +423,7 @@ testCommands =
                     theorem "consider simple ex": (exists Y . a(Y) & b(Y)) -> exists Q . b(Q)
                     proof
                         suppose h1 : exists Y . a(Y) & b(Y)
-                        consider Y := Q st h2 : a(Q) & b(Q) by h1
+                        consider Q st h2 : a(Q) & b(Q) by h1
                         take Q := Q
                         thus b(Q) by -
                     end

@@ -62,7 +62,7 @@ data ProofStep
     PSClaim HypId Form TProof
   | PSCases Justification [Case]
   | PSTake VarId Term
-  | PSConsider VarRename HypId Form Justification
+  | PSConsider VarId HypId Form Justification
   | PSLet VarRename
   deriving (Show, Eq)
 

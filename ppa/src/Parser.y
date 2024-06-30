@@ -93,7 +93,7 @@ ProofStep : suppose Name ':' Form                                       { PSSupp
           | cases OptionalBy Cases end                                  { PSCases $2 $3 }
           | take var ':=' Term                                          { PSTake $2 $4 }
           | let OptVarRename                                            { PSLet $2 }
-          | consider OptVarRename st Name ':' Form by Justification     { PSConsider $2 $4 $6 $8 }
+          | consider var st Name ':' Form by Justification     { PSConsider $2 $4 $6 $8 }
 
 OptVarRename    :: { VarRename }
 OptVarRename    : var                 { ($1, $1) }

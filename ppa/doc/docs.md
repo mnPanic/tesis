@@ -183,11 +183,14 @@ El by es opcional en ambos. En caso de no especificarlo, debe ser una tautologí
 
 - **`consider`** o eliminación del existencial
 
-  Si se puede justificar `exists X . p`, se puede razonar sobre ese x.
+  Si se puede justificar `exists X . p`, se puede razonar sobre ese `X`.
   
   El comando `consider X st h : p by ...` agrega f al contexto para el resto de la demostración siempre y cuando `X` no aparezca libre en la tesis o el contexto hasta el momento.
 
   El `by` debe justificar `exists X . p`.
+
+  También se puede usar una variable y fórmula alpha-equivalente, por ej. si
+  podemos justificar `exists X . p(X)` podemos usar `consider Y st h: p(Y) by ...`.
 
 - **`let`** o introducción de universal
   

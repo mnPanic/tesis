@@ -180,13 +180,12 @@ certifyLet ctx thesis (PSLet{}) ps =
 -- by debe justificar el exists X . f
 -- Y no debe aparecer libre en la tesis ni en el contexto
 certifyConsider :: Context -> Form -> ProofStep -> TProof -> Result Proof
-certifyConsider ctx thesis s@(PSConsider (x, x') h f js) ps | trace (printf "certifyConsider %s %s %s %s %s %s" (show ctx) (show thesis) (show s) h (show f) (show js)) False = undefined
-certifyConsider ctx thesis (PSConsider (x, x') h f js) ps
+-- certifyConsider ctx thesis s@(PSConsider x h f js) ps | trace (printf "certifyConsider %s %s %s %s %s %s" (show ctx) (show thesis) (show s) h (show f) (show js)) False = undefined
+certifyConsider ctx thesis (PSConsider x h f js) ps
     | x `elem` fv thesis = Left $ printf "can't use an exist whose variable (%s) appears free in the thesis (%s)" x (show thesis)
     | x `elem` fvC ctx = Left $ printf "can't use an exist whose variable (%s) appears free in the preceding context (%s)" x (show ctx)
     | otherwise = do
-        let fOrig = subst x' (TVar x) f
-        proofExists <- certifyBy ctx (FExists x fOrig) js
+        proofExists <- certifyBy ctx (FExists x f) js
 
         let ctx' = HAxiom h f : ctx
         nextProof <- certifyProof ctx' thesis ps
@@ -194,7 +193,6 @@ certifyConsider ctx thesis (PSConsider (x, x') h f js) ps
         return
             PExistsE
                 { var = x
-                , newVar = x'
                 , form = f
                 , proofExists = proofExists
                 , hyp = h
