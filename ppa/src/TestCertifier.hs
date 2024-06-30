@@ -476,6 +476,18 @@ testCommands =
                     end
                 |]
                         "theorem 'let err': let: can't use with form 'a -> b', must be an universal quantifier (forall)"
+               , "var free in thesis"
+                    ~: testProgramError
+                        [r|
+                    axiom a: forall X. p(X, X)
+                    theorem t: forall X. forall Y. p(X, Y)
+                    proof
+                        let X // forall Y . p(X, Y)
+                        let X // p(X,X), pero X está libre en la tesis, falla
+                        thus p(X, X) by a
+                    end
+                |]
+                        "theorem 't': let: let: new var (X) must not appear free in forall: forall Y . p(X, Y)"
                , "ok"
                     ~: testProgram
                         [r|

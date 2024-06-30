@@ -160,8 +160,9 @@ certifyProofStep ctx thesis s@(PSLet{}) ps = certifyLet ctx thesis s ps
 -- para demostrar forall X . f(X)
 -- Y no debe aparecer libre en el contexto que lo precede
 certifyLet :: Context -> Form -> ProofStep -> TProof -> Result Proof
-certifyLet ctx (FForall x f) (PSLet y) ps
+certifyLet ctx forAll@(FForall x f) (PSLet y) ps
     | y `elem` fvC ctx = Left $ printf "new var (%s) must not appear free in preceding context (%s)" y (show ctx)
+    | y `elem` fv forAll = Left $ printf "new var (%s) must not appear free in forall: %s" y (show forAll)
     | otherwise = do
         nextProof <- certifyProof ctx (subst x (TVar y) f) ps
         return
