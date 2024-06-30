@@ -222,10 +222,12 @@ check env proof@(PExistsE x fA proofExistsxA hypA proofB) fB
         err | checkResultIsErr err -> CheckErrorW "proof exists" env proof fB err
         CheckOK -> wrap (check (EExtend hypA fA env) proofB fB) "proof assuming" env proof fB
 -- dem de Forall x. A
-check env proof@(PForallI proofA) form@(FForall x fA) =
-    if x `elem` fvE env
-        then CheckError env proof form (printf "env shouldn't contain fv '%s'" x)
-        else wrap (check env proofA fA) "proof form" env proof form
+check env proof@(PForallI x' proofA) form@(FForall x fA) =
+    if x' `elem` fvE env
+        then CheckError env proof form (printf "env shouldn't contain fv '%s'" x')
+        else
+            let fA' = subst x (TVar x') fA
+             in wrap (check env proofA fA') "proof form" env proof form
 -- dem de A{x:=t} usando Forall x. A
 check env proof@(PForallE x fA proofForallxA t) fAxt =
     if subst x t fA /= fAxt

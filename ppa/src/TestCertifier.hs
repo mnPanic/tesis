@@ -14,7 +14,7 @@ import Certifier (
     findContradiction,
     fromClause,
     fromDNF,
-    solve,
+    solveContradiction,
     toClause,
  )
 
@@ -91,36 +91,75 @@ testCommands :: Test
 testCommands =
     test
         [ "suppose"
-            ~: testProgram
+            ~: test
+                [ "simple"
+                    ~: testProgram
+                        [r|
+                        theorem a_implies_a : a -> a
+                        proof
+                            suppose "a" : a
+                            thus a by a
+                        end
+                    |]
+                , "transitivity"
+                    ~: testProgram
+                        [r|
+                        axiom ax_1 : a -> b
+                        axiom ax_2 : b -> c
+                        theorem t1 : a -> c 
+                        proof
+                            suppose a : a
+                            // La tesis ahora es c
+                            hence c by a, ax_1, ax_2
+                        end
+                    |]
+                , "wrong formula"
+                    ~: testProgramError
+                        [r|
+                            theorem t1: a
+                            proof
+                                suppose a : a
+                            end
+                        |]
+                        "theorem 't1': suppose: can't suppose 'a : a' with form 'a', must be implication or negation"
+                , "not intro"
+                    ~: testProgram
+                        [r|
+                        theorem ej : a -> ~~a
+                        proof
+                            suppose a : a
+                            suppose "no a" : ~a
+                            thus false by a, "no a"
+                        end
+                    |]
+                , "not intro contrapositive"
+                    ~: testProgram
+                        [r|
+                        axiom a_implies_b : a -> b
+                        theorem contrapositive : ~b -> ~a
+                        proof
+                            suppose not_b : ~b
+                            suppose a : a
+                            thus false by a, a_implies_b, not_b
+                        end
+                    |]
+                ]
+        , "invalid axiom free vars"
+            ~: testProgramError
                 [r|
-            theorem a_implies_a : a -> a
-            proof
-                suppose "a" : a;
-                thus a by a;
-            end
+            axiom a: p(X) & g(Y)
         |]
-        , "suppose 2, transitivity"
-            ~: testProgram
-                [r|
-            axiom ax_1 : a -> b
-            axiom ax_2 : b -> c
-            theorem t1 : a -> c 
-            proof
-                suppose a : a;
-                // La tesis ahora es c
-                hence c by a, ax_1, ax_2;
-            end
-            |]
+                "axiom 'a': can't have free vars but have {X,Y}"
         , "have"
             ~: testProgram
                 [r|
             theorem "ejemplo" : (a -> b -> c) -> (a -> b) -> a -> c
             proof
-                suppose "P": a -> b -> c;
-                suppose "Q": a -> b;
-                suppose "R": a;
-                have "S": b by "Q", "R";
-                thus c   by "P", "R", "S";
+                suppose "P": a -> b -> c
+                suppose "Q": a -> b
+                suppose "R": a
+                have "S": b by "Q", "R"
+                thus c   by "P", "R", "S"
             end
         |]
         , "incomplete proof"
@@ -132,64 +171,80 @@ testCommands =
                         proof
                         end
                         |]
-                        "incomplete proof, still have a -> b as thesis"
+                        "theorem 'error': incomplete proof, still have a -> b as thesis"
                 , "incomplete"
                     ~: testProgramError
                         [r|
                         theorem "error": a -> b
                         proof
-                            suppose a:a;
+                            suppose a:a
                         end
                         |]
-                        "incomplete proof, still have b as thesis"
+                        "theorem 'error': suppose: incomplete proof, still have b as thesis"
                 ]
         , "justification not in context error"
             ~: testProgramError
                 [r|theorem "ejemplo" : a
                 proof
-                    thus a by "-", foo;
+                    thus a by "-", foo
                 end|]
-                "finding hyps in context: can't get prev hyp from empty ctx; 'foo' not present in ctx"
+                "theorem 'ejemplo': thusBy: finding hyps in context: can't get prev hyp from empty ctx; 'foo' not present in ctx"
         , "no contradicting literals error"
             ~: testProgramError
                 [r|theorem "ejemplo" : (a -> b -> c) -> (a -> b) -> a -> c
             proof
-                suppose "P": a -> b -> c;
-                suppose "Q": a -> b;
-                suppose "R": a;
-                have "S": b by "Q";
+                suppose "P": a -> b -> c
+                suppose "Q": a -> b
+                suppose "R": a
+                have "S": b by "Q"
             end|]
-                "finding contradiction for dnf form '(~a & ~b) | (b & ~b)' obtained from '~((a -> b) -> b)': [~a,~b] contains no contradicting literals or false"
+                "theorem 'ejemplo': suppose: suppose: suppose: haveBy: finding contradiction for dnf form '(~a & ~b) | (b & ~b)' obtained from '~((a -> b) -> b)': '~a & ~b' contains no contradicting literals or false, and trying to eliminate foralls: form contains no foralls to eliminate"
         , "then + hence"
             ~: testProgram
                 [r|
             theorem "ejemplo" : (a -> b -> c) -> (a -> b) -> a -> c
             proof
-                suppose "P": a -> b -> c;
-                suppose "Q": a -> b;
-                suppose "R": a;
-                then "S": b by "Q";
-                hence c   by "P", "R";
+                suppose "P": a -> b -> c
+                suppose "Q": a -> b
+                suppose "R": a
+                then "S": b by "Q"
+                hence c   by "P", "R"
             end
             theorem "thus -, have -" : (a -> b -> c) -> (a -> b) -> a -> c
             proof
-                suppose "P": a -> b -> c;
-                suppose "Q": a -> b;
-                suppose "R": a;
+                suppose "P": a -> b -> c
+                suppose "Q": a -> b
+                suppose "R": a
                 // Sin el sugar, hence == thus -/then == have -
-                have "S": b by "Q", -;
-                thus c   by -, "P", "R";
+                have "S": b by "Q", -
+                thus c   by -, "P", "R"
             end
         |]
-        , "and discharge"
+        , "and discharge + optional by"
             ~: testProgram
                 [r|
             theorem "andi_variant" : a -> b -> (a & b)
             proof
-                suppose "a" : a;
-                suppose "b" : b;
-                hence b by "b"; // TODO: sacar el by cuando sea opcional
-                thus a by "a";
+                suppose "a" : a
+                suppose "b" : b
+                hence b
+                thus a by "a"
+            end
+        |]
+        , "tautology + optional by"
+            ~: testProgram
+                [r|
+            theorem "taut" : ~(a | b) -> ~a & ~b
+            proof
+                // Resuelve solo el solver, sin by
+                thus ~(a | b) -> ~a & ~b
+            end
+
+            // Demo alternativa pero con have + hence
+            theorem "taut con have": ~(a | b) & c -> ~a & ~b & c
+            proof
+                have "distributiva del not sobre or": ~(a | b) -> ~a & ~b
+                hence ~(a | b) & c -> ~a & ~b & c
             end
         |]
         , "and repeteated"
@@ -197,11 +252,11 @@ testCommands =
                 [r|
             theorem "andi_variant" : a -> b -> (a & (a & (b & a)) & a)
             proof
-                suppose "a" : a;
-                suppose "b" : b;
+                suppose "a" : a
+                suppose "b" : b
                 // A pesar de haber más de un a, se sacan los repetidos
-                thus a by "a";
-                thus b by "b";
+                thus a by "a"
+                thus b by "b"
             end
         |]
         , "and discharge complex"
@@ -214,9 +269,9 @@ testCommands =
             axiom "e": e
             theorem "andi_variant" : (a & b) & ((c & d) & e)
             proof
-                thus a & e by "a", "e";
-                thus d by "d";
-                thus b & c by "b", "c";
+                thus a & e by "a", "e"
+                thus d by "d"
+                thus b & c by "b", "c"
             end
         |]
         , -- https://www.cs.ru.nl/~freek/notes/mv.pdf p2
@@ -228,8 +283,8 @@ testCommands =
 
                 theorem t: a & b -> c & d
                 proof
-                    suppose h : a & b;
-                    hence c & d by "a then c", "b then d";
+                    suppose h : a & b
+                    hence c & d by "a then c", "b then d"
                 end
             |]
         , "equivalently"
@@ -240,9 +295,9 @@ testCommands =
                 axiom "no b": ~b
                 theorem "ejemplo equiv" : ~(a | b)
                 proof
-                    equivalently (~a & ~b);
-                    thus ~a by "no a";
-                    thus ~b by "no b";
+                    equivalently (~a & ~b)
+                    thus ~a by "no a"
+                    thus ~b by "no b"
                 end
             |]
         , "claim"
@@ -254,12 +309,276 @@ testCommands =
                 proof
                     claim "c" : (~a & ~b)
                     proof
-                        thus ~a by "no a";
-                        thus ~b by "no b";
+                        thus ~a by "no a"
+                        thus ~b by "no b"
                     end
-                    thus ~(a | b) by "c";
+                    thus ~(a | b) by "c"
                 end
         |]
+        , "LEM"
+            ~: testProgram
+                [r|
+                theorem lem: p | ~p
+                proof
+                    thus p | ~p
+                end
+                |]
+        , "cases"
+            ~: test
+                [ "2 cases"
+                    ~: testProgram
+                        [r|
+                        theorem "ejemplo cases": (a & b) | (c & a) -> a
+                        proof
+                            suppose h : (a & b) | (c & a)
+                            cases by h
+                                case a&b
+                                    hence a
+                                case a&c // no tiene que ser igual
+                                    hence a
+                            end
+                        end
+                    |]
+                , "3 cases"
+                    ~: testProgram
+                        [r|
+                        axiom d_imp_a : d -> a
+                        theorem "3 casos": (a & b) | (c & a) | d -> a
+                        proof
+                            suppose h : (a & b) | (c & a) | d
+                            cases by h
+                                case a & b
+                                    hence a
+                                case c2 : a & c
+                                    thus a by c2
+                                case d
+                                    hence a by d_imp_a
+                            end
+                        end
+                    |]
+                , "optional by"
+                    ~: testProgram
+                        [r|
+                    axiom a1: p -> q
+                    axiom a2: ~p -> q
+
+                    theorem always_q: q
+                    proof
+                        cases
+                        case p
+                            thus q by a1, -
+                        case ~p
+                            thus q by a2, -
+                        end
+                    end
+                    |]
+                ]
+        , "take"
+            ~: test
+                [ "ok"
+                    ~: testProgram
+                        [r|
+                        axiom zero_is_zero : isZero(zero)
+                        theorem "zero exists": exists X. isZero(X)
+                        proof
+                            take X := zero
+                            thus isZero(zero) by zero_is_zero
+                        end
+                |]
+                , "error invalid var"
+                    ~: testProgramError
+                        [r|
+                        theorem "zero exists": exists X. isZero(X)
+                        proof
+                            take Y := zero
+                        end
+                |]
+                        "theorem 'zero exists': take: can't take var 'Y', different from thesis var 'X'"
+                , "error invalid form"
+                    ~: testProgramError
+                        [r|
+                        theorem "zero exists": a
+                        proof
+                            take Y := zero
+                        end
+                |]
+                        "theorem 'zero exists': take: can't use on form 'a', not exists"
+                ]
+        , "consider"
+            ~: test
+                [ "ok"
+                    ~: testProgram
+                        [r|
+                    theorem "consider simple ex": (exists Y . a(Y) & b(Y)) -> exists Q . b(Q)
+                    proof
+                        suppose h1 : exists Y . a(Y) & b(Y)
+                        consider Y st h2 : a(Y) & b(Y) by h1
+                        take Q := Y
+                        thus b(Y) by -
+                    end
+                |]
+                , "ok rename"
+                    ~: testProgram
+                        [r|
+                    theorem "consider simple ex": (exists Y . a(Y) & b(Y)) -> exists Q . b(Q)
+                    proof
+                        suppose h1 : exists Y . a(Y) & b(Y)
+                        consider Q st h2 : a(Q) & b(Q) by h1
+                        take Q := Q
+                        thus b(Q) by -
+                    end
+                |]
+                , "err var free in form"
+                    ~: testProgramError
+                        [r|
+                    theorem "consider": (exists Y . a(Y) & b(Y)) -> exists Q . b(Q)
+                    proof
+                        suppose h1 : exists Y . a(Y) & b(Y)
+                        // Alcanza con invertir estas dos fórmulas para que falle
+                        take Q := Y
+                        consider Y st h2 : a(Y) & b(Y) by h1
+                        thus b(Y) by -
+                    end
+                |]
+                        "theorem 'consider': suppose: take: consider: can't use an exist whose variable (Y) appears free in the thesis (b(Y))"
+                , "err var free in ctx"
+                    ~: testProgramError
+                        [r|
+                    axiom a1 : exists Y . a(Y)
+                    theorem "consider": (exists Y . b(Y)) -> exists Y . c(Y)
+                    proof
+                        suppose h1 : exists Y . b(Y)
+                        consider Y st h2 : a(Y) by a1
+                        consider Y st h3 : b(Y) by h1 // está libre en el contexto
+                    end
+                |]
+                        "theorem 'consider': suppose: consider: consider: can't use an exist whose variable (Y) appears free in the preceding context ([(axiom) h2 : a(Y),(axiom) h1 : exists Y . b(Y),(axiom) a1 : exists Y . a(Y)])"
+                ]
+        , "let"
+            ~: [ "err var in context"
+                    ~: testProgramError
+                        [r|
+                    axiom a1: exists X . a(X)
+                    theorem "let" : forall X . a(X)
+                    proof
+                        consider X st h : a(X) by a1
+                        let X := X // está X libre en el ctx por el consider
+                        thus a(X) by a1
+                    end
+                |]
+                        "theorem 'let': consider: let: new var (X) must not appear free in preceding context ([(axiom) h : a(X),(axiom) a1 : exists X . a(X)])"
+               , "wrong form"
+                    ~: testProgramError
+                        [r|
+                    theorem "let err" : a -> b
+                    proof
+                        let X := X
+                    end
+                |]
+                        "theorem 'let err': let: can't use with form 'a -> b', must be an universal quantifier (forall)"
+               , "ok"
+                    ~: testProgram
+                        [r|
+                    axiom a1: forall X . p(X) & q(X)
+                    theorem "let" : forall X . p(X)
+                    proof
+                        let X
+                        thus p(X) by a1
+                    end
+
+                    theorem "let same rename" : forall X . p(X)
+                    proof
+                        let X := X
+                        thus p(X) by a1
+                    end
+
+                    theorem "let rename" : forall X . p(X)
+                    proof
+                        let X := Y
+                        thus p(Y) by a1
+                    end
+               |]
+               ]
+        , "forall elim"
+            ~: test
+                [ "simple ex OK"
+                    ~: testProgram
+                        [r|
+                    axiom a: forall X. f(X)
+                    theorem t: f(a)
+                    proof
+                        thus f(a) by a
+                    end
+                |]
+                , "ok more than one"
+                    ~: testProgram
+                        [r|
+                    axiom a0: forall Y. g(Y)
+                    axiom a: forall X. f(X)
+                    theorem t: f(a)
+                    proof
+                        thus f(a) by a0, a
+                    end
+                |]
+                , "dnf OK"
+                    ~: testProgram
+                        [r|
+                    // Al instanciar la X, queda una fórmula que no está en DNF
+                    //  ~(f(X) | g(X)) & ~f(a) & ~g(a)
+                    // y hay que re-convertir
+
+                    axiom a: forall X. ~(f(X) | g(X))
+                    theorem t: ~f(a) & ~g(a)
+                    proof
+                        thus ~f(a) & ~g(a) by a
+                    end
+                |]
+                , "with imp"
+                    ~: testProgram
+                        [r|
+                    axiom a: forall X. f(X) | g(X)
+                    theorem t: ~g(a) -> f(a)
+                    proof
+                        suppose h: ~g(a)
+                        thus f(a) by -, a
+                    end
+                |]
+                , "no vars inside forall"
+                    ~: testProgram
+                        [r|
+                    axiom a: forall X. f(a)
+                    theorem t: f(a)
+                    proof
+                        thus f(a) by a
+                    end
+
+                    axiom a2: forall X. false
+                    theorem t2: f(b)
+                    proof
+                        thus f(b) by a2
+                    end
+                |]
+                , "ok alpha equiv"
+                    ~: testProgram
+                        [r|
+                    axiom a1: forall X. forall Y. f(X) & g(Y)
+                    theorem t: forall Z. f(a) & g(Z)
+                    proof
+                        thus forall Z. f(a) & g(Z) by a1
+                    end
+                |]
+                , "err no foralls"
+                    ~: testProgramError
+                        [r|
+                    axiom a1: forall X. f(X)
+                    axiom a2: forall Y. g(Y)
+                    theorem t: h(a)
+                    proof
+                        thus h(a) by a1, a2
+                    end
+                |]
+                        "theorem 't': thusBy: finding contradiction for dnf form '(forall X . f(X) & forall Y . g(Y)) & ~h(a)' obtained from '~((forall X . f(X) & forall Y . g(Y)) -> h(a))': '(forall X . f(X) & forall Y . g(Y)) & ~h(a)' contains no contradicting literals or false, and trying to eliminate foralls: no foralls useful for contradictions:\ntry eliminating 'forall X . f(X)': solving clause with metavar in dnf '(f(?) & forall Y . g(Y)) & ~h(a)': no opposites that unify\ntry eliminating 'forall Y . g(Y)': solving clause with metavar in dnf '(forall X . f(X) & g(?)) & ~h(a)': no opposites that unify"
+                ]
         ]
 
 -- , "optional hyp"
@@ -267,11 +586,11 @@ testCommands =
 --         [r|
 --     theorem "ejemplo sin hyp id" : (a -> b -> c) -> (a -> b) -> a -> c
 --     proof
---         suppose "P": a -> b -> c;
---         suppose "Q": a -> b;
---         suppose "R": a;
---         then b by "Q"; // no tiene hyp id
---         hence c by "P", "R";
+--         suppose "P": a -> b -> c
+--         suppose "Q": a -> b
+--         suppose "R": a
+--         then b by "Q" // no tiene hyp id
+--         hence c by "P", "R"
 --     end|]
 
 testSolve :: Test
@@ -389,10 +708,10 @@ testSolve =
                     ]
                 ]
         , "clause too short not refutable"
-            ~: solve ("h", fromDNF [[propVar "X"]])
-            ~?= Left "[X] contains no contradicting literals or false"
+            ~: solveContradiction ("h", fromDNF [[propVar "X"]])
+            ~?= Left "'X' contains no contradicting literals or false, and trying to eliminate foralls: form contains no foralls to eliminate"
         , "one clause not refutable"
-            ~: solve
+            ~: solveContradiction
                 ( "h"
                 , fromDNF
                     [
@@ -406,20 +725,20 @@ testSolve =
                     , [propVar "X", FTrue]
                     ]
                 )
-            ~?= Left "[X,true] contains no contradicting literals or false"
-        , "not dnf" ~: solve ("h", FImp FTrue FFalse) ~?= Left "convert to clause: true -> false is not a literal"
+            ~?= Left "'X & true' contains no contradicting literals or false, and trying to eliminate foralls: form contains no foralls to eliminate"
+        , "not dnf" ~: solveContradiction ("h", FImp FTrue FFalse) ~?= Left "convert to clause: true -> false is not a literal"
         ]
 
 doTestSolveEqCheck :: EnvItem -> Proof -> IO ()
 doTestSolveEqCheck i@(h, f) expectedProof = do
-    let result = solve i
+    let result = solveContradiction i
     result @?= Right expectedProof
     let (Right proof) = result
     check (EExtend h f EEmpty) proof FFalse @?= CheckOK
 
 doTestSolveCheck :: Form -> Assertion
 doTestSolveCheck f = do
-    let result = solve ("h", f)
+    let result = solveContradiction ("h", f)
     case result of
         Right proof -> check (EExtend "h" f EEmpty) proof FFalse @?= CheckOK
         Left err -> assertFailure err
@@ -473,7 +792,7 @@ testFindContradiction =
                 , propVar "B"
                 , FFalse
                 ]
-            ~?= Right
+            ~?= Just
                 FFalse
         , "no contradiction"
             ~: findContradiction
@@ -481,7 +800,7 @@ testFindContradiction =
                 , propVar "B"
                 , propVar "C"
                 ]
-            ~?= Left "[A,B,C] contains no contradicting literals or false"
+            ~?= Nothing
         , "literals contradicting"
             ~: findContradiction
                 [ propVar "A"
@@ -489,7 +808,7 @@ testFindContradiction =
                 , FNot $ propVar "A"
                 , propVar "C"
                 ]
-            ~?= Right (propVar "A")
+            ~?= Just (propVar "A")
         , "more than one literal contradicting returns first"
             ~: findContradiction
                 [ FForall "x" (propVar "A")
@@ -498,7 +817,7 @@ testFindContradiction =
                 , propVar "C"
                 , FNot $ FForall "x" (propVar "A")
                 ]
-            ~?= Right (FForall "x" (propVar "A"))
+            ~?= Just (FForall "x" (propVar "A"))
         ]
 
 testClause :: Test

@@ -6,20 +6,34 @@ module PPA (
   Justification,
   Hypothesis (..),
   Decl (..),
+  Case,
   findHyp,
   getHypId,
   getProof,
   getForm,
+  fvC,
+  psName,
+  VarRename,
 ) where
 
 import Data.List (find)
-import ND (Env (EEmpty), Form (..), HypId, Proof (..))
+import ND (
+  Env (EEmpty),
+  Form (..),
+  HypId,
+  Proof (..),
+  Term,
+  VarId,
+  fv,
+ )
 import NDChecker (
   CheckResult,
   check,
  )
 import NDProofs (Result)
 import Text.Printf (printf)
+
+import Data.Set qualified as Set
 
 type Program = [Decl]
 
@@ -29,6 +43,12 @@ data Decl
   deriving (Show, Eq)
 
 type TProof = [ProofStep]
+
+-- old, new
+-- Pueden ser iguales
+type VarRename = (VarId, VarId)
+
+type Case = (HypId, Form, TProof)
 
 data ProofStep
   = PSSuppose HypId Form
@@ -40,7 +60,23 @@ data ProofStep
     PSEquiv Form
   | -- Afirmación auxiliar con su demostración
     PSClaim HypId Form TProof
+  | PSCases Justification [Case]
+  | PSTake VarId Term
+  | PSConsider VarId HypId Form Justification
+  | PSLet VarRename
   deriving (Show, Eq)
+
+psName :: ProofStep -> String
+psName ps = case ps of
+  (PSSuppose{}) -> "suppose"
+  (PSThusBy{}) -> "thusBy"
+  (PSHaveBy{}) -> "haveBy"
+  (PSEquiv{}) -> "equiv"
+  (PSClaim{}) -> "claim"
+  (PSCases{}) -> "cases"
+  (PSTake{}) -> "take"
+  (PSConsider{}) -> "consider"
+  (PSLet{}) -> "let"
 
 type Justification = [HypId]
 
@@ -52,7 +88,11 @@ type Goal = (Context, Form)
 data Hypothesis
   = HAxiom HypId Form
   | HTheorem HypId Form Proof
-  deriving (Show, Eq)
+  deriving (Eq)
+
+instance Show Hypothesis where
+  show (HAxiom h f) = printf "(axiom) %s : %s" h (show f)
+  show (HTheorem h f p) = printf "(theorem) %s : %s . Proof = %s" h (show f) (show p)
 
 getHypId :: Hypothesis -> HypId
 getHypId (HAxiom h _) = h
@@ -68,9 +108,7 @@ getProof (HTheorem _ _ p) = p
 
 findHyp :: Context -> HypId -> Result Hypothesis
 findHyp ctx h
-  | h == prevHypId = do
-      prev <- getPrevHypId ctx
-      findHyp ctx prev
+  | h == prevHypId = getPrevHyp ctx
   | otherwise = case find (\h' -> getHypId h' == h) ctx of
       Just hyp -> Right hyp
       Nothing -> Left $ printf "'%s' not present in ctx" h
@@ -80,7 +118,10 @@ prevHypId :: String
 prevHypId = "-"
 
 -- Devuelve la última hipótesis que se agregó al contexto
-getPrevHypId :: Context -> Result HypId
-getPrevHypId ctx
+getPrevHyp :: Context -> Result Hypothesis
+getPrevHyp ctx
   | null ctx = Left "can't get prev hyp from empty ctx"
-  | otherwise = return $ getHypId $ head ctx
+  | otherwise = return $ head ctx
+
+fvC :: Context -> Set.Set VarId
+fvC = foldr (Set.union . fv . getForm) Set.empty

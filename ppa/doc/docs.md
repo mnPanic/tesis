@@ -70,7 +70,7 @@ Se pueden dejar comentarios de una sola línea (`//`) o multilínea (`/* ... */`
 ## Demostraciones
 
 Las demostraciones están compuestas por *pasos*, que deben probar la *tesis*.
-Los pasos corresponden a *comandos*. Están separados por `;`.
+Los pasos corresponden a *comandos*.
 
 ### Comandos
 
@@ -79,23 +79,36 @@ Para demostrar una tesis, hay que **reducirla** mediante comandos hasta agotarla
 #### By
 
 El principal mecanismo de demostración es el **by**, que afirma que un hecho es
-consecuencia de una lista de hipótesis. Puede usarse de dos formas principales
+consecuencia de una lista de hipótesis. Esto permite eliminar universales e implicaciones.
+
+Puede usarse de dos formas principales
 
 - `thus <form> by <justification>`: Si form es *parte* de la tesis (ver
   [descarga de conjunciones](#descarga-de-conjunciones)), y es
   consecuencia lógica de las justificaciones, lo demuestra automáticamente y lo
   descarga de la tesis.
 
-  Por ejemplo,
+  Por ejemplo, para eliminación de implicaciones
 
   ```text
   axiom ax_1 : a -> b
   axiom ax_2 : b -> c
   theorem t1 : a -> c 
   proof
-      suppose a : a;
+      suppose a : a
       // La tesis ahora es c
-      thus c by a, ax_1, ax_2;
+      thus c by a, ax_1, ax_2
+  end
+  ```
+
+  Y para eliminación de cuantificadores universales,
+
+  ```text
+  axiom ax_1 : forall X . f(X)
+  
+  theorem t1: f(n)
+  proof
+    thus f(n) by ax_1
   end
   ```
 
@@ -107,11 +120,11 @@ consecuencia de una lista de hipótesis. Puede usarse de dos formas principales
   ```text
   theorem "ejemplo" : (a -> b -> c) -> (a -> b) -> a -> c
   proof
-      suppose "P": a -> b -> c;
-      suppose "Q": a -> b;
-      suppose "R": a;
-      have "S": b by "Q", "R";
-      thus c   by "P", "R", "S";
+      suppose "P": a -> b -> c
+      suppose "Q": a -> b
+      suppose "R": a
+      have "S": b by "Q", "R"
+      thus c   by "P", "R", "S"
   end
   ```
 
@@ -123,13 +136,71 @@ hipótesis anterior a la justificación, a la que también se puede referir con 
 | `thus`      | `hence`    | Si                  |
 | `have`      | `then`     | No                  |
 
-### Otros comandos
+El by es opcional en ambos. En caso de no especificarlo, debe ser una tautología.
 
-- **`suppose`**: Corresponde a la introducción de la implicación en DN (`=>-I`)
+### Comandos y reglas de inferencia
+
+- **`suppose`**: Corresponde a la introducción de la implicación (`=>-I`)
 
   `suppose <hyp name> : <form>`
 
   Si la tesis es `A -> B`, asume `A` y la tesis se convierte en `B`.
+
+  Viendo a la negación como implicación, `~A = A -> bot`, se puede usar
+  `suppose` para razonar por el absurdo.
+
+  ```text
+  // proof de ~A
+  suppose - : A
+  // ... proof de false
+  ```
+
+- **`cases`**: Corresponde a la eliminación de la disyunción (`v-E`)
+
+  Permite razonar por casos. Para cada uno de ellos se debe demostrar la tesis
+  en su totalidad por separado.
+  
+  ```text
+  theorem "ejemplo cases": (a & b) | (c & a) -> a
+  proof
+      suppose h : (a & b) | (c & a)
+      cases by h
+          case a&b
+              hence a
+          case h:a&c // no tiene que ser igual
+              thus a by h
+      end
+  end
+  ```
+
+  El `by` es opcional, para casos en donde la disyunción es provable sin
+  antecedentes (por ejemplo si tiene la forma `a | ~a` (LEM))
+
+- **`take`** o introducción del existencial
+
+  Para probar un existencial se usa el comando `take`. Si la tesis es `exists X.
+  p(X)`, luego del comando `take X := a` la tesis se reduce a `p(a)`
+
+- **`consider`** o eliminación del existencial
+
+  Si se puede justificar `exists X . p`, se puede razonar sobre ese `X`.
+  
+  El comando `consider X st h : p by ...` agrega f al contexto para el resto de la demostración siempre y cuando `X` no aparezca libre en la tesis o el contexto hasta el momento.
+
+  El `by` debe justificar `exists X . p`.
+
+  También se puede usar una variable y fórmula alpha-equivalente, por ej. si
+  podemos justificar `exists X . p(X)` podemos usar `consider Y st h: p(Y) by ...`.
+
+- **`let`** o introducción de universal
+  
+  Para probar un cuantificador universal `forall X. p(X)`, luego del comando
+  `let X := Y` la tesis se reduce a `p(Y)` para un `Y` genérico.
+  
+  Puede ser el
+  mismo nombre de variable, en ese caso se puede escribir directamente como `let X`.
+
+### Otros comandos
 
 - **`equivalently`**: Permite reducir la tesis a una fórmula equivalente
 
@@ -138,7 +209,7 @@ hipótesis anterior a la justificación, a la que también se puede referir con 
   ```text
   theorem "ejemplo" : ¬(a | b)
   proof
-    equivalently (¬a & ¬b);
+    equivalently (¬a & ¬b)
     ...
   end
   ```
@@ -154,7 +225,7 @@ hipótesis anterior a la justificación, a la que también se puede referir con 
     proof
       ...
     end
-    thus ¬(a | b) by "c";
+    thus ¬(a | b) by "c"
   end
   ```
 
@@ -166,13 +237,13 @@ tesis se reduce al resto. Por ejemplo,
 ```text
 theorem "and discharge" : a -> b -> (a & b)
 proof
-    suppose "a" : a;
-    suppose "b" : b;
+    suppose "a" : a
+    suppose "b" : b
     // La tesis es a & b
-    hence b by "b";
+    hence b by "b"
 
     // La tesis es a
-    thus a by "a";
+    thus a by "a"
 end
 ```
 
@@ -186,8 +257,8 @@ axiom "d": d
 axiom "e": e
 theorem "and discharge" : (a & b) & ((c & d) & e)
 proof
-    thus a & e by "a", "e";
-    thus d by "d";
-    thus b & c by "b", "c";
+    thus a & e by "a", "e"
+    thus d by "d"
+    thus b & c by "b", "c"
 end
 ```

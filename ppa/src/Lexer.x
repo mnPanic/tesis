@@ -51,11 +51,18 @@ tokens :-
     by              { literal TokenBy }
     equivalently    { literal TokenEquivalently }
     claim           { literal TokenClaim }
+    cases           { literal TokenCases }
+    case            { literal TokenCase }
+    take            { literal TokenTake }
+    \:\=            { literal TokenAssign }
+    st              { literal TokenSuchThat }
+    consider        { literal TokenConsider }
+    let             { literal TokenLet }
 
     \"[^\"]*\"          { lex (TokenQuotedName . firstLast) }
 
-    (\_|[A-Z])[a-zA-Z0-9\_\-]*(\')*                      { lex TokenVar }
-    [a-zA-Z0-9\_\-\?!#\$\%&\*\+\<\>\=\?\@\^]+(\')*       { lex TokenId }
+    (\_|[A-Z])[a-zA-Z0-9\_\-]*(\')*                     { lex TokenVar }
+    [a-zA-Z0-9\_\-\?!#\$\%\*\+\<\>\=\?\@\^]+(\')*       { lex TokenId }
     
 {
 
@@ -109,6 +116,13 @@ data TokenClass
     | TokenBy
     | TokenEquivalently
     | TokenClaim
+    | TokenCase
+    | TokenCases
+    | TokenTake
+    | TokenAssign
+    | TokenConsider
+    | TokenSuchThat
+    | TokenLet
     deriving (Eq, Show)
 
 unLex :: TokenClass -> String
@@ -120,6 +134,7 @@ unLex TokenTrue = "true"
 unLex TokenFalse = "false"
 unLex TokenImp = "->"
 unLex TokenNot = "~"
+unLex TokenLet = "let"
 unLex TokenExists = "exists"
 unLex TokenForall = "forall"
 unLex TokenParenOpen = "("
@@ -138,6 +153,12 @@ unLex TokenHence = "hence"
 unLex TokenHave = "have"
 unLex TokenEquivalently = "equivalently"
 unLex TokenClaim = "claim"
+unLex TokenCase = "case"
+unLex TokenCases = "cases"
+unLex TokenTake = "take"
+unLex TokenAssign = ":="
+unLex TokenConsider = "consider"
+unLex TokenSuchThat = "st"
 unLex (TokenQuotedName n) = "\"" ++ n ++ "\""
 unLex (TokenVar s) = "(var) " ++ s
 unLex (TokenId s) = "(id) " ++ s

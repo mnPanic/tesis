@@ -1,0 +1,23 @@
+theorem "implication transitivity":
+    (a -> b) & (b -> c) -> (a -> c)
+proof
+    suppose h1: (a -> b) & (b -> c)
+    suppose h2: a
+    thus c by h1, h2
+end
+
+/************************* Modus Tollens ****************************/
+// (A -> B) -> (~B -> ~A)
+theorem "modus tollens explicit": (a -> b) -> (~b -> ~a)
+proof
+    suppose a_imp_b: a -> b
+    suppose no_b: ~b
+    suppose -: a
+    thus false by -, a_imp_b, no_b
+end
+
+// Obviamente, como es valido en LP, lo demuestra solo el by
+theorem "modus tollens with by": (a -> b) -> (~b -> ~a)
+proof
+    thus (a -> b) -> (~b -> ~a)
+end

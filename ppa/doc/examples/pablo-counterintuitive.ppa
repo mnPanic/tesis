@@ -1,0 +1,12 @@
+// con otro predicado
+// exists X. ( (forall Y. odia(X,Y)) -> (forall Y. odia(Y,X)) )
+
+theorem t: exists X. ( (forall Y. p(X,Y)) -> (forall Y. p(Y,X)) )
+proof
+    take X := a
+    // (forall Y. p(a,Y)) -> (forall Y. p(Y,a))
+    assume h: forall Y. p(a, Y)
+    // forall Y. p(Y,a)
+    let Y := Y
+    // p(Y, a)
+end

@@ -1,0 +1,28 @@
+axiom a: forall X. f(X)
+
+theorem t: f(n)
+proof
+    thus f(n) by a
+end
+
+axiom b: forall X. f(X) | g(X)
+
+theorem t2: g(n) | f(n)
+proof
+    thus g(n) | f(n) by b
+end
+
+/*
+Si a todos les gusta el rock o la cumbia, y existe alguien al que no le gusta
+la cumbia, existe alguien al que le gusta el rock (esa persona)
+*/
+
+axiom all_rock_or_cumbia: forall P. rock(P) | cumbia(P)
+axiom exists_not_cumbia: exists P. ~cumbia(P)
+
+theorem exists_rock: exists P. rock(P)
+proof
+    consider Y st y_no_cumbia: ~cumbia(Y) by exists_not_cumbia
+    take P := Y
+    thus rock(Y) by all_rock_or_cumbia, y_no_cumbia
+end

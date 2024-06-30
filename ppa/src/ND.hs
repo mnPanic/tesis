@@ -17,6 +17,11 @@ module ND (
     propVar,
     predVar,
     dneg,
+    isForall,
+    varN,
+    tFun0,
+    tFun1,
+    fPred1,
 ) where
 
 import Data.Map qualified as Map
@@ -36,7 +41,16 @@ propVar :: PredId -> Form
 propVar pid = FPred pid []
 
 predVar :: PredId -> VarId -> Form
-predVar p v = FPred p [TVar v]
+predVar p v = fPred1 p (TVar v)
+
+fPred1 :: PredId -> Term -> Form
+fPred1 p t = FPred p [t]
+
+tFun0 :: FunId -> Term
+tFun0 f = TFun f []
+
+tFun1 :: FunId -> Term -> Term
+tFun1 f t = TFun f [t]
 
 -- Tipos de identificadores
 type VarId = String
@@ -49,30 +63,35 @@ type Subst = Map.Map String String
 
 data Term
     = TVar VarId
+    | TMetavar
     | TFun FunId [Term]
 
 instance Show Term where
     show (TVar x) = x
     show (TFun f ts) = f ++ showArgs ts
+    show TMetavar = "?"
 
 -- Free variables de un término
 fvTerm :: Term -> Set.Set VarId
 fvTerm (TVar x) = Set.singleton x
 fvTerm (TFun _ ts) = foldr (Set.union . fvTerm) Set.empty ts
+fvTerm TMetavar = Set.empty
 
 instance Eq Term where
     (==) = alphaEqTerm Map.empty Map.empty
 
 alphaEqTerm :: Subst -> Subst -> Term -> Term -> Bool
-alphaEqTerm m1 m2 (TVar x) (TVar y)
-    | x == y = True
-    | otherwise = case Map.lookup x m1 of
-        Nothing -> False
-        Just x' -> case Map.lookup y m2 of
+alphaEqTerm m1 m2 t u = case (t, u) of
+    (TMetavar, TMetavar) -> True
+    (TVar x, TVar y)
+        | x == y -> True
+        | otherwise -> case Map.lookup x m1 of
             Nothing -> False
-            Just y' -> x' == y'
-alphaEqTerm m1 m2 (TFun f1 ts1) (TFun f2 ts2) = f1 == f2 && alphaEqTerms m1 m2 ts1 ts2
-alphaEqTerm _ _ _ _ = False -- Diferente forma
+            Just x' -> case Map.lookup y m2 of
+                Nothing -> False
+                Just y' -> x' == y'
+    (TFun f1 ts1, TFun f2 ts2) -> f1 == f2 && alphaEqTerms m1 m2 ts1 ts2
+    _ -> False -- Diferente forma
 
 alphaEqTerms :: Subst -> Subst -> [Term] -> [Term] -> Bool
 alphaEqTerms m1 m2 ts1 ts2 =
@@ -99,8 +118,8 @@ instance Show Form where
     show (FNot f) = "~" ++ showBinParen f
     show FTrue = "true"
     show FFalse = "false"
-    show (FForall x f) = "forall x. " ++ showBinParen f
-    show (FExists x f) = "exists x. " ++ showBinParen f
+    show (FForall x f) = "forall " ++ x ++ " . " ++ showBinParen f
+    show (FExists x f) = "exists " ++ x ++ " . " ++ showBinParen f
 
 -- muestra las binarias con paréntesis, para evitar supérfluos en show
 showBinParen :: Form -> String
@@ -131,32 +150,33 @@ alphaEqForm' = alphaEqForm 0
 -- TODO: Hay que devolver también la próxima libre, sino para un && puede pasar
 -- que se use la misma de ambos lados y está mal?
 alphaEqForm :: Int -> Subst -> Subst -> Form -> Form -> Bool
-alphaEqForm n _ _ FTrue FTrue = True
-alphaEqForm n _ _ FFalse FFalse = True
-alphaEqForm n m1 m2 (FPred p1 ts1) (FPred p2 ts2) = p1 == p2 && alphaEqTerms m1 m2 ts1 ts2
-alphaEqForm n m1 m2 (FAnd f1 g1) (FAnd f2 g2) = alphaEqForm n m1 m2 f1 f2 && alphaEqForm n m1 m2 g1 g2
-alphaEqForm n m1 m2 (FOr f1 g1) (FOr f2 g2) = alphaEqForm n m1 m2 f1 f2 && alphaEqForm n m1 m2 g1 g2
-alphaEqForm n m1 m2 (FImp f1 g1) (FImp f2 g2) = alphaEqForm n m1 m2 f1 f2 && alphaEqForm n m1 m2 g1 g2
-alphaEqForm n m1 m2 (FNot f1) (FNot f2) = alphaEqForm n m1 m2 f1 f2
-alphaEqForm n m1 m2 (FForall x f1) (FForall y f2)
-    | x == y = alphaEqForm n m1 m2 f1 f2
-    | otherwise =
-        alphaEqForm
-            (n + 1)
-            (Map.insert x (varN n) m1)
-            (Map.insert y (varN n) m2)
-            f1
-            f2
-alphaEqForm n m1 m2 (FExists x f1) (FExists y f2)
-    | x == y = alphaEqForm n m1 m2 f1 f2
-    | otherwise =
-        alphaEqForm
-            (n + 1)
-            (Map.insert x (varN n) m1)
-            (Map.insert y (varN n) m2)
-            f1
-            f2
-alphaEqForm _ _ _ _ _ = False -- Diferente forma
+alphaEqForm n m1 m2 f g = case (f, g) of
+    (FTrue, FTrue) -> True
+    (FFalse, FFalse) -> True
+    (FPred p1 ts1, FPred p2 ts2) -> p1 == p2 && alphaEqTerms m1 m2 ts1 ts2
+    (FAnd f1 g1, FAnd f2 g2) -> alphaEqForm n m1 m2 f1 f2 && alphaEqForm n m1 m2 g1 g2
+    (FOr f1 g1, FOr f2 g2) -> alphaEqForm n m1 m2 f1 f2 && alphaEqForm n m1 m2 g1 g2
+    (FImp f1 g1, FImp f2 g2) -> alphaEqForm n m1 m2 f1 f2 && alphaEqForm n m1 m2 g1 g2
+    (FNot f1, FNot f2) -> alphaEqForm n m1 m2 f1 f2
+    (FForall x f1, FForall y f2)
+        | x == y -> alphaEqForm n m1 m2 f1 f2
+        | otherwise ->
+            alphaEqForm
+                (n + 1)
+                (Map.insert x (varN n) m1)
+                (Map.insert y (varN n) m2)
+                f1
+                f2
+    (FExists x f1, FExists y f2)
+        | x == y -> alphaEqForm n m1 m2 f1 f2
+        | otherwise ->
+            alphaEqForm
+                (n + 1)
+                (Map.insert x (varN n) m1)
+                (Map.insert y (varN n) m2)
+                f1
+                f2
+    _ -> False -- Diferente forma
 
 -- Devuelve la n-esima variable
 varN :: Int -> VarId
@@ -172,6 +192,10 @@ fv FTrue = Set.empty
 fv FFalse = Set.empty
 fv (FForall y f1) = Set.delete y (fv f1)
 fv (FExists y f1) = Set.delete y (fv f1)
+
+isForall :: Form -> Bool
+isForall (FForall{}) = True
+isForall _ = False
 
 data Env
     = EEmpty
@@ -265,21 +289,27 @@ data Proof
         }
     | PLEM
     | -- V x . A
-      PForallI Proof -- de A
+      PForallI
+        { newVar :: VarId -- x'
+        , proofForm :: Proof -- de A { x := x'}
+        }
     | PForallE
-        VarId -- x
-        Form -- A (sin sust)
-        Proof -- de V x . A
-        Term -- t
-        -- E x . A
-    | PExistsI
-        Term -- t
-        Proof -- de A con x reemplazado por t
-        -- E x . A deduce B
-    | PExistsE
-        VarId -- x
-        Form -- A
-        Proof -- de E x. A
-        HypId -- x:A
-        Proof -- de B con A como hyp
+        { var :: VarId -- x
+        , form :: Form -- A (sin sust)
+        , proofForall :: Proof -- de V x . A
+        , termReplace :: Term -- t
+        }
+    | -- E x . A
+      PExistsI
+        { inst :: Term -- t
+        , proofFormWithInst :: Proof -- de A {x := t}
+        }
+    | -- E x . A deduce B
+      PExistsE
+        { var :: VarId -- x
+        , form :: Form -- A
+        , proofExists :: Proof -- de E x. A
+        , hyp :: HypId -- x: A
+        , proofAssuming :: Proof -- de B con A como hyp
+        }
     deriving (Show, Eq)

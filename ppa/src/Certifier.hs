@@ -1,6 +1,6 @@
 module Certifier (
     dnf,
-    solve,
+    solveContradiction,
     toClause,
     fromClause,
     certifyBy,
@@ -11,6 +11,7 @@ module Certifier (
 ) where
 
 import PPA (
+    Case,
     Context,
     Decl (..),
     Hypothesis (HAxiom, HTheorem),
@@ -19,9 +20,11 @@ import PPA (
     ProofStep (..),
     TProof,
     findHyp,
+    fvC,
     getForm,
     getHypId,
     getProof,
+    psName,
  )
 
 import NDProofs (
@@ -29,6 +32,7 @@ import NDProofs (
     Result,
     cut,
     doubleNegElim,
+    hypAndForm,
     hypForm,
     proofAndAssoc,
     proofAndCongruence1,
@@ -55,16 +59,22 @@ import ND (
     Form (..),
     HypId,
     Proof (..),
+    Term (TFun, TMetavar, TVar),
     dneg,
+    fv,
+    isForall,
  )
 
-import NDChecker (CheckResult (CheckOK), check, checkResultIsErr)
+import Unifier (SingleSubst (..), unifyF, unifyT)
+
+import NDChecker (CheckResult (CheckOK), check, checkResultIsErr, subst)
 
 import Data.List (find, intercalate, nub, partition, (\\))
-import Data.Maybe (fromJust, isNothing)
+import Data.Maybe (fromJust, isJust, isNothing)
+import Data.Set (Set)
 import Text.Printf (printf)
 
-import Data.Either (fromLeft, fromRight, isLeft)
+import Data.Either (fromLeft, fromRight, isLeft, isRight, lefts)
 import Debug.Trace
 
 -- En un contexto cada demostración de teorema es válida en el contexto que
@@ -99,29 +109,29 @@ certifyDecl ctx d@(DAxiom{}) = certifyAxiom ctx d
 certifyDecl ctx d@(DTheorem{}) = certifyTheorem ctx d
 
 certifyAxiom :: Context -> Decl -> Result Hypothesis
-certifyAxiom ctx (DAxiom h f) = return (HAxiom h f)
+certifyAxiom ctx (DAxiom h f)
+    | not (null (fv f)) = Left $ printf "axiom '%s': can't have free vars but have %s" h (showSet (fv f))
+    | otherwise = return (HAxiom h f)
 
 certifyTheorem :: Context -> Decl -> Result Hypothesis
 certifyTheorem ctx (DTheorem h f p) = do
-    ndProof <- certifyProof ctx f p
+    ndProof <-
+        wrapR
+            (printf "theorem '%s'" h)
+            (certifyProof ctx f p)
     return (HTheorem h f ndProof)
 
 certifyProof :: Context -> Form -> TProof -> Result Proof
+-- certifyProof ctx f ps | trace (printf "certifyProof %s %s %s" (show ctx) (show f) (show ps)) False = undefined
 certifyProof ctx f [] = Left $ printf "incomplete proof, still have %s as thesis" (show f)
-certifyProof ctx f (p : ps) = certifyProofStep ctx f p ps
+certifyProof ctx f (p : ps) = certifyProofStep' ctx f p ps
+
+certifyProofStep' :: Context -> Form -> ProofStep -> TProof -> Result Proof
+certifyProofStep' ctx f s ps = wrapR (psName s) (certifyProofStep ctx f s ps)
 
 certifyProofStep ::
     Context -> Form -> ProofStep -> TProof -> Result Proof
-certifyProofStep ctx (FImp f1 f2) (PSSuppose name form) ps
-    | form /= f1 = Left $ printf "can't assume '%s' as it's different from antecedent '%s'" (show form) (show f1)
-    | otherwise = do
-        let ctx' = HAxiom name form : ctx
-        sub <- certifyProof ctx' f2 ps
-        return
-            PImpI
-                { hypAntecedent = name
-                , proofConsequent = sub
-                }
+certifyProofStep ctx f s@(PSSuppose _ _) ps = certifySuppose ctx f s ps
 certifyProofStep ctx thesis (PSHaveBy h f js) ps = do
     proof <- certifyBy ctx f js
     let ctx' = HTheorem h f proof : ctx
@@ -129,7 +139,7 @@ certifyProofStep ctx thesis (PSHaveBy h f js) ps = do
 certifyProofStep ctx thesis (PSThusBy form js) ps =
     certifyThesisBy ctx thesis form js ps
 certifyProofStep ctx thesis (PSEquiv thesis') ps = do
-    proofThesis'ThenThesis <- solveImp thesis' thesis
+    proofThesis'ThenThesis <- solve (FImp thesis' thesis)
     proofThesis' <- certifyProof ctx thesis' ps
     return
         PImpE
@@ -141,6 +151,149 @@ certifyProofStep ctx thesis (PSClaim h f ps') ps = do
     proofClaim <- certifyProof ctx f ps'
     let ctx' = HTheorem h f proofClaim : ctx
     certifyProof ctx' thesis ps
+certifyProofStep ctx thesis (PSCases js cs) ps = certifyCases ctx thesis js cs ps
+certifyProofStep ctx thesis s@(PSTake{}) ps = certifyTake ctx thesis s ps
+certifyProofStep ctx thesis s@(PSConsider{}) ps = certifyConsider ctx thesis s ps
+certifyProofStep ctx thesis s@(PSLet{}) ps = certifyLet ctx thesis s ps
+
+-- let X := Y
+-- para demostrar forall X . f
+-- Y no debe aparecer libre en el contexto que lo precede
+certifyLet :: Context -> Form -> ProofStep -> TProof -> Result Proof
+certifyLet ctx (FForall x f) (PSLet (x', y)) ps
+    | x /= x' = Left $ printf "assinged var (%s) must be the same as in thesis (%s)" x' x
+    | y `elem` fvC ctx = Left $ printf "new var (%s) must not appear free in preceding context (%s)" y (show ctx)
+    | otherwise = do
+        nextProof <- certifyProof ctx (subst x (TVar y) f) ps
+        return
+            PForallI
+                { newVar = y
+                , proofForm = nextProof
+                }
+certifyLet ctx thesis (PSLet{}) ps =
+    Left
+        $ printf
+            "can't use with form '%s', must be an universal quantifier (forall)"
+            (show thesis)
+
+-- consider X := Y st h : f by ...
+-- by debe justificar el exists X . f
+-- Y no debe aparecer libre en la tesis ni en el contexto
+certifyConsider :: Context -> Form -> ProofStep -> TProof -> Result Proof
+-- certifyConsider ctx thesis s@(PSConsider x h f js) ps | trace (printf "certifyConsider %s %s %s %s %s %s" (show ctx) (show thesis) (show s) h (show f) (show js)) False = undefined
+certifyConsider ctx thesis (PSConsider x h f js) ps
+    | x `elem` fv thesis = Left $ printf "can't use an exist whose variable (%s) appears free in the thesis (%s)" x (show thesis)
+    | x `elem` fvC ctx = Left $ printf "can't use an exist whose variable (%s) appears free in the preceding context (%s)" x (show ctx)
+    | otherwise = do
+        proofExists <- certifyBy ctx (FExists x f) js
+
+        let ctx' = HAxiom h f : ctx
+        nextProof <- certifyProof ctx' thesis ps
+
+        return
+            PExistsE
+                { var = x
+                , form = f
+                , proofExists = proofExists
+                , hyp = h
+                , proofAssuming = nextProof
+                }
+
+certifyTake :: Context -> Form -> ProofStep -> TProof -> Result Proof
+certifyTake ctx (FExists x f) (PSTake x' t) ps
+    | x /= x' = Left $ printf "can't take var '%s', different from thesis var '%s'" x' x
+    | otherwise = do
+        let f' = subst x t f
+        proof <- certifyProof ctx f' ps
+        return
+            PExistsI
+                { inst = t
+                , proofFormWithInst = proof
+                }
+certifyTake _ f (PSTake _ _) _ = Left $ printf "can't use on form '%s', not exists" (show f)
+
+-- Certifica el suppose
+certifySuppose :: Context -> Form -> ProofStep -> TProof -> Result Proof
+certifySuppose ctx (FImp f1 f2) (PSSuppose name form) ps
+    | form /= f1 =
+        Left
+            $ printf
+                "can't suppose '%s : %s' as it's different from antecedent '%s'"
+                name
+                (show form)
+                (show f1)
+    | otherwise = do
+        let ctx' = HAxiom name form : ctx
+        proofConsequent <- certifyProof ctx' f2 ps
+        return
+            PImpI
+                { hypAntecedent = name
+                , proofConsequent = proofConsequent
+                }
+certifySuppose ctx (FNot f) (PSSuppose name form) ps
+    | form /= f =
+        Left
+            $ printf
+                "to prove by contradiction you must suppose the form without negation, but '%s' != '%s : %s'"
+                (show f)
+                name
+                (show form)
+    | otherwise = do
+        let ctx' = HAxiom name form : ctx
+        proofBot <- certifyProof ctx' FFalse ps
+        return
+            PNotI
+                { hyp = name
+                , proofBot = proofBot
+                }
+certifySuppose ctx f (PSSuppose name form) ps =
+    Left
+        $ printf
+            "can't suppose '%s : %s' with form '%s', must be implication or negation"
+            name
+            (show form)
+            (show f)
+
+-- Certifica el cases
+-- Para cada caso, sigue con la demostración asumiendo la fórmula.
+certifyCases :: Context -> Form -> Justification -> [Case] -> TProof -> Result Proof
+-- certifyCases ctx thesis js cases ps | trace (printf "certifyCases %s %s %s %s %s" (show ctx) (show thesis) (show js) (show cases) (show ps)) False = undefined
+certifyCases _ _ _ [] _ = Left "empty cases"
+certifyCases _ _ _ [_] _ = Left "must have more than one case"
+certifyCases ctx thesis js cases ps = do
+    let fOr = orFromCases cases
+    proofOr <- certifyBy ctx fOr js
+    (_, proofCases) <- certifyCases' ctx thesis proofOr cases ps
+    return PNamed{name = "proof cases", proof = proofCases}
+
+certifyCases' :: Context -> Form -> Proof -> [Case] -> TProof -> Result (HypId, Proof)
+-- certifyCases' ctx thesis proofOr cases ps | trace (printf "certifyCases' %s %s %s %s %s" (show ctx) (show thesis) (show proofOr) (show cases) (show ps)) False = undefined
+certifyCases' ctx thesis _ [(h, f, p)] ps = do
+    proof <- certifyProof (HAxiom h f : ctx) thesis p
+    return (h, proof)
+certifyCases' ctx thesis proofOr cases@((h, f, p) : cs) ps = do
+    let hOr = hypForm $ orFromCases cases
+    let (fOrR, hOrR) = hypAndForm $ orFromCases cs
+
+    proofAssumingF <- certifyProof (HAxiom h f : ctx) thesis p
+    (hOrRest, proofRest) <- certifyCases' ctx thesis (PAx hOrR) cs ps
+
+    return
+        ( hOr
+        , POrE
+            { left = f
+            , right = fOrR
+            , proofOr = proofOr
+            , hypLeft = h
+            , proofAssumingLeft = proofAssumingF
+            , hypRight = hOrRest
+            , proofAssumingRight = proofRest
+            }
+        )
+
+-- Dados los casos de un cases, devuelve el or que representan (right assoc)
+orFromCases :: [Case] -> Form
+orFromCases cs = fromOrListR $ map (\(h, f, p) -> f) cs
 
 {- Certifica que f sea una parte de la tesis y una consecuencia de las justificaciones
 -}
@@ -157,7 +310,7 @@ certifyThesisBy ctx thesis f js ps = do
         -- Tenemos que demostrar que thesis <=> f ^ f'
         Just remForms -> do
             let thesis' = FAnd f remForms
-            proofThesis'ThenThesis <- solveImp thesis' thesis
+            proofThesis'ThenThesis <- solve (FImp thesis' thesis)
 
             proofF <- certifyBy ctx f js
             -- Por acá continua
@@ -197,6 +350,10 @@ toAndList f = [f]
 fromAndList :: [Form] -> Form
 fromAndList = foldl1 FAnd
 
+-- Right assoc
+fromOrListR :: [Form] -> Form
+fromOrListR = foldr1 FOr
+
 {- Certifica que js |- f
 
 Si las justificaciones son [h1, .., hn] y el contexto tiene {h1: f1, ... hn:
@@ -210,13 +367,14 @@ pero en realidad por abajo demuestra
 -}
 certifyBy :: Context -> Form -> Justification -> Result Proof
 -- certifyBy ctx f js | trace (printf "certifyBy %s %s %s" (show ctx) (show f) (show js)) False = undefined
+certifyBy ctx f [] = solve f
 certifyBy ctx f js = do
     jsHyps <- findJustification ctx js
     let jsForms = map getForm jsHyps
 
     let antecedent = fromClause jsForms
 
-    proofAntecedentImpF <- solveImp antecedent f
+    proofAntecedentImpF <- solve (FImp antecedent f)
 
     return
         -- Dem de f con (f1 ... fn) => f
@@ -237,14 +395,15 @@ findJustification ctx js
     hyps = zip js $ map (findHyp ctx) js
     missingHyps = filter (\(h, r) -> isLeft r) hyps
 
-{- solveImp encuentra una demostración automáticamente para f => g
+{- solve encuentra una demostración automáticamente para thesis.
 
-Lo hace por el absurdo, niega la implicación, la pasa a DNF y encuentra una
-contradicción. Este procedimiento es completo para proposicional.
+Lo hace por el absurdo, la niega, la pasa a DNF y encuentra una
+contradicción. Este procedimiento es completo para proposicional y heurístico
+para LPO.
 -}
-solveImp :: Form -> Form -> Result Proof
-solveImp f g = do
-    let thesis = FImp f g
+solve :: Form -> Result Proof
+-- solve thesis | trace (printf "solve %s" (show thesis)) False = undefined
+solve thesis = do
     let fNotThesis = FNot thesis
     let hNotThesis = hypForm fNotThesis
 
@@ -254,9 +413,9 @@ solveImp f g = do
 
     contradictionProof <-
         wrapR (printf "finding contradiction for dnf form '%s' obtained from '%s'" (show fDNFNotThesis) (show fNotThesis))
-            $ solve (hDNFNotThesis, fDNFNotThesis)
+            $ solveContradiction (hDNFNotThesis, fDNFNotThesis)
 
-    -- Dem de f => g por el absurdo
+    -- Dem de thesis por el absurdo
     return
         PImpE
             { antecedent = dneg thesis
@@ -307,6 +466,7 @@ Devuelve Nothing cuando F ya está en DNF.
 -- acá y no se conoce de antemano. Se podrían devolver siempre acá las hips?
 -- Pero es menos general.
 dnfStep :: EnvItem -> Maybe (EnvItem, Proof, Proof)
+-- dnfStep i | trace (printf "dnfStep %s" (show i)) False = undefined
 {- Casos de reescritura -}
 -- x ^ (y v z) -|- (x ^ y) v (x ^ z)
 dnfStep (hAnd, FAnd x (FOr y z)) =
@@ -499,19 +659,20 @@ dnfStep (h, f)
     | isLiteral f = Nothing
     | otherwise = error $ printf "unexpected case '%s':'%s'" h (show f)
 
-{- solve demuestra una contradicción de una fórmula que se asume que está en
-DNF. Para ello refuta cada cláusula, buscando o el mismo literal negado y sin
-negar, o que tenga false.
+{- solveContradiction demuestra una contradicción de una fórmula que se asume
+que está en DNF. Para ello refuta cada cláusula, buscando o el mismo literal
+negado y sin negar, que tenga false, o instanciando cuantificadores universales
+y re-convirtiendo a dnf.
 
 Devuelve una demostración de
     f |- bot
 -}
-solve :: EnvItem -> Result Proof
-solve (hOr, FOr l r) = do
+solveContradiction :: EnvItem -> Result Proof
+solveContradiction (hOr, FOr l r) = do
     let hLeft = hOr ++ " L"
     let hRight = hOr ++ " R"
-    proofLeft <- solve (hLeft, l)
-    proofRight <- solve (hRight, r)
+    proofLeft <- solveContradiction (hLeft, l)
+    proofRight <- solveContradiction (hRight, r)
     return
         POrE
             { left = l
@@ -522,29 +683,33 @@ solve (hOr, FOr l r) = do
             , hypRight = hRight
             , proofAssumingRight = proofRight
             }
-solve i = solveClause i
+solveContradiction i = solveClause i
 
 {- solveClause intenta demostrar que una cláusula es contradictoria.
 
-    p1 ^ p2 ^ ... ^ p_n |- bot
+    p1 ^ p2 ^ ... ^ p_n |- false
 
-busca el mismo literal opuesto, o que alguno sea false.
 Asume que la fórmula es una cláusula: Una conjunción de literales (predicados,
-true y false)
+true/false y cuantificadores)
+
+Hay 3 casos
+
+- Algún literal es false
+- Hay dos literales opuestos
+- Sino, intenta eliminando universales
 -}
 solveClause :: EnvItem -> Result Proof
 solveClause (h, rawClause) = do
     clause <- toClause rawClause
-    contradictingForm <- findContradiction clause
-    case contradictingForm of
-        FFalse -> do
+    case findContradiction clause of
+        Just FFalse -> do
             proofFalse <- proofAndEProjection (h, rawClause) FFalse
             return
                 ( PNamed
                     (printf "contradiction of %s by false" (show rawClause))
                     proofFalse
                 )
-        f -> do
+        Just f -> do
             proofF <- proofAndEProjection (h, rawClause) f
             proofNotF <- proofAndEProjection (h, rawClause) (FNot f)
             return
@@ -557,22 +722,207 @@ solveClause (h, rawClause) = do
                         }
                     )
                 )
+        -- No contradicting literals or false, try by eliminating foralls
+        Nothing ->
+            wrapR
+                (printf "'%s' contains no contradicting literals or false, and trying to eliminate foralls" (show rawClause))
+                (trySolveClauseElimForall (h, rawClause))
 
 -- Clause es una conjunción de literales
 type Clause = [Form]
 
 -- Encuentra dos literales opuestos o false. Devuelve una sola fórmula, que es o
 -- bien false o una que se contradice con su negación.
-findContradiction :: Clause -> Result Form
+findContradiction :: Clause -> Maybe Form
 findContradiction fs
     -- Contradicción por false
-    | FFalse `elem` fs = Right FFalse
+    | FFalse `elem` fs = Just FFalse
     -- No hay por false, buscamos dos opuestas
     | otherwise = case filter hasOpposite fs of
-        (f : _) -> Right f
-        [] -> Left $ printf "%s contains no contradicting literals or false" (show fs)
+        (f : _) -> Just f
+        [] -> Nothing
   where
     hasOpposite f = FNot f `elem` fs
+
+{- trySolveClauseElimForall intenta de refutar una cláusula eliminando a lo sumo
+un forall.
+
+    p1 ^ p2 ^ ... ^ p_n |- false
+
+Para ello, para cada forall intenta:
+
+- instancia la variable en una metavariable, que es única porque solo
+  hacemos este proceso una vez (pega la demo con PForallE reemplazando con lo
+  que unifique)
+
+- como el pasaje a dnf no se mete en los cuantificadores, la fórmula resultante
+  puede no estar en dnf. re-convierte a dnf.
+
+- resuelve la cláusula pero teniendo en cuenta que en lugar de igualdad de
+  términos, hay que ver que unifiquen (y propagar la sustitución para arriba)
+-}
+trySolveClauseElimForall :: EnvItem -> Result Proof
+trySolveClauseElimForall (h, rawClause) =
+    do
+        cl <- toClause rawClause
+        let foralls = filter isForall cl
+        if null foralls
+            then Left "form contains no foralls to eliminate"
+            else do
+                let allProofs = zip foralls (map (solveClauseElimForall (h, rawClause)) foralls)
+                case find (isRight . snd) allProofs of
+                    Nothing ->
+                        let
+                            errs = map (fromLeft "" . snd) allProofs
+                            errMsgs = intercalate "\n" errs
+                         in
+                            Left ("no foralls useful for contradictions:\n" ++ errMsgs)
+                    Just (_, Right proof) -> Right proof
+
+{- solveClauseElimForall refuta una cláusula mediante la eliminación de un
+forall.
+
+- Genera la demostración de la refutación generando la sustitución, pero la demo
+  asume que ya está sustituido
+
+- P
+
+-}
+solveClauseElimForall :: EnvItem -> Form -> Result Proof
+solveClauseElimForall i f =
+    wrapR
+        (printf "try eliminating '%s'" (show f))
+        (solveClauseElimForall' i f)
+
+solveClauseElimForall' :: EnvItem -> Form -> Result Proof
+solveClauseElimForall' (hClause, rawClause) f@(FForall x g) =
+    do
+        -- Primero encontramos por qué reemplazar x para que sea refutable
+        cl <- toClause rawClause
+        sub <- findSubstToSolveContradiction cl f
+        let x' = case sub of SSEmpty -> TVar x; SSTerm t -> t
+
+        -- Ya sé por qué tengo que sustituir la var del forall cuando lo
+        -- elimine, así que lo pego con cut a la fórmula con eso eliminado y
+        -- sigo por ahí
+        let gReplaced = subst x x' g
+        let (clReplaced, hclReplaced) = hypAndForm $ fromClause $ replaceFirst cl f gReplaced
+
+        let (dnfClReplaced, proofDnfClReplaced) = dnf (hclReplaced, clReplaced)
+        let hdnfClReplaced = hypForm dnfClReplaced
+
+        contradictionProof <- solveContradiction (hdnfClReplaced, dnfClReplaced)
+
+        proofClReplacedList <- proveClauseWithForallReplaced (hClause, rawClause) x' cl f
+        let proofClReplaced = proofAndIList proofClReplacedList
+        -- TODO: forall repetido?
+
+        let proofDNFToContradiction =
+                PNamed "dnf to contradiction"
+                    $ cut
+                        dnfClReplaced
+                        proofDnfClReplaced
+                        hdnfClReplaced
+                        contradictionProof
+
+        return
+            ( PNamed
+                "forall elimination to dnf"
+                ( cut
+                    clReplaced
+                    proofClReplaced
+                    hclReplaced
+                    proofDNFToContradiction
+                )
+            )
+
+{-
+proveClauseWithForallReplaced demuestra la cláusula resultante de eliminar un
+forall
+
+Por ejemplo,
+
+    f1 & f2 & (forall x. f(x)) & f3 |- f1 & f2 & f(a) & f3
+-}
+proveClauseWithForallReplaced :: EnvItem -> Term -> Clause -> Form -> Result [Proof]
+proveClauseWithForallReplaced _ _ [] _ = Right []
+proveClauseWithForallReplaced clause newTerm (f : fs) fForall@(FForall x g) =
+    do
+        proofRest <- proveClauseWithForallReplaced clause newTerm fs fForall
+        if f == fForall
+            then do
+                proofForall <- proofAndEProjection clause fForall
+                let proofForallReplaced =
+                        PForallE
+                            { var = x
+                            , form = g
+                            , proofForall = proofForall
+                            , termReplace = newTerm
+                            }
+
+                return (proofForallReplaced : proofRest)
+            else do
+                proofF <- proofAndEProjection clause f
+                return (proofF : proofRest)
+
+{-
+Como el contenido de forall pegado con el resto de la cláusula puede no
+resultar en una fórmula en DNF, hay que re-convertir
+
+Por ej.
+    (forall x . a | b) & c
+    --> (a|b) & c
+
+que no está en dnf
+
+    (dnf) (a & c) | (b & c)
+-}
+findSubstToSolveContradiction :: Clause -> Form -> Result SingleSubst
+findSubstToSolveContradiction cl f@(FForall x g) = do
+    -- Reemplazo la variable por una metavariable así unificando encontramos la
+    -- sustitución que permite refutarla (en caso de que exista)
+    let gMeta = subst x TMetavar g
+    let clMeta = fromClause $ replaceFirst cl f gMeta
+
+    -- Convierto la nueva cláusula a DNF
+    let (dnfClMeta, _) = dnf ("h", clMeta) -- No importa la demo
+    wrapR
+        (printf "solving clause with metavar in dnf '%s'" (show dnfClMeta))
+        (solveContradictionUnifying SSEmpty dnfClMeta)
+
+-- solveContradictionUnifying encuentra la sustitución que hace a la fórmula
+-- refutable (en caso de que exista).
+-- Asume que la fórmula está en DNF.
+solveContradictionUnifying :: SingleSubst -> Form -> Result SingleSubst
+solveContradictionUnifying s (FOr l r) = do
+    sL <- solveContradictionUnifying s l
+    solveContradictionUnifying sL r
+solveContradictionUnifying s i = solveClauseUnifying s i
+
+-- Encuentra la sustitución que permite una contradicción: dos literales
+-- opuestos que unifican o false.
+solveClauseUnifying :: SingleSubst -> Form -> Result SingleSubst
+solveClauseUnifying s rawClause = do
+    clause <- toClause rawClause
+    -- Contradicción por false
+    if FFalse `elem` clause
+        then return SSEmpty
+        else -- No hay por false, buscamos dos opuestas que unifiquen
+        case find isJust (map (findFirstUnifyingWithOpposite s clause) clause) of
+            Just (Just (f, fNot, s)) -> return s
+            Nothing -> Left "no opposites that unify"
+
+findFirstUnifyingWithOpposite :: SingleSubst -> [Form] -> Form -> Maybe (Form, Form, SingleSubst)
+findFirstUnifyingWithOpposite s (f' : fs) f = case unifyF s (FNot f) f' of
+    Left _ -> findFirstUnifyingWithOpposite s fs f
+    Right s -> Just (f, f', s)
+findFirstUnifyingWithOpposite _ [] _ = Nothing
+
+replaceFirst :: (Eq a) => [a] -> a -> a -> [a]
+replaceFirst (x : xs) old new
+    | x == old = new : xs
+    | otherwise = x : replaceFirst xs old new
+replaceFirst [] _ _ = []
 
 toClause :: Form -> Result Clause
 toClause (FAnd l r) = do
@@ -607,3 +957,6 @@ isNotLiteral (FPred _ _) = True
 isNotLiteral (FForall _ _) = True
 isNotLiteral (FExists _ _) = True
 isNotLiteral _ = False
+
+showSet :: Data.Set.Set String -> String
+showSet s = "{" ++ intercalate "," (foldr (:) [] s) ++ "}"

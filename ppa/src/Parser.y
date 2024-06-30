@@ -2,7 +2,7 @@
 module Parser(parseProgram, parseProgram') where
 
 import ND ( Form(..), Term(..) )
-import PPA ( TProof, ProofStep(..), Program(..), Decl(..), Justification )
+import PPA ( TProof, ProofStep(..), Program(..), Decl(..), Justification, Case, VarRename )
 import Lexer
 import Data.List (intercalate)
 import Debug.Trace (trace)
@@ -32,7 +32,6 @@ import Debug.Trace (trace)
 
     id                  { Token _ (TokenId $$) }
     var                 { Token _ (TokenVar $$) }
-    ';'                 { Token _ TokenSemicolon }
     ':'                 { Token _ TokenDoubleColon }
     ','                 { Token _ TokenComma }
     axiom               { Token _ TokenAxiom }   
@@ -48,6 +47,13 @@ import Debug.Trace (trace)
     by                  { Token _ TokenBy }
     equivalently        { Token _ TokenEquivalently }
     claim               { Token _ TokenClaim }
+    case                { Token _ TokenCase }
+    cases               { Token _ TokenCases }
+    take                { Token _ TokenTake }
+    ':='                { Token _ TokenAssign }
+    consider            { Token _ TokenConsider }
+    st                  { Token _ TokenSuchThat }
+    let                 { Token _ TokenLet }       
 
 %right exists forall dot
 %right imp
@@ -73,31 +79,41 @@ Theorem :: { Decl }
 Theorem : theorem Name ':' Form proof Proof end   { DTheorem $2 $4 $6 }
 
 Proof   :: { TProof }
-Proof   : ProofStep ';' Proof       { $1 : $3 }
-        | ProofStep ';'             { [ $1 ] }
-        -- Sin separador porque termina con end
-        | ProofStepBlock Proof      { $1 : $2 }
-        | ProofStepBlock            { [ $1 ] }
-        | {- empty -}               { [] } -- Error manejado por Certifier
+Proof   : ProofStep Proof       { $1 : $2 }
+        | {- empty -}           { [] }
 
 ProofStep :: { ProofStep }
-ProofStep : suppose Name ':' Form                       { PSSuppose $2 $4 }
-          | thus Form by Justification                  { PSThusBy $2 $4 }
-          | hence Form by Justification                 { PSThusBy $2 (["-"] ++ $4) }
-          | have Name ':' Form by Justification         { PSHaveBy $2 $4 $6 }
-          | then Name ':' Form by Justification         { PSHaveBy $2 $4 (["-"] ++ $6) }
-          | equivalently Form                           { PSEquiv $2 }
+ProofStep : suppose Name ':' Form                                       { PSSuppose $2 $4 }
+          | thus Form OptionalBy                                        { PSThusBy $2 $3 }
+          | hence Form OptionalBy                                       { PSThusBy $2 (["-"] ++ $3) }
+          | have Name ':' Form OptionalBy                               { PSHaveBy $2 $4 $5 }
+          | then Name ':' Form OptionalBy                               { PSHaveBy $2 $4 (["-"] ++ $5) }
+          | equivalently Form                                           { PSEquiv $2 }
+          | claim Name ':' Form proof Proof end                         { PSClaim $2 $4 $6 }
+          | cases OptionalBy Cases end                                  { PSCases $2 $3 }
+          | take var ':=' Term                                          { PSTake $2 $4 }
+          | let OptVarRename                                            { PSLet $2 }
+          | consider var st Name ':' Form by Justification     { PSConsider $2 $4 $6 $8 }
 
-ProofStepBlock :: { ProofStep }
-ProofStepBlock : claim Name ':' Form proof Proof end    { PSClaim $2 $4 $6 }
+OptVarRename    :: { VarRename }
+OptVarRename    : var                 { ($1, $1) }
+                | var ':=' var        { ($1, $3) }
+
+Cases   :: { [Case] }
+Cases   : Case Cases      { $1 : $2 }
+        | {- empty -}     { [] }
+
+Case    :: { Case }
+Case    : case Form Proof               { ("-", $2, $3) }
+        | case Name ':' Form Proof      { ($2, $4, $5) }
+
+OptionalBy :: { Justification }
+OptionalBy : by Justification      { $2 }
+OptionalBy : {- empty -}           { [] }
 
 Justification :: { Justification }
 Justification : Name ',' Justification          { $1 : $3 }
-              | Name                            { [ $1 ] }              
-
-OptionalHyp    :: { String }
-OptionalHyp    : {- empty -}      { "" }
-               | Name ':'        { $1 }
+              | Name                            { [ $1 ] }
 
 Name    :: { String }
 Name    : id               { $1 }

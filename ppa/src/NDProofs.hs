@@ -4,6 +4,7 @@ module NDProofs (
     cut,
     proofImpElim,
     hypForm,
+    hypAndForm,
     proofNotTrue,
     proofNotFalse,
     proofAndAssoc,
@@ -49,8 +50,14 @@ wrapR msg (Left err) = Left (msg ++ ": " ++ err)
 type EnvItem = (HypId, Form)
 
 -- Genera un nombre para una hipótesis a partir de una fórmula
+-- El prefijo __h es una forma best-effort de evitar colisiones con los hypID de
+-- los usuarios
 hypForm :: Form -> HypId
-hypForm f = "h " ++ show f
+hypForm f = "__h " ++ show f
+
+-- Encapsula un patrón común de generar una fórmula y obtener su hipótesis
+hypAndForm :: Form -> (Form, HypId)
+hypAndForm f = (f, hypForm f)
 
 {- doubleNegElim dada una fórmula A da una demostración de ~~A -> A
 
@@ -103,13 +110,13 @@ Permite evitar Imp-E y Imp-I para demostrar a partir de una implicación conocid
 (A -> B)
 -}
 cut :: Form -> Proof -> HypId -> Proof -> Proof
-cut fA pA hypA pAtoB =
+cut fA pA hypA pAThenB =
     PImpE
         { antecedent = fA
         , proofImp =
             PImpI
                 { hypAntecedent = hypA
-                , proofConsequent = pAtoB
+                , proofConsequent = pAThenB
                 }
         , proofAntecedent = pA
         }

@@ -9,17 +9,20 @@ import ND (
     Term (..),
     VarId,
     dneg,
+    fPred1,
     fv,
     fvE,
     get,
     predVar,
     propVar,
+    tFun0,
+    tFun1,
  )
 
 import Certifier (
     dnf,
     fromClause,
-    solve,
+    solveContradiction,
  )
 
 import NDChecker (
@@ -70,6 +73,10 @@ import Test.HUnit (
  )
 
 import Data.Set qualified as Set
+import Unifier (SingleSubst (..), unifyF, unifyT)
+
+main :: IO Counts
+main = do runTestTT testND
 
 testND :: Test
 testND =
@@ -80,6 +87,7 @@ testND =
         , "subst" ~: testSubst
         , "fv" ~: testFV
         , "alphaEq" ~: testAlphaEq
+        , "unify" ~: testUnify
         ]
 
 exampleEnv :: Env
@@ -116,6 +124,98 @@ testFV =
 
 testTerm :: Term
 testTerm = TFun "f" [TVar "y"]
+
+testUnify :: Test
+testUnify =
+    test
+        [ "terms"
+            ~: test
+                [ "equal vars"
+                    ~: unifyF SSEmpty (fPred1 "p" (TVar "x")) (fPred1 "p" (TVar "x"))
+                    ~?= Right SSEmpty
+                , "diff vars"
+                    ~: unifyF SSEmpty (fPred1 "p" (TVar "x")) (fPred1 "p" (TVar "y"))
+                    ~?= Left "different var names: x /= y"
+                , "diff fun names"
+                    ~: unifyF SSEmpty (fPred1 "p" (tFun0 "f")) (fPred1 "p" (tFun0 "g"))
+                    ~?= Left "different function names: f /= g"
+                , "composed error"
+                    ~: unifyF SSEmpty (fPred1 "p" (TFun "g" [TVar "x"])) (fPred1 "p" (tFun1 "g" (TVar "y")))
+                    ~?= Left "different var names: x /= y"
+                , "unification OK"
+                    ~: unifyF
+                        SSEmpty
+                        (FPred "p" [TFun "g" [TVar "x", TMetavar, TVar "y"]])
+                        (FPred "p" [TFun "g" [TVar "x", TFun "w" [TVar "z"], TVar "y"]])
+                    ~?= Right (SSTerm (TFun "w" [TVar "z"]))
+                ]
+        , "complex form"
+            ~: unifyF
+                SSEmpty
+                ( FAnd
+                    (FOr (predVar "p" "x") (FOr FTrue FFalse))
+                    ( FImp
+                        (FNot $ FPred "p" [TVar "x", TVar "g"])
+                        ( FAnd
+                            (FForall "x" (FPred "p" [TMetavar])) -- Puede capturar
+                            (FExists "y" (predVar "q" "y"))
+                        )
+                    )
+                )
+                ( FAnd
+                    (FOr (FPred "p" [TMetavar]) (FOr FTrue FFalse))
+                    ( FImp
+                        (FNot $ FPred "p" [TMetavar, TVar "g"])
+                        ( FAnd
+                            (FForall "x" (predVar "p" "x"))
+                            (FExists "y" (predVar "q" "y"))
+                        )
+                    )
+                )
+            ~?= Right (SSTerm (TVar "x"))
+        , "error different forms"
+            ~: unifyF
+                SSEmpty
+                (FPred "p" [])
+                FTrue
+            ~?= Left "different form types: p /= true"
+        , "error don't unify"
+            ~: unifyF
+                SSEmpty
+                (FAnd (predVar "f" "x") (FPred "g" [TMetavar]))
+                (FAnd (FPred "f" [TMetavar]) (predVar "g" "y"))
+            ~?= Left "different var names: x /= y"
+        , "preds"
+            ~: unifyF SSEmpty (FPred "p" [TMetavar]) (FPred "p" [TVar "x"])
+            ~?= Right (SSTerm (TVar "x"))
+        , "alpha eq"
+            ~: test
+                [ "ok"
+                    ~: unifyF
+                        SSEmpty
+                        (FForall "z" (FAnd (fPred1 "p" (TVar "z")) (fPred1 "g" TMetavar)))
+                        (FForall "y" (FAnd (fPred1 "p" (TVar "y")) (fPred1 "g" (tFun0 "a"))))
+                    ~?= Right (SSTerm (tFun0 "a"))
+                , "err capture simple single var"
+                    ~: unifyF
+                        SSEmpty
+                        (FForall "x" (fPred1 "p" TMetavar))
+                        (FForall "y" (predVar "p" "y"))
+                    ~?= Left "Rename check: 'y' has free variables that were renamed for alpha equivalence"
+                , "err capture func"
+                    ~: unifyF
+                        SSEmpty
+                        (FForall "x" (fPred1 "p" TMetavar))
+                        (FForall "y" (fPred1 "p" (tFun1 "f" (TVar "y"))))
+                    ~?= Left "Rename check: 'f(y)' has free variables that were renamed for alpha equivalence"
+                , "err capture full"
+                    ~: unifyF
+                        SSEmpty
+                        (FForall "y" (FAnd (FForall "x" (fPred1 "p" TMetavar)) (predVar "g" "x")))
+                        (FForall "x" (FAnd (FForall "x" (fPred1 "p" (TVar "x"))) (fPred1 "g" TMetavar)))
+                    ~?= Left "Rename check: 'x' has free variables that were renamed for alpha equivalence"
+                ]
+        ]
 
 testAlphaEq :: Test
 testAlphaEq =
@@ -306,6 +406,12 @@ testCheckExamples =
         , "A |- B invalid"
             ~: rootCause (check exampleEnv (PAx "h1") FFalse)
             ~?= CheckError exampleEnv (PAx "h1") FFalse "env has hyp 'h1' for different form 'true'"
+        , "PAx alpha eq"
+            ~: check
+                (EExtend "h" (FExists "x" (predVar "p" "x")) EEmpty)
+                (PAx "h")
+                (FExists "y" (predVar "p" "y"))
+            ~?= CheckOK
         , -- PImpI
           "A -> A" ~: check EEmpty p1 f1 ~?= CheckOK
         , "A -> (B -> A)" ~: check EEmpty p2 f2 ~?= CheckOK
@@ -371,7 +477,13 @@ testCheckExamples =
         , -- Exists y forall
           "Good(y) => Exists x. Good(x)" ~: check EEmpty p18 f18 ~?= CheckOK
         , "Exists x. A(x) ^ B(x) => Exists y. A(y)" ~: check EEmpty p19 f19 ~?= CheckOK
+        , "Exists x. A(x) ^ B(x) => Exists y. A(y) con renombre"
+            ~: check EEmpty p19_rename f19
+            ~?= CheckOK
         , "Forall x. A(x) ^ B(x) => Forall x. A(x)" ~: check EEmpty p20 f20 ~?= CheckOK
+        , "Forall x. A(x) ^ B(x) => Forall x. A(x) with rename in forallI"
+            ~: check EEmpty p20_2 f20
+            ~?= CheckOK
         , "Forall x. A(x) ^ B(x) => Forall y. A(y)" ~: check EEmpty p20' f20' ~?= CheckOK
         , "Forall x. A(x) => Exists x. B(x)"
             ~: rootCause (check EEmpty p22 f22)
@@ -384,7 +496,7 @@ testCheckExamples =
             ~: rootCause (check EEmpty p21 f21)
             ~?= CheckError
                 (EExtend "h A(x)" (FPred "A" [TVar "x"]) EEmpty)
-                (PForallI (PAx "h A(x)"))
+                (PForallI "x" (PAx "h A(x)"))
                 (FForall "x" (FPred "A" [TVar "x"]))
                 "env shouldn't contain fv 'x'"
         , -- DeMorgan de Exists y Forall
@@ -406,7 +518,7 @@ testCheckExamples =
                 EEmpty
                 ( PExistsI
                     (TVar "x") -- generaria captura con V x
-                    (PForallI (POrI2 PTrueI))
+                    (PForallI "x" (POrI2 PTrueI))
                 )
                 (FExists "y" (FForall "x" (FOr (predVar "A" "z") FTrue)))
             ~?= CheckOK
@@ -1385,6 +1497,34 @@ p19 =
             )
         )
 
+-- Exists x. A(x) ^ B(x) -> Exists y. A(y)
+-- Banca renombres implícitos por alpha igualdad, en PAx Exists x. p(x)
+-- demuestra Exists y . p(y)
+p19_rename :: Proof
+p19_rename =
+    PImpI
+        { hypAntecedent = "h Exists x. A(x) ^ B(x)"
+        , proofConsequent =
+            PExistsE
+                { var = "y"
+                , form =
+                    FAnd
+                        (predVar "A" "y")
+                        (predVar "B" "y")
+                , proofExists = PAx "h Exists x. A(x) ^ B(x)"
+                , hyp = "h A(y) ^ B(y)"
+                , proofAssuming -- Dem Exists y. A(y)
+                  =
+                    PExistsI
+                        (TVar "y")
+                        -- Dem A(y)
+                        ( PAndE1
+                            (predVar "B" "y")
+                            (PAx "h A(y) ^ B(y)")
+                        )
+                }
+        }
+
 -- Es necesario primero hacer eliminación del exists y después PExistsI, PAndE1, porque sino al revés
 -- se querría probar A(x) ^ B(x) con ExistsE pero no se puede porque tiene x libre.
 -- Análogamente, para probar lo mismo pero del consecuente Exists x. A(x), no hay problema porque justamente x no está libre, sino que está ligado por el existencial.
@@ -1407,6 +1547,7 @@ p20 =
     PImpI
         "h Forall x. A(x) ^ B(x)"
         ( PForallI
+            "x"
             ( -- Proof A(x)
               PAndE1
                 bx
@@ -1422,23 +1563,41 @@ p20 =
     ax = FPred "A" [TVar "x"]
     bx = FPred "B" [TVar "x"]
 
+p20_2 :: Proof
+p20_2 =
+    PImpI
+        { hypAntecedent = "h forall"
+        , proofConsequent =
+            PForallI
+                { newVar = "y"
+                , proofForm =
+                    PAndE1
+                        { right = predVar "B" "y"
+                        , proofAnd =
+                            PForallE
+                                { var = "x"
+                                , form = FAnd (predVar "A" "x") (predVar "B" "x")
+                                , proofForall = PAx "h forall"
+                                , termReplace = TVar "y"
+                                }
+                        }
+                }
+        }
+
 -- Var diferente, debería ser lo mismo
 -- Forall x. A(x) ^ B(x) => Forall y. A(y)
 f20' :: Form
 f20' =
     FImp
-        (FForall "x" (FAnd ax bx))
-        (FForall "y" ay)
-  where
-    ax = FPred "A" [TVar "x"]
-    ay = FPred "A" [TVar "y"]
-    bx = FPred "B" [TVar "x"]
+        (FForall "x" (FAnd (predVar "A" "x") (predVar "B" "x")))
+        (FForall "y" (predVar "A" "y"))
 
 p20' :: Proof
 p20' =
     PImpI
         "h Forall x. A(x) ^ B(x)"
         ( PForallI
+            "y"
             ( -- Proof A(y)
               PAndE1
                 by -- tengo que cambiar en ambos
@@ -1465,7 +1624,7 @@ f21 =
         (FForall "x" (FPred "A" [TVar "x"]))
 
 p21 :: Proof
-p21 = PImpI "h A(x)" (PForallI (PAx "h A(x)"))
+p21 = PImpI "h A(x)" (PForallI "x" (PAx "h A(x)"))
 
 -- Dem inválida de eliminación de forall, en donde el término a demostrar no
 -- A{x := t} sino que otra cosa
@@ -1547,6 +1706,7 @@ p23Vuelta =
     PImpI
         "h ~E x. ~A(x)"
         ( PForallI
+            "x"
             ( -- Dem de A(x), por absurdo, asumo ~A(x) mediante dnegelim
               PImpE
                 (dneg $ predVar "A" "x")
@@ -1622,6 +1782,7 @@ p24Vuelta =
                     (PAx "h ~V x. ~A(x)")
                     -- Dem de V x. ~A(x) (usando que no existe x. A(x))
                     ( PForallI
+                        "x"
                         ( PNotI
                             "h A(x)"
                             ( PNotE
@@ -1882,7 +2043,7 @@ p26 :: Result Proof
 -- Primero doubleNegElim para demostrar por contradicción
 p26 = do
     let (dnfNegThesis, dnfProof) = dnf ("h dnfThesis", FNot thesis)
-    contradictionProof <- solve ("h dnfThesis", dnfNegThesis)
+    contradictionProof <- solveContradiction ("h dnfThesis", dnfNegThesis)
     return
         PImpE
             { antecedent = dneg thesis
