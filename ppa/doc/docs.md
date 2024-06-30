@@ -195,10 +195,11 @@ El by es opcional en ambos. En caso de no especificarlo, debe ser una tautologí
 - **`let`** o introducción de universal
   
   Para probar un cuantificador universal `forall X. p(X)`, luego del comando
-  `let X := Y` la tesis se reduce a `p(Y)` para un `Y` genérico.
+  `let X` la tesis se reduce a `p(X)` para un `X` genérico.
   
   Puede ser el
-  mismo nombre de variable, en ese caso se puede escribir directamente como `let X`.
+  mismo nombre de variable o uno diferente, por ejemplo también podríamos haber
+  hecho `let Y` y en ese caso la tesis se reduce a `p(Y)`. Tiene que ser alpha-equivalente.
 
 ### Otros comandos
 

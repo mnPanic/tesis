@@ -2,7 +2,7 @@
 module Parser(parseProgram, parseProgram') where
 
 import ND ( Form(..), Term(..) )
-import PPA ( TProof, ProofStep(..), Program(..), Decl(..), Justification, Case, VarRename )
+import PPA ( TProof, ProofStep(..), Program(..), Decl(..), Justification, Case )
 import Lexer
 import Data.List (intercalate)
 import Debug.Trace (trace)
@@ -83,21 +83,17 @@ Proof   : ProofStep Proof       { $1 : $2 }
         | {- empty -}           { [] }
 
 ProofStep :: { ProofStep }
-ProofStep : suppose Name ':' Form                                       { PSSuppose $2 $4 }
-          | thus Form OptionalBy                                        { PSThusBy $2 $3 }
-          | hence Form OptionalBy                                       { PSThusBy $2 (["-"] ++ $3) }
-          | have Name ':' Form OptionalBy                               { PSHaveBy $2 $4 $5 }
-          | then Name ':' Form OptionalBy                               { PSHaveBy $2 $4 (["-"] ++ $5) }
-          | equivalently Form                                           { PSEquiv $2 }
-          | claim Name ':' Form proof Proof end                         { PSClaim $2 $4 $6 }
-          | cases OptionalBy Cases end                                  { PSCases $2 $3 }
-          | take var ':=' Term                                          { PSTake $2 $4 }
-          | let OptVarRename                                            { PSLet $2 }
+ProofStep : suppose Name ':' Form                              { PSSuppose $2 $4 }
+          | thus Form OptionalBy                               { PSThusBy $2 $3 }
+          | hence Form OptionalBy                              { PSThusBy $2 (["-"] ++ $3) }
+          | have Name ':' Form OptionalBy                      { PSHaveBy $2 $4 $5 }
+          | then Name ':' Form OptionalBy                      { PSHaveBy $2 $4 (["-"] ++ $5) }
+          | equivalently Form                                  { PSEquiv $2 }
+          | claim Name ':' Form proof Proof end                { PSClaim $2 $4 $6 }
+          | cases OptionalBy Cases end                         { PSCases $2 $3 }
+          | take var ':=' Term                                 { PSTake $2 $4 }
+          | let var                                            { PSLet $2 }
           | consider var st Name ':' Form by Justification     { PSConsider $2 $4 $6 $8 }
-
-OptVarRename    :: { VarRename }
-OptVarRename    : var                 { ($1, $1) }
-                | var ':=' var        { ($1, $3) }
 
 Cases   :: { [Case] }
 Cases   : Case Cases      { $1 : $2 }

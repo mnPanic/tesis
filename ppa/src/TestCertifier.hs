@@ -462,7 +462,7 @@ testCommands =
                     theorem "let" : forall X . a(X)
                     proof
                         consider X st h : a(X) by a1
-                        let X := X // está X libre en el ctx por el consider
+                        let X // está X libre en el ctx por el consider
                         thus a(X) by a1
                     end
                 |]
@@ -472,7 +472,7 @@ testCommands =
                         [r|
                     theorem "let err" : a -> b
                     proof
-                        let X := X
+                        let X
                     end
                 |]
                         "theorem 'let err': let: can't use with form 'a -> b', must be an universal quantifier (forall)"
@@ -486,15 +486,9 @@ testCommands =
                         thus p(X) by a1
                     end
 
-                    theorem "let same rename" : forall X . p(X)
-                    proof
-                        let X := X
-                        thus p(X) by a1
-                    end
-
                     theorem "let rename" : forall X . p(X)
                     proof
-                        let X := Y
+                        let Y
                         thus p(Y) by a1
                     end
                |]
