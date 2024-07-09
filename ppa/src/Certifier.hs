@@ -115,6 +115,7 @@ certifyDecl ctx d@(DTheorem{}) = certifyTheorem ctx d
 certifyAxiom :: Context -> Decl -> Result Hypothesis
 -- certifyAxiom ctx a | trace (printf "certifyAxiom %s %s" (show ctx) (show a)) False = undefined
 certifyAxiom ctx (DAxiom h f)
+    | isRight (findHyp ctx h) = Left $ printf "axiom '%s': another axiom with the same hyp id previously declared" h
     | not (null (fv f)) = Left $ printf "axiom '%s': can't have free vars but have %s" h (showSet (fv f))
     | otherwise = return (HAxiom h f)
 

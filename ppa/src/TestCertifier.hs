@@ -351,6 +351,13 @@ testCommands =
             axiom a: p(X) & g(Y)
         |]
                 "axiom 'a': can't have free vars but have {X,Y}"
+        , "duplicated axiom"
+            ~: testProgramError
+                [r|
+                axiom a1: p(a)
+                axiom a1: p(b)
+                |]
+                "axiom 'a1': another axiom with the same hyp id previously declared"
         , "have"
             ~: testProgram
                 [r|
