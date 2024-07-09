@@ -64,8 +64,8 @@ data ProofStep
 psName :: ProofStep -> String
 psName ps = case ps of
   (PSSuppose{}) -> "suppose"
-  (PSThusBy{}) -> "thusBy"
-  (PSHaveBy{}) -> "haveBy"
+  (PSThusBy{}) -> "thus"
+  (PSHaveBy h _ _) -> printf "have (%s)" h
   (PSEquiv{}) -> "equiv"
   (PSClaim{}) -> "claim"
   (PSCases{}) -> "cases"
@@ -74,11 +74,6 @@ psName ps = case ps of
   (PSLet{}) -> "let"
 
 type Justification = [HypId]
-
-type Context = [Hypothesis]
-
--- TODO: No se usa?
-type Goal = (Context, Form)
 
 data Hypothesis
   = HAxiom HypId Form
@@ -100,6 +95,8 @@ getForm (HTheorem _ f _) = f
 getProof :: Hypothesis -> Proof
 getProof (HAxiom h _) = PAx h
 getProof (HTheorem _ _ p) = p
+
+type Context = [Hypothesis]
 
 findHyp :: Context -> HypId -> Result Hypothesis
 findHyp ctx h

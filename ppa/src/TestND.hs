@@ -72,8 +72,9 @@ import Test.HUnit (
     (~?=),
  )
 
+import Data.Map qualified as Map
 import Data.Set qualified as Set
-import Unifier (SingleSubst (..), unifyF, unifyT)
+import Unifier (Substitution, unifyF, unifyT)
 
 main :: IO Counts
 main = do runTestTT testND
@@ -131,88 +132,106 @@ testUnify =
         [ "terms"
             ~: test
                 [ "equal vars"
-                    ~: unifyF SSEmpty (fPred1 "p" (TVar "x")) (fPred1 "p" (TVar "x"))
-                    ~?= Right SSEmpty
+                    ~: unifyF Map.empty (fPred1 "p" (TVar "x")) (fPred1 "p" (TVar "x"))
+                    ~?= Right Map.empty
                 , "diff vars"
-                    ~: unifyF SSEmpty (fPred1 "p" (TVar "x")) (fPred1 "p" (TVar "y"))
+                    ~: unifyF Map.empty (fPred1 "p" (TVar "x")) (fPred1 "p" (TVar "y"))
                     ~?= Left "different var names: x /= y"
                 , "diff fun names"
-                    ~: unifyF SSEmpty (fPred1 "p" (tFun0 "f")) (fPred1 "p" (tFun0 "g"))
+                    ~: unifyF Map.empty (fPred1 "p" (tFun0 "f")) (fPred1 "p" (tFun0 "g"))
                     ~?= Left "different function names: f /= g"
                 , "composed error"
-                    ~: unifyF SSEmpty (fPred1 "p" (TFun "g" [TVar "x"])) (fPred1 "p" (tFun1 "g" (TVar "y")))
+                    ~: unifyF Map.empty (fPred1 "p" (TFun "g" [TVar "x"])) (fPred1 "p" (tFun1 "g" (TVar "y")))
                     ~?= Left "different var names: x /= y"
                 , "unification OK"
                     ~: unifyF
-                        SSEmpty
-                        (FPred "p" [TFun "g" [TVar "x", TMetavar, TVar "y"]])
+                        Map.empty
+                        (FPred "p" [TFun "g" [TVar "x", TMetavar 1, TVar "y"]])
                         (FPred "p" [TFun "g" [TVar "x", TFun "w" [TVar "z"], TVar "y"]])
-                    ~?= Right (SSTerm (TFun "w" [TVar "z"]))
+                    ~?= Right (Map.singleton 1 (TFun "w" [TVar "z"]))
                 ]
         , "complex form"
             ~: unifyF
-                SSEmpty
+                Map.empty
                 ( FAnd
                     (FOr (predVar "p" "x") (FOr FTrue FFalse))
                     ( FImp
                         (FNot $ FPred "p" [TVar "x", TVar "g"])
                         ( FAnd
-                            (FForall "x" (FPred "p" [TMetavar])) -- Puede capturar
+                            (FForall "x" (FPred "p" [TMetavar 1])) -- Puede capturar
                             (FExists "y" (predVar "q" "y"))
                         )
                     )
                 )
                 ( FAnd
-                    (FOr (FPred "p" [TMetavar]) (FOr FTrue FFalse))
+                    (FOr (FPred "p" [TMetavar 1]) (FOr FTrue FFalse))
                     ( FImp
-                        (FNot $ FPred "p" [TMetavar, TVar "g"])
+                        (FNot $ FPred "p" [TMetavar 1, TVar "g"])
                         ( FAnd
                             (FForall "x" (predVar "p" "x"))
                             (FExists "y" (predVar "q" "y"))
                         )
                     )
                 )
-            ~?= Right (SSTerm (TVar "x"))
+            ~?= Right (Map.singleton 1 (TVar "x"))
+        , "and with bool"
+            ~: unifyF
+                Map.empty
+                (FAnd (fPred1 "p" $ TVar "x") FTrue)
+                (FAnd (fPred1 "p" $ TMetavar 1) FTrue)
+            ~?= Right (Map.singleton 1 (TVar "x"))
         , "error different forms"
             ~: unifyF
-                SSEmpty
+                Map.empty
                 (FPred "p" [])
                 FTrue
             ~?= Left "different form types: p /= true"
         , "error don't unify"
             ~: unifyF
-                SSEmpty
-                (FAnd (predVar "f" "x") (FPred "g" [TMetavar]))
-                (FAnd (FPred "f" [TMetavar]) (predVar "g" "y"))
+                Map.empty
+                (FAnd (predVar "f" "x") (FPred "g" [TMetavar 1]))
+                (FAnd (FPred "f" [TMetavar 1]) (predVar "g" "y"))
             ~?= Left "different var names: x /= y"
         , "preds"
-            ~: unifyF SSEmpty (FPred "p" [TMetavar]) (FPred "p" [TVar "x"])
-            ~?= Right (SSTerm (TVar "x"))
+            ~: unifyF Map.empty (FPred "p" [TMetavar 1]) (FPred "p" [TVar "x"])
+            ~?= Right (Map.singleton 1 (TVar "x"))
+        , "more than one metavar"
+            ~: unifyF
+                Map.empty
+                (FImp (fPred1 "p" (TMetavar 1)) (FAnd (fPred1 "q" (TFun "f" [TVar "x", TMetavar 2])) (fPred1 "r" (TMetavar 3))))
+                (FImp (fPred1 "p" (tFun1 "f" (TVar "y"))) (FAnd (fPred1 "q" (TFun "f" [TVar "x", TVar "z"])) (fPred1 "r" (TVar "x"))))
+            ~?= Right
+                ( Map.fromList
+                    [ (1, tFun1 "f" (TVar "y"))
+                    , (2, TVar "z")
+                    , (3, TVar "x")
+                    ]
+                )
         , "alpha eq"
             ~: test
                 [ "ok"
                     ~: unifyF
-                        SSEmpty
-                        (FForall "z" (FAnd (fPred1 "p" (TVar "z")) (fPred1 "g" TMetavar)))
+                        Map.empty
+                        (FForall "z" (FAnd (fPred1 "p" (TVar "z")) (fPred1 "g" (TMetavar 1))))
                         (FForall "y" (FAnd (fPred1 "p" (TVar "y")) (fPred1 "g" (tFun0 "a"))))
-                    ~?= Right (SSTerm (tFun0 "a"))
+                    ~?= Right (Map.singleton 1 (tFun0 "a"))
                 , "err capture simple single var"
                     ~: unifyF
-                        SSEmpty
-                        (FForall "x" (fPred1 "p" TMetavar))
+                        Map.empty
+                        (FForall "x" (fPred1 "p" (TMetavar 1)))
                         (FForall "y" (predVar "p" "y"))
                     ~?= Left "Rename check: 'y' has free variables that were renamed for alpha equivalence"
                 , "err capture func"
                     ~: unifyF
-                        SSEmpty
-                        (FForall "x" (fPred1 "p" TMetavar))
+                        Map.empty
+                        (FForall "x" (fPred1 "p" (TMetavar 1)))
                         (FForall "y" (fPred1 "p" (tFun1 "f" (TVar "y"))))
                     ~?= Left "Rename check: 'f(y)' has free variables that were renamed for alpha equivalence"
                 , "err capture full"
                     ~: unifyF
-                        SSEmpty
-                        (FForall "y" (FAnd (FForall "x" (fPred1 "p" TMetavar)) (predVar "g" "x")))
-                        (FForall "x" (FAnd (FForall "x" (fPred1 "p" (TVar "x"))) (fPred1 "g" TMetavar)))
+                        Map.empty
+                        (FForall "y" (FAnd (FForall "x" (fPred1 "p" (TMetavar 1))) (predVar "g" "x")))
+                        (FForall "x" (FAnd (FForall "x" (fPred1 "p" (TVar "x"))) (fPred1 "g" (TMetavar 1))))
                     ~?= Left "Rename check: 'x' has free variables that were renamed for alpha equivalence"
                 ]
         ]

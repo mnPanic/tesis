@@ -12,9 +12,9 @@ import ND (
     FunId,
     PredId,
     Proof (..),
-    Subst,
     Term (..),
     VarId,
+    VarSubstitution,
     fv,
     fvE,
     fvTerm,
@@ -29,12 +29,13 @@ import Text.Printf (printf)
 --
 -- Lo hace alpha-renombrando en el camino para evitar *capturas* de variables:
 -- si y esta libre en T, busca y' que no este libre en T y f1. En lugar de
--- reemplazar en el momento, lo guarda en una Subst para hacerlo lineal y no
+-- reemplazar en el momento, lo guarda en una VarSubstitution para hacerlo lineal y no
 -- cuadrático.
 subst :: VarId -> Term -> Form -> Form
 subst = subst' Map.empty
 
-subst' :: Subst -> VarId -> Term -> Form -> Form
+-- Sustituye ocurrencias libres de x por t en f
+subst' :: VarSubstitution -> VarId -> Term -> Form -> Form
 subst' s x t f = case f of
     FPred l ts -> FPred l (map (substTerm s x t) ts)
     FAnd f1 f2 -> FAnd (rec f1) (rec f2)
@@ -63,7 +64,8 @@ subst' s x t f = case f of
     rec = subst' s x t
     recRenaming y y' = subst' (Map.insert y y' s) x t
 
-substTerm :: Subst -> VarId -> Term -> Term -> Term
+-- Sustituye x por t en t'
+substTerm :: VarSubstitution -> VarId -> Term -> Term -> Term
 substTerm s x t t' = case t' of
     -- No es necesario chequear que el renombre de x se quiera sustituir, porque
     -- renombramos cuando encontramos un cuantificador, y si la var del
@@ -73,6 +75,7 @@ substTerm s x t t' = case t' of
         | x == y -> t
         | otherwise -> maybe o TVar (Map.lookup y s)
     TFun f ts -> TFun f (map (substTerm s x t) ts)
+    m@(TMetavar _) -> m
 
 -- freshWRT da una variable libre con respecto a una lista en donde no queremos
 -- que aparezca

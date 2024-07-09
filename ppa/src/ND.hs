@@ -10,7 +10,8 @@ module ND (
     Term (..),
     Form (..),
     Proof (..),
-    Subst,
+    VarSubstitution,
+    Metavar,
     fv,
     fvTerm,
     fvE,
@@ -22,6 +23,7 @@ module ND (
     tFun0,
     tFun1,
     fPred1,
+    fAndN,
 ) where
 
 import Data.Map qualified as Map
@@ -52,6 +54,9 @@ tFun0 f = TFun f []
 tFun1 :: FunId -> Term -> Term
 tFun1 f t = TFun f [t]
 
+fAndN :: [Form] -> Form
+fAndN = foldl1 FAnd
+
 -- Tipos de identificadores
 type VarId = String
 type FunId = String
@@ -59,30 +64,32 @@ type PredId = String
 type HypId = String
 
 -- Sustitución de variables, usado para alphaEqForm y subst sin capturas
-type Subst = Map.Map String String
+type VarSubstitution = Map.Map String String
+
+type Metavar = Int
 
 data Term
     = TVar VarId
-    | TMetavar
+    | TMetavar Metavar
     | TFun FunId [Term]
 
 instance Show Term where
     show (TVar x) = x
     show (TFun f ts) = f ++ showArgs ts
-    show TMetavar = "?"
+    show (TMetavar x) = "?" ++ show x
 
 -- Free variables de un término
 fvTerm :: Term -> Set.Set VarId
 fvTerm (TVar x) = Set.singleton x
 fvTerm (TFun _ ts) = foldr (Set.union . fvTerm) Set.empty ts
-fvTerm TMetavar = Set.empty
+fvTerm (TMetavar _) = Set.empty
 
 instance Eq Term where
     (==) = alphaEqTerm Map.empty Map.empty
 
-alphaEqTerm :: Subst -> Subst -> Term -> Term -> Bool
+alphaEqTerm :: VarSubstitution -> VarSubstitution -> Term -> Term -> Bool
 alphaEqTerm m1 m2 t u = case (t, u) of
-    (TMetavar, TMetavar) -> True
+    (TMetavar x, TMetavar y) -> x == y
     (TVar x, TVar y)
         | x == y -> True
         | otherwise -> case Map.lookup x m1 of
@@ -93,7 +100,7 @@ alphaEqTerm m1 m2 t u = case (t, u) of
     (TFun f1 ts1, TFun f2 ts2) -> f1 == f2 && alphaEqTerms m1 m2 ts1 ts2
     _ -> False -- Diferente forma
 
-alphaEqTerms :: Subst -> Subst -> [Term] -> [Term] -> Bool
+alphaEqTerms :: VarSubstitution -> VarSubstitution -> [Term] -> [Term] -> Bool
 alphaEqTerms m1 m2 ts1 ts2 =
     length ts1
         == length ts2
@@ -135,7 +142,7 @@ showArgs ts = "(" ++ intercalate ", " (map show ts) ++ ")"
 instance Eq Form where
     (==) = alphaEqForm' Map.empty Map.empty
 
-alphaEqForm' :: Subst -> Subst -> Form -> Form -> Bool
+alphaEqForm' :: VarSubstitution -> VarSubstitution -> Form -> Form -> Bool
 alphaEqForm' = alphaEqForm 0
 
 -- alphaEqForm chequea que dos fórmulas sean alpha equivalentes.
@@ -149,7 +156,7 @@ alphaEqForm' = alphaEqForm 0
 -- mismo nombre.
 -- TODO: Hay que devolver también la próxima libre, sino para un && puede pasar
 -- que se use la misma de ambos lados y está mal?
-alphaEqForm :: Int -> Subst -> Subst -> Form -> Form -> Bool
+alphaEqForm :: Int -> VarSubstitution -> VarSubstitution -> Form -> Form -> Bool
 alphaEqForm n m1 m2 f g = case (f, g) of
     (FTrue, FTrue) -> True
     (FFalse, FFalse) -> True

@@ -24,7 +24,7 @@ import Control.Monad ( liftM )
 tokens :-
     $white+                         ;
     "//".*                          ;
-    "/*"(.|(\r\n|\r|\n))*"*/"       ; -- block comments
+    "/*"(.|(\r\n|\r|\n))*"*/"       ; -- block comments, broken
     \.              { literal TokenDot }
     \,              { literal TokenComma }
     \&              { literal TokenAnd }

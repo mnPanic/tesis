@@ -8,6 +8,7 @@ module Certifier (
     certify,
     checkContext,
     findContradiction,
+    partitionForalls,
 ) where
 
 import PPA (
@@ -58,23 +59,26 @@ import ND (
     Env (..),
     Form (..),
     HypId,
+    Metavar,
     Proof (..),
     Term (TFun, TMetavar, TVar),
+    VarId,
     dneg,
     fv,
     isForall,
  )
 
-import Unifier (SingleSubst (..), unifyF, unifyT)
+import Unifier (Substitution, showSubstitution, unifyF, unifyT)
 
 import NDChecker (CheckResult (CheckOK), check, checkResultIsErr, subst)
 
-import Data.List (find, intercalate, nub, partition, (\\))
-import Data.Maybe (fromJust, isJust, isNothing)
+import Data.List (find, intercalate, nub, (\\))
+import Data.Map qualified as Map
+import Data.Maybe (fromJust, fromMaybe, isJust, isNothing)
 import Data.Set (Set)
 import Text.Printf (printf)
 
-import Data.Either (fromLeft, fromRight, isLeft, isRight, lefts)
+import Data.Either (fromLeft, fromRight, isLeft, isRight, lefts, rights)
 import Debug.Trace
 
 -- En un contexto cada demostración de teorema es válida en el contexto que
@@ -109,6 +113,7 @@ certifyDecl ctx d@(DAxiom{}) = certifyAxiom ctx d
 certifyDecl ctx d@(DTheorem{}) = certifyTheorem ctx d
 
 certifyAxiom :: Context -> Decl -> Result Hypothesis
+-- certifyAxiom ctx a | trace (printf "certifyAxiom %s %s" (show ctx) (show a)) False = undefined
 certifyAxiom ctx (DAxiom h f)
     | not (null (fv f)) = Left $ printf "axiom '%s': can't have free vars but have %s" h (showSet (fv f))
     | otherwise = return (HAxiom h f)
@@ -127,7 +132,7 @@ certifyProof ctx f [] = Left $ printf "incomplete proof, still have %s as thesis
 certifyProof ctx f (p : ps) = certifyProofStep' ctx f p ps
 
 certifyProofStep' :: Context -> Form -> ProofStep -> TProof -> Result Proof
-certifyProofStep' ctx f s ps = wrapR (psName s) (certifyProofStep ctx f s ps)
+certifyProofStep' ctx f s ps = wrapR ("\n certify " ++ psName s) (certifyProofStep ctx f s ps)
 
 certifyProofStep ::
     Context -> Form -> ProofStep -> TProof -> Result Proof
@@ -412,7 +417,7 @@ solve thesis = do
     let hDNFNotThesis = hypForm fDNFNotThesis
 
     contradictionProof <-
-        wrapR (printf "finding contradiction for dnf form '%s' obtained from '%s'" (show fDNFNotThesis) (show fNotThesis))
+        wrapR (printf "solving form by finding contradiction of negation:\n'%s',\nin dnf: '%s'" (show fNotThesis) (show fDNFNotThesis))
             $ solveContradiction (hDNFNotThesis, fDNFNotThesis)
 
     -- Dem de thesis por el absurdo
@@ -765,55 +770,83 @@ trySolveClauseElimForall :: EnvItem -> Result Proof
 trySolveClauseElimForall (h, rawClause) =
     do
         cl <- toClause rawClause
-        let foralls = filter isForall cl
+        let foralls = partitionForalls cl
         if null foralls
-            then Left "form contains no foralls to eliminate"
+            then Left "no foralls to eliminate"
             else do
-                let allProofs = zip foralls (map (solveClauseElimForall (h, rawClause)) foralls)
-                case find (isRight . snd) allProofs of
+                let allProofs = map (solveClauseElimForall h) foralls
+                case find isRight allProofs of
                     Nothing ->
                         let
-                            errs = map (fromLeft "" . snd) allProofs
+                            errs = map (fromLeft "") allProofs
                             errMsgs = intercalate "\n" errs
                          in
                             Left ("no foralls useful for contradictions:\n" ++ errMsgs)
-                    Just (_, Right proof) -> Right proof
+                    Just (Right proof) -> Right proof
 
-{- solveClauseElimForall refuta una cláusula mediante la eliminación de un
-forall.
+partitionForalls :: Clause -> [(Clause, Form, Clause)]
+partitionForalls cl = nub $ filter (\(_, f, _) -> isForall f) (allPartitions cl)
 
-- Genera la demostración de la refutación generando la sustitución, pero la demo
-  asume que ya está sustituido
+allPartitions :: Clause -> [(Clause, Form, Clause)]
+allPartitions [f] = [([], f, [])]
+allPartitions (f : fs) =
+    let
+        rest = allPartitions fs
+        appendLeft = map (\(cL, g, cR) -> (f : cL, g, cR)) rest
+        asCenter = map (\(cL, g, cR) -> ([], f, cL ++ g : cR)) rest
+     in
+        appendLeft ++ asCenter
 
-- P
+{- solveClauseElimForall refuta una cláusula mediante la eliminación de los N
+foralls de una cláusula
 
+- Encuentra la sustitución que lleva a una contradicción, sin generar
+  demostraciones, en un modo "dry run"
+
+- Realiza esa sustitución y encuentra la contradicción de forma usual, sin
+  eliminar foralls.
 -}
-solveClauseElimForall :: EnvItem -> Form -> Result Proof
-solveClauseElimForall i f =
+solveClauseElimForall :: HypId -> (Clause, Form, Clause) -> Result Proof
+solveClauseElimForall h (cL, f, cR) =
     wrapR
         (printf "try eliminating '%s'" (show f))
-        (solveClauseElimForall' i f)
+        (solveClauseElimForall' h (cL, f, cR))
 
-solveClauseElimForall' :: EnvItem -> Form -> Result Proof
-solveClauseElimForall' (hClause, rawClause) f@(FForall x g) =
+elimForalls :: Form -> Substitution -> Map.Map VarId Metavar -> Form
+elimForalls f@(FForall x g) s m = case Map.lookup x m of
+    -- No fue necesario eliminar más foralls
+    Nothing -> f
+    -- Se eliminó el forall
+    Just meta ->
+        -- Si no está en la sustitución, no fue necesario unificar la variable
+        -- para la contradicción, por ej. f(a) & forall X. ~f(a)
+        let x' = case Map.lookup meta s of
+                Nothing -> TVar x
+                Just t -> t
+            g' = subst x x' g
+         in elimForalls g' s m
+elimForalls g _ _ = g
+
+solveClauseElimForall' :: HypId -> (Clause, Form, Clause) -> Result Proof
+-- solveClauseElimForall' hClause t | trace (printf "solveClauseElimForall' h:'%s' t:%s" hClause (show t)) False = undefined
+solveClauseElimForall' hClause (cL, f@(FForall x g), cR) =
     do
         -- Primero encontramos por qué reemplazar x para que sea refutable
-        cl <- toClause rawClause
-        sub <- findSubstToSolveContradiction cl f
-        let x' = case sub of SSEmpty -> TVar x; SSTerm t -> t
+        (subst, usedVars) <- findSubstToSolveContradiction cL cR f 0
 
         -- Ya sé por qué tengo que sustituir la var del forall cuando lo
         -- elimine, así que lo pego con cut a la fórmula con eso eliminado y
         -- sigo por ahí
-        let gReplaced = subst x x' g
-        let (clReplaced, hclReplaced) = hypAndForm $ fromClause $ replaceFirst cl f gReplaced
+        let g' = elimForalls f subst usedVars
+        let (clReplaced, hclReplaced) = hypAndForm $ fromClause $ cL ++ g' : cR
 
         let (dnfClReplaced, proofDnfClReplaced) = dnf (hclReplaced, clReplaced)
         let hdnfClReplaced = hypForm dnfClReplaced
 
         contradictionProof <- solveContradiction (hdnfClReplaced, dnfClReplaced)
 
-        proofClReplacedList <- proveClauseWithForallReplaced (hClause, rawClause) x' cl f
+        let origClause = cL ++ f : cR
+        proofClReplacedList <- proveClauseWithForallReplaced (hClause, fromClause origClause) subst usedVars origClause f
         let proofClReplaced = proofAndIList proofClReplacedList
         -- TODO: forall repetido?
 
@@ -837,33 +870,57 @@ solveClauseElimForall' (hClause, rawClause) f@(FForall x g) =
             )
 
 {-
-proveClauseWithForallReplaced demuestra la cláusula resultante de eliminar un
-forall
+proveClauseWithForallReplaced demuestra la cláusula resultante de eliminar N
+foralls contiguos
 
 Por ejemplo,
 
-    f1 & f2 & (forall x. f(x)) & f3 |- f1 & f2 & f(a) & f3
+    f1 & f2 & (forall x. forall y. forall z. f(x) & f(y) & f(z)) & f3 |- f1 & f2 & f(a) & f(b) & f(c) & f3
 -}
-proveClauseWithForallReplaced :: EnvItem -> Term -> Clause -> Form -> Result [Proof]
-proveClauseWithForallReplaced _ _ [] _ = Right []
-proveClauseWithForallReplaced clause newTerm (f : fs) fForall@(FForall x g) =
+proveClauseWithForallReplaced :: EnvItem -> Substitution -> Map.Map VarId Metavar -> Clause -> Form -> Result [Proof]
+proveClauseWithForallReplaced _ _ _ [] _ = Right []
+proveClauseWithForallReplaced clause subst usedVars (f : fs) fForall@(FForall x g) =
     do
-        proofRest <- proveClauseWithForallReplaced clause newTerm fs fForall
+        proofRest <- proveClauseWithForallReplaced clause subst usedVars fs fForall
         if f == fForall
             then do
                 proofForall <- proofAndEProjection clause fForall
-                let proofForallReplaced =
-                        PForallE
-                            { var = x
-                            , form = g
-                            , proofForall = proofForall
-                            , termReplace = newTerm
-                            }
+                let proofForallReplaced = proveForallWithElim fForall subst usedVars proofForall
 
                 return (proofForallReplaced : proofRest)
             else do
                 proofF <- proofAndEProjection clause f
                 return (proofF : proofRest)
+
+-- TODO
+{- Demuestra
+
+Dado {x = a, y = b, z = c}, demuestra
+
+    forall x. forall y. forall z. f(x) & f(y) & f(z) |- f(a) & f(b) & f(c)
+-}
+proveForallWithElim :: Form -> Substitution -> Map.Map VarId Metavar -> Proof -> Proof
+proveForallWithElim f@(FForall x g) s m proofForall = case Map.lookup x m of
+    -- No fue necesario eliminar más foralls
+    Nothing -> proofForall
+    -- Se eliminó el forall
+    Just meta -> do
+        -- Si no está en la sustitución, no fue necesario unificar la variable
+        -- para la contradicción, por ej. f(a) & forall X. ~f(a)
+        let x' = case Map.lookup meta s of
+                Nothing -> TVar x
+                Just t -> t
+        let (g', h_g') = hypAndForm $ subst x x' g
+        let proofGThenG' =
+                PForallE
+                    { var = x
+                    , form = g
+                    , proofForall = proofForall
+                    , termReplace = x'
+                    }
+        let proofG' = proveForallWithElim g' s m (PAx h_g')
+        cut g' proofGThenG' h_g' proofG'
+proveForallWithElim g _ _ proofForm = proofForm
 
 {-
 Como el contenido de forall pegado con el resto de la cláusula puede no
@@ -877,46 +934,91 @@ que no está en dnf
 
     (dnf) (a & c) | (b & c)
 -}
-findSubstToSolveContradiction :: Clause -> Form -> Result SingleSubst
-findSubstToSolveContradiction cl f@(FForall x g) = do
+findSubstToSolveContradiction :: Clause -> Clause -> Form -> Metavar -> Result (Substitution, Map.Map VarId Metavar)
+findSubstToSolveContradiction clL clR f@(FForall x g) metavar = do
     -- Reemplazo la variable por una metavariable así unificando encontramos la
     -- sustitución que permite refutarla (en caso de que exista)
-    let gMeta = subst x TMetavar g
-    let clMeta = fromClause $ replaceFirst cl f gMeta
+    let meta = TMetavar metavar
+    let gMeta = subst x meta g
+    let clMeta = fromClause $ clL ++ [gMeta] ++ clR
 
     -- Convierto la nueva cláusula a DNF
     let (dnfClMeta, _) = dnf ("h", clMeta) -- No importa la demo
-    wrapR
-        (printf "solving clause with metavar in dnf '%s'" (show dnfClMeta))
-        (solveContradictionUnifying SSEmpty dnfClMeta)
+    case solveContradictionUnifying Map.empty dnfClMeta of
+        Right (s : _) -> Right (s, Map.singleton x metavar)
+        Left err -> case findSubstToSolveContradiction clL clR gMeta (metavar + 1) of
+            Left err2 ->
+                Left
+                    $ printf
+                        "solving clause with '%s' replaced by metavar '%s' and reconverting to dnf \n%s\n%s\n%s"
+                        x
+                        (show meta)
+                        (mustShowDNF dnfClMeta)
+                        err
+                        err2
+            Right (s, ms) -> Right (s, Map.insert x metavar ms)
+findSubstToSolveContradiction _ _ _ _ = Left "no more foralls"
 
--- solveContradictionUnifying encuentra la sustitución que hace a la fórmula
--- refutable (en caso de que exista).
--- Asume que la fórmula está en DNF.
-solveContradictionUnifying :: SingleSubst -> Form -> Result SingleSubst
+-- splitForalls
+-- (forall x . forall y . exists w -> p(x) & g(y) & forall w . true)
+-- -> [x, y] (exists w -> p(x) & g(y) & forall w . true)
+splitForalls :: Form -> ([VarId], Form)
+splitForalls (FForall x g) = (x : xs, g')
+  where
+    (xs, g') = splitForalls g
+splitForalls g = ([], g)
+
+{- solveContradictionUnifying encuentra la sustitución que hace a la fórmula
+refutable (en caso de que exista).
+Asume que la fórmula está en DNF.
+
+Puede haber más de una combinación de fórmulas posible para cada cláusula, y es
+importante considerarlas todas. Por ej.
+
+    [
+        [f(?), ~f(a), ~f(b)]  -> {? = a}, {? = b}
+        [f(?), ~f(b) ]        -> {? = b}
+    ]
+
+si no se consideran todas las sustituciones candidatas, en la primera se
+commitea a {? = a} y la 2da fallaría.
+-}
+solveContradictionUnifying :: Substitution -> Form -> Result [Substitution]
 solveContradictionUnifying s (FOr l r) = do
     sL <- solveContradictionUnifying s l
-    solveContradictionUnifying sL r
+    solveContradictionUnifyingWithMany sL r
 solveContradictionUnifying s i = solveClauseUnifying s i
 
--- Encuentra la sustitución que permite una contradicción: dos literales
+solveContradictionUnifyingWithMany :: [Substitution] -> Form -> Result [Substitution]
+solveContradictionUnifyingWithMany ss f =
+    let substs = map (`solveContradictionUnifying` f) ss
+     in case filter isRight substs of
+            [] -> Left (intercalate "\n" (lefts substs))
+            ss -> Right (concat (rights substs))
+
+-- Encuentra las sustituciones que permite una contradicción: dos literales
 -- opuestos que unifican o false.
-solveClauseUnifying :: SingleSubst -> Form -> Result SingleSubst
+solveClauseUnifying :: Substitution -> Form -> Result [Substitution]
 solveClauseUnifying s rawClause = do
     clause <- toClause rawClause
     -- Contradicción por false
     if FFalse `elem` clause
-        then return SSEmpty
+        then return [s]
         else -- No hay por false, buscamos dos opuestas que unifiquen
-        case find isJust (map (findFirstUnifyingWithOpposite s clause) clause) of
-            Just (Just (f, fNot, s)) -> return s
-            Nothing -> Left "no opposites that unify"
+        case concatMap (findAllUnifyingWithOpposite s clause) clause of
+            [] -> Left $ printf "(subst %s) no opposites that unify in clause %s" (showSubstitution s) (show clause)
+            ss -> Right ss
 
-findFirstUnifyingWithOpposite :: SingleSubst -> [Form] -> Form -> Maybe (Form, Form, SingleSubst)
-findFirstUnifyingWithOpposite s (f' : fs) f = case unifyF s (FNot f) f' of
-    Left _ -> findFirstUnifyingWithOpposite s fs f
-    Right s -> Just (f, f', s)
-findFirstUnifyingWithOpposite _ [] _ = Nothing
+-- Devuelve todas las sustituciones que hacen que la fórmula f unifique con su
+-- opuesto
+findAllUnifyingWithOpposite :: Substitution -> [Form] -> Form -> [Substitution]
+findAllUnifyingWithOpposite s (f' : fs) f =
+    ( case unifyF s (FNot f) f' of
+        Left _ -> []
+        Right s' -> [s']
+    )
+        ++ findAllUnifyingWithOpposite s fs f
+findAllUnifyingWithOpposite _ [] _ = []
 
 replaceFirst :: (Eq a) => [a] -> a -> a -> [a]
 replaceFirst (x : xs) old new
@@ -940,6 +1042,25 @@ fromClause = foldl1 FAnd
 -- left assoc
 fromDNF :: [Clause] -> Form
 fromDNF cs = foldl1 FOr (map fromClause cs)
+
+mustShowDNF :: Form -> String
+mustShowDNF f = case showDNF f of
+    Right s -> s
+    Left e -> error e
+
+showDNF :: Form -> Result String
+showDNF f = do
+    dnfF <- toDNFMatrix f
+    return (intercalate "\n" (map show dnfF))
+
+toDNFMatrix :: Form -> Result [Clause]
+toDNFMatrix (FOr l r) = do
+    dnfL <- toDNFMatrix l
+    dnfR <- toDNFMatrix r
+    return (dnfL ++ dnfR)
+toDNFMatrix f = do
+    clauseF <- toClause f
+    return [clauseF]
 
 -- True si es un literal
 isLiteral :: Form -> Bool

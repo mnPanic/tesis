@@ -14,6 +14,7 @@ import Certifier (
     findContradiction,
     fromClause,
     fromDNF,
+    partitionForalls,
     solveContradiction,
     toClause,
  )
@@ -36,8 +37,11 @@ import ND (
     Proof (..),
     Term (..),
     dneg,
+    fPred1,
     predVar,
     propVar,
+    tFun0,
+    tFun1,
  )
 
 import PPA (Hypothesis (HAxiom))
@@ -65,10 +69,12 @@ testCertifier =
     test
         [ "certifyBy" ~: testCertifyBy
         , "commands" ~: testCommands
+        , "programs" ~: testPrograms
         , "clauses" ~: testClause
         , "findContradiction" ~: testFindContradiction
         , "solve" ~: testSolve
         , "dnf" ~: testDnf
+        , "partitionForalls" ~: testPartitionForalls
         ]
 
 testProgram :: String -> IO ()
@@ -86,6 +92,201 @@ testProgramError p err = do
     case result of
         Left err -> assertFailure err
         Right prog -> certify prog @?= Left err
+
+testPrograms :: Test
+testPrograms =
+    test
+        [ "relatives old"
+            ~: testProgram
+                [r|
+axiom todos_tienen_padre: forall P. exists Q. padre(P, Q)
+axiom def_abuelo:
+    forall P. forall Q. forall R.
+        (padre(P, Q) & padre(Q, R)) -> abuelo(P, R)
+
+theorem todos_tienen_abuelo: forall A. exists B. abuelo(A, B)
+proof
+    // Primero encuentro el padre del padre de A (todos tienen padre)
+    // Luego uso la definición para mostrar que es el abuelo
+    let A
+    have -: exists B. padre(A, B) by todos_tienen_padre
+    consider B st a_padre_b: padre(A, B) by -
+
+    have -: exists C. padre(B, C) by todos_tienen_padre
+    consider C st b_padre_c: padre(B, C) by -
+
+    take B := C
+    
+    // me gustaria
+    //thus abuelo(A, C) by a_padre_b, b_padre_c, def_abuelo
+
+    // Tengo que hacer la eliminación en 3 pasos porque se elimina de a un forall
+    have -: forall B. forall C. padre(A, B) & padre(B, C) -> abuelo(A, C)
+        by def_abuelo
+    then -: forall C. padre(A, B) & padre(B, C) -> abuelo(A, C)
+    then -: padre(A, B) & padre(B, C) -> abuelo(A, C)
+    hence abuelo(A, C) by a_padre_b, b_padre_c
+end
+    |]
+        , "relatives new"
+            ~: testProgram
+                [r|
+    axiom todos_tienen_padre: forall P. exists Q. padre(P, Q)
+axiom def_abuelo:
+    forall P. forall Q. forall R.
+        (padre(P, Q) & padre(Q, R)) -> abuelo(P, R)
+
+axiom def_hijo: forall P. forall Q. padre(P, Q) -> hijo(Q, P)
+
+theorem todos_tienen_abuelo: forall A. exists B. abuelo(A, B)
+proof
+    // Primero encuentro el padre del padre de A (todos tienen padre)
+    // Luego uso la definición para mostrar que es el abuelo
+    let A
+    consider B st a_padre_b: padre(A, B) by todos_tienen_padre
+    consider C st b_padre_c: padre(B, C) by todos_tienen_padre
+
+    take B := C
+
+    thus abuelo(A, C) by a_padre_b, b_padre_c, def_abuelo
+end|]
+        , "groups"
+            ~: testProgram
+                [r|
+    // Teoría matemática de Grupos //
+    //
+    // Referencia: https://en.wikipedia.org/wiki/Group_(mathematics)#Uniqueness_of_identity_element
+    // Simbolos
+    // - op/2: El operador * del grupo
+    // - eq/2: Igualdad
+    // - id/1: Predicado que indica que un elemento es la identidad
+
+    axiom eq_refl: forall X . eq(X, X)
+    axiom eq_sym: forall X. forall Y. eq(X, Y) -> eq(Y, X)
+    axiom eq_trans: forall X. forall Y. forall Z.
+        eq(X, Y) & eq(Y, Z) -> eq(X, Z)
+
+    axiom id_def: forall E. forall X.
+        (eq(op(E, X), X) & eq(op(X, E), X) -> id(E)) &
+        (id(E) -> eq(op(E, X), X) & eq(op(X, E), X))
+
+
+    axiom op_cong_eq_1: forall X. forall Y. forall Z.
+        eq(X, Y) -> eq(op(X, Z), op(Y, Z))
+
+    axiom op_cong_eq_2: forall X. forall Y. forall Z.
+        eq(Y, Z) -> eq(op(X, Y), op(X, Z))
+
+    axiom id_exists: exists E. id(E)
+
+    axiom inverse_def: forall E . forall A . forall I .
+        id(E) -> (
+            (inverse(A, I) -> eq(op(A, I), E) & eq(op(I, A), E)) &
+            (eq(op(A, I), E) & eq(op(I, A), E) -> inverse(A, I) )
+        )
+
+    axiom inverse_exists: forall A . exists I . inverse(A, I)
+
+    // (X * Y) * Z = X * (Y * Z)
+    axiom assoc_def: forall X. forall Y. forall Z.
+        eq(
+            op(op(X, Y), Z),
+            op(X, op(Y, Z))
+        )
+
+    /* sketch
+        Si e1 y e2 son identity elements,
+
+        por e1 usando e2
+            (1) e2 * e1 = e1 * e2 = e2
+        
+        por e2 usando e1
+            (2) e1 * e2 = e2 * e1 = e1
+        
+        luego tengo
+            e1 * e2 = e2 y
+            e1 * e2 = e1
+        
+        luego,
+
+            e1 = e1 * e2 (eq_sym)
+            = e2
+            -> e1 = e2 (eq_trans)
+    */
+    theorem identity_unique_2:
+        forall E1. forall E2.
+            id(E1) & id(E2) -> eq(E1, E2)
+    proof
+        let E1
+        let E2
+        suppose e1_e2_are_id: id(E1) & id(E2)
+
+        // qvq eq(E1, E2)
+        have "e2 * e1 = e2": eq(op(E2, E1), E2)
+            by e1_e2_are_id, id_def
+
+        have "e2 * e1 = e1": eq(op(E2, E1), E1)
+            by e1_e2_are_id, id_def
+
+        have "e1 = e2 * e1": eq(E1, op(E2, E1)) by "e2 * e1 = e1", eq_sym
+
+        thus eq(E1, E2) by "e1 = e2 * e1", "e2 * e1 = e2", eq_trans
+    end
+
+
+    // b = b * e            (e es la identidad)
+    //   = b * (a * c)      (c es inverso de a)
+    //   = (b * a) * c      (assoc)
+    //   = e * c            (b inverso de a)
+    //   = c                (e es id)
+    theorem inverse_unique:
+        forall A . forall B . forall C .
+            inverse(A, B) & inverse(A, C) -> eq(B, C)
+    proof
+        let A
+        let B
+        let C
+        suppose b_c_inverse_of_a: inverse(A, B) & inverse(A, C)
+
+        consider E st id_e:id(E) by id_exists
+
+        have "b*e = b": eq(op(B, E), B) by id_def, id_e
+
+        have "b = b*e": eq(B, op(B, E)) by "b*e = b", eq_sym
+
+        have "a * c = e": eq(op(A, C), E) by inverse_def, b_c_inverse_of_a, id_e
+        
+        have "e = a*c": eq(E, op(A, C)) by "a * c = e", eq_sym
+
+        have "b * e = b * (a * c)": eq(op(B, E), op(B, op(A, C)))
+            by "e = a*c", op_cong_eq_2
+
+        have "(b * a) * c = b * (a * c)": eq(op(op(B, A), C), op(B, op(A, C)))
+            by assoc_def
+        then "b * (a * c) = (b * a) * c": eq(op(B, op(A, C)), op(op(B, A), C))
+            by eq_sym
+        
+        have "b * a = e": eq(op(B, A), E) by b_c_inverse_of_a, inverse_def, id_e
+        have "(b * a) * c = e * c": eq(op(op(B, A), C), op(E, C))
+            by "b * a = e", op_cong_eq_1
+
+        have "e * c = c": eq(op(E, C), C) by id_def, id_e
+
+        // pasos de transitividad
+        have "b = b * (a * c)": eq(B, op(B, op(A, C)))
+            by "b = b*e", "b * e = b * (a * c)", eq_trans
+        
+        then "b = (b * a) * c": eq(B, op(op(B, A), C))
+            by "b * (a * c) = (b * a) * c", eq_trans
+        
+        then "b = e * c": eq(B, op(E, C))
+            by "(b * a) * c = e * c", eq_trans
+        
+        hence eq(B, C)
+            by "e * c = c", eq_trans
+    end
+    |]
+        ]
 
 testCommands :: Test
 testCommands =
@@ -121,7 +322,7 @@ testCommands =
                                 suppose a : a
                             end
                         |]
-                        "theorem 't1': suppose: can't suppose 'a : a' with form 'a', must be implication or negation"
+                        "theorem 't1': \n certify suppose: can't suppose 'a : a' with form 'a', must be implication or negation"
                 , "not intro"
                     ~: testProgram
                         [r|
@@ -180,7 +381,7 @@ testCommands =
                             suppose a:a
                         end
                         |]
-                        "theorem 'error': suppose: incomplete proof, still have b as thesis"
+                        "theorem 'error': \n certify suppose: incomplete proof, still have b as thesis"
                 ]
         , "justification not in context error"
             ~: testProgramError
@@ -188,7 +389,7 @@ testCommands =
                 proof
                     thus a by "-", foo
                 end|]
-                "theorem 'ejemplo': thusBy: finding hyps in context: can't get prev hyp from empty ctx; 'foo' not present in ctx"
+                "theorem 'ejemplo': \n certify thus: finding hyps in context: can't get prev hyp from empty ctx; 'foo' not present in ctx"
         , "no contradicting literals error"
             ~: testProgramError
                 [r|theorem "ejemplo" : (a -> b -> c) -> (a -> b) -> a -> c
@@ -198,7 +399,7 @@ testCommands =
                 suppose "R": a
                 have "S": b by "Q"
             end|]
-                "theorem 'ejemplo': suppose: suppose: suppose: haveBy: finding contradiction for dnf form '(~a & ~b) | (b & ~b)' obtained from '~((a -> b) -> b)': '~a & ~b' contains no contradicting literals or false, and trying to eliminate foralls: form contains no foralls to eliminate"
+                "theorem 'ejemplo': \n certify suppose: \n certify suppose: \n certify suppose: \n certify have (S): solving form by finding contradiction of negation:\n'~((a -> b) -> b)',\nin dnf: '(~a & ~b) | (b & ~b)': '~a & ~b' contains no contradicting literals or false, and trying to eliminate foralls: no foralls to eliminate"
         , "then + hence"
             ~: testProgram
                 [r|
@@ -393,7 +594,7 @@ testCommands =
                             take Y := zero
                         end
                 |]
-                        "theorem 'zero exists': take: can't take var 'Y', different from thesis var 'X'"
+                        "theorem 'zero exists': \n certify take: can't take var 'Y', different from thesis var 'X'"
                 , "error invalid form"
                     ~: testProgramError
                         [r|
@@ -402,7 +603,7 @@ testCommands =
                             take Y := zero
                         end
                 |]
-                        "theorem 'zero exists': take: can't use on form 'a', not exists"
+                        "theorem 'zero exists': \n certify take: can't use on form 'a', not exists"
                 ]
         , "consider"
             ~: test
@@ -440,7 +641,7 @@ testCommands =
                         thus b(Y) by -
                     end
                 |]
-                        "theorem 'consider': suppose: take: consider: can't use an exist whose variable (Y) appears free in the thesis (b(Y))"
+                        "theorem 'consider': \n certify suppose: \n certify take: \n certify consider: can't use an exist whose variable (Y) appears free in the thesis (b(Y))"
                 , "err var free in ctx"
                     ~: testProgramError
                         [r|
@@ -452,7 +653,7 @@ testCommands =
                         consider Y st h3 : b(Y) by h1 // está libre en el contexto
                     end
                 |]
-                        "theorem 'consider': suppose: consider: consider: can't use an exist whose variable (Y) appears free in the preceding context ([(axiom) h2 : a(Y),(axiom) h1 : exists Y . b(Y),(axiom) a1 : exists Y . a(Y)])"
+                        "theorem 'consider': \n certify suppose: \n certify consider: \n certify consider: can't use an exist whose variable (Y) appears free in the preceding context ([(axiom) h2 : a(Y),(axiom) h1 : exists Y . b(Y),(axiom) a1 : exists Y . a(Y)])"
                 ]
         , "let"
             ~: [ "err var in context"
@@ -466,7 +667,7 @@ testCommands =
                         thus a(X) by a1
                     end
                 |]
-                        "theorem 'let': consider: let: new var (X) must not appear free in preceding context ([(axiom) h : a(X),(axiom) a1 : exists X . a(X)])"
+                        "theorem 'let': \n certify consider: \n certify let: new var (X) must not appear free in preceding context ([(axiom) h : a(X),(axiom) a1 : exists X . a(X)])"
                , "wrong form"
                     ~: testProgramError
                         [r|
@@ -475,7 +676,7 @@ testCommands =
                         let X
                     end
                 |]
-                        "theorem 'let err': let: can't use with form 'a -> b', must be an universal quantifier (forall)"
+                        "theorem 'let err': \n certify let: can't use with form 'a -> b', must be an universal quantifier (forall)"
                , "var free in thesis"
                     ~: testProgramError
                         [r|
@@ -487,7 +688,7 @@ testCommands =
                         thus p(X, X) by a
                     end
                 |]
-                        "theorem 't': let: let: new var (X) must not appear free in forall: forall Y . p(X, Y)"
+                        "theorem 't': \n certify let: \n certify let: new var (X) must not appear free in forall: forall Y . p(X, Y)"
                , "ok"
                     ~: testProgram
                         [r|
@@ -573,6 +774,60 @@ testCommands =
                         thus forall Z. f(a) & g(Z) by a1
                     end
                 |]
+                , "elim more than one in same clause OK"
+                    ~: testProgram
+                        [r|
+                        axiom a1: forall X . forall Y. p(X, Y)
+                        theorem t: p(a, b)
+                        proof
+                            thus p(a, b) by a1
+                        end
+
+                        // Tambien se puede hacer por pasos
+                        theorem t2: p(a, b)
+                        proof
+                            have -: forall Y. p(a, Y) by a1
+                            hence p(a, b)
+                        end
+                        |]
+                , "elim more than one in different clause OK"
+                    ~: testProgram
+                        [r|
+                        axiom a1: forall Y. q(Y)
+                        axiom a2: forall X. p(X)
+                        theorem t: p(a) & q(b)
+                        proof
+                            /* elimina los 2 foralls porque termina en cláusulas diferentes
+                            ~(a1 & a2 -> p(a) & p(b))
+                            a1 & a2 & ~(p(a) & p(b))
+                            a1 & a2 & (~p(a) | ~p(b))
+                            ~p(a) & a1 & a2 | ~p(b) & a1 & a2
+                            */
+                            thus p(a) & q(b) by a1, a2
+                        end
+                        |]
+                , "elim more than one forall for same clause error"
+                    ~: testProgramError
+                        [r|
+                        axiom a1: forall Y. q(Y) -> p(Y)
+                        axiom a2: forall X. q(X)
+                        theorem t: p(a)
+                        proof
+                            thus p(a) by a1, a2
+                        end
+                        |]
+                        "theorem 't': \n certify thus: solving form by finding contradiction of negation:\n'~((forall Y . (q(Y) -> p(Y)) & forall X . q(X)) -> p(a))',\nin dnf: '(forall Y . (q(Y) -> p(Y)) & forall X . q(X)) & ~p(a)': '(forall Y . (q(Y) -> p(Y)) & forall X . q(X)) & ~p(a)' contains no contradicting literals or false, and trying to eliminate foralls: no foralls useful for contradictions:\ntry eliminating 'forall X . q(X)': solving clause with 'X' replaced by metavar '?0' and reconverting to dnf \n[forall Y . (q(Y) -> p(Y)),q(?0),~p(a)]\n(subst {}) no opposites that unify in clause [forall Y . (q(Y) -> p(Y)),q(?0),~p(a)]\nno more foralls\ntry eliminating 'forall Y . (q(Y) -> p(Y))': solving clause with 'Y' replaced by metavar '?0' and reconverting to dnf \n[~q(?0),forall X . q(X),~p(a)]\n[p(?0),forall X . q(X),~p(a)]\n(subst {}) no opposites that unify in clause [~q(?0),forall X . q(X),~p(a)]\nno more foralls"
+                , "elim more than one forall for same clause multiple steps OK"
+                    ~: testProgram
+                        [r|
+                        axiom a1: forall Y. q(Y) -> p(Y)
+                        axiom a2: forall X. q(X)
+                        theorem t: p(a)
+                        proof
+                            have -: q(a) -> p(a) by a1
+                            thus p(a) by a2, -
+                        end
+                        |]
                 , "err no foralls"
                     ~: testProgramError
                         [r|
@@ -583,7 +838,7 @@ testCommands =
                         thus h(a) by a1, a2
                     end
                 |]
-                        "theorem 't': thusBy: finding contradiction for dnf form '(forall X . f(X) & forall Y . g(Y)) & ~h(a)' obtained from '~((forall X . f(X) & forall Y . g(Y)) -> h(a))': '(forall X . f(X) & forall Y . g(Y)) & ~h(a)' contains no contradicting literals or false, and trying to eliminate foralls: no foralls useful for contradictions:\ntry eliminating 'forall X . f(X)': solving clause with metavar in dnf '(f(?) & forall Y . g(Y)) & ~h(a)': no opposites that unify\ntry eliminating 'forall Y . g(Y)': solving clause with metavar in dnf '(forall X . f(X) & g(?)) & ~h(a)': no opposites that unify"
+                        "theorem 't': \n certify thus: solving form by finding contradiction of negation:\n'~((forall X . f(X) & forall Y . g(Y)) -> h(a))',\nin dnf: '(forall X . f(X) & forall Y . g(Y)) & ~h(a)': '(forall X . f(X) & forall Y . g(Y)) & ~h(a)' contains no contradicting literals or false, and trying to eliminate foralls: no foralls useful for contradictions:\ntry eliminating 'forall Y . g(Y)': solving clause with 'Y' replaced by metavar '?0' and reconverting to dnf \n[forall X . f(X),g(?0),~h(a)]\n(subst {}) no opposites that unify in clause [forall X . f(X),g(?0),~h(a)]\nno more foralls\ntry eliminating 'forall X . f(X)': solving clause with 'X' replaced by metavar '?0' and reconverting to dnf \n[f(?0),forall Y . g(Y),~h(a)]\n(subst {}) no opposites that unify in clause [f(?0),forall Y . g(Y),~h(a)]\nno more foralls"
                 ]
         ]
 
@@ -715,7 +970,7 @@ testSolve =
                 ]
         , "clause too short not refutable"
             ~: solveContradiction ("h", fromDNF [[propVar "X"]])
-            ~?= Left "'X' contains no contradicting literals or false, and trying to eliminate foralls: form contains no foralls to eliminate"
+            ~?= Left "'X' contains no contradicting literals or false, and trying to eliminate foralls: no foralls to eliminate"
         , "one clause not refutable"
             ~: solveContradiction
                 ( "h"
@@ -731,8 +986,69 @@ testSolve =
                     , [propVar "X", FTrue]
                     ]
                 )
-            ~?= Left "'X & true' contains no contradicting literals or false, and trying to eliminate foralls: form contains no foralls to eliminate"
+            ~?= Left "'X & true' contains no contradicting literals or false, and trying to eliminate foralls: no foralls to eliminate"
         , "not dnf" ~: solveContradiction ("h", FImp FTrue FFalse) ~?= Left "convert to clause: true -> false is not a literal"
+        , "ok forall 1 form"
+            ~: doTestSolveCheck
+            $ fromClause [FForall "X" $ fPred1 "p" (TVar "X"), FNot $ fPred1 "p" (tFun0 "a")]
+        , "ok forall 2 forms"
+            ~: doTestSolveCheck
+            $ fromClause
+                [ FForall
+                    "X"
+                    ( fromDNF
+                        [
+                            [ predVar "p" "X"
+                            , FNot $ fPred1 "p" (tFun0 "a")
+                            , FNot $ fPred1 "p" (tFun0 "b")
+                            ]
+                        ,
+                            [ predVar "p" "X"
+                            , FNot $ fPred1 "p" (tFun0 "a")
+                            ]
+                        ]
+                    )
+                ]
+        , "ok forall 2 forms match second"
+            -- two valid substs, must use second
+            ~: doTestSolveCheck
+            $ fromClause
+                [ FForall
+                    "X"
+                    ( fromDNF
+                        [
+                            [ predVar "p" "X"
+                            , FNot $ fPred1 "p" (tFun0 "a")
+                            , FNot $ fPred1 "p" (tFun0 "b")
+                            ]
+                        ,
+                            [ predVar "p" "X"
+                            , FNot $ fPred1 "p" (tFun0 "b")
+                            ]
+                        ]
+                    )
+                ]
+        , "err forall 2 forms no match second"
+            ~: solveContradiction
+                ( "h"
+                , fromClause
+                    [ FForall
+                        "X"
+                        ( fromDNF
+                            [
+                                [ predVar "p" "X"
+                                , FNot $ fPred1 "p" (tFun0 "a")
+                                , FNot $ fPred1 "p" (tFun0 "b")
+                                ]
+                            ,
+                                [ predVar "p" "X"
+                                , FNot $ fPred1 "p" (tFun0 "c")
+                                ]
+                            ]
+                        )
+                    ]
+                )
+            ~?= Left "'forall X . (((p(X) & ~p(a)) & ~p(b)) | (p(X) & ~p(c)))' contains no contradicting literals or false, and trying to eliminate foralls: no foralls useful for contradictions:\ntry eliminating 'forall X . (((p(X) & ~p(a)) & ~p(b)) | (p(X) & ~p(c)))': solving clause with 'X' replaced by metavar '?0' and reconverting to dnf \n[p(?0),~p(a),~p(b)]\n[p(?0),~p(c)]\n(subst {0=a}) no opposites that unify in clause [p(?0),~p(c)]\n(subst {0=b}) no opposites that unify in clause [p(?0),~p(c)]\nno more foralls"
         ]
 
 doTestSolveEqCheck :: EnvItem -> Proof -> IO ()
@@ -889,6 +1205,27 @@ testClause =
                 )
                 (propVar "X")
         ]
+
+testPartitionForalls :: Test
+testPartitionForalls =
+    test
+        [ partitionForalls [fx, pa, fy, fz, qa]
+            ~?= [ ([fx, pa, fy], fz, [qa])
+                , ([fx, pa], fy, [fz, qa])
+                , ([], fx, [pa, fy, fz, qa])
+                ]
+        , partitionForalls [fx, fy, fz]
+            ~?= [ ([fx, fy], fz, [])
+                , ([fx], fy, [fz])
+                , ([], fx, [fy, fz])
+                ]
+        ]
+  where
+    fx = FForall "X" (predVar "p" "X")
+    fy = FForall "Y" (predVar "p" "Y")
+    fz = FForall "Z" (predVar "p" "Z")
+    pa = fPred1 "p" (tFun0 "a")
+    qa = fPred1 "q" (tFun0 "b")
 
 testDnf :: Test
 testDnf =

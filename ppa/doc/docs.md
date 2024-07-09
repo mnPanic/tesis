@@ -136,7 +136,81 @@ hipótesis anterior a la justificación, a la que también se puede referir con 
 | `thus`      | `hence`    | Si                  |
 | `have`      | `then`     | No                  |
 
-El by es opcional en ambos. En caso de no especificarlo, debe ser una tautología.
+El by es opcional en ambos. En caso de no especificarlo, debe ser una
+tautología.
+
+#### Demostración automática
+
+Para demostrar `thus h: a by h1, h2, ... hn`, encuentra `h1: b1, ... hn: bn` y
+demuestra `b1 & ... & bn -> a` negando, convirtiendo a [DNF](#dnf), y encontrando una contradicción.
+
+Cuando hay `foralls` involucrados, elige a lo sumo una fórmula por *cláusula*
+que puede tener hasta N foralls consecutivos e intenta eliminarlos uno por uno.
+
+Por ejemplo, en el siguiente programa, se eliminan `forall X` y `forall Y` al
+mismo tiempo.
+
+```ppa
+axiom a1: forall X . forall Y. p(X, Y)
+theorem t: p(a, b)
+proof
+    thus p(a, b) by a1
+end
+```
+
+Pero también se puede hacer por pasos, en donde elimina solo el primero
+
+```ppa
+axiom a1: forall X . forall Y. p(X, Y)
+theorem t2: p(a, b)
+proof
+    have -: forall Y. p(a, Y) by a1
+    hence p(a, b)
+end
+```
+
+En cambio, en un programa como el siguiente, el by arroja un error, porque no es
+suficientemente inteligente como para eliminar más de un forall en la misma
+cláusula
+
+```ppa
+axiom a1: forall Y. q(Y) -> p(Y)
+axiom a2: forall X. q(X)
+theorem t: p(a)
+proof
+  thus p(a) by a1, a2
+end
+```
+
+Es importante recordar que las fórmulas se transforman a DNF, por lo que si
+resulta en más de una cláusula, se termina eliminando más de un forall, como en
+este otro ejemplo
+
+```ppa
+axiom a1: forall Y. q(Y)
+axiom a2: forall X. p(X)
+theorem t: p(a) & q(b)
+proof
+    /* elimina los 2 foralls porque termina en cláusulas diferentes
+    ~(a1 & a2 -> p(a) & p(b))
+    a1 & a2 & ~(p(a) & p(b))
+    a1 & a2 & (~p(a) | ~p(b))
+    ~p(a) & a1 & a2 | ~p(b) & a1 & a2
+    */
+    thus p(a) & q(b) by a1, a2
+end
+```
+
+#### DNF
+
+Una fórmula está en DNF (Disjuntive Normal Form) si es una disyunción de
+conjunciones, i.e
+
+```text
+(a_11 & ... & a_1n) | (a_21 & ... & a_2n) | ... | (a_m1 & ... & a_mn)
+```
+
+a cada conjunción se le llama **cláusula**
 
 ### Comandos y reglas de inferencia
 
