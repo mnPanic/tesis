@@ -1,0 +1,19 @@
+
+axiom corr_algo1: correlativa(algo1, cbc)
+axiom corr_algo2: correlativa(algo2, algo1)
+axiom corr_algo3: correlativa(algo3, algo2)
+
+axiom trans_corr: forall Mat1. forall Mat2. forall Mat3 .
+    correlativa(Mat1, Mat2) & correlativa(Mat2, Mat3) -> correlativa(Mat1, Mat3)
+
+theorem algo3_corr_algo1: correlativa(algo3, algo1)
+proof
+    have h1: forall Mat2. forall Mat3. correlativa(algo3, Mat2) & correlativa(Mat2,
+    Mat3) -> correlativa(algo3, Mat3) by trans_corr
+    then h2: forall Mat3. correlativa(algo3, algo2) & correlativa(algo2,
+    Mat3) -> correlativa(algo3, Mat3)
+    then h3: correlativa(algo3, algo2) & correlativa(algo2,
+    algo1) -> correlativa(algo3, algo1)
+
+    hence correlativa(algo3, algo1) by h3, corr_algo3, corr_algo2
+end

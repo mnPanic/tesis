@@ -1,0 +1,21 @@
+// Parientes
+
+axiom todos_tienen_padre: forall P. exists Q. padre(P, Q)
+axiom def_abuelo:
+    forall P. forall Q. forall R.
+        (padre(P, Q) & padre(Q, R)) -> abuelo(P, R)
+
+axiom def_hijo: forall P. forall Q. padre(P, Q) -> hijo(Q, P)
+
+theorem todos_tienen_abuelo: forall A. exists B. abuelo(A, B)
+proof
+    // Primero encuentro el padre del padre de A (todos tienen padre)
+    // Luego uso la definición para mostrar que es el abuelo
+    let A
+    consider B st a_padre_b: padre(A, B) by todos_tienen_padre
+    consider C st b_padre_c: padre(B, C) by todos_tienen_padre
+
+    take B := C
+
+    thus abuelo(A, C) by a_padre_b, b_padre_c, def_abuelo
+end
