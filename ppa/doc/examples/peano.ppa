@@ -1,0 +1,52 @@
+
+axiom eq_refl : forall X.
+  eq(X, X)
+axiom eq_sym  : forall X. forall Y.
+  eq(X, Y) -> eq(Y, X)
+axiom eq_trans  : forall X. forall Y. forall Z.
+  eq(X, Y) -> eq(Y, Z) -> eq(X, Z)
+axiom eq_cong_S : forall X. forall Y.
+  eq(X, Y) -> eq(s(X), s(Y))
+
+axiom zero_neq_S : forall X.
+  ~eq(zero, s(X))
+axiom inj_S : forall X. forall Y.
+  eq(s(X), s(Y)) -> eq(X, Y)
+axiom add_0l : forall X.
+  eq(add(zero, X), X)
+axiom add_Sl : forall X. forall Y.
+  eq(add(s(X), Y), s(add(X, Y)))
+axiom mul_0l : forall X.
+  eq(mul(zero, X), zero)
+axiom mul_Sl : forall X. forall Y.
+  eq(mul(s(X), Y), add(Y, mul(X, Y)))
+
+axiom ind_add_0r :
+       (eq(add(zero, zero), zero))
+    -> (forall X. eq(add(X, zero), X) -> eq(add(s(X), zero), s(X)))
+    -> forall X. eq(add(X, zero), X)
+
+theorem add_0r : forall X. eq(add(X, zero), X)
+proof
+  let X
+  claim "caso base": eq(add(zero, zero), zero)
+  proof
+    thus eq(add(zero, zero), zero) by add_0l
+  end
+  claim "paso inductivo":
+        forall X. eq(add(X, zero), X) -> eq(add(s(X), zero), s(X))
+  proof
+    let X
+    suppose "HI": eq(add(X, zero), X)
+    have 1: eq(add(s(X), zero), s(add(X, zero))) by add_Sl
+    have 2: eq(s(add(X, zero)), s(X)) by eq_cong_S, "HI"
+    thus eq(add(s(X), zero), s(X)) by 1, 2, eq_trans
+  end
+  thus eq(add(X, zero), X) by ind_add_0r, "caso base", "paso inductivo"
+end
+
+// ojo: seguramente tengas que agregar eq_cong_add y eq_cong_mul
+// probar que la suma es conmutativa, asociativa
+// probar que la multiplicación es conmutativa, asociativa
+// probar que la multiplicación distribuye sobre la suma
+

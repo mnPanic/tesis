@@ -1,6 +1,6 @@
 .PHONY: all
 
-all : lexer-parser main
+all : main
 
 clean:
 	rm src/*.hi
@@ -10,8 +10,8 @@ clean:
 test:
 	cd src && ghc Test*.hs
 
-main:
-	cd src && ghc Main.hs
+main: lexer-parser
+	cd src && ghc -XImportQualifiedPost Main.hs
 
 # TODO:
 # https://downloads.haskell.org/~ghc/6.0/docs/html/users_guide/options-output.html
