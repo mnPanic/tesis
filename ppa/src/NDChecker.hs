@@ -1,3 +1,4 @@
+-- NDChecker contiene lo necesario para poder `check`ear una ND.Proof
 module NDChecker (
     check,
     CheckResult (..),

@@ -58,7 +58,10 @@ import NDProofs (
     proofOrCongruence2,
  )
 
+import NDReducer (reduce)
+
 import Test.HUnit (
+    Assertion,
     Counts,
     Test,
     Testable (test),
@@ -89,6 +92,7 @@ testND =
         , "fv" ~: testFV
         , "alphaEq" ~: testAlphaEq
         , "unify" ~: testUnify
+        , "reduce" ~: testReduce
         ]
 
 exampleEnv :: Env
@@ -881,6 +885,84 @@ checkEquiv :: HypId -> Form -> HypId -> Form -> Proof -> Proof -> IO ()
 checkEquiv hF f hF' f' pFThenF' pF'ThenF = do
     CheckOK @=? check (EExtend hF f EEmpty) pFThenF' f'
     CheckOK @=? check (EExtend hF' f' EEmpty) pF'ThenF f
+
+testReduce :: Test
+testReduce =
+    test
+        [ "and"
+            ~: test
+                [ "left"
+                    ~: doTestReduce
+                        (EExtend "h1" (propVar "p") $ EExtend "h2" (propVar "q") EEmpty)
+                        (propVar "p")
+                        ( PAndE1
+                            { right = propVar "q"
+                            , proofAnd =
+                                ( PAndI
+                                    { proofLeft = PAx "h1"
+                                    , proofRight = PAx "h2"
+                                    }
+                                )
+                            }
+                        )
+                        (PAx "h1")
+                , "right"
+                    ~: doTestReduce
+                        (EExtend "h1" (propVar "p") $ EExtend "h2" (propVar "q") EEmpty)
+                        (propVar "q")
+                        ( PAndE2
+                            { left = propVar "p"
+                            , proofAnd =
+                                ( PAndI
+                                    { proofLeft = PAx "h1"
+                                    , proofRight = PAx "h2"
+                                    }
+                                )
+                            }
+                        )
+                        (PAx "h2")
+                , "left closed"
+                    ~: do
+                        let (p, q) = (propVar "p", propVar "q")
+                        doTestReduce
+                            EEmpty
+                            (FImp p (FImp q p))
+                            ( PImpI
+                                { hypAntecedent = "h1"
+                                , proofConsequent =
+                                    PImpI
+                                        { hypAntecedent = "h2"
+                                        , proofConsequent =
+                                            PAndE1
+                                                { right = propVar "q"
+                                                , proofAnd =
+                                                    ( PAndI
+                                                        { proofLeft = PAx "h1"
+                                                        , proofRight = PAx "h2"
+                                                        }
+                                                    )
+                                                }
+                                        }
+                                }
+                            )
+                            ( PImpI
+                                { hypAntecedent = "h1"
+                                , proofConsequent =
+                                    PImpI
+                                        { hypAntecedent = "h2"
+                                        , proofConsequent = PAx "h1"
+                                        }
+                                }
+                            )
+                ]
+        ]
+
+doTestReduce :: Env -> Form -> Proof -> Proof -> Assertion
+doTestReduce env f p expectedP = do
+    assertEqual "original doesn't check" CheckOK (check env p f)
+    let p' = reduce p
+    expectedP @=? p'
+    assertEqual "reduced doesn't check" CheckOK (check env p' f)
 
 {-                                  Proofs                                    -}
 
