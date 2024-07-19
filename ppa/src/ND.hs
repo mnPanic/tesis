@@ -2,6 +2,7 @@
 -- fórmulas de LPO con deducción natural.
 module ND (
     Env (..),
+    fromList,
     get,
     VarId,
     FunId,
@@ -214,6 +215,10 @@ instance Show Env where
       where
         showPair (h, f) = printf "'%s' : %s" h (show f)
         envList = asList env
+
+fromList :: [(HypId, Form)] -> Env
+fromList [] = EEmpty
+fromList ((h, f) : ps) = EExtend h f (fromList ps)
 
 asList :: Env -> [(HypId, Form)]
 asList EEmpty = []

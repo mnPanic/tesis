@@ -10,6 +10,7 @@ import ND (
     VarId,
     dneg,
     fPred1,
+    fromList,
     fv,
     fvE,
     get,
@@ -422,25 +423,30 @@ testSubst =
     px = FPred "P" [TVar "x"]
     pt = FPred "P" [testTerm]
 
+doTestCheckOK :: Env -> Proof -> Form -> Assertion
+doTestCheckOK env p f = do
+    assertEqual "check failed" CheckOK (check env p f)
+    let p' = reduce p
+    assertEqual "reduced check failed" CheckOK (check env p' f)
+
 testCheckExamples :: Test
 testCheckExamples =
     test
         [ -- PAx
-          "A |- A" ~: check exampleEnv (PAx "h1") FTrue ~?= CheckOK
+          "A |- A" ~: doTestCheckOK exampleEnv (PAx "h1") FTrue
         , "A |- B invalid"
             ~: rootCause (check exampleEnv (PAx "h1") FFalse)
             ~?= CheckError exampleEnv (PAx "h1") FFalse "env has hyp 'h1' for different form 'true'"
         , "PAx alpha eq"
-            ~: check
+            ~: doTestCheckOK
                 (EExtend "h" (FExists "x" (predVar "p" "x")) EEmpty)
                 (PAx "h")
                 (FExists "y" (predVar "p" "y"))
-            ~?= CheckOK
         , -- PImpI
-          "A -> A" ~: check EEmpty p1 f1 ~?= CheckOK
-        , "A -> (B -> A)" ~: check EEmpty p2 f2 ~?= CheckOK
+          "A -> A" ~: doTestCheckOK EEmpty p1 f1
+        , "A -> (B -> A)" ~: doTestCheckOK EEmpty p2 f2
         , -- Usar la misma etiqueta para diferentes hipótesis
-          "A -> (B -> B)" ~: check EEmpty p3 f3 ~?= CheckOK
+          "A -> (B -> B)" ~: doTestCheckOK EEmpty p3 f3
         , "A -> (B -> A) invalid"
             ~: rootCause (check EEmpty p3 f2)
             ~?= CheckError
@@ -450,8 +456,7 @@ testCheckExamples =
                 "env has hyp 'x' for different form 'B'"
         , -- PImpE
           "(A -> (B -> C)) -> [(A -> B) -> (A -> C)]"
-            ~: check EEmpty p4 f4
-            ~?= CheckOK
+            ~: doTestCheckOK EEmpty p4 f4
         , "(A -> (B -> C)) -> [(A -> B) -> (A -> C)] err left"
             ~: rootCause (check EEmpty p4Err1 f4)
             ~?= CheckError
@@ -479,28 +484,28 @@ testCheckExamples =
                 (propVar "B")
                 "hyp h B not in env"
         , -- PFalseE
-          "bot -> P" ~: check EEmpty p5 f5 ~?= CheckOK
+          "bot -> P" ~: doTestCheckOK EEmpty p5 f5
         , -- PNotE, PNotI
-          "P -> ~~P" ~: check EEmpty p6 f6 ~?= CheckOK
-        , "~~~P -> ~P" ~: check EEmpty p7 f7 ~?= CheckOK
-        , "(A -> B) -> (~B -> ~A)" ~: check EEmpty p8 f8 ~?= CheckOK
+          "P -> ~~P" ~: doTestCheckOK EEmpty p6 f6
+        , "~~~P -> ~P" ~: doTestCheckOK EEmpty p7 f7
+        , "(A -> B) -> (~B -> ~A)" ~: doTestCheckOK EEmpty p8 f8
         , -- And y OR
-          "(~A v ~B) -> ~(A ^ B)" ~: check EEmpty p10 f10 ~?= CheckOK
-        , "((A ^ B) -> C) <-> (A -> (B -> C))" ~: check EEmpty p11 f11 ~?= CheckOK
-        , "~~(A v ~A) con LEM" ~: check EEmpty p12LEM f12 ~?= CheckOK
-        , "~~(A v ~A) sin LEM" ~: check EEmpty p12 f12 ~?= CheckOK
+          "(~A v ~B) -> ~(A ^ B)" ~: doTestCheckOK EEmpty p10 f10
+        , "((A ^ B) -> C) <-> (A -> (B -> C))" ~: doTestCheckOK EEmpty p11 f11
+        , "~~(A v ~A) con LEM" ~: doTestCheckOK EEmpty p12LEM f12
+        , "~~(A v ~A) sin LEM" ~: doTestCheckOK EEmpty p12 f12
         , -- equivalencias
-          "(A ^ true) <-> A" ~: check EEmpty p13 f13 ~?= CheckOK
-        , "(A v true) <-> true" ~: check EEmpty p14 f14 ~?= CheckOK
+          "(A ^ true) <-> A" ~: doTestCheckOK EEmpty p13 f13
+        , "(A v true) <-> true" ~: doTestCheckOK EEmpty p14 f14
         , -- implicaciones de LK
-          "~~P -> P" ~: check EEmpty p9 f9 ~?= CheckOK
-        , "~~P -> P con macro" ~: check EEmpty (doubleNegElim $ propVar "A") f9 ~?= CheckOK
-        , "~(A ^ B) -> (~A v ~B)" ~: check EEmpty p15 f15 ~?= CheckOK
-        , "~A ^ ~B -> ~(A v B)" ~: check EEmpty p17 f17 ~?= CheckOK
-        , "~(A v B) -> ~A ^ ~B" ~: check EEmpty p16 f16 ~?= CheckOK
+          "~~P -> P" ~: doTestCheckOK EEmpty p9 f9
+        , "~~P -> P con macro" ~: doTestCheckOK EEmpty (doubleNegElim $ propVar "A") f9
+        , "~(A ^ B) -> (~A v ~B)" ~: doTestCheckOK EEmpty p15 f15
+        , "~A ^ ~B -> ~(A v B)" ~: doTestCheckOK EEmpty p17 f17
+        , "~(A v B) -> ~A ^ ~B" ~: doTestCheckOK EEmpty p16 f16
         , -- Exists y forall
-          "Good(y) => Exists x. Good(x)" ~: check EEmpty p18 f18 ~?= CheckOK
-        , "Exists x. A(x) ^ B(x) => Exists y. A(y)" ~: check EEmpty p19 f19 ~?= CheckOK
+          "Good(y) => Exists x. Good(x)" ~: doTestCheckOK EEmpty p18 f18
+        , "Exists x. A(x) ^ B(x) => Exists y. A(y)" ~: doTestCheckOK EEmpty p19 f19
         , "Exists x. A(x) ^ B(x) => Exists y. A(y) con renombre"
             ~: check EEmpty p19_rename f19
             ~?= CheckOK
@@ -1059,7 +1064,177 @@ testReduce =
                                 , proofConsequent = PAx "p"
                                 }
                             )
+                , "non trivial left and right"
+                    ~: do
+                        let (p, q) = (propVar "p", propVar "q")
+                        doTestReduce
+                            (fromList [("q imp p", FImp q p), ("p imp p", FImp p p), ("q", q)])
+                            (FImp p p)
+                            ( PImpI
+                                { hypAntecedent = "p"
+                                , proofConsequent =
+                                    POrE
+                                        { left = p
+                                        , right = q
+                                        , proofOr =
+                                            POrI1
+                                                ( PImpE
+                                                    { antecedent = q
+                                                    , proofImp = PAx "q imp p"
+                                                    , proofAntecedent = PAx "q"
+                                                    }
+                                                )
+                                        , hypLeft = "p"
+                                        , proofAssumingLeft =
+                                            PImpE
+                                                { antecedent = p
+                                                , proofImp = PAx "p imp p"
+                                                , proofAntecedent = PAx "p"
+                                                }
+                                        , hypRight = "q"
+                                        , proofAssumingRight =
+                                            PImpE
+                                                { antecedent = q
+                                                , proofImp = PAx "q imp p"
+                                                , proofAntecedent = PAx "q"
+                                                }
+                                        }
+                                }
+                            )
+                            ( PImpI
+                                { hypAntecedent = "p"
+                                , proofConsequent =
+                                    PImpE
+                                        { antecedent = p
+                                        , proofImp = PAx "p imp p"
+                                        , proofAntecedent =
+                                            PImpE
+                                                { antecedent = q
+                                                , proofImp = PAx "q imp p"
+                                                , proofAntecedent = PAx "q"
+                                                }
+                                        }
+                                }
+                            )
                 ]
+        , "or L + and" ~: do
+            let (p, q) = (propVar "p", propVar "q")
+            doTestReduce
+                (EExtend "q imp p" (FImp q p) EEmpty)
+                (FImp p p)
+                ( PImpI
+                    { hypAntecedent = "p"
+                    , proofConsequent =
+                        POrE
+                            { left = p
+                            , right = q
+                            , proofOr = POrI1 (PAx "p")
+                            , hypLeft = "p"
+                            , proofAssumingLeft =
+                                PAndE1
+                                    { right = p
+                                    , proofAnd =
+                                        PAndI
+                                            { proofLeft = PAx "p"
+                                            , proofRight = PAx "p"
+                                            }
+                                    }
+                            , hypRight = "q"
+                            , proofAssumingRight =
+                                PImpE
+                                    { antecedent = q
+                                    , proofImp = PAx "q imp p"
+                                    , proofAntecedent = PAx "q"
+                                    }
+                            }
+                    }
+                )
+                ( PImpI
+                    { hypAntecedent = "p"
+                    , proofConsequent = PAx "p"
+                    }
+                )
+        , "or L + and 2" ~: do
+            let (p, q) = (propVar "p", propVar "q")
+            doTestReduce
+                (EExtend "q imp p" (FImp q p) EEmpty)
+                (FImp p p)
+                ( PImpI
+                    { hypAntecedent = "p"
+                    , proofConsequent =
+                        POrE
+                            { left = p
+                            , right = q
+                            , proofOr =
+                                POrI1
+                                    ( PAndE1
+                                        { right = p
+                                        , proofAnd =
+                                            PAndI
+                                                { proofLeft = PAx "p"
+                                                , proofRight = PAx "p"
+                                                }
+                                        }
+                                    )
+                            , hypLeft = "p"
+                            , proofAssumingLeft = PAx "p"
+                            , hypRight = "q"
+                            , proofAssumingRight =
+                                PImpE
+                                    { antecedent = q
+                                    , proofImp = PAx "q imp p"
+                                    , proofAntecedent = PAx "q"
+                                    }
+                            }
+                    }
+                )
+                ( PImpI
+                    { hypAntecedent = "p"
+                    , proofConsequent = PAx "p"
+                    }
+                )
+        , "imp" ~: do
+            let p = propVar "p"
+            doTestReduce
+                (fromList [("p", p)])
+                p
+                ( PImpE
+                    { antecedent = p
+                    , proofImp =
+                        PImpI
+                            { hypAntecedent = "p"
+                            , proofConsequent = PAx "p"
+                            }
+                    , proofAntecedent = PAx "p"
+                    }
+                )
+                (PAx "p")
+        , "not" ~: do
+            let p = propVar "p"
+            doTestReduce
+                (fromList [("p", p), ("no p", FNot p)])
+                FFalse
+                ( PNotE
+                    { form = p
+                    , proofNotForm =
+                        PNotI
+                            { hyp = "h a"
+                            , proofBot =
+                                PNotE
+                                    { form = p
+                                    , proofNotForm = PAx "no p"
+                                    , proofForm = PAx "p"
+                                    }
+                            }
+                    , proofForm = PAx "p"
+                    }
+                )
+                ( PNotE
+                    { form = p
+                    , proofNotForm = PAx "no p"
+                    , proofForm = PAx "p"
+                    }
+                )
         ]
 
 doTestReduce :: Env -> Form -> Proof -> Proof -> Assertion

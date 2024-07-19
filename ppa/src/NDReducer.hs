@@ -127,16 +127,107 @@ reduce1 p = case p of
     { proofOr = POrI1{proofLeft = proofLeft}
     , hypLeft = hypLeft
     , proofAssumingLeft = proofAssumingLeft
-    } -> Just $ substHyp hypLeft proofAssumingLeft proofLeft
+    } -> Just $ substHyp hypLeft proofLeft proofAssumingLeft
   POrE
     { proofOr = POrI2{proofRight = proofRight}
     , hypRight = hypRight
     , proofAssumingRight = proofAssumingRight
-    } -> Just $ substHyp hypRight proofAssumingRight proofRight
+    } -> Just $ substHyp hypRight proofRight proofAssumingRight
+  -- Reducción de Imp
+  PImpE
+    { antecedent = ant
+    , proofImp =
+      PImpI
+        { hypAntecedent = hypAntecedent
+        , proofConsequent = proofAntThenCons
+        }
+    , proofAntecedent = proofAnt
+    } -> Just $ substHyp hypAntecedent proofAnt proofAntThenCons
+  -- Reducción de Not
+  PNotE
+    { form = form
+    , proofNotForm =
+      PNotI
+        { hyp = hypForm
+        , proofBot = proofBot
+        }
+    , proofForm = proofForm
+    } -> Just $ substHyp hypForm proofForm proofBot
   -- Valores
   PAx{} -> Nothing
   PNamed{} -> Nothing -- TODO: Capaz mantenerlo
+  PLEM -> Nothing
+  PTrueI -> Nothing
   -- Congruencia
-  PImpI hypAntecedent proofConsequent -> case reduce1 proofConsequent of
+  PImpI hypAntecedent proofConsequent -> do
+    proofConsequent' <- reduce1 proofConsequent
+    return $ PImpI hypAntecedent proofConsequent'
+  PImpE antecedent proofImp proofAntecedent -> case reduce1 proofImp of
+    Just proofImp' -> Just $ PImpE antecedent proofImp' proofAntecedent
+    Nothing -> case reduce1 proofAntecedent of
+      Just proofAntecedent' -> Just $ PImpE antecedent proofImp proofAntecedent'
+      Nothing -> Nothing
+  PNotI hyp proofBot -> do
+    proofBot' <- reduce1 proofBot
+    return $ PNotI hyp proofBot'
+  PNotE form proofNotForm proofForm -> case reduce1 proofNotForm of
+    Just proofNotForm' -> Just $ PNotE form proofNotForm' proofForm
+    Nothing -> case reduce1 proofForm of
+      Just proofForm' -> Just $ PNotE form proofNotForm proofForm'
+      Nothing -> Nothing
+  PAndI proofLeft proofRight ->
+    reduceCong2
+      proofLeft
+      (\proofLeft' -> PAndI proofLeft' proofRight)
+      proofRight
+      (\proofRight' -> PAndI proofLeft proofRight')
+  PAndE1 right proofAnd -> do
+    proofAnd' <- reduce1 proofAnd
+    return $ PAndE1 right proofAnd'
+  PAndE2 left proofAnd -> do
+    proofAnd' <- reduce1 proofAnd
+    return $ PAndE2 left proofAnd'
+  POrI1 proofLeft -> do
+    proofLeft' <- reduce1 proofLeft
+    return $ POrI1 proofLeft'
+  POrI2 proofRight -> do
+    proofRight' <- reduce1 proofRight
+    return $ POrI2 proofRight'
+  POrE left right proofOr hypLeft proofAssumingLeft hypRight proofAssumingRight ->
+    reduceCong3
+      proofOr
+      (\proofOr' -> POrE left right proofOr' hypLeft proofAssumingLeft hypRight proofAssumingRight)
+      proofAssumingLeft
+      (\proofAssumingLeft' -> POrE left right proofOr hypLeft proofAssumingLeft' hypRight proofAssumingRight)
+      proofAssumingRight
+      (\proofAssumingRight' -> POrE left right proofOr hypLeft proofAssumingLeft hypRight proofAssumingRight')
+  PFalseE proofBot -> do
+    proofBot' <- reduce1 proofBot
+    return $ PFalseE proofBot'
+  p -> error (show p)
+
+reduceCong2 ::
+  Proof ->
+  (Proof -> Proof) ->
+  Proof ->
+  (Proof -> Proof) ->
+  Maybe Proof
+reduceCong2 p1 r1 p2 r2 = case reduce1 p1 of
+  Just p1' -> Just $ r1 p1'
+  Nothing -> case reduce1 p2 of
+    Just p2' -> Just $ r2 p2'
     Nothing -> Nothing
-    Just p' -> Just $ PImpI hypAntecedent p'
+
+reduceCong3 ::
+  Proof ->
+  (Proof -> Proof) ->
+  Proof ->
+  (Proof -> Proof) ->
+  Proof ->
+  (Proof -> Proof) ->
+  Maybe Proof
+reduceCong3 p1 r1 p2 r2 p3 r3 = case reduceCong2 p1 r1 p2 r2 of
+  Just p' -> Just p'
+  Nothing -> case reduce1 p3 of
+    Just p3' -> Just $ r3 p3'
+    Nothing -> Nothing
