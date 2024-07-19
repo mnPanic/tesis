@@ -58,7 +58,7 @@ import NDProofs (
     proofOrCongruence2,
  )
 
-import NDReducer (reduce)
+import NDReducer (reduce, substHyp)
 
 import Test.HUnit (
     Assertion,
@@ -93,6 +93,7 @@ testND =
         , "alphaEq" ~: testAlphaEq
         , "unify" ~: testUnify
         , "reduce" ~: testReduce
+        , "substHyp" ~: testSubstHyp
         ]
 
 exampleEnv :: Env
@@ -886,6 +887,48 @@ checkEquiv hF f hF' f' pFThenF' pF'ThenF = do
     CheckOK @=? check (EExtend hF f EEmpty) pFThenF' f'
     CheckOK @=? check (EExtend hF' f' EEmpty) pF'ThenF f
 
+testSubstHyp :: Test
+testSubstHyp =
+    test
+        [ "simple"
+            ~: substHyp
+                "h"
+                (PAx "b")
+                (PAx "h")
+            ~?= PAx "b"
+        , "capture"
+            ~: substHyp
+                "h"
+                ( PAndE1
+                    { right = propVar "a"
+                    , proofAnd = PAx "q"
+                    }
+                )
+                ( PImpI
+                    { hypAntecedent = "q" -- son qs diferentes
+                    , proofConsequent =
+                        PAndI
+                            { proofLeft = PAx "h"
+                            , proofRight = PAx "q"
+                            }
+                    }
+                )
+            ~?= ( PImpI
+                    { hypAntecedent = "q0"
+                    , proofConsequent =
+                        PAndI
+                            { proofLeft =
+                                ( PAndE1
+                                    { right = propVar "a"
+                                    , proofAnd = PAx "q"
+                                    }
+                                )
+                            , proofRight = PAx "q0"
+                            }
+                    }
+                )
+        ]
+
 testReduce :: Test
 testReduce =
     test
@@ -952,6 +995,68 @@ testReduce =
                                         { hypAntecedent = "h2"
                                         , proofConsequent = PAx "h1"
                                         }
+                                }
+                            )
+                ]
+        , "or"
+            ~: test
+                [ "l" ~: do
+                    let (p, q) = (propVar "p", propVar "q")
+                    doTestReduce
+                        (EExtend "q imp p" (FImp q p) EEmpty)
+                        (FImp p p)
+                        ( PImpI
+                            { hypAntecedent = "p"
+                            , proofConsequent =
+                                POrE
+                                    { left = p
+                                    , right = q
+                                    , proofOr = POrI1 (PAx "p")
+                                    , hypLeft = "p"
+                                    , proofAssumingLeft = PAx "p"
+                                    , hypRight = "q"
+                                    , proofAssumingRight =
+                                        PImpE
+                                            { antecedent = q
+                                            , proofImp = PAx "q imp p"
+                                            , proofAntecedent = PAx "q"
+                                            }
+                                    }
+                            }
+                        )
+                        ( PImpI
+                            { hypAntecedent = "p"
+                            , proofConsequent = PAx "p"
+                            }
+                        )
+                , "r"
+                    ~: do
+                        let (p, q) = (propVar "p", propVar "q")
+                        doTestReduce
+                            (EExtend "q imp p" (FImp q p) EEmpty)
+                            (FImp p p)
+                            ( PImpI
+                                { hypAntecedent = "p"
+                                , proofConsequent =
+                                    POrE
+                                        { left = q
+                                        , right = p
+                                        , proofOr = POrI2 (PAx "p")
+                                        , hypLeft = "q"
+                                        , proofAssumingLeft =
+                                            PImpE
+                                                { antecedent = q
+                                                , proofImp = PAx "q imp p"
+                                                , proofAntecedent = PAx "q"
+                                                }
+                                        , hypRight = "p"
+                                        , proofAssumingRight = PAx "p"
+                                        }
+                                }
+                            )
+                            ( PImpI
+                                { hypAntecedent = "p"
+                                , proofConsequent = PAx "p"
                                 }
                             )
                 ]
