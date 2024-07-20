@@ -504,8 +504,8 @@ testCheckExamples =
         , "~A ^ ~B -> ~(A v B)" ~: doTestCheckOK EEmpty p17 f17
         , "~(A v B) -> ~A ^ ~B" ~: doTestCheckOK EEmpty p16 f16
         , -- Exists y forall
-          "Good(y) => Exists x. Good(x)" ~: doTestCheckOK EEmpty p18 f18
-        , "Exists x. A(x) ^ B(x) => Exists y. A(y)" ~: doTestCheckOK EEmpty p19 f19
+          "Good(y) => Exists x. Good(x)" ~: check EEmpty p18 f18 ~?= CheckOK
+        , "Exists x. A(x) ^ B(x) => Exists y. A(y)" ~: check EEmpty p19 f19 ~?= CheckOK
         , "Exists x. A(x) ^ B(x) => Exists y. A(y) con renombre"
             ~: check EEmpty p19_rename f19
             ~?= CheckOK
@@ -1233,6 +1233,53 @@ testReduce =
                     { form = p
                     , proofNotForm = PAx "no p"
                     , proofForm = PAx "p"
+                    }
+                )
+        , "forall" ~: do
+            let fx = tFun1 "f" (TVar "x")
+            let (py, qy) = (predVar "p" "y", predVar "q" "y")
+            let (pfx, qfx) = (fPred1 "p" fx, fPred1 "q" fx)
+            doTestReduce
+                EEmpty
+                (FImp (FForall "y" (FAnd py qy)) pfx)
+                ( PImpI
+                    { hypAntecedent = "h"
+                    , proofConsequent =
+                        PForallE
+                            { var = "y"
+                            , form = py
+                            , proofForall =
+                                PForallI
+                                    { newVar = "y"
+                                    , proofForm =
+                                        PAndE1
+                                            { right = qy
+                                            , proofAnd =
+                                                PForallE
+                                                    { var = "y"
+                                                    , form = FAnd py qy
+                                                    , proofForall = PAx "h"
+                                                    , termReplace = TVar "y"
+                                                    }
+                                            }
+                                    }
+                            , termReplace = fx
+                            }
+                    }
+                )
+                ( PImpI
+                    { hypAntecedent = "h"
+                    , proofConsequent =
+                        PAndE1
+                            { right = qfx
+                            , proofAnd =
+                                PForallE
+                                    { var = "y"
+                                    , form = FAnd py qy
+                                    , proofForall = PAx "h"
+                                    , termReplace = fx
+                                    }
+                            }
                     }
                 )
         ]

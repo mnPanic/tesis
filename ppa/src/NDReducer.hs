@@ -5,6 +5,7 @@ module NDReducer (reduce, substHyp) where
 import Data.Map qualified as Map
 import Data.Set qualified as Set
 import ND (HypId, Proof (..), Term, VarId)
+import NDChecker (subst)
 
 -- Sustituciones sobre demostraciones
 
@@ -12,8 +13,38 @@ import ND (HypId, Proof (..), Term, VarId)
 type HypSubstitution = Map.Map HypId HypId
 
 -- Hace (subst varid term) en toda la proof recursivamente
-substVar :: Proof -> VarId -> Term -> Proof
-substVar = undefined
+substVar :: VarId -> Term -> Proof -> Proof
+substVar x t p = case p of
+  PNamed name p1 -> PNamed name (rec p1)
+  PAx h -> PAx h
+  PAndI pL pR -> PAndI (rec pL) (rec pR)
+  PAndE1 r pR -> PAndE1 (doSubst r) (rec pR)
+  PAndE2 l pL -> PAndE2 (doSubst l) (rec pL)
+  POrI1 pL -> POrI1 (rec pL)
+  POrI2 pR -> POrI2 (rec pR)
+  POrE l r pOr hL pL hR pR -> POrE (doSubst l) (doSubst r) (rec pOr) hL (rec pL) hR (rec pR)
+  PImpI h p1 -> PImpI h (rec p1)
+  PImpE f pI pA -> PImpE (doSubst f) (rec pI) (rec pA)
+  PNotI h pB -> PNotI h (rec pB)
+  PNotE f pNotF pF -> PNotE (doSubst f) (rec pNotF) (rec pF)
+  PTrueI -> PTrueI
+  PFalseE pB -> PFalseE (rec pB)
+  PLEM -> PLEM
+  -- TODO: tests para todos estos casos, solo probé PForallE con misma var
+  p@(PForallI y pF)
+    | x == y -> p
+    -- TODO: acá hay que renombrar y si está libre en t seguro
+    | otherwise -> PForallI y (rec pF)
+  p@(PForallE x' f pF t')
+    | x == x' -> PForallE x f (rec pF) t
+    | otherwise -> PForallE x' (doSubst f) (rec pF) t'
+  PExistsI t' p1 -> PExistsI t' (rec p1)
+  p@(PExistsE y f pE h pA)
+    | x == y -> p
+    | otherwise -> PExistsE y (doSubst f) (rec pE) h (rec pA)
+ where
+  doSubst = subst x t
+  rec = substVar x t
 
 {- Sustituye todos los usos de una hipótesis por una demostración
 Sin capturas.
@@ -153,58 +184,85 @@ reduce1 p = case p of
         }
     , proofForm = proofForm
     } -> Just $ substHyp hypForm proofForm proofBot
+  -- Reducción de Forall
+  PForallE
+    { var = x
+    , form = form
+    , proofForall =
+      PForallI
+        { newVar = x'
+        , proofForm = proofForm
+        }
+    , termReplace = t
+    } -> Just $ substVar x t proofForm
   -- Valores
   PAx{} -> Nothing
   PNamed{} -> Nothing -- TODO: Capaz mantenerlo
   PLEM -> Nothing
   PTrueI -> Nothing
-  -- Congruencia
-  PImpI hypAntecedent proofConsequent -> do
-    proofConsequent' <- reduce1 proofConsequent
-    return $ PImpI hypAntecedent proofConsequent'
-  PImpE antecedent proofImp proofAntecedent -> case reduce1 proofImp of
-    Just proofImp' -> Just $ PImpE antecedent proofImp' proofAntecedent
-    Nothing -> case reduce1 proofAntecedent of
-      Just proofAntecedent' -> Just $ PImpE antecedent proofImp proofAntecedent'
-      Nothing -> Nothing
-  PNotI hyp proofBot -> do
-    proofBot' <- reduce1 proofBot
-    return $ PNotI hyp proofBot'
-  PNotE form proofNotForm proofForm -> case reduce1 proofNotForm of
-    Just proofNotForm' -> Just $ PNotE form proofNotForm' proofForm
-    Nothing -> case reduce1 proofForm of
-      Just proofForm' -> Just $ PNotE form proofNotForm proofForm'
-      Nothing -> Nothing
-  PAndI proofLeft proofRight ->
+  -- Congruencias
+  p@(PImpI hypAntecedent proofConsequent) ->
+    reduceCong1
+      proofConsequent
+      (\proofConsequent' -> p{proofConsequent = proofConsequent'})
+  p@(PImpE antecedent proofImp proofAntecedent) ->
+    reduceCong2
+      proofImp
+      (\proofImp' -> p{proofImp = proofImp'})
+      proofAntecedent
+      (\proofAntecedent' -> p{proofAntecedent = proofAntecedent'})
+  p@(PNotI hyp proofBot) ->
+    reduceCong1
+      proofBot
+      (\proofBot' -> p{proofBot = proofBot'})
+  p@(PNotE form proofNotForm proofForm) ->
+    reduceCong2
+      proofNotForm
+      (\proofNotForm' -> p{proofNotForm = proofNotForm'})
+      proofForm
+      (\proofForm' -> p{proofForm = proofForm'})
+  p@(PAndI proofLeft proofRight) ->
     reduceCong2
       proofLeft
-      (\proofLeft' -> PAndI proofLeft' proofRight)
+      (\proofLeft' -> p{proofLeft = proofLeft'})
       proofRight
-      (\proofRight' -> PAndI proofLeft proofRight')
-  PAndE1 right proofAnd -> do
-    proofAnd' <- reduce1 proofAnd
-    return $ PAndE1 right proofAnd'
-  PAndE2 left proofAnd -> do
-    proofAnd' <- reduce1 proofAnd
-    return $ PAndE2 left proofAnd'
-  POrI1 proofLeft -> do
-    proofLeft' <- reduce1 proofLeft
-    return $ POrI1 proofLeft'
-  POrI2 proofRight -> do
-    proofRight' <- reduce1 proofRight
-    return $ POrI2 proofRight'
-  POrE left right proofOr hypLeft proofAssumingLeft hypRight proofAssumingRight ->
+      (\proofRight' -> p{proofRight = proofRight'})
+  p@(PAndE1 right proofAnd) ->
+    reduceCong1
+      proofAnd
+      (\proofAnd' -> p{proofAnd = proofAnd'})
+  p@(PAndE2 left proofAnd) ->
+    reduceCong1
+      proofAnd
+      (\proofAnd' -> p{proofAnd = proofAnd'})
+  p@(POrI1 proofLeft) ->
+    reduceCong1
+      proofLeft
+      (\proofLeft' -> p{proofLeft = proofLeft'})
+  p@(POrI2 proofRight) ->
+    reduceCong1
+      proofRight
+      (\proofRight' -> p{proofRight = proofRight'})
+  p@(POrE left right proofOr hypLeft proofAssumingLeft hypRight proofAssumingRight) ->
     reduceCong3
       proofOr
-      (\proofOr' -> POrE left right proofOr' hypLeft proofAssumingLeft hypRight proofAssumingRight)
+      (\proofOr' -> p{proofOr = proofOr'})
       proofAssumingLeft
-      (\proofAssumingLeft' -> POrE left right proofOr hypLeft proofAssumingLeft' hypRight proofAssumingRight)
+      (\proofAssumingLeft' -> p{proofAssumingLeft = proofAssumingLeft'})
       proofAssumingRight
-      (\proofAssumingRight' -> POrE left right proofOr hypLeft proofAssumingLeft hypRight proofAssumingRight')
-  PFalseE proofBot -> do
-    proofBot' <- reduce1 proofBot
-    return $ PFalseE proofBot'
+      (\proofAssumingRight' -> p{proofAssumingRight = proofAssumingRight'})
+  p@(PFalseE proofBot) ->
+    reduceCong1
+      proofBot
+      (\proofBot' -> p{proofBot = proofBot'})
+  p@(PForallE var form proofForall termReplace) ->
+    reduceCong1 proofForall (\proofForall' -> p{proofForall = proofForall'})
   p -> error (show p)
+
+reduceCong1 :: Proof -> (Proof -> Proof) -> Maybe Proof
+reduceCong1 p r = do
+  p' <- reduce1 p
+  return (r p')
 
 reduceCong2 ::
   Proof ->
