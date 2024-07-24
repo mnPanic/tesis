@@ -4,8 +4,8 @@ module NDReducer (reduce, substHyp) where
 
 import Data.Map qualified as Map
 import Data.Set qualified as Set
-import ND (HypId, Proof (..), Term, VarId)
-import NDChecker (subst)
+import ND (HypId, Proof (..), Term (TVar), VarId)
+import NDChecker (subst, substTerm)
 
 -- Sustituciones sobre demostraciones
 
@@ -36,14 +36,15 @@ substVar x t p = case p of
     -- TODO: acá hay que renombrar y si está libre en t seguro
     | otherwise -> PForallI y (rec pF)
   p@(PForallE x' f pF t')
-    | x == x' -> PForallE x f (rec pF) t
-    | otherwise -> PForallE x' (doSubst f) (rec pF) t'
-  PExistsI t' p1 -> PExistsI t' (rec p1)
+    | x == x' -> PForallE x' f pF (doSubstT t') -- cortas cambiando T (todavía no está en el scope del nuevo x)
+    | otherwise -> PForallE x' (doSubst f) (rec pF) (doSubstT t') -- TODO: x libre en t?
+  PExistsI t' p1 -> PExistsI (doSubstT t') (rec p1)
   p@(PExistsE y f pE h pA)
     | x == y -> p
     | otherwise -> PExistsE y (doSubst f) (rec pE) h (rec pA)
  where
   doSubst = subst x t
+  doSubstT = substTerm Map.empty x t
   rec = substVar x t
 
 {- Sustituye todos los usos de una hipótesis por una demostración
@@ -194,7 +195,7 @@ reduce1 p = case p of
         , proofForm = proofForm
         }
     , termReplace = t
-    } -> Just $ substVar x t proofForm
+    } -> Just $ substVar x' t proofForm
   -- Valores
   PAx{} -> Nothing
   PNamed{} -> Nothing -- TODO: Capaz mantenerlo

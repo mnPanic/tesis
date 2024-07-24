@@ -3,6 +3,7 @@ module NDChecker (
     check,
     CheckResult (..),
     subst,
+    substTerm,
     rootCause,
     checkResultIsErr,
 ) where
