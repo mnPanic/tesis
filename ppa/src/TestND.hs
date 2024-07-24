@@ -30,7 +30,10 @@ import NDChecker (
     CheckResult (CheckError, CheckErrorN, CheckOK),
     check,
     rootCause,
-    subst,
+ )
+
+import NDSubst(
+    subst, substHyp
  )
 
 import NDProofs (
@@ -59,7 +62,7 @@ import NDProofs (
     proofOrCongruence2,
  )
 
-import NDReducer (reduce, substHyp)
+import NDReducer (reduce)
 
 import Test.HUnit (
     Assertion,

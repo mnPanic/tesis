@@ -70,7 +70,8 @@ import ND (
 
 import Unifier (Substitution, showSubstitution, unifyF, unifyT)
 
-import NDChecker (CheckResult (CheckOK), check, checkResultIsErr, subst)
+import NDChecker (CheckResult (CheckOK), check, checkResultIsErr)
+import NDSubst (subst)
 
 import Data.List (find, intercalate, nub, (\\))
 import Data.Map qualified as Map
