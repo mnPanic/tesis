@@ -1288,6 +1288,7 @@ testReduce =
                     let fx = tFun1 "f" (TVar "x")
                     let (py, qy) = (predVar "p" "y", predVar "q" "y")
                     let (px, qx) = (predVar "p" "x", predVar "q" "x")
+                    let (px0, qx0) = (predVar "p" "x0", predVar "q" "x0")
                     let (pfx, qfx) = (fPred1 "p" fx, fPred1 "q" fx)
                     doTestReduce
                         EEmpty
@@ -1324,9 +1325,70 @@ testReduce =
                                     { right = qfx
                                     , proofAnd =
                                         PForallE
-                                            { var = "x"
-                                            , form = FAnd px qx
+                                            { var = "x0"
+                                            , form = FAnd px0 qx0
                                             , proofForall = PAx "h"
+                                            , termReplace = fx
+                                            }
+                                    }
+                            }
+                        )
+                , "replace forall-E diff var free in t" ~: do
+                    let fx = tFun1 "f" (TVar "x")
+                    let (py, qy) = (predVar "p" "y", predVar "q" "y")
+                    let (px, qx) = (predVar "p" "x", predVar "q" "x")
+                    let (px0, qx0) = (predVar "p" "x0", predVar "q" "x0")
+                    let (pfx, qfx) = (fPred1 "p" fx, fPred1 "q" fx)
+                    doTestReduce
+                        EEmpty
+                        (FImp (FForall "y" $ FForall "x" (FAnd px qy)) pfx)
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                PForallE
+                                    { var = "y"
+                                    , form = py
+                                    , proofForall =
+                                        PForallI
+                                            { newVar = "y"
+                                            , proofForm =
+                                                PAndE1
+                                                    { right = qy
+                                                    , proofAnd =
+                                                        PForallE
+                                                            { var = "x"
+                                                            , form = FAnd px qy
+                                                            , proofForall =
+                                                                PForallE
+                                                                    { var = "y"
+                                                                    , form = FForall "x" (FAnd px qy)
+                                                                    , proofForall = PAx "h"
+                                                                    , termReplace = TVar "y"
+                                                                    }
+                                                            , termReplace = TVar "y"
+                                                            }
+                                                    }
+                                            }
+                                    , termReplace = fx
+                                    }
+                            }
+                        )
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                PAndE1
+                                    { right = qfx
+                                    , proofAnd =
+                                        PForallE
+                                            { var = "x0"
+                                            , form = FAnd px0 qfx
+                                            , proofForall =
+                                                PForallE
+                                                    { var = "y"
+                                                    , form = FForall "x0" (FAnd px0 qy)
+                                                    , proofForall = PAx "h"
+                                                    , termReplace = fx
+                                                    }
                                             , termReplace = fx
                                             }
                                     }

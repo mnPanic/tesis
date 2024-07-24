@@ -4,17 +4,20 @@ module NDReducer (reduce, substHyp) where
 
 import Data.Map qualified as Map
 import Data.Set qualified as Set
-import ND (HypId, Proof (..), Term (TVar), VarId)
-import NDChecker (subst, substTerm)
+import ND (HypId, Proof (..), Term (TVar), VarId, VarSubstitution, fvTerm)
+import NDChecker (subst, subst', substTerm)
 
 -- Sustituciones sobre demostraciones
 
 -- Sustitución de hipótesis, usado para substHyp sin capturas
 type HypSubstitution = Map.Map HypId HypId
 
--- Hace (subst varid term) en toda la proof recursivamente
 substVar :: VarId -> Term -> Proof -> Proof
-substVar x t p = case p of
+substVar = substVar' Map.empty
+
+-- Hace (subst varid term) en toda la proof recursivamente
+substVar' :: VarSubstitution -> VarId -> Term -> Proof -> Proof
+substVar' s x t p = case p of
   PNamed name p1 -> PNamed name (rec p1)
   PAx h -> PAx h
   PAndI pL pR -> PAndI (rec pL) (rec pR)
@@ -35,17 +38,26 @@ substVar x t p = case p of
     | x == y -> p
     -- TODO: acá hay que renombrar y si está libre en t seguro
     | otherwise -> PForallI y (rec pF)
-  p@(PForallE x' f pF t')
-    | x == x' -> PForallE x' f pF (doSubstT t') -- cortas cambiando T (todavía no está en el scope del nuevo x)
-    | otherwise -> PForallE x' (doSubst f) (rec pF) (doSubstT t') -- TODO: x libre en t?
+  p@(PForallE y f pF t')
+    -- cortas cambiando T (todavía no está en el scope del nuevo x)
+    | x == y -> PForallE y f pF (doSubstT t')
+    -- Seguis chequeando que no haya captura
+    | y `elem` fvTerm t ->
+        let s' = Map.insert y y' s
+         in PForallE y' (doSubstS s' f) (recS s' pF) (doSubstT t')
+    | otherwise -> PForallE y (doSubst f) (rec pF) (doSubstT t')
+   where
+    y' = freshWRT y (fvTerm t) -- TODO más?
   PExistsI t' p1 -> PExistsI (doSubstT t') (rec p1)
   p@(PExistsE y f pE h pA)
     | x == y -> p
     | otherwise -> PExistsE y (doSubst f) (rec pE) h (rec pA)
  where
-  doSubst = subst x t
-  doSubstT = substTerm Map.empty x t
-  rec = substVar x t
+  doSubst = subst' s x t
+  doSubstS s' = subst' s' x t
+  doSubstT = substTerm s x t
+  rec = substVar' s x t
+  recS s' = substVar' s' x t
 
 {- Sustituye todos los usos de una hipótesis por una demostración
 Sin capturas.

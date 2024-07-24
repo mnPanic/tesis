@@ -3,6 +3,8 @@ module NDChecker (
     check,
     CheckResult (..),
     subst,
+    subst',
+    freshWRT,
     substTerm,
     rootCause,
     checkResultIsErr,
