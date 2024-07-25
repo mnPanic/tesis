@@ -5,7 +5,7 @@ module NDReducer (reduce) where
 import Data.Map qualified as Map
 import Data.Set qualified as Set
 import ND (HypId, Proof (..), Term (TVar), VarId, VarSubstitution, fvTerm)
-import NDSubst (substVar, substHyp)
+import NDSubst (substHyp, substVar)
 
 -- freshWRT da una hyp no usada con respecto a una lista en donde no queremos
 -- que aparezca
@@ -126,6 +126,8 @@ reduce1 p = case p of
     reduceCong1
       proofBot
       (\proofBot' -> p{proofBot = proofBot'})
+  p@(PForallI newVar proofForm) ->
+    reduceCong1 proofForm (\proofForm' -> p{proofForm = proofForm'})
   p@(PForallE var form proofForall termReplace) ->
     reduceCong1 proofForall (\proofForall' -> p{proofForall = proofForall'})
   p -> error (show p)

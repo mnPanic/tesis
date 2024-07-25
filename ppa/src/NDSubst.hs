@@ -6,17 +6,20 @@ module NDSubst (
   substVar,
 ) where
 
-import ND(
-  Form(..),
-  Term(..),
+import ND (
+  Form (..),
+  HypId,
+  Proof (..),
+  Term (..),
   VarId,
-  Proof(..),
   VarSubstitution,
-  fv, fvTerm, HypId
+  fv,
+  fvP,
+  fvTerm,
  )
 
-import Data.Set qualified as Set
 import Data.Map qualified as Map
+import Data.Set qualified as Set
 
 {------------------------ Sustituciones sobre fórmulas ------------------------}
 
@@ -109,7 +112,7 @@ substVar' s x t p = case p of
     -- TODO: acá hay que renombrar y si está libre en t seguro
     | otherwise -> PForallI y (rec pF)
   p@(PForallE y f pF t')
-    -- cortas cambiando T (todavía no está en el scope del nuevo x)
+    -- Cortas cambiando T (todavía no está en el scope del nuevo x)
     | x == y -> PForallE y f pF (doSubstT t')
     -- Seguis chequeando que no haya captura
     | y `elem` fvTerm t ->
@@ -117,7 +120,7 @@ substVar' s x t p = case p of
          in PForallE y' (doSubstS s' f) (recS s' pF) (doSubstT t')
     | otherwise -> PForallE y (doSubst f) (rec pF) (doSubstT t')
    where
-    y' = freshWRT y (fvTerm t) -- TODO más?
+    y' = freshWRT y (Set.union (fvTerm t) (fvP pF)) -- TODO: fv f?
   PExistsI t' p1 -> PExistsI (doSubstT t') (rec p1)
   p@(PExistsE y f pE h pA)
     | x == y -> p
