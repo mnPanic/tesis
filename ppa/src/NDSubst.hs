@@ -117,17 +117,21 @@ substVar' s x t p = case p of
     | otherwise -> PForallI y (rec pF)
   p@(PForallE y f pF t')
     -- Cortas cambiando T (todavía no está en el scope del nuevo x)
-    | x == y -> PForallE y f pF (doSubstT t')
+    | x == y -> PForallE y (doSubst f) pF (doSubstT t')
     -- Seguis chequeando que no haya captura
     | y `elem` fvTerm t ->
-        let y' = freshWRT y (Set.union (fvTerm t) (fvP pF)) -- TODO: fv f?
+        let y' = freshWRT y (Set.unions [fvTerm t, fvP pF, fv f])
             s' = Map.insert y y' s
          in PForallE y' (doSubstS s' f) (recS s' pF) (doSubstT t')
     | otherwise -> PForallE y (doSubst f) (rec pF) (doSubstT t')
   -- TODO tests estos casos
   PExistsI t' p1 -> PExistsI (doSubstT t') (rec p1)
   p@(PExistsE y f pE h pA)
-    | x == y -> p
+    | x == y -> PExistsE y (doSubst f) pE h pA
+    | y `elem` fvTerm t ->
+        let y' = freshWRT y (Set.unions [fvTerm t, fvP pA, fvP pE, fv f])
+            s' = Map.insert y y' s
+         in PExistsE y' (doSubstS s' f) (recS s' pE) h (recS s' pA)
     | otherwise -> PExistsE y (doSubst f) (rec pE) h (rec pA)
  where
   doSubst = subst' s x t

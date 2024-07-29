@@ -66,6 +66,8 @@ reduce1 p = case p of
         }
     , termReplace = t
     } -> Just $ substVar x' t proofForm
+  -- Reducción de Exists
+  --
   -- Valores
   PAx{} -> Nothing
   PNamed{} -> Nothing -- TODO: Capaz mantenerlo
