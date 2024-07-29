@@ -20,6 +20,8 @@ import ND (
 
 import Data.Map qualified as Map
 import Data.Set qualified as Set
+import Debug.Trace (trace)
+import Text.Printf (printf)
 
 {------------------------ Sustituciones sobre fórmulas ------------------------}
 
@@ -106,21 +108,23 @@ substVar' s x t p = case p of
   PTrueI -> PTrueI
   PFalseE pB -> PFalseE (rec pB)
   PLEM -> PLEM
-  -- TODO: tests para todos estos casos, solo probé PForallE con misma var
   p@(PForallI y pF)
     | x == y -> p
-    -- TODO: acá hay que renombrar y si está libre en t seguro
+    | y `elem` fvTerm t ->
+        let y' = freshWRT y (Set.union (fvTerm t) (fvP pF))
+            s' = Map.insert y y' s
+         in PForallI y' (recS s' pF)
     | otherwise -> PForallI y (rec pF)
   p@(PForallE y f pF t')
     -- Cortas cambiando T (todavía no está en el scope del nuevo x)
     | x == y -> PForallE y f pF (doSubstT t')
     -- Seguis chequeando que no haya captura
     | y `elem` fvTerm t ->
-        let s' = Map.insert y y' s
+        let y' = freshWRT y (Set.union (fvTerm t) (fvP pF)) -- TODO: fv f?
+            s' = Map.insert y y' s
          in PForallE y' (doSubstS s' f) (recS s' pF) (doSubstT t')
     | otherwise -> PForallE y (doSubst f) (rec pF) (doSubstT t')
-   where
-    y' = freshWRT y (Set.union (fvTerm t) (fvP pF)) -- TODO: fv f?
+  -- TODO tests estos casos
   PExistsI t' p1 -> PExistsI (doSubstT t') (rec p1)
   p@(PExistsE y f pE h pA)
     | x == y -> p
