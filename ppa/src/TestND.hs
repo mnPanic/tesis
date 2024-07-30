@@ -1755,6 +1755,106 @@ testReduce =
                                     }
                             }
                         )
+                , "replace exists-I" ~: do
+                    let pxy = FPred "p" [TVar "x", TVar "y"]
+                    let pxa = FPred "p" [TVar "x", tFun0 "a"]
+                    let pby = FPred "p" [tFun0 "b", TVar "y"]
+                    doTestReduce
+                        EEmpty
+                        (FImp (FForall "x" pxa) (FExists "y" pby))
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                -- uso forall x . exists y . p(x, y)
+                                PForallE
+                                    { var = "x"
+                                    , form = FExists "y" pxy
+                                    , termReplace = tFun0 "b"
+                                    , proofForall =
+                                        PForallI
+                                            { newVar = "x"
+                                            , -- exists y . p(x, y)
+                                              proofForm =
+                                                PExistsI
+                                                    { inst = tFun0 "a"
+                                                    , proofFormWithInst =
+                                                        PForallE
+                                                            { var = "x"
+                                                            , form = pxa
+                                                            , termReplace = TVar "x"
+                                                            , proofForall = PAx "h"
+                                                            }
+                                                    }
+                                            }
+                                    }
+                            }
+                        )
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                PExistsI
+                                    { inst = tFun0 "a"
+                                    , proofFormWithInst =
+                                        PForallE
+                                            { var = "x"
+                                            , form = pxa
+                                            , termReplace = tFun0 "b"
+                                            , proofForall = PAx "h"
+                                            }
+                                    }
+                            }
+                        )
+                , "replace exists-I subst in inst" ~: do
+                    let pxy = FPred "p" [TVar "x", TVar "y"]
+                    let fxa = TFun "f" [TVar "x", tFun0 "a"]
+                    let fba = TFun "f" [tFun0 "b", tFun0 "a"]
+                    let px_fxa = FPred "p" [TVar "x", fxa]
+                    let pby = FPred "p" [tFun0 "b", TVar "y"]
+                    doTestReduce
+                        EEmpty
+                        (FImp (FForall "x" px_fxa) (FExists "y" pby))
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                -- uso forall x . exists y . p(x, y)
+                                PForallE
+                                    { var = "x"
+                                    , form = FExists "y" pxy
+                                    , termReplace = tFun0 "b"
+                                    , proofForall =
+                                        PForallI
+                                            { newVar = "x"
+                                            , -- exists y . p(x, y)
+                                              proofForm =
+                                                PExistsI
+                                                    { inst = fxa
+                                                    , proofFormWithInst =
+                                                        PForallE
+                                                            { var = "x"
+                                                            , form = px_fxa
+                                                            , termReplace = TVar "x"
+                                                            , proofForall = PAx "h"
+                                                            }
+                                                    }
+                                            }
+                                    }
+                            }
+                        )
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                PExistsI
+                                    { inst = fba
+                                    , proofFormWithInst =
+                                        PForallE
+                                            { var = "x"
+                                            , form = px_fxa
+                                            , termReplace = tFun0 "b"
+                                            , proofForall = PAx "h"
+                                            }
+                                    }
+                            }
+                        )
                 ]
         ]
 

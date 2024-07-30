@@ -132,6 +132,8 @@ reduce1 p = case p of
     reduceCong1 proofForm (\proofForm' -> p{proofForm = proofForm'})
   p@(PForallE var form proofForall termReplace) ->
     reduceCong1 proofForall (\proofForall' -> p{proofForall = proofForall'})
+  p@(PExistsI t pInst) ->
+    reduceCong1 pInst (\pInst' -> p{proofFormWithInst = pInst'})
   p -> error (show p)
 
 reduceCong1 :: Proof -> (Proof -> Proof) -> Maybe Proof
