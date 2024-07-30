@@ -134,7 +134,12 @@ reduce1 p = case p of
     reduceCong1 proofForall (\proofForall' -> p{proofForall = proofForall'})
   p@(PExistsI t pInst) ->
     reduceCong1 pInst (\pInst' -> p{proofFormWithInst = pInst'})
-  p -> error (show p)
+  p@(PExistsE var form proofExists hyp proofAssuming) ->
+    reduceCong2
+      proofExists
+      (\proofExists' -> p{proofExists = proofExists'})
+      proofAssuming
+      (\proofAssuming' -> p{proofAssuming = proofAssuming'})
 
 reduceCong1 :: Proof -> (Proof -> Proof) -> Maybe Proof
 reduceCong1 p r = do

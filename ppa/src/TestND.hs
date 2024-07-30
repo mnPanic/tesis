@@ -427,6 +427,8 @@ testSubst =
     px = FPred "P" [TVar "x"]
     pt = FPred "P" [testTerm]
 
+-- chequea que la proof sea correcta y además la reduce y ve que siga chequeando,
+-- de esa forma testeando a mano que la reducción preserve "tipo" (chequeo)
 doTestCheckOK :: Env -> Proof -> Form -> Assertion
 doTestCheckOK env p f = do
     assertEqual "check failed" CheckOK (check env p f)
@@ -508,16 +510,14 @@ testCheckExamples =
         , "~A ^ ~B -> ~(A v B)" ~: doTestCheckOK EEmpty p17 f17
         , "~(A v B) -> ~A ^ ~B" ~: doTestCheckOK EEmpty p16 f16
         , -- Exists y forall
-          "Good(y) => Exists x. Good(x)" ~: check EEmpty p18 f18 ~?= CheckOK
-        , "Exists x. A(x) ^ B(x) => Exists y. A(y)" ~: check EEmpty p19 f19 ~?= CheckOK
+          "Good(y) => Exists x. Good(x)" ~: doTestCheckOK EEmpty p18 f18
+        , "Exists x. A(x) ^ B(x) => Exists y. A(y)" ~: doTestCheckOK EEmpty p19 f19
         , "Exists x. A(x) ^ B(x) => Exists y. A(y) con renombre"
-            ~: check EEmpty p19_rename f19
-            ~?= CheckOK
-        , "Forall x. A(x) ^ B(x) => Forall x. A(x)" ~: check EEmpty p20 f20 ~?= CheckOK
+            ~: doTestCheckOK EEmpty p19_rename f19
+        , "Forall x. A(x) ^ B(x) => Forall x. A(x)" ~: doTestCheckOK EEmpty p20 f20
         , "Forall x. A(x) ^ B(x) => Forall x. A(x) with rename in forallI"
-            ~: check EEmpty p20_2 f20
-            ~?= CheckOK
-        , "Forall x. A(x) ^ B(x) => Forall y. A(y)" ~: check EEmpty p20' f20' ~?= CheckOK
+            ~: doTestCheckOK EEmpty p20_2 f20
+        , "Forall x. A(x) ^ B(x) => Forall y. A(y)" ~: doTestCheckOK EEmpty p20' f20'
         , "Forall x. A(x) => Exists x. B(x)"
             ~: rootCause (check EEmpty p22 f22)
             ~?= CheckError
@@ -533,28 +533,26 @@ testCheckExamples =
                 (FForall "x" (FPred "A" [TVar "x"]))
                 "env shouldn't contain fv 'x'"
         , -- DeMorgan de Exists y Forall
-          "V x. A(x) => ~E x. ~A(x)" ~: check EEmpty p23Ida f23Ida ~?= CheckOK
-        , "~E x. ~A(x) => V x. A(x)" ~: check EEmpty p23Vuelta f23Vuelta ~?= CheckOK
-        , "E x. A(x) => ~V x. ~A(x)" ~: check EEmpty p24Ida f24Ida ~?= CheckOK
-        , "~V x. ~A(x) => E x. A(x)" ~: check EEmpty p24Vuelta f24Vuelta ~?= CheckOK
+          "V x. A(x) => ~E x. ~A(x)" ~: doTestCheckOK EEmpty p23Ida f23Ida
+        , "~E x. ~A(x) => V x. A(x)" ~: doTestCheckOK EEmpty p23Vuelta f23Vuelta
+        , "E x. A(x) => ~V x. ~A(x)" ~: doTestCheckOK EEmpty p24Ida f24Ida
+        , "~V x. ~A(x) => E x. A(x)" ~: doTestCheckOK EEmpty p24Vuelta f24Vuelta
         , "alphaEq E x. A(x) => E y. A(y) directo"
-            ~: check
+            ~: doTestCheckOK
                 EEmpty
                 (PImpI "h E x. A(x)" (PAx "h E x. A(x)"))
                 ( FImp
                     (FExists "x" (predVar "A" "x"))
                     (FExists "y" (predVar "A" "y"))
                 )
-            ~?= CheckOK
         , "subst sin captura - E y. V x. A(z) v true"
-            ~: check
+            ~: doTestCheckOK
                 EEmpty
                 ( PExistsI
                     (TVar "x") -- generaria captura con V x
                     (PForallI "x" (POrI2 PTrueI))
                 )
                 (FExists "y" (FForall "x" (FOr (predVar "A" "z") FTrue)))
-            ~?= CheckOK
         ]
 
 -- generated proofs
@@ -1856,6 +1854,10 @@ testReduce =
                             }
                         )
                 ]
+                -- , "exists"
+                --     ~: test
+                --         [ ""
+                --         ]
         ]
 
 doTestReduce :: Env -> Form -> Proof -> Proof -> Assertion
