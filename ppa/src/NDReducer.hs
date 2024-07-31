@@ -82,9 +82,9 @@ reduce1 p = case p of
     } ->
       let proofAssumingWithInst = substVar x t proofAssuming
        in Just $ substHyp hypForm proofFormWithInst proofAssumingWithInst
+  PNamed _ p -> Just p
   -- Valores
   PAx{} -> Nothing
-  PNamed{} -> Nothing -- TODO: Capaz mantenerlo
   PLEM -> Nothing
   PTrueI -> Nothing
   -- Congruencias

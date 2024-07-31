@@ -1,33 +1,68 @@
 module Main where
 
-import Certifier (certify, checkContext)
+import Certifier (certify, checkContext, reduceContext)
 import Parser (parseProgram')
 
+import Data.Text.Lazy (unpack)
 import GHC.Stack (HasCallStack)
 import NDProofs (Result)
-import PPA (Program)
+import PPA (Context, Program)
 import System.Environment (getArgs)
+import Text.Pretty.Simple (pPrint, pShowNoColor)
+import Text.Printf (printf)
+
+data Args = Args {input :: Path, output :: Maybe Path}
+
+data Path = Stdin | Stdout | File FilePath
+
+instance Show Path where
+    show Stdin = "<stdin>"
+    show Stdout = "<stdout>"
+    show (File p) = p
 
 main :: (HasCallStack) => IO ()
 main = do
-    args <- getArgs
-    let path = case args of
-            [] -> "<stdin>"
-            [f] -> f
-            _ -> error "expected max. 1 argument "
+    rawArgs <- getArgs
+    let args = parseArgs rawArgs
 
-    raw <- case path of
-        "<stdin>" -> getContents
-        f -> readFile f
+    let inputPath = input args
+    rawProgram <- case inputPath of
+        Stdin -> getContents
+        File f -> readFile f
 
-    let result = parseProgram' path raw
-    case result of
+    case run (show inputPath) rawProgram of
         Left err -> putStrLn err
-        Right prog -> case execute prog of
-            Left err -> putStrLn err
-            Right _ -> putStrLn "OK!"
+        Right ctx -> do
+            putStrLn "OK!"
+            writeResult (output args) ctx
 
-execute :: Program -> Result ()
-execute prog = do
+writeResult :: Maybe Path -> Context -> IO ()
+writeResult Nothing _ = return ()
+writeResult (Just p) ctx = do
+    let ctxReduced = reduceContext ctx
+    case p of
+        Stdout -> do
+            putStrLn "raw context:\n"
+            pPrint ctx
+            putStrLn "reduced:\n"
+            pPrint ctxReduced
+        File f -> do
+            writeFile (f ++ "_raw.nk") (unpack $ pShowNoColor ctx)
+            writeFile (f ++ "_red.nk") (unpack $ pShowNoColor ctxReduced)
+
+run :: String -> String -> Result Context
+run path rawProgram = do
+    prog <- parseProgram' (show path) rawProgram
     ctx <- certify prog
     checkContext ctx
+    checkContext (reduceContext ctx)
+    return ctx
+
+parseArgs :: [String] -> Args
+parseArgs args = case args of
+    [] -> Args{input = Stdin, output = Nothing}
+    [f] -> Args{input = inputPath f, output = Nothing}
+    [f, o] -> Args{input = inputPath f, output = Just $ outputPath o}
+  where
+    inputPath s = if s == "-" then Stdin else File s
+    outputPath s = if s == "-" then Stdout else File s
