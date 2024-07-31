@@ -1854,10 +1854,112 @@ testReduce =
                             }
                         )
                 ]
-                -- , "exists"
-                --     ~: test
-                --         [ ""
-                --         ]
+        , "exists"
+            ~: test
+                [ "simple" ~: do
+                    let px = predVar "p" "x"
+                    let a = tFun0 "a"
+                    let (py, qy) = (predVar "p" "y", predVar "q" "y")
+                    let (pa, qa) = (fPred1 "p" a, fPred1 "q" a)
+                    doTestReduce
+                        EEmpty
+                        (FImp (FAnd pa qa) (FExists "y" py))
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , -- uso exists y . p(y) & q(y)
+                              proofConsequent =
+                                PExistsE
+                                    { var = "y"
+                                    , form = FAnd py qy
+                                    , proofExists =
+                                        PExistsI
+                                            { inst = a
+                                            , proofFormWithInst = PAx "h"
+                                            }
+                                    , hyp = "h2"
+                                    , proofAssuming =
+                                        PExistsI
+                                            { inst = TVar "y"
+                                            , proofFormWithInst =
+                                                PAndE1
+                                                    { right = qy
+                                                    , proofAnd = PAx "h2"
+                                                    }
+                                            }
+                                    }
+                            }
+                        )
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                PExistsI
+                                    { inst = a
+                                    , proofFormWithInst =
+                                        PAndE1
+                                            { right = qa
+                                            , proofAnd = PAx "h"
+                                            }
+                                    }
+                            }
+                        )
+                , "non trivial existsI"
+                    ~: do
+                        let px = predVar "p" "x"
+                        let a = tFun0 "a"
+                        let (py, qy) = (predVar "p" "y", predVar "q" "y")
+                        let (pa, qa, ra) = (fPred1 "p" a, fPred1 "q" a, fPred1 "r" a)
+                        doTestReduce
+                            (fromList [("ax", FImp ra (FAnd pa qa))])
+                            (FImp ra (FExists "y" py))
+                            ( PImpI
+                                { hypAntecedent = "h"
+                                , -- uso exists y . p(y) & q(y)
+                                  proofConsequent =
+                                    PExistsE
+                                        { var = "y"
+                                        , form = FAnd py qy
+                                        , proofExists =
+                                            PExistsI
+                                                { inst = a
+                                                , proofFormWithInst =
+                                                    PImpE
+                                                        { antecedent = ra
+                                                        , proofImp = PAx "ax"
+                                                        , proofAntecedent = PAx "h"
+                                                        }
+                                                }
+                                        , hyp = "h2"
+                                        , proofAssuming =
+                                            PExistsI
+                                                { inst = TVar "y"
+                                                , proofFormWithInst =
+                                                    PAndE1
+                                                        { right = qy
+                                                        , proofAnd = PAx "h2"
+                                                        }
+                                                }
+                                        }
+                                }
+                            )
+                            ( PImpI
+                                { hypAntecedent = "h"
+                                , proofConsequent =
+                                    PExistsI
+                                        { inst = a
+                                        , proofFormWithInst =
+                                            PAndE1
+                                                { right = qa
+                                                , proofAnd =
+                                                    PImpE
+                                                        { antecedent = ra
+                                                        , proofImp = PAx "ax"
+                                                        , proofAntecedent = PAx "h"
+                                                        }
+                                                }
+                                        }
+                                }
+                            )
+                ]
         ]
 
 doTestReduce :: Env -> Form -> Proof -> Proof -> Assertion

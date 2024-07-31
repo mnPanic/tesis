@@ -15,6 +15,7 @@ module ND (
     Metavar,
     fv,
     fvTerm,
+    proofName,
     fvE,
     fvP,
     propVar,
@@ -326,6 +327,28 @@ data Proof
         , proofAssuming :: Proof -- de B con A como hyp
         }
     deriving (Show, Eq)
+
+proofName :: Proof -> String
+proofName p = case p of
+    PAx{} -> "PAx"
+    PNamed{} -> "PNamed"
+    PAndI{} -> "PAndI"
+    PAndE1{} -> "PAndE1"
+    PAndE2{} -> "PAndE2"
+    POrI1{} -> "POrI1"
+    POrI2{} -> "POrI2"
+    POrE{} -> "POrE"
+    PImpI{} -> "PImpI"
+    PImpE{} -> "PImpE"
+    PNotI{} -> "PNotI"
+    PNotE{} -> "PNotE"
+    PTrueI{} -> "PTrueI"
+    PFalseE{} -> "PFalseE"
+    PLEM{} -> "PLEM"
+    PForallI{} -> "PForallI"
+    PForallE{} -> "PForallE"
+    PExistsI{} -> "PExistsI"
+    PExistsE{} -> "PExistsE"
 
 fvP :: Proof -> Set.Set VarId
 fvP p = case p of

@@ -19,6 +19,7 @@ import ND (
     fvE,
     fvTerm,
     get,
+    proofName,
  )
 
 import NDSubst (subst)
@@ -48,10 +49,11 @@ instance Show CheckResult where
             (show form)
     show (CheckErrorW msg env proof form res) =
         printf
-            "Checking \nproof: %s\n%s\n|- %s\n\n%s:\n%s"
+            "Checking \nproof: %s\n%s\n|- %s\n\n(%s) %s:\n%s"
             (show proof)
             (show env)
             (show form)
+            (proofName proof)
             msg
             (showInTree res)
     show (CheckErrorN name res) =
@@ -70,9 +72,10 @@ showInTree (CheckError env proof form msg) =
         (show form)
 showInTree (CheckErrorW msg env proof form res) =
     printf
-        "Checking\n%s\n|- %s\n\n%s:\n%s"
+        "Checking\n%s\n|- %s\n\n(%s) %s:\n%s"
         (show env)
         (show form)
+        (proofName proof)
         msg
         (showInTree res)
 showInTree (CheckErrorN name res) =
