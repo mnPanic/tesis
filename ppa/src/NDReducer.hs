@@ -12,6 +12,8 @@ import NDSubst (substHyp, substVar)
 freshWRT :: (Foldable t) => HypId -> t HypId -> HypId
 freshWRT h forbidden = head [h ++ suffix | suffix <- map show [0 ..], h ++ suffix `notElem` forbidden]
 
+-- Reduce una demostración hasta que sea irreducible (big step).
+-- Asume que chequea.
 reduce :: Proof -> Proof
 reduce p = maybe p reduce (reduce1 p)
 
@@ -67,7 +69,19 @@ reduce1 p = case p of
     , termReplace = t
     } -> Just $ substVar x' t proofForm
   -- Reducción de Exists
-  --
+  PExistsE
+    { var = x
+    , form = form
+    , proofExists =
+      PExistsI
+        { inst = t
+        , proofFormWithInst = proofFormWithInst
+        }
+    , hyp = hypForm
+    , proofAssuming = proofAssuming
+    } ->
+      let proofAssumingWithInst = substVar x t proofAssuming
+       in Just $ substHyp hypForm proofFormWithInst proofAssumingWithInst
   -- Valores
   PAx{} -> Nothing
   PNamed{} -> Nothing -- TODO: Capaz mantenerlo
