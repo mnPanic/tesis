@@ -30,6 +30,7 @@ main = do
         Stdin -> getContents
         File f -> readFile f
 
+    putStrLn "Running program..."
     case run (show inputPath) rawProgram of
         Left err -> putStrLn err
         Right ctx -> do
@@ -39,7 +40,12 @@ main = do
 writeResult :: Maybe Path -> Context -> IO ()
 writeResult Nothing _ = return ()
 writeResult (Just p) ctx = do
+    putStrLn "Reducing..."
     let ctxReduced = reduceContext ctx
+    case checkContext ctxReduced of
+        Right () -> putStrLn "OK!"
+        Left err -> putStrLn err
+
     case p of
         Stdout -> do
             putStrLn "raw context:\n"
@@ -55,7 +61,6 @@ run path rawProgram = do
     prog <- parseProgram' (show path) rawProgram
     ctx <- certify prog
     checkContext ctx
-    checkContext (reduceContext ctx)
     return ctx
 
 parseArgs :: [String] -> Args
