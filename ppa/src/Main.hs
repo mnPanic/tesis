@@ -1,3 +1,5 @@
+{-# LANGUAGE PackageImports #-}
+
 module Main where
 
 import Certifier (certify, checkContext, reduceContext)
@@ -8,8 +10,17 @@ import GHC.Stack (HasCallStack)
 import NDProofs (Result)
 import PPA (Context, Program)
 import System.Environment (getArgs)
-import Text.Pretty.Simple (pPrint, pShowNoColor)
+
 import Text.Printf (printf)
+import "pretty-simple" Text.Pretty.Simple (
+    CheckColorTty (NoCheckColorTty),
+    OutputOptions (outputOptionsCompact, outputOptionsCompactParens),
+    defaultOutputOptionsNoColor,
+    pPrint,
+    pPrintOpt,
+    pShowNoColor,
+    pShowOpt,
+ )
 
 data Args = Args {input :: Path, output :: Maybe Path}
 
@@ -53,8 +64,17 @@ writeResult (Just p) ctx = do
             putStrLn "reduced:\n"
             pPrint ctxReduced
         File f -> do
-            writeFile (f ++ "_raw.nk") (unpack $ pShowNoColor ctx)
-            writeFile (f ++ "_red.nk") (unpack $ pShowNoColor ctxReduced)
+            writeFile (f ++ "_raw.nk") (prettyShow ctx)
+            writeFile (f ++ "_red.nk") (prettyShow ctxReduced)
+
+prettyShow :: (Show a) => a -> String
+prettyShow s = unpack $ pShowOpt opts s
+  where
+    opts =
+        defaultOutputOptionsNoColor
+            { outputOptionsCompact = True
+            -- , outputOptionsCompactParens = True
+            }
 
 run :: String -> String -> Result Context
 run path rawProgram = do
