@@ -117,7 +117,8 @@ substVar' s x t p = case p of
     | otherwise -> PForallI y (rec pF)
   p@(PForallE y f pF t')
     -- Cortas cambiando T (todavía no está en el scope del nuevo x, pero f si)
-    | x == y -> PForallE y f pF (doSubstT t')
+    -- También seguís por pF, porque no está alcanzado por el scope de y.
+    | x == y -> PForallE y f (rec pF) (doSubstT t')
     -- Seguis chequeando que no haya captura
     | y `elem` fvTerm t ->
         let y' = freshWRT y (Set.unions [fvTerm t, fvP pF, fv f])
@@ -127,7 +128,7 @@ substVar' s x t p = case p of
   PExistsI t' p1 -> PExistsI (doSubstT t') (rec p1)
   -- TODO tests estos casos
   p@(PExistsE y f pE h pA)
-    | x == y -> PExistsE y f pE h pA
+    | x == y -> PExistsE y f (rec pE) h pA
     | y `elem` fvTerm t ->
         let y' = freshWRT y (Set.unions [fvTerm t, fvP pA, fvP pE, fv f])
             s' = Map.insert y y' s
