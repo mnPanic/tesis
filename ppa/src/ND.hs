@@ -20,6 +20,8 @@ module ND (
     fvP,
     propVar,
     predVar,
+    fPred0,
+    fPredVar,
     dneg,
     isForall,
     varN,
@@ -42,11 +44,21 @@ dneg f = FNot $ FNot f
 
 -- Dado un id de predicado devuelve un predicado de aridad 0,
 -- i.e una variable proposicional (propositional variable)
+-- Deprecated: Usar fPred0
 propVar :: PredId -> Form
-propVar pid = FPred pid []
+propVar = fPred0
 
+-- Dado un id de predicado devuelve un predicado de aridad 0,
+-- i.e una variable proposicional (propositional variable)
+fPred0 :: PredId -> Form
+fPred0 p = FPred p []
+
+-- Deprecated: Usar fPredVar
 predVar :: PredId -> VarId -> Form
-predVar p v = fPred1 p (TVar v)
+predVar = fPredVar
+
+fPredVar :: PredId -> VarId -> Form
+fPredVar p v = fPred1 p (TVar v)
 
 fPred1 :: PredId -> Term -> Form
 fPred1 p t = FPred p [t]
