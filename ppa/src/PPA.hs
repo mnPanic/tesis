@@ -15,7 +15,7 @@ module PPA (
   psName,
 ) where
 
-import Data.List (find)
+import Data.List (find, intercalate)
 import ND (
   Env (EEmpty),
   Form (..),

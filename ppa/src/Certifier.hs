@@ -8,6 +8,7 @@ module Certifier (
     certify,
     checkContext,
     findContradiction,
+    reduceContext,
     partitionForalls,
 ) where
 
@@ -70,7 +71,8 @@ import ND (
 
 import Unifier (Substitution, showSubstitution, unifyF, unifyT)
 
-import NDChecker (CheckResult (CheckOK), check, checkResultIsErr, subst)
+import NDChecker (CheckResult (CheckOK), check, checkResultIsErr)
+import NDSubst (subst)
 
 import Data.List (find, intercalate, nub, (\\))
 import Data.Map qualified as Map
@@ -80,6 +82,12 @@ import Text.Printf (printf)
 
 import Data.Either (fromLeft, fromRight, isLeft, isRight, lefts, rights)
 import Debug.Trace
+import NDReducer (reduce)
+
+reduceContext :: Context -> Context
+reduceContext [] = []
+reduceContext ((HAxiom h f) : hs) = HAxiom h f : reduceContext hs
+reduceContext ((HTheorem h f p) : hs) = HTheorem h f (reduce p):reduceContext hs
 
 -- En un contexto cada demostración de teorema es válida en el contexto que
 -- contiene el prefijo estricto anterior a él.

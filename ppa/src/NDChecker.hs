@@ -1,7 +1,7 @@
+-- NDChecker contiene lo necesario para poder `check`ear una ND.Proof
 module NDChecker (
     check,
     CheckResult (..),
-    subst,
     rootCause,
     checkResultIsErr,
 ) where
@@ -19,68 +19,14 @@ import ND (
     fvE,
     fvTerm,
     get,
+    proofName,
  )
+
+import NDSubst (subst)
 
 import Data.Map qualified as Map
 import Data.Set qualified as Set
 import Text.Printf (printf)
-
--- sustituye todas las ocurrencias libres de VarId por Term.
---
--- Lo hace alpha-renombrando en el camino para evitar *capturas* de variables:
--- si y esta libre en T, busca y' que no este libre en T y f1. En lugar de
--- reemplazar en el momento, lo guarda en una VarSubstitution para hacerlo lineal y no
--- cuadrático.
-subst :: VarId -> Term -> Form -> Form
-subst = subst' Map.empty
-
--- Sustituye ocurrencias libres de x por t en f
-subst' :: VarSubstitution -> VarId -> Term -> Form -> Form
-subst' s x t f = case f of
-    FPred l ts -> FPred l (map (substTerm s x t) ts)
-    FAnd f1 f2 -> FAnd (rec f1) (rec f2)
-    FOr f1 f2 -> FOr (rec f1) (rec f2)
-    FImp f1 f2 -> FImp (rec f1) (rec f2)
-    FNot f1 -> FNot (rec f1)
-    FTrue -> FTrue
-    FFalse -> FFalse
-    orig@(FForall y f1)
-        -- No está libre, no cambio
-        | x == y -> orig
-        -- Captura de variables
-        | y `elem` fvTerm t -> FForall y' (recRenaming y y' f1)
-        | otherwise -> FForall y (rec f1)
-      where
-        y' = freshWRT y $ fv f1 `Set.union` fvTerm t
-    orig@(FExists y f1)
-        -- No está libre, no cambio
-        | x == y -> orig
-        -- Captura de variables
-        | y `elem` fvTerm t -> FExists y' (recRenaming y y' f1)
-        | otherwise -> FExists y (rec f1)
-      where
-        y' = freshWRT y $ fv f1 `Set.union` fvTerm t
-  where
-    rec = subst' s x t
-    recRenaming y y' = subst' (Map.insert y y' s) x t
-
--- Sustituye x por t en t'
-substTerm :: VarSubstitution -> VarId -> Term -> Term -> Term
-substTerm s x t t' = case t' of
-    -- No es necesario chequear que el renombre de x se quiera sustituir, porque
-    -- renombramos cuando encontramos un cuantificador, y si la var del
-    -- cuantificador es la misma de la subst entonces no está libre y hubiera
-    -- cortado (nunca llega acá)
-    o@(TVar y)
-        | x == y -> t
-        | otherwise -> maybe o TVar (Map.lookup y s)
-    TFun f ts -> TFun f (map (substTerm s x t) ts)
-    m@(TMetavar _) -> m
-
--- freshWRT da una variable libre con respecto a una lista en donde no queremos
--- que aparezca
-freshWRT :: (Foldable t) => VarId -> t VarId -> VarId
-freshWRT x forbidden = head [x ++ suffix | suffix <- map show [0 ..], x ++ suffix `notElem` forbidden]
 
 data CheckResult
     = CheckOK
@@ -103,10 +49,11 @@ instance Show CheckResult where
             (show form)
     show (CheckErrorW msg env proof form res) =
         printf
-            "Checking \nproof: %s\n%s\n|- %s\n\n%s:\n%s"
+            "Checking \nproof: %s\n%s\n|- %s\n\n(%s) %s:\n%s"
             (show proof)
             (show env)
             (show form)
+            (proofName proof)
             msg
             (showInTree res)
     show (CheckErrorN name res) =
@@ -125,9 +72,10 @@ showInTree (CheckError env proof form msg) =
         (show form)
 showInTree (CheckErrorW msg env proof form res) =
     printf
-        "Checking\n%s\n|- %s\n\n%s:\n%s"
+        "Checking\n%s\n|- %s\n\n(%s) %s:\n%s"
         (show env)
         (show form)
+        (proofName proof)
         msg
         (showInTree res)
 showInTree (CheckErrorN name res) =

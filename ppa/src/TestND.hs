@@ -10,6 +10,7 @@ import ND (
     VarId,
     dneg,
     fPred1,
+    fromList,
     fv,
     fvE,
     get,
@@ -29,7 +30,11 @@ import NDChecker (
     CheckResult (CheckError, CheckErrorN, CheckOK),
     check,
     rootCause,
+ )
+
+import NDSubst (
     subst,
+    substHyp,
  )
 
 import NDProofs (
@@ -58,7 +63,10 @@ import NDProofs (
     proofOrCongruence2,
  )
 
+import NDReducer (reduce)
+
 import Test.HUnit (
+    Assertion,
     Counts,
     Test,
     Testable (test),
@@ -89,6 +97,8 @@ testND =
         , "fv" ~: testFV
         , "alphaEq" ~: testAlphaEq
         , "unify" ~: testUnify
+        , "reduce" ~: testReduce
+        , "substHyp" ~: testSubstHyp
         ]
 
 exampleEnv :: Env
@@ -417,25 +427,32 @@ testSubst =
     px = FPred "P" [TVar "x"]
     pt = FPred "P" [testTerm]
 
+-- chequea que la proof sea correcta y además la reduce y ve que siga chequeando,
+-- de esa forma testeando a mano que la reducción preserve "tipo" (chequeo)
+doTestCheckOK :: Env -> Proof -> Form -> Assertion
+doTestCheckOK env p f = do
+    assertEqual "check failed" CheckOK (check env p f)
+    let p' = reduce p
+    assertEqual "reduced check failed" CheckOK (check env p' f)
+
 testCheckExamples :: Test
 testCheckExamples =
     test
         [ -- PAx
-          "A |- A" ~: check exampleEnv (PAx "h1") FTrue ~?= CheckOK
+          "A |- A" ~: doTestCheckOK exampleEnv (PAx "h1") FTrue
         , "A |- B invalid"
             ~: rootCause (check exampleEnv (PAx "h1") FFalse)
             ~?= CheckError exampleEnv (PAx "h1") FFalse "env has hyp 'h1' for different form 'true'"
         , "PAx alpha eq"
-            ~: check
+            ~: doTestCheckOK
                 (EExtend "h" (FExists "x" (predVar "p" "x")) EEmpty)
                 (PAx "h")
                 (FExists "y" (predVar "p" "y"))
-            ~?= CheckOK
         , -- PImpI
-          "A -> A" ~: check EEmpty p1 f1 ~?= CheckOK
-        , "A -> (B -> A)" ~: check EEmpty p2 f2 ~?= CheckOK
+          "A -> A" ~: doTestCheckOK EEmpty p1 f1
+        , "A -> (B -> A)" ~: doTestCheckOK EEmpty p2 f2
         , -- Usar la misma etiqueta para diferentes hipótesis
-          "A -> (B -> B)" ~: check EEmpty p3 f3 ~?= CheckOK
+          "A -> (B -> B)" ~: doTestCheckOK EEmpty p3 f3
         , "A -> (B -> A) invalid"
             ~: rootCause (check EEmpty p3 f2)
             ~?= CheckError
@@ -445,8 +462,7 @@ testCheckExamples =
                 "env has hyp 'x' for different form 'B'"
         , -- PImpE
           "(A -> (B -> C)) -> [(A -> B) -> (A -> C)]"
-            ~: check EEmpty p4 f4
-            ~?= CheckOK
+            ~: doTestCheckOK EEmpty p4 f4
         , "(A -> (B -> C)) -> [(A -> B) -> (A -> C)] err left"
             ~: rootCause (check EEmpty p4Err1 f4)
             ~?= CheckError
@@ -474,36 +490,34 @@ testCheckExamples =
                 (propVar "B")
                 "hyp h B not in env"
         , -- PFalseE
-          "bot -> P" ~: check EEmpty p5 f5 ~?= CheckOK
+          "bot -> P" ~: doTestCheckOK EEmpty p5 f5
         , -- PNotE, PNotI
-          "P -> ~~P" ~: check EEmpty p6 f6 ~?= CheckOK
-        , "~~~P -> ~P" ~: check EEmpty p7 f7 ~?= CheckOK
-        , "(A -> B) -> (~B -> ~A)" ~: check EEmpty p8 f8 ~?= CheckOK
+          "P -> ~~P" ~: doTestCheckOK EEmpty p6 f6
+        , "~~~P -> ~P" ~: doTestCheckOK EEmpty p7 f7
+        , "(A -> B) -> (~B -> ~A)" ~: doTestCheckOK EEmpty p8 f8
         , -- And y OR
-          "(~A v ~B) -> ~(A ^ B)" ~: check EEmpty p10 f10 ~?= CheckOK
-        , "((A ^ B) -> C) <-> (A -> (B -> C))" ~: check EEmpty p11 f11 ~?= CheckOK
-        , "~~(A v ~A) con LEM" ~: check EEmpty p12LEM f12 ~?= CheckOK
-        , "~~(A v ~A) sin LEM" ~: check EEmpty p12 f12 ~?= CheckOK
+          "(~A v ~B) -> ~(A ^ B)" ~: doTestCheckOK EEmpty p10 f10
+        , "((A ^ B) -> C) <-> (A -> (B -> C))" ~: doTestCheckOK EEmpty p11 f11
+        , "~~(A v ~A) con LEM" ~: doTestCheckOK EEmpty p12LEM f12
+        , "~~(A v ~A) sin LEM" ~: doTestCheckOK EEmpty p12 f12
         , -- equivalencias
-          "(A ^ true) <-> A" ~: check EEmpty p13 f13 ~?= CheckOK
-        , "(A v true) <-> true" ~: check EEmpty p14 f14 ~?= CheckOK
+          "(A ^ true) <-> A" ~: doTestCheckOK EEmpty p13 f13
+        , "(A v true) <-> true" ~: doTestCheckOK EEmpty p14 f14
         , -- implicaciones de LK
-          "~~P -> P" ~: check EEmpty p9 f9 ~?= CheckOK
-        , "~~P -> P con macro" ~: check EEmpty (doubleNegElim $ propVar "A") f9 ~?= CheckOK
-        , "~(A ^ B) -> (~A v ~B)" ~: check EEmpty p15 f15 ~?= CheckOK
-        , "~A ^ ~B -> ~(A v B)" ~: check EEmpty p17 f17 ~?= CheckOK
-        , "~(A v B) -> ~A ^ ~B" ~: check EEmpty p16 f16 ~?= CheckOK
+          "~~P -> P" ~: doTestCheckOK EEmpty p9 f9
+        , "~~P -> P con macro" ~: doTestCheckOK EEmpty (doubleNegElim $ propVar "A") f9
+        , "~(A ^ B) -> (~A v ~B)" ~: doTestCheckOK EEmpty p15 f15
+        , "~A ^ ~B -> ~(A v B)" ~: doTestCheckOK EEmpty p17 f17
+        , "~(A v B) -> ~A ^ ~B" ~: doTestCheckOK EEmpty p16 f16
         , -- Exists y forall
-          "Good(y) => Exists x. Good(x)" ~: check EEmpty p18 f18 ~?= CheckOK
-        , "Exists x. A(x) ^ B(x) => Exists y. A(y)" ~: check EEmpty p19 f19 ~?= CheckOK
+          "Good(y) => Exists x. Good(x)" ~: doTestCheckOK EEmpty p18 f18
+        , "Exists x. A(x) ^ B(x) => Exists y. A(y)" ~: doTestCheckOK EEmpty p19 f19
         , "Exists x. A(x) ^ B(x) => Exists y. A(y) con renombre"
-            ~: check EEmpty p19_rename f19
-            ~?= CheckOK
-        , "Forall x. A(x) ^ B(x) => Forall x. A(x)" ~: check EEmpty p20 f20 ~?= CheckOK
+            ~: doTestCheckOK EEmpty p19_rename f19
+        , "Forall x. A(x) ^ B(x) => Forall x. A(x)" ~: doTestCheckOK EEmpty p20 f20
         , "Forall x. A(x) ^ B(x) => Forall x. A(x) with rename in forallI"
-            ~: check EEmpty p20_2 f20
-            ~?= CheckOK
-        , "Forall x. A(x) ^ B(x) => Forall y. A(y)" ~: check EEmpty p20' f20' ~?= CheckOK
+            ~: doTestCheckOK EEmpty p20_2 f20
+        , "Forall x. A(x) ^ B(x) => Forall y. A(y)" ~: doTestCheckOK EEmpty p20' f20'
         , "Forall x. A(x) => Exists x. B(x)"
             ~: rootCause (check EEmpty p22 f22)
             ~?= CheckError
@@ -519,28 +533,26 @@ testCheckExamples =
                 (FForall "x" (FPred "A" [TVar "x"]))
                 "env shouldn't contain fv 'x'"
         , -- DeMorgan de Exists y Forall
-          "V x. A(x) => ~E x. ~A(x)" ~: check EEmpty p23Ida f23Ida ~?= CheckOK
-        , "~E x. ~A(x) => V x. A(x)" ~: check EEmpty p23Vuelta f23Vuelta ~?= CheckOK
-        , "E x. A(x) => ~V x. ~A(x)" ~: check EEmpty p24Ida f24Ida ~?= CheckOK
-        , "~V x. ~A(x) => E x. A(x)" ~: check EEmpty p24Vuelta f24Vuelta ~?= CheckOK
+          "V x. A(x) => ~E x. ~A(x)" ~: doTestCheckOK EEmpty p23Ida f23Ida
+        , "~E x. ~A(x) => V x. A(x)" ~: doTestCheckOK EEmpty p23Vuelta f23Vuelta
+        , "E x. A(x) => ~V x. ~A(x)" ~: doTestCheckOK EEmpty p24Ida f24Ida
+        , "~V x. ~A(x) => E x. A(x)" ~: doTestCheckOK EEmpty p24Vuelta f24Vuelta
         , "alphaEq E x. A(x) => E y. A(y) directo"
-            ~: check
+            ~: doTestCheckOK
                 EEmpty
                 (PImpI "h E x. A(x)" (PAx "h E x. A(x)"))
                 ( FImp
                     (FExists "x" (predVar "A" "x"))
                     (FExists "y" (predVar "A" "y"))
                 )
-            ~?= CheckOK
         , "subst sin captura - E y. V x. A(z) v true"
-            ~: check
+            ~: doTestCheckOK
                 EEmpty
                 ( PExistsI
                     (TVar "x") -- generaria captura con V x
                     (PForallI "x" (POrI2 PTrueI))
                 )
                 (FExists "y" (FForall "x" (FOr (predVar "A" "z") FTrue)))
-            ~?= CheckOK
         ]
 
 -- generated proofs
@@ -881,6 +893,1080 @@ checkEquiv :: HypId -> Form -> HypId -> Form -> Proof -> Proof -> IO ()
 checkEquiv hF f hF' f' pFThenF' pF'ThenF = do
     CheckOK @=? check (EExtend hF f EEmpty) pFThenF' f'
     CheckOK @=? check (EExtend hF' f' EEmpty) pF'ThenF f
+
+testSubstHyp :: Test
+testSubstHyp =
+    test
+        [ "simple"
+            ~: substHyp
+                "h"
+                (PAx "b")
+                (PAx "h")
+            ~?= PAx "b"
+        , "capture"
+            ~: substHyp
+                "h"
+                ( PAndE1
+                    { right = propVar "a"
+                    , proofAnd = PAx "q"
+                    }
+                )
+                ( PImpI
+                    { hypAntecedent = "q" -- son qs diferentes
+                    , proofConsequent =
+                        PAndI
+                            { proofLeft = PAx "h"
+                            , proofRight = PAx "q"
+                            }
+                    }
+                )
+            ~?= ( PImpI
+                    { hypAntecedent = "q0"
+                    , proofConsequent =
+                        PAndI
+                            { proofLeft =
+                                ( PAndE1
+                                    { right = propVar "a"
+                                    , proofAnd = PAx "q"
+                                    }
+                                )
+                            , proofRight = PAx "q0"
+                            }
+                    }
+                )
+        ]
+
+testReduce :: Test
+testReduce =
+    test
+        [ "and"
+            ~: test
+                [ "left"
+                    ~: doTestReduce
+                        (EExtend "h1" (propVar "p") $ EExtend "h2" (propVar "q") EEmpty)
+                        (propVar "p")
+                        ( PAndE1
+                            { right = propVar "q"
+                            , proofAnd =
+                                ( PAndI
+                                    { proofLeft = PAx "h1"
+                                    , proofRight = PAx "h2"
+                                    }
+                                )
+                            }
+                        )
+                        (PAx "h1")
+                , "right"
+                    ~: doTestReduce
+                        (EExtend "h1" (propVar "p") $ EExtend "h2" (propVar "q") EEmpty)
+                        (propVar "q")
+                        ( PAndE2
+                            { left = propVar "p"
+                            , proofAnd =
+                                ( PAndI
+                                    { proofLeft = PAx "h1"
+                                    , proofRight = PAx "h2"
+                                    }
+                                )
+                            }
+                        )
+                        (PAx "h2")
+                , "left closed"
+                    ~: do
+                        let (p, q) = (propVar "p", propVar "q")
+                        doTestReduce
+                            EEmpty
+                            (FImp p (FImp q p))
+                            ( PImpI
+                                { hypAntecedent = "h1"
+                                , proofConsequent =
+                                    PImpI
+                                        { hypAntecedent = "h2"
+                                        , proofConsequent =
+                                            PAndE1
+                                                { right = propVar "q"
+                                                , proofAnd =
+                                                    ( PAndI
+                                                        { proofLeft = PAx "h1"
+                                                        , proofRight = PAx "h2"
+                                                        }
+                                                    )
+                                                }
+                                        }
+                                }
+                            )
+                            ( PImpI
+                                { hypAntecedent = "h1"
+                                , proofConsequent =
+                                    PImpI
+                                        { hypAntecedent = "h2"
+                                        , proofConsequent = PAx "h1"
+                                        }
+                                }
+                            )
+                ]
+        , "or"
+            ~: test
+                [ "l" ~: do
+                    let (p, q) = (propVar "p", propVar "q")
+                    doTestReduce
+                        (EExtend "q imp p" (FImp q p) EEmpty)
+                        (FImp p p)
+                        ( PImpI
+                            { hypAntecedent = "p"
+                            , proofConsequent =
+                                POrE
+                                    { left = p
+                                    , right = q
+                                    , proofOr = POrI1 (PAx "p")
+                                    , hypLeft = "p"
+                                    , proofAssumingLeft = PAx "p"
+                                    , hypRight = "q"
+                                    , proofAssumingRight =
+                                        PImpE
+                                            { antecedent = q
+                                            , proofImp = PAx "q imp p"
+                                            , proofAntecedent = PAx "q"
+                                            }
+                                    }
+                            }
+                        )
+                        ( PImpI
+                            { hypAntecedent = "p"
+                            , proofConsequent = PAx "p"
+                            }
+                        )
+                , "r"
+                    ~: do
+                        let (p, q) = (propVar "p", propVar "q")
+                        doTestReduce
+                            (EExtend "q imp p" (FImp q p) EEmpty)
+                            (FImp p p)
+                            ( PImpI
+                                { hypAntecedent = "p"
+                                , proofConsequent =
+                                    POrE
+                                        { left = q
+                                        , right = p
+                                        , proofOr = POrI2 (PAx "p")
+                                        , hypLeft = "q"
+                                        , proofAssumingLeft =
+                                            PImpE
+                                                { antecedent = q
+                                                , proofImp = PAx "q imp p"
+                                                , proofAntecedent = PAx "q"
+                                                }
+                                        , hypRight = "p"
+                                        , proofAssumingRight = PAx "p"
+                                        }
+                                }
+                            )
+                            ( PImpI
+                                { hypAntecedent = "p"
+                                , proofConsequent = PAx "p"
+                                }
+                            )
+                , "non trivial left and right"
+                    ~: do
+                        let (p, q) = (propVar "p", propVar "q")
+                        doTestReduce
+                            (fromList [("q imp p", FImp q p), ("p imp p", FImp p p), ("q", q)])
+                            (FImp p p)
+                            ( PImpI
+                                { hypAntecedent = "p"
+                                , proofConsequent =
+                                    POrE
+                                        { left = p
+                                        , right = q
+                                        , proofOr =
+                                            POrI1
+                                                ( PImpE
+                                                    { antecedent = q
+                                                    , proofImp = PAx "q imp p"
+                                                    , proofAntecedent = PAx "q"
+                                                    }
+                                                )
+                                        , hypLeft = "p"
+                                        , proofAssumingLeft =
+                                            PImpE
+                                                { antecedent = p
+                                                , proofImp = PAx "p imp p"
+                                                , proofAntecedent = PAx "p"
+                                                }
+                                        , hypRight = "q"
+                                        , proofAssumingRight =
+                                            PImpE
+                                                { antecedent = q
+                                                , proofImp = PAx "q imp p"
+                                                , proofAntecedent = PAx "q"
+                                                }
+                                        }
+                                }
+                            )
+                            ( PImpI
+                                { hypAntecedent = "p"
+                                , proofConsequent =
+                                    PImpE
+                                        { antecedent = p
+                                        , proofImp = PAx "p imp p"
+                                        , proofAntecedent =
+                                            PImpE
+                                                { antecedent = q
+                                                , proofImp = PAx "q imp p"
+                                                , proofAntecedent = PAx "q"
+                                                }
+                                        }
+                                }
+                            )
+                ]
+        , "or L + and" ~: do
+            let (p, q) = (propVar "p", propVar "q")
+            doTestReduce
+                (EExtend "q imp p" (FImp q p) EEmpty)
+                (FImp p p)
+                ( PImpI
+                    { hypAntecedent = "p"
+                    , proofConsequent =
+                        POrE
+                            { left = p
+                            , right = q
+                            , proofOr = POrI1 (PAx "p")
+                            , hypLeft = "p"
+                            , proofAssumingLeft =
+                                PAndE1
+                                    { right = p
+                                    , proofAnd =
+                                        PAndI
+                                            { proofLeft = PAx "p"
+                                            , proofRight = PAx "p"
+                                            }
+                                    }
+                            , hypRight = "q"
+                            , proofAssumingRight =
+                                PImpE
+                                    { antecedent = q
+                                    , proofImp = PAx "q imp p"
+                                    , proofAntecedent = PAx "q"
+                                    }
+                            }
+                    }
+                )
+                ( PImpI
+                    { hypAntecedent = "p"
+                    , proofConsequent = PAx "p"
+                    }
+                )
+        , "or L + and 2" ~: do
+            let (p, q) = (propVar "p", propVar "q")
+            doTestReduce
+                (EExtend "q imp p" (FImp q p) EEmpty)
+                (FImp p p)
+                ( PImpI
+                    { hypAntecedent = "p"
+                    , proofConsequent =
+                        POrE
+                            { left = p
+                            , right = q
+                            , proofOr =
+                                POrI1
+                                    ( PAndE1
+                                        { right = p
+                                        , proofAnd =
+                                            PAndI
+                                                { proofLeft = PAx "p"
+                                                , proofRight = PAx "p"
+                                                }
+                                        }
+                                    )
+                            , hypLeft = "p"
+                            , proofAssumingLeft = PAx "p"
+                            , hypRight = "q"
+                            , proofAssumingRight =
+                                PImpE
+                                    { antecedent = q
+                                    , proofImp = PAx "q imp p"
+                                    , proofAntecedent = PAx "q"
+                                    }
+                            }
+                    }
+                )
+                ( PImpI
+                    { hypAntecedent = "p"
+                    , proofConsequent = PAx "p"
+                    }
+                )
+        , "imp" ~: do
+            let p = propVar "p"
+            doTestReduce
+                (fromList [("p", p)])
+                p
+                ( PImpE
+                    { antecedent = p
+                    , proofImp =
+                        PImpI
+                            { hypAntecedent = "p"
+                            , proofConsequent = PAx "p"
+                            }
+                    , proofAntecedent = PAx "p"
+                    }
+                )
+                (PAx "p")
+        , "not" ~: do
+            let p = propVar "p"
+            doTestReduce
+                (fromList [("p", p), ("no p", FNot p)])
+                FFalse
+                ( PNotE
+                    { form = p
+                    , proofNotForm =
+                        PNotI
+                            { hyp = "h a"
+                            , proofBot =
+                                PNotE
+                                    { form = p
+                                    , proofNotForm = PAx "no p"
+                                    , proofForm = PAx "p"
+                                    }
+                            }
+                    , proofForm = PAx "p"
+                    }
+                )
+                ( PNotE
+                    { form = p
+                    , proofNotForm = PAx "no p"
+                    , proofForm = PAx "p"
+                    }
+                )
+        , "forall"
+            ~: test
+                [ "replace forall-e same var" ~: do
+                    let fx = tFun1 "f" (TVar "x")
+                    let (py, qy) = (predVar "p" "y", predVar "q" "y")
+                    let (pfx, qfx) = (fPred1 "p" fx, fPred1 "q" fx)
+                    doTestReduce
+                        EEmpty
+                        (FImp (FForall "y" (FAnd py qy)) pfx)
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                PForallE
+                                    { var = "y"
+                                    , form = py
+                                    , proofForall =
+                                        PForallI
+                                            { newVar = "y"
+                                            , proofForm =
+                                                PAndE1
+                                                    { right = qy
+                                                    , proofAnd =
+                                                        PForallE
+                                                            { var = "y"
+                                                            , form = FAnd py qy
+                                                            , proofForall = PAx "h"
+                                                            , termReplace = TVar "y"
+                                                            }
+                                                    }
+                                            }
+                                    , termReplace = fx
+                                    }
+                            }
+                        )
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                PAndE1
+                                    { right = qfx
+                                    , proofAnd =
+                                        PForallE
+                                            { var = "y"
+                                            , form = FAnd py qy
+                                            , proofForall = PAx "h"
+                                            , termReplace = fx
+                                            }
+                                    }
+                            }
+                        )
+                , "replace forall-E diff var" ~: do
+                    let fx = tFun1 "f" (TVar "x")
+                    let (py, qy) = (predVar "p" "y", predVar "q" "y")
+                    let (px, qx) = (predVar "p" "x", predVar "q" "x")
+                    let (px0, qx0) = (predVar "p" "x0", predVar "q" "x0")
+                    let (pfx, qfx) = (fPred1 "p" fx, fPred1 "q" fx)
+                    doTestReduce
+                        EEmpty
+                        (FImp (FForall "x" (FAnd px qx)) pfx)
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                PForallE
+                                    { var = "y"
+                                    , form = py
+                                    , proofForall =
+                                        PForallI
+                                            { newVar = "y"
+                                            , proofForm =
+                                                PAndE1
+                                                    { right = qy
+                                                    , proofAnd =
+                                                        PForallE
+                                                            { var = "x"
+                                                            , form = FAnd px qx
+                                                            , proofForall = PAx "h"
+                                                            , termReplace = TVar "y"
+                                                            }
+                                                    }
+                                            }
+                                    , termReplace = fx
+                                    }
+                            }
+                        )
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                PAndE1
+                                    { right = qfx
+                                    , proofAnd =
+                                        PForallE
+                                            { var = "x0"
+                                            , form = FAnd px0 qx0
+                                            , proofForall = PAx "h"
+                                            , termReplace = fx
+                                            }
+                                    }
+                            }
+                        )
+                , "replace forall-E diff var free in t" ~: do
+                    let fx = tFun1 "f" (TVar "x")
+                    let (py, qy) = (predVar "p" "y", predVar "q" "y")
+                    let (px, qx) = (predVar "p" "x", predVar "q" "x")
+                    let (px0, qx0) = (predVar "p" "x0", predVar "q" "x0")
+                    let (pfx, qfx) = (fPred1 "p" fx, fPred1 "q" fx)
+                    doTestReduce
+                        EEmpty
+                        (FImp (FForall "y" $ FForall "x" (FAnd px qy)) pfx)
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                PForallE
+                                    { var = "y"
+                                    , form = py
+                                    , proofForall =
+                                        PForallI
+                                            { newVar = "y"
+                                            , proofForm =
+                                                PAndE1
+                                                    { right = qy
+                                                    , proofAnd =
+                                                        PForallE
+                                                            { var = "x"
+                                                            , form = FAnd px qy
+                                                            , proofForall =
+                                                                PForallE
+                                                                    { var = "y"
+                                                                    , form = FForall "x" (FAnd px qy)
+                                                                    , proofForall = PAx "h"
+                                                                    , termReplace = TVar "y"
+                                                                    }
+                                                            , termReplace = TVar "y"
+                                                            }
+                                                    }
+                                            }
+                                    , termReplace = fx
+                                    }
+                            }
+                        )
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                PAndE1
+                                    { right = qfx
+                                    , proofAnd =
+                                        PForallE
+                                            { var = "x0"
+                                            , form = FAnd px0 qfx
+                                            , proofForall =
+                                                PForallE
+                                                    { var = "y"
+                                                    , form = FForall "x0" (FAnd px0 qy)
+                                                    , proofForall = PAx "h"
+                                                    , termReplace = fx
+                                                    }
+                                            , termReplace = fx
+                                            }
+                                    }
+                            }
+                        )
+                , "forall-I change var" ~: do
+                    let fx = tFun1 "f" (TVar "x")
+                    let (py, qy) = (predVar "p" "y", predVar "q" "y")
+                    let (px, qx) = (predVar "p" "x", predVar "q" "x")
+                    let (pfx, qfx) = (fPred1 "p" fx, fPred1 "q" fx)
+                    doTestReduce
+                        EEmpty
+                        (FImp (FForall "x" (FAnd px qx)) pfx)
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                PForallE
+                                    { var = "y"
+                                    , form = py
+                                    , proofForall =
+                                        PForallI
+                                            { newVar = "x"
+                                            , proofForm =
+                                                PAndE1
+                                                    { right = qx
+                                                    , proofAnd =
+                                                        PForallE
+                                                            { var = "x"
+                                                            , form = FAnd px qx
+                                                            , proofForall = PAx "h"
+                                                            , termReplace = TVar "x"
+                                                            }
+                                                    }
+                                            }
+                                    , termReplace = fx
+                                    }
+                            }
+                        )
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                PAndE1
+                                    { right = qfx
+                                    , proofAnd =
+                                        PForallE
+                                            { var = "x"
+                                            , form = FAnd px qx
+                                            , proofForall = PAx "h"
+                                            , termReplace = fx
+                                            }
+                                    }
+                            }
+                        )
+                , "replace forall-I" ~: do
+                    let (px, qx) = (predVar "p" "x", predVar "q" "x")
+                    doTestReduce
+                        EEmpty
+                        (FImp (FForall "x" (FAnd px qx)) (FForall "x" px))
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                -- Uso forall y. forall x. px
+                                PForallE
+                                    { var = "y"
+                                    , form = FForall "x" px
+                                    , proofForall =
+                                        PForallI
+                                            { newVar = "y"
+                                            , proofForm =
+                                                PForallI
+                                                    { newVar = "x"
+                                                    , proofForm =
+                                                        PAndE1
+                                                            { right = qx
+                                                            , proofAnd =
+                                                                PForallE
+                                                                    { var = "x"
+                                                                    , form = FAnd px qx
+                                                                    , proofForall = PAx "h"
+                                                                    , termReplace = TVar "x"
+                                                                    }
+                                                            }
+                                                    }
+                                            }
+                                    , termReplace = TVar "y"
+                                    }
+                            }
+                        )
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                PForallI
+                                    { newVar = "x"
+                                    , proofForm =
+                                        PAndE1
+                                            { right = qx
+                                            , proofAnd =
+                                                PForallE
+                                                    { var = "x"
+                                                    , form = FAnd px qx
+                                                    , proofForall = PAx "h"
+                                                    , termReplace = TVar "x"
+                                                    }
+                                            }
+                                    }
+                            }
+                        )
+                , "replace forall-I same var (newVar)" ~: do
+                    let (py, qy) = (predVar "p" "y", predVar "q" "y")
+                    let (px, qx) = (predVar "p" "x", predVar "q" "x")
+                    doTestReduce
+                        EEmpty
+                        (FImp (FForall "x" (FAnd px qx)) (FForall "x" px))
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                -- Uso forall x. forall y. py
+                                PForallE
+                                    { var = "x"
+                                    , form = FForall "y" py
+                                    , proofForall =
+                                        PForallI
+                                            { newVar = "x"
+                                            , -- proof FForall "y" py
+                                              proofForm =
+                                                PForallI
+                                                    { newVar = "x" -- adapto con newVar
+                                                    , proofForm =
+                                                        PAndE1
+                                                            { right = qx
+                                                            , proofAnd =
+                                                                PForallE
+                                                                    { var = "x"
+                                                                    , form = FAnd px qx
+                                                                    , proofForall = PAx "h"
+                                                                    , termReplace = TVar "x"
+                                                                    }
+                                                            }
+                                                    }
+                                            }
+                                    , termReplace = TVar "x"
+                                    }
+                            }
+                        )
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                PForallI
+                                    { newVar = "x"
+                                    , proofForm =
+                                        PAndE1
+                                            { right = qx
+                                            , proofAnd =
+                                                PForallE
+                                                    { var = "x"
+                                                    , form = FAnd px qx
+                                                    , proofForall = PAx "h"
+                                                    , termReplace = TVar "x"
+                                                    }
+                                            }
+                                    }
+                            }
+                        )
+                , "replace forall-I same var (termReplace)" ~: do
+                    let (py, qy) = (predVar "p" "y", predVar "q" "y")
+                    let (px, qx) = (predVar "p" "x", predVar "q" "x")
+                    doTestReduce
+                        EEmpty
+                        (FImp (FForall "x" (FAnd px qx)) (FForall "x" px))
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                -- Uso forall x. forall y. py
+                                PForallE
+                                    { var = "x"
+                                    , form = FForall "y" py
+                                    , proofForall =
+                                        PForallI
+                                            { newVar = "x"
+                                            , -- proof FForall "y" py
+                                              proofForm =
+                                                PForallI
+                                                    { newVar = "y"
+                                                    , proofForm =
+                                                        PAndE1
+                                                            { right = qy
+                                                            , proofAnd =
+                                                                PForallE
+                                                                    { var = "x"
+                                                                    , form = FAnd px qx
+                                                                    , proofForall = PAx "h"
+                                                                    , termReplace = TVar "y" -- adapto aca
+                                                                    }
+                                                            }
+                                                    }
+                                            }
+                                    , termReplace = TVar "x"
+                                    }
+                            }
+                        )
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                PForallI
+                                    { newVar = "y"
+                                    , proofForm =
+                                        PAndE1
+                                            { right = qy
+                                            , proofAnd =
+                                                PForallE
+                                                    { var = "x"
+                                                    , form = FAnd px qx
+                                                    , proofForall = PAx "h"
+                                                    , termReplace = TVar "y"
+                                                    }
+                                            }
+                                    }
+                            }
+                        )
+                , "replace forall-I remove and" ~: do
+                    let (py, qy) = (predVar "p" "y", predVar "q" "y")
+                    let (px, qx) = (predVar "p" "x", predVar "q" "x")
+                    let (px0, qx0) = (predVar "p" "x0", predVar "q" "x0")
+                    let fx = tFun1 "f" (TVar "x")
+                    let (pfx, qfx) = (fPred1 "p" fx, fPred1 "q" fx)
+                    doTestReduce
+                        EEmpty
+                        (FImp (FForall "x" (FAnd px qx)) (FForall "x" pfx))
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                PForallI
+                                    { newVar = "x"
+                                    , -- p(f(x))
+                                      proofForm =
+                                        -- Uso forall y. (p(y) & forall x. px)
+                                        PAndE1
+                                            { right = FForall "x" px
+                                            , proofAnd =
+                                                PForallE
+                                                    { var = "y"
+                                                    , form = FAnd py (FForall "x" px)
+                                                    , proofForall =
+                                                        PForallI
+                                                            { newVar = "y"
+                                                            , -- proof p(y) & forall x. px
+                                                              proofForm =
+                                                                PAndI
+                                                                    { proofLeft =
+                                                                        PAndE1
+                                                                            { right = qy
+                                                                            , proofAnd =
+                                                                                PForallE
+                                                                                    { var = "x"
+                                                                                    , form = FAnd px qx
+                                                                                    , proofForall = PAx "h"
+                                                                                    , termReplace = TVar "y"
+                                                                                    }
+                                                                            }
+                                                                    , proofRight =
+                                                                        PForallI
+                                                                            { newVar = "x"
+                                                                            , proofForm =
+                                                                                PAndE1
+                                                                                    { right = qx
+                                                                                    , proofAnd =
+                                                                                        PForallE
+                                                                                            { var = "x"
+                                                                                            , form = FAnd px qx
+                                                                                            , proofForall = PAx "h"
+                                                                                            , termReplace = TVar "x"
+                                                                                            }
+                                                                                    }
+                                                                            }
+                                                                    }
+                                                            }
+                                                    , termReplace = fx
+                                                    }
+                                            }
+                                    }
+                            }
+                        )
+                        -- (forall x (px & qx)) -> forall x. p(f(x))
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                PForallI
+                                    { newVar = "x"
+                                    , -- p(f(x))
+                                      proofForm =
+                                        -- Uso forall y. (p(y) & forall x. px)
+                                        PAndE1
+                                            { right = qfx
+                                            , proofAnd =
+                                                PForallE
+                                                    { var = "x0"
+                                                    , form = FAnd px0 qx0
+                                                    , proofForall = PAx "h"
+                                                    , termReplace = fx
+                                                    }
+                                            }
+                                    }
+                            }
+                        )
+                , "replace forall-I avoid capture" ~: do
+                    let (py, qy) = (predVar "p" "y", predVar "q" "y")
+                    let (px, qx) = (predVar "p" "x", predVar "q" "x")
+                    let (px0, qx0) = (predVar "p" "x0", predVar "q" "x0")
+                    doTestReduce
+                        EEmpty
+                        (FImp (FForall "x" (FAnd px qx)) (FForall "x" px))
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                -- uso forall y. forall x. p(x)
+                                PForallE
+                                    { var = "y"
+                                    , form = FForall "x" px
+                                    , termReplace = tFun1 "f" (TVar "x")
+                                    , proofForall =
+                                        PForallI
+                                            { newVar = "y"
+                                            , -- forall x. px
+                                              proofForm =
+                                                PForallI
+                                                    { newVar = "x"
+                                                    , proofForm =
+                                                        PAndE1
+                                                            { right = qx
+                                                            , proofAnd =
+                                                                PForallE
+                                                                    { var = "x"
+                                                                    , form = FAnd px qx
+                                                                    , proofForall = PAx "h"
+                                                                    , termReplace = TVar "x"
+                                                                    }
+                                                            }
+                                                    }
+                                            }
+                                    }
+                            }
+                        )
+                        -- (forall x (px & qx)) -> forall x. p(f(x))
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                PForallI
+                                    { newVar = "x0"
+                                    , proofForm =
+                                        PAndE1
+                                            { right = qx0
+                                            , proofAnd =
+                                                PForallE
+                                                    { var = "x0"
+                                                    , form = FAnd px0 qx0
+                                                    , proofForall = PAx "h"
+                                                    , termReplace = TVar "x0"
+                                                    }
+                                            }
+                                    }
+                            }
+                        )
+                , "replace exists-I" ~: do
+                    let pxy = FPred "p" [TVar "x", TVar "y"]
+                    let pxa = FPred "p" [TVar "x", tFun0 "a"]
+                    let pby = FPred "p" [tFun0 "b", TVar "y"]
+                    doTestReduce
+                        EEmpty
+                        (FImp (FForall "x" pxa) (FExists "y" pby))
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                -- uso forall x . exists y . p(x, y)
+                                PForallE
+                                    { var = "x"
+                                    , form = FExists "y" pxy
+                                    , termReplace = tFun0 "b"
+                                    , proofForall =
+                                        PForallI
+                                            { newVar = "x"
+                                            , -- exists y . p(x, y)
+                                              proofForm =
+                                                PExistsI
+                                                    { inst = tFun0 "a"
+                                                    , proofFormWithInst =
+                                                        PForallE
+                                                            { var = "x"
+                                                            , form = pxa
+                                                            , termReplace = TVar "x"
+                                                            , proofForall = PAx "h"
+                                                            }
+                                                    }
+                                            }
+                                    }
+                            }
+                        )
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                PExistsI
+                                    { inst = tFun0 "a"
+                                    , proofFormWithInst =
+                                        PForallE
+                                            { var = "x"
+                                            , form = pxa
+                                            , termReplace = tFun0 "b"
+                                            , proofForall = PAx "h"
+                                            }
+                                    }
+                            }
+                        )
+                , "replace exists-I subst in inst" ~: do
+                    let pxy = FPred "p" [TVar "x", TVar "y"]
+                    let fxa = TFun "f" [TVar "x", tFun0 "a"]
+                    let fba = TFun "f" [tFun0 "b", tFun0 "a"]
+                    let px_fxa = FPred "p" [TVar "x", fxa]
+                    let pby = FPred "p" [tFun0 "b", TVar "y"]
+                    doTestReduce
+                        EEmpty
+                        (FImp (FForall "x" px_fxa) (FExists "y" pby))
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                -- uso forall x . exists y . p(x, y)
+                                PForallE
+                                    { var = "x"
+                                    , form = FExists "y" pxy
+                                    , termReplace = tFun0 "b"
+                                    , proofForall =
+                                        PForallI
+                                            { newVar = "x"
+                                            , -- exists y . p(x, y)
+                                              proofForm =
+                                                PExistsI
+                                                    { inst = fxa
+                                                    , proofFormWithInst =
+                                                        PForallE
+                                                            { var = "x"
+                                                            , form = px_fxa
+                                                            , termReplace = TVar "x"
+                                                            , proofForall = PAx "h"
+                                                            }
+                                                    }
+                                            }
+                                    }
+                            }
+                        )
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                PExistsI
+                                    { inst = fba
+                                    , proofFormWithInst =
+                                        PForallE
+                                            { var = "x"
+                                            , form = px_fxa
+                                            , termReplace = tFun0 "b"
+                                            , proofForall = PAx "h"
+                                            }
+                                    }
+                            }
+                        )
+                ]
+        , "exists"
+            ~: test
+                [ "simple" ~: do
+                    let px = predVar "p" "x"
+                    let a = tFun0 "a"
+                    let (py, qy) = (predVar "p" "y", predVar "q" "y")
+                    let (pa, qa) = (fPred1 "p" a, fPred1 "q" a)
+                    doTestReduce
+                        EEmpty
+                        (FImp (FAnd pa qa) (FExists "y" py))
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , -- uso exists y . p(y) & q(y)
+                              proofConsequent =
+                                PExistsE
+                                    { var = "y"
+                                    , form = FAnd py qy
+                                    , proofExists =
+                                        PExistsI
+                                            { inst = a
+                                            , proofFormWithInst = PAx "h"
+                                            }
+                                    , hyp = "h2"
+                                    , proofAssuming =
+                                        PExistsI
+                                            { inst = TVar "y"
+                                            , proofFormWithInst =
+                                                PAndE1
+                                                    { right = qy
+                                                    , proofAnd = PAx "h2"
+                                                    }
+                                            }
+                                    }
+                            }
+                        )
+                        ( PImpI
+                            { hypAntecedent = "h"
+                            , proofConsequent =
+                                PExistsI
+                                    { inst = a
+                                    , proofFormWithInst =
+                                        PAndE1
+                                            { right = qa
+                                            , proofAnd = PAx "h"
+                                            }
+                                    }
+                            }
+                        )
+                , "non trivial existsI"
+                    ~: do
+                        let px = predVar "p" "x"
+                        let a = tFun0 "a"
+                        let (py, qy) = (predVar "p" "y", predVar "q" "y")
+                        let (pa, qa, ra) = (fPred1 "p" a, fPred1 "q" a, fPred1 "r" a)
+                        doTestReduce
+                            (fromList [("ax", FImp ra (FAnd pa qa))])
+                            (FImp ra (FExists "y" py))
+                            ( PImpI
+                                { hypAntecedent = "h"
+                                , -- uso exists y . p(y) & q(y)
+                                  proofConsequent =
+                                    PExistsE
+                                        { var = "y"
+                                        , form = FAnd py qy
+                                        , proofExists =
+                                            PExistsI
+                                                { inst = a
+                                                , proofFormWithInst =
+                                                    PImpE
+                                                        { antecedent = ra
+                                                        , proofImp = PAx "ax"
+                                                        , proofAntecedent = PAx "h"
+                                                        }
+                                                }
+                                        , hyp = "h2"
+                                        , proofAssuming =
+                                            PExistsI
+                                                { inst = TVar "y"
+                                                , proofFormWithInst =
+                                                    PAndE1
+                                                        { right = qy
+                                                        , proofAnd = PAx "h2"
+                                                        }
+                                                }
+                                        }
+                                }
+                            )
+                            ( PImpI
+                                { hypAntecedent = "h"
+                                , proofConsequent =
+                                    PExistsI
+                                        { inst = a
+                                        , proofFormWithInst =
+                                            PAndE1
+                                                { right = qa
+                                                , proofAnd =
+                                                    PImpE
+                                                        { antecedent = ra
+                                                        , proofImp = PAx "ax"
+                                                        , proofAntecedent = PAx "h"
+                                                        }
+                                                }
+                                        }
+                                }
+                            )
+                ]
+        ]
+
+doTestReduce :: Env -> Form -> Proof -> Proof -> Assertion
+doTestReduce env f p expectedP = do
+    assertEqual "original doesn't check" CheckOK (check env p f)
+    assertEqual "expected reduced doesn't check" CheckOK (check env expectedP f)
+    expectedP @=? reduce p
 
 {-                                  Proofs                                    -}
 

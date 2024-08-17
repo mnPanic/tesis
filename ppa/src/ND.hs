@@ -2,6 +2,7 @@
 -- fórmulas de LPO con deducción natural.
 module ND (
     Env (..),
+    fromList,
     get,
     VarId,
     FunId,
@@ -14,7 +15,9 @@ module ND (
     Metavar,
     fv,
     fvTerm,
+    proofName,
     fvE,
+    fvP,
     propVar,
     predVar,
     dneg,
@@ -215,6 +218,10 @@ instance Show Env where
         showPair (h, f) = printf "'%s' : %s" h (show f)
         envList = asList env
 
+fromList :: [(HypId, Form)] -> Env
+fromList [] = EEmpty
+fromList ((h, f) : ps) = EExtend h f (fromList ps)
+
 asList :: Env -> [(HypId, Form)]
 asList EEmpty = []
 asList (EExtend h f r) = (h, f) : asList r
@@ -320,3 +327,47 @@ data Proof
         , proofAssuming :: Proof -- de B con A como hyp
         }
     deriving (Show, Eq)
+
+proofName :: Proof -> String
+proofName p = case p of
+    PAx{} -> "PAx"
+    PNamed{} -> "PNamed"
+    PAndI{} -> "PAndI"
+    PAndE1{} -> "PAndE1"
+    PAndE2{} -> "PAndE2"
+    POrI1{} -> "POrI1"
+    POrI2{} -> "POrI2"
+    POrE{} -> "POrE"
+    PImpI{} -> "PImpI"
+    PImpE{} -> "PImpE"
+    PNotI{} -> "PNotI"
+    PNotE{} -> "PNotE"
+    PTrueI{} -> "PTrueI"
+    PFalseE{} -> "PFalseE"
+    PLEM{} -> "PLEM"
+    PForallI{} -> "PForallI"
+    PForallE{} -> "PForallE"
+    PExistsI{} -> "PExistsI"
+    PExistsE{} -> "PExistsE"
+
+fvP :: Proof -> Set.Set VarId
+fvP p = case p of
+    PAx h -> Set.empty
+    PNamed name p1 -> fvP p1
+    PAndI pL pR -> Set.union (fvP pL) (fvP pR)
+    PAndE1 r pR -> Set.union (fv r) (fvP pR)
+    PAndE2 l pL -> Set.union (fv l) (fvP pL)
+    POrI1 pL -> fvP pL
+    POrI2 pR -> fvP pR
+    POrE l r pOr hL pL hR pR -> Set.unions [fv l, fv r, fvP pOr, fvP pL, fvP pR]
+    PImpI h p1 -> fvP p1
+    PImpE f pI pA -> Set.unions [fv f, fvP pI, fvP pA]
+    PNotI h pB -> fvP pB
+    PNotE f pNotF pF -> Set.unions [fv f, fvP pNotF, fvP pF]
+    PTrueI -> Set.empty
+    PFalseE pB -> fvP pB
+    PLEM -> Set.empty
+    PForallI x pF -> fvP pF
+    PForallE x f pF t -> Set.unions [fv f, fvTerm t, fvP pF]
+    PExistsI t p1 -> Set.union (fvP p1) (fvTerm t)
+    PExistsE x f pE h pA -> Set.unions [fv f, fvP pE, fvP pA]

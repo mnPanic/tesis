@@ -15,6 +15,7 @@ import Certifier (
     fromClause,
     fromDNF,
     partitionForalls,
+    reduceContext,
     solveContradiction,
     toClause,
  )
@@ -84,7 +85,9 @@ testProgram p = do
         Left err -> assertFailure err
         Right prog -> case certify prog of
             Left err -> assertFailure err
-            Right ctx -> checkContext ctx @?= Right ()
+            Right ctx -> do
+                checkContext ctx @?= Right ()
+                checkContext (reduceContext ctx) @?= Right ()
 
 testProgramError :: String -> String -> IO ()
 testProgramError p err = do
