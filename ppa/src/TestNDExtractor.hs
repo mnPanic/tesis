@@ -1,7 +1,8 @@
 module TestNDExtractor (testExtractor) where
 
-import ND (Form (..), Term (..), fPred0, fPred1, tFun1)
-import NDExtractor (translateF)
+import ND (Env (EEmpty), Form (..), Proof (..), Term (..), fPred0, fPred1, tFun1)
+import NDChecker (CheckResult (CheckOK), check)
+import NDExtractor (translateF, translateP)
 import Test.HUnit (
     Assertion,
     Counts,
@@ -24,6 +25,80 @@ testExtractor :: Test
 testExtractor =
     test
         [ "translateF" ~: testTranslateForm
+        , "translateP" ~: testTranslateProof
+        ]
+
+doTestTranslate :: Proof -> Form -> Proof -> Form -> Assertion
+doTestTranslate p f expectedP expectedF = do
+    assertEqual "original doesn't check" CheckOK (check EEmpty p f)
+    assertEqual "expected translated doesn't check" CheckOK (check EEmpty expectedP expectedF)
+    let (p', f') = translateP p f r
+    expectedF @=? f'
+    expectedP @=? p'
+
+testTranslateProof :: Test
+testTranslateProof =
+    test
+        [ "impE/I + andE1/2" ~: do
+            -- (a -> b & a) -> b
+            let (a, b) = (fPred0 "a", fPred0 "b")
+            let f = FImp (FAnd (FImp a b) a) b
+            let p =
+                    PImpI
+                        { hypAntecedent = "a imp b & a"
+                        , proofConsequent =
+                            PImpE
+                                { antecedent = a
+                                , proofImp =
+                                    PAndE1
+                                        { right = a
+                                        , proofAnd = PAx "a imp b & a"
+                                        }
+                                , proofAntecedent =
+                                    PAndE2
+                                        { left = FImp a b
+                                        , proofAnd = PAx "a imp b & a"
+                                        }
+                                }
+                        }
+            -- (~R~R a -> ~R~R b & ~R~R a) -> ~R~R b
+            let expectedF = FImp (FAnd (FImp (doubleNegR a) (doubleNegR b)) (doubleNegR a)) (doubleNegR b)
+            let expectedP =
+                    PImpI
+                        { hypAntecedent = "a imp b & a"
+                        , proofConsequent =
+                            PImpE
+                                { antecedent = doubleNegR a
+                                , proofImp =
+                                    PAndE1
+                                        { right = doubleNegR a
+                                        , proofAnd = PAx "a imp b & a"
+                                        }
+                                , proofAntecedent =
+                                    PAndE2
+                                        { left = FImp (doubleNegR a) (doubleNegR b)
+                                        , proofAnd = PAx "a imp b & a"
+                                        }
+                                }
+                        }
+            doTestTranslate p f expectedP expectedF
+        , "andI" ~: do
+            -- a -> a & a
+            let a = fPred0 "a"
+            let f = FImp a (FAnd a a)
+            let p =
+                    PImpI
+                        { hypAntecedent = "h"
+                        , proofConsequent =
+                            PAndI
+                                { proofLeft = PAx "h"
+                                , proofRight = PAx "h"
+                                }
+                        }
+            -- (~R~R a -> ~R~R b & ~R~R a) -> ~R~R b
+            let expectedF = FImp (doubleNegR a) (FAnd (doubleNegR a) (doubleNegR a))
+            let expectedP = p
+            doTestTranslate p f expectedP expectedF
         ]
 
 testTranslateForm :: Test
@@ -78,4 +153,7 @@ fNotR :: Form -> Form
 fNotR f = FImp f r
 
 tripleNegR :: Form -> Form
-tripleNegR f = fNotR $ fNotR $ fNotR f
+tripleNegR f = fNotR $ doubleNegR f
+
+doubleNegR :: Form -> Form
+doubleNegR f = fNotR $ fNotR f
