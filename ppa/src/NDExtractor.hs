@@ -5,8 +5,9 @@
 -}
 module NDExtractor (translateF, translateP) where
 
-import ND (Form (..), Proof (..), Term)
-import NDProofs (Result)
+import Debug.Trace (trace)
+import ND (Form (..), Proof (..), Term, proofName)
+import NDProofs (Result, hypForm)
 import NDReducer (reduce)
 import Text.Printf (printf)
 
@@ -28,8 +29,14 @@ extractWitness _ f = Left $ printf "form %s must be exists" (show f)
 
 -- Convierte una demostración clásica en una intuicionista usando la traducción de friedman.
 translateP :: Proof -> Form -> Form -> (Proof, Form)
-translateP p f r = case (f, p) of
+translateP _ _ _ | trace "translateP" False = undefined
+translateP proof form r = case (form, proof) of
   (f, PAx h) -> (PAx h, translateF f r)
+  (f, PNamed n p) ->
+    let
+      (p', f') = rec p f
+     in
+      (PNamed n p', f')
   {- Imp -}
   ( cons
     , PImpE
@@ -119,7 +126,43 @@ translateP p f r = case (f, p) of
             }
        in
         (proofR', right')
-  p -> error ("unexpected proof " ++ show p)
+  {- False -}
+  {- True -}
+  {- LEM -}
+  (or@(FOr f (FNot g)), PLEM) ->
+    -- ~R (~R f~~ & ~R~R f~~)
+    case translateF or r of
+      or'@(FImp and@(FAnd left right) r) ->
+        let
+          proofOr' =
+            PImpI
+              { -- ~R f~~ & ~R~R f~~
+                hypAntecedent = hypForm and
+              , -- R
+                proofConsequent =
+                  PImpE
+                    { antecedent = right
+                    , proofImp =
+                        PAndE2
+                          { left = left
+                          , proofAnd = PAx $ hypForm and
+                          }
+                    , -- ~R f~~
+                      proofAntecedent =
+                        PAndE1
+                          { right = right
+                          , proofAnd = PAx $ hypForm and
+                          }
+                    }
+              }
+         in
+          (proofOr', or')
+      or' -> error ("unexpected format " ++ show or')
+  {- Or -}
+  {- Forall -}
+  {- Exists -}
+  {- Not -}
+  (f, p) -> error $ printf "translateP: unexpected proof %s for form %s" (proofName p) (show f)
  where
   rec p f = translateP p f r
 

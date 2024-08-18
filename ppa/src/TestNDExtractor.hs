@@ -36,6 +36,14 @@ doTestTranslate p f expectedP expectedF = do
     expectedF @=? f'
     expectedP @=? p'
 
+assertTranslateChecks :: Proof -> Form -> Assertion
+assertTranslateChecks p f = do
+    let expectedF' = translateF f r
+    let (p', f') = translateP p f r
+    expectedF' @=? f'
+    assertEqual "original doesn't check" CheckOK (check EEmpty p f)
+    assertEqual "translated doesn't check" CheckOK (check EEmpty p' f')
+
 testTranslateProof :: Test
 testTranslateProof =
     test
@@ -99,6 +107,9 @@ testTranslateProof =
             let expectedF = FImp (doubleNegR a) (FAnd (doubleNegR a) (doubleNegR a))
             let expectedP = p
             doTestTranslate p f expectedP expectedF
+        , "LEM" ~: do
+            let a = fPred0 "a"
+            assertTranslateChecks PLEM (FOr a (FNot a))
         ]
 
 testTranslateForm :: Test
