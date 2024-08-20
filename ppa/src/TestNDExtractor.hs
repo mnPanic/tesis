@@ -55,7 +55,6 @@ testTranslateProof =
     test
         [ "impE/I + andE1/2" ~: do
             -- (a -> b & a) -> b
-            let (a, b) = (fPred0 "a", fPred0 "b")
             let f = FImp (FAnd (FImp a b) a) b
             let p =
                     PImpI
@@ -98,7 +97,6 @@ testTranslateProof =
             doTestTranslate p f expectedP expectedF
         , "andI" ~: do
             -- a -> a & a
-            let a = fPred0 "a"
             let f = FImp a (FAnd a a)
             let p =
                     PImpI
@@ -113,10 +111,32 @@ testTranslateProof =
             let expectedF = FImp (doubleNegR a) (FAnd (doubleNegR a) (doubleNegR a))
             let expectedP = p
             doTestTranslate p f expectedP expectedF
-        , "LEM" ~: do
-            let a = fPred0 "a"
-            assertTranslateChecks PLEM (FOr a (FNot a))
+        , "LEM" ~: assertTranslateChecks PLEM (FOr a (FNot a))
+        , "OrI1" ~: do
+            let f = FImp a (FOr a b)
+            let p =
+                    PImpI
+                        { hypAntecedent = "h"
+                        , proofConsequent =
+                            POrI1
+                                { proofLeft = PAx "h"
+                                }
+                        }
+            assertTranslateChecks p f
+        , "OrI2" ~: do
+            let f = FImp a (FOr b a)
+            let p =
+                    PImpI
+                        { hypAntecedent = "h"
+                        , proofConsequent =
+                            POrI2
+                                { proofRight = PAx "h"
+                                }
+                        }
+            assertTranslateChecks p f
         ]
+  where
+    (a, b) = (fPred0 "a", fPred0 "b")
 
 testTranslateForm :: Test
 testTranslateForm =

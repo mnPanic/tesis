@@ -47,6 +47,8 @@ translateP proof form r = case proof of
   {- LEM -}
   PLEM -> translateLEM form proof r
   {- Or -}
+  POrI1{} -> translateOrI1 form proof r
+  POrI2{} -> translateOrI2 form proof r
   {- Forall -}
   {- Exists -}
   {- Not -}
@@ -188,6 +190,68 @@ translateLEM or@(FOr f (FNot g)) PLEM r =
        in
         (proofOr', or')
     or' -> error ("unexpected format " ++ show or')
+
+translateOrI1 :: Form -> Proof -> Form -> (Proof, Form)
+translateOrI1
+  or@(FOr left right)
+  POrI1
+    { proofLeft = proofLeft
+    }
+  r =
+    -- ~r (~r left~~ & ~r right~~)
+    case translateF or r of
+      or'@(FImp and@(FAnd (FImp left' _) notR_right') r) ->
+        let
+          (proofLeft', _) = translateP proofLeft left r
+          hAnd = hypForm and
+          proofOr' =
+            PImpI
+              { hypAntecedent = hAnd
+              , proofConsequent =
+                  PImpE
+                    { antecedent = left'
+                    , proofImp =
+                        PAndE1
+                          { right = notR_right'
+                          , proofAnd = PAx hAnd
+                          }
+                    , proofAntecedent = proofLeft'
+                    }
+              }
+         in
+          (proofOr', or')
+      f' -> error ("unexpected format " ++ show f')
+
+translateOrI2 :: Form -> Proof -> Form -> (Proof, Form)
+translateOrI2
+  or@(FOr left right)
+  POrI2
+    { proofRight = proofRight
+    }
+  r =
+    -- ~r (~r left~~ & ~r right~~)
+    case translateF or r of
+      or'@(FImp and@(FAnd notR_left' (FImp right' _)) r) ->
+        let
+          (proofRight', _) = translateP proofRight right r
+          hAnd = hypForm and
+          proofOr' =
+            PImpI
+              { hypAntecedent = hAnd
+              , proofConsequent =
+                  PImpE
+                    { antecedent = right'
+                    , proofImp =
+                        PAndE2
+                          { left = notR_left'
+                          , proofAnd = PAx hAnd
+                          }
+                    , proofAntecedent = proofRight'
+                    }
+              }
+         in
+          (proofOr', or')
+      f' -> error ("unexpected format " ++ show f')
 
 -- Traduce f via doble negación relativizada, parametrizada por una fórmula
 -- arbitraria R.
