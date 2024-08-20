@@ -29,142 +29,165 @@ extractWitness _ f = Left $ printf "form %s must be exists" (show f)
 
 -- Convierte una demostración clásica en una intuicionista usando la traducción de friedman.
 translateP :: Proof -> Form -> Form -> (Proof, Form)
-translateP _ _ _ | trace "translateP" False = undefined
-translateP proof form r = case (form, proof) of
-  (f, PAx h) -> (PAx h, translateF f r)
-  (f, PNamed n p) ->
-    let
-      (p', f') = rec p f
-     in
-      (PNamed n p', f')
+-- translateP _ _ _ | trace "translateP" False = undefined
+translateP proof form r = case proof of
+  PAx h -> (PAx h, translateF form r)
+  PNamed n p ->
+    let (p', f') = translateP p form r
+     in (PNamed n p', f')
   {- Imp -}
-  ( cons
-    , PImpE
-        { antecedent = ant
-        , proofImp = proofImp
-        , proofAntecedent = proofAnt
-        }
-    ) ->
-      let imp = FImp ant cons
-          (proofImp', _) = rec proofImp imp
-          (proofAnt', ant') = rec proofAnt ant
-          cons' = translateF cons r
-          proofCons' =
-            PImpE
-              { antecedent = ant'
-              , proofImp = proofImp'
-              , proofAntecedent = proofAnt'
-              }
-       in (proofCons', cons')
-  ( imp@(FImp ant cons)
-    , PImpI
-        { hypAntecedent = h
-        , proofConsequent = proofCons
-        }
-    ) ->
-      let
-        (proofCons', _) = rec proofCons cons
-        imp' = translateF imp r
-        proofImp' =
-          PImpI
-            { hypAntecedent = h
-            , proofConsequent = proofCons'
-            }
-       in
-        (proofImp', imp')
+  PImpE{} -> translateImpE form proof r
+  PImpI{} -> translateImpI form proof r
   {- And -}
-  ( and@(FAnd left right)
-    , PAndI
-        { proofLeft = proofL
-        , proofRight = proofR
-        }
-    ) ->
-      let
-        (proofLeft', _) = rec proofL left
-        (proofRight', _) = rec proofR right
-        and' = translateF and right
-        proofAnd' =
-          PAndI
-            { proofLeft = proofLeft'
-            , proofRight = proofRight'
-            }
-       in
-        (proofAnd', and')
-  ( left
-    , PAndE1
-        { right = right
-        , proofAnd = proofAnd
-        }
-    ) ->
-      let
-        and = FAnd left right
-        (proofAnd', _) = rec proofAnd and
-        left' = translateF left r
-        right' = translateF right r
-        proofL' =
-          PAndE1
-            { right = right'
-            , proofAnd = proofAnd'
-            }
-       in
-        (proofL', left')
-  ( right
-    , PAndE2
-        { left = left
-        , proofAnd = proofAnd
-        }
-    ) ->
-      let
-        and = FAnd left right
-        (proofAnd', _) = rec proofAnd and
-        left' = translateF left r
-        right' = translateF right r
-        proofR' =
-          PAndE2
-            { left = left'
-            , proofAnd = proofAnd'
-            }
-       in
-        (proofR', right')
+  PAndI{} -> translateAndI form proof r
+  PAndE1{} -> translateAndE1 form proof r
+  PAndE2{} -> translateAndE2 form proof r
   {- False -}
   {- True -}
   {- LEM -}
-  (or@(FOr f (FNot g)), PLEM) ->
-    -- ~R (~R f~~ & ~R~R f~~)
-    case translateF or r of
-      or'@(FImp and@(FAnd left right) r) ->
-        let
-          proofOr' =
-            PImpI
-              { -- ~R f~~ & ~R~R f~~
-                hypAntecedent = hypForm and
-              , -- R
-                proofConsequent =
-                  PImpE
-                    { antecedent = right
-                    , proofImp =
-                        PAndE2
-                          { left = left
-                          , proofAnd = PAx $ hypForm and
-                          }
-                    , -- ~R f~~
-                      proofAntecedent =
-                        PAndE1
-                          { right = right
-                          , proofAnd = PAx $ hypForm and
-                          }
-                    }
-              }
-         in
-          (proofOr', or')
-      or' -> error ("unexpected format " ++ show or')
+  PLEM -> translateLEM form proof r
   {- Or -}
   {- Forall -}
   {- Exists -}
   {- Not -}
-  (f, p) -> error $ printf "translateP: unexpected proof %s for form %s" (proofName p) (show f)
- where
-  rec p f = translateP p f r
+  p -> error $ printf "translateP: unexpected proof %s for form %s" (proofName p) (show form)
+
+translateImpI :: Form -> Proof -> Form -> (Proof, Form)
+translateImpI
+  imp@(FImp ant cons)
+  PImpI
+    { hypAntecedent = h
+    , proofConsequent = proofCons
+    }
+  r =
+    let
+      (proofCons', _) = translateP proofCons cons r
+      imp' = translateF imp r
+      proofImp' =
+        PImpI
+          { hypAntecedent = h
+          , proofConsequent = proofCons'
+          }
+     in
+      (proofImp', imp')
+
+translateImpE :: Form -> Proof -> Form -> (Proof, Form)
+translateImpE
+  cons
+  PImpE
+    { antecedent = ant
+    , proofImp = proofImp
+    , proofAntecedent = proofAnt
+    }
+  r =
+    let
+      imp = FImp ant cons
+      (proofImp', _) = translateP proofImp imp r
+      (proofAnt', ant') = translateP proofAnt ant r
+      cons' = translateF cons r
+      proofCons' =
+        PImpE
+          { antecedent = ant'
+          , proofImp = proofImp'
+          , proofAntecedent = proofAnt'
+          }
+     in
+      (proofCons', cons')
+
+translateAndI :: Form -> Proof -> Form -> (Proof, Form)
+translateAndI
+  and@(FAnd left right)
+  PAndI
+    { proofLeft = proofL
+    , proofRight = proofR
+    }
+  r =
+    let
+      (proofLeft', _) = translateP proofL left r
+      (proofRight', _) = translateP proofR right r
+      and' = translateF and right
+      proofAnd' =
+        PAndI
+          { proofLeft = proofLeft'
+          , proofRight = proofRight'
+          }
+     in
+      (proofAnd', and')
+
+translateAndE1 :: Form -> Proof -> Form -> (Proof, Form)
+translateAndE1
+  left
+  PAndE1
+    { right = right
+    , proofAnd = proofAnd
+    }
+  r =
+    let
+      and = FAnd left right
+      (proofAnd', _) = translateP proofAnd and r
+      left' = translateF left r
+      right' = translateF right r
+      proofL' =
+        PAndE1
+          { right = right'
+          , proofAnd = proofAnd'
+          }
+     in
+      (proofL', left')
+
+translateAndE2 :: Form -> Proof -> Form -> (Proof, Form)
+translateAndE2
+  right
+  PAndE2
+    { left = left
+    , proofAnd = proofAnd
+    }
+  r =
+    let
+      and = FAnd left right
+      (proofAnd', _) = translateP proofAnd and r
+      left' = translateF left r
+      right' = translateF right r
+      proofR' =
+        PAndE2
+          { left = left'
+          , proofAnd = proofAnd'
+          }
+     in
+      (proofR', right')
+
+translateLEM :: Form -> Proof -> Form -> (Proof, Form)
+translateLEM or@(FOr f (FNot g)) PLEM r =
+  -- ~R (~R f~~ & ~R~R f~~)
+  case translateF or r of
+    or'@(FImp and@(FAnd left right) r) ->
+      let
+        hAnd = hypForm and
+        proofOr' =
+          PImpI
+            { -- ~R f~~ & ~R~R f~~
+              hypAntecedent = hAnd
+            , -- R
+              proofConsequent =
+                -- Elimino ~R~R f~~, porque sabemos que vale ~R f~~
+                PImpE
+                  { antecedent = left
+                  , proofImp =
+                      PAndE2
+                        { left = left
+                        , proofAnd = PAx hAnd
+                        }
+                  , -- ~R f~~
+                    proofAntecedent =
+                      PAndE1
+                        { right = right
+                        , proofAnd = PAx hAnd
+                        }
+                  }
+            }
+       in
+        (proofOr', or')
+    or' -> error ("unexpected format " ++ show or')
 
 -- Traduce f via doble negación relativizada, parametrizada por una fórmula
 -- arbitraria R.

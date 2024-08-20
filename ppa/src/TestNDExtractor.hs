@@ -3,6 +3,7 @@ module TestNDExtractor (testExtractor) where
 import ND (Env (EEmpty), Form (..), Proof (..), Term (..), fPred0, fPred1, tFun1)
 import NDChecker (CheckResult (CheckOK), check)
 import NDExtractor (translateF, translateP)
+import NDReducer (reduce)
 import Test.HUnit (
     Assertion,
     Counts,
@@ -36,6 +37,9 @@ doTestTranslate p f expectedP expectedF = do
     expectedF @=? f'
     expectedP @=? p'
 
+    let reducedP' = reduce p'
+    assertEqual "reduced doesn't check" CheckOK (check EEmpty p' f')
+
 assertTranslateChecks :: Proof -> Form -> Assertion
 assertTranslateChecks p f = do
     let expectedF' = translateF f r
@@ -43,6 +47,8 @@ assertTranslateChecks p f = do
     expectedF' @=? f'
     assertEqual "original doesn't check" CheckOK (check EEmpty p f)
     assertEqual "translated doesn't check" CheckOK (check EEmpty p' f')
+    let reducedP' = reduce p'
+    assertEqual "reduced doesn't check" CheckOK (check EEmpty p' f')
 
 testTranslateProof :: Test
 testTranslateProof =

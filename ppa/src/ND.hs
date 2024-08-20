@@ -1,3 +1,5 @@
+{-# LANGUAGE ImportQualifiedPost #-}
+
 -- El módulo ND (Natural Deduction) contiene tipos para demostraciones de
 -- fórmulas de LPO con deducción natural.
 module ND (
