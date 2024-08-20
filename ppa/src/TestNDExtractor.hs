@@ -1,6 +1,6 @@
 module TestNDExtractor (testExtractor) where
 
-import ND (Env (EEmpty), Form (..), Proof (..), Term (..), fPred0, fPred1, tFun1)
+import ND (Env (EEmpty), Form (..), Proof (..), Term (..), fPred0, fPred1, fPredVar, tFun0, tFun1)
 import NDChecker (CheckResult (CheckOK), check)
 import NDExtractor (translateF, translateP)
 import NDReducer (reduce)
@@ -9,6 +9,7 @@ import Test.HUnit (
     Counts,
     Test,
     Testable (test),
+    assertBool,
     assertEqual,
     assertFailure,
     runTestTT,
@@ -45,6 +46,7 @@ assertTranslateChecks p f = do
     let expectedF' = translateF f r
     let (p', f') = translateP p f r
     expectedF' @=? f'
+    assertBool "translated and reduced proofs aren't different" (p /= p')
     assertEqual "original doesn't check" CheckOK (check EEmpty p f)
     assertEqual "translated doesn't check" CheckOK (check EEmpty p' f')
     let reducedP' = reduce p'
@@ -53,7 +55,7 @@ assertTranslateChecks p f = do
 testTranslateProof :: Test
 testTranslateProof =
     test
-        [ "impE/I + andE1/2" ~: do
+        [ "ImpE/I + AndE1/2" ~: do
             -- (a -> b & a) -> b
             let f = FImp (FAnd (FImp a b) a) b
             let p =
@@ -95,7 +97,7 @@ testTranslateProof =
                                 }
                         }
             doTestTranslate p f expectedP expectedF
-        , "andI" ~: do
+        , "AndI" ~: do
             -- a -> a & a
             let f = FImp a (FAnd a a)
             let p =
@@ -131,6 +133,44 @@ testTranslateProof =
                         , proofConsequent =
                             POrI2
                                 { proofRight = PAx "h"
+                                }
+                        }
+            assertTranslateChecks p f
+        , "ForallI + ForallE" ~: do
+            let (px, qx) = (fPredVar "p" "x", fPredVar "q" "x")
+            let py = fPredVar "p" "y"
+            let f = FImp (FForall "x" (FAnd px qx)) (FForall "y" py)
+            let p =
+                    PImpI
+                        { hypAntecedent = "h"
+                        , proofConsequent =
+                            PForallI
+                                { newVar = "x"
+                                , proofForm =
+                                    PAndE1
+                                        { right = qx
+                                        , proofAnd =
+                                            PForallE
+                                                { var = "x"
+                                                , form = FAnd px qx
+                                                , termReplace = TVar "x"
+                                                , proofForall = PAx "h"
+                                                }
+                                        }
+                                }
+                        }
+            assertTranslateChecks p f
+        , "ForallE" ~: do
+            let f = FImp (FForall "x" (fPredVar "p" "x")) (fPred1 "p" (tFun0 "f"))
+            let p =
+                    PImpI
+                        { hypAntecedent = "h"
+                        , proofConsequent =
+                            PForallE
+                                { var = "x"
+                                , form = fPredVar "p" "x"
+                                , termReplace = tFun0 "f"
+                                , proofForall = PAx "h"
                                 }
                         }
             assertTranslateChecks p f

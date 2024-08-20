@@ -50,6 +50,8 @@ translateP proof form r = case proof of
   POrI1{} -> translateOrI1 form proof r
   POrI2{} -> translateOrI2 form proof r
   {- Forall -}
+  PForallI{} -> translateForallI form proof r
+  PForallE{} -> translateForallE form proof r
   {- Exists -}
   {- Not -}
   p -> error $ printf "translateP: unexpected proof %s for form %s" (proofName p) (show form)
@@ -252,6 +254,50 @@ translateOrI2
          in
           (proofOr', or')
       f' -> error ("unexpected format " ++ show f')
+
+translateForallI :: Form -> Proof -> Form -> (Proof, Form)
+translateForallI
+  _forall@(FForall x f)
+  PForallI
+    { newVar = x'
+    , proofForm = proofForm
+    }
+  r =
+    let
+      forall' = translateF _forall r
+      (proofForm', _) = translateP proofForm f r
+      proofForall' =
+        PForallI
+          { newVar = x'
+          , proofForm = proofForm'
+          }
+     in
+      (proofForall', forall')
+
+translateForallE :: Form -> Proof -> Form -> (Proof, Form)
+translateForallE
+  formReplace
+  PForallE
+    { var = x
+    , form = f
+    , termReplace = t
+    , proofForall = proofForall
+    }
+  r =
+    let
+      formReplace' = translateF formReplace r
+      _forall = FForall x f
+      f' = translateF f r
+      (proofForall', _) = translateP proofForall _forall r
+      proofFormReplace' =
+        PForallE
+          { var = x
+          , form = f'
+          , termReplace = t
+          , proofForall = proofForall'
+          }
+     in
+      (proofFormReplace', formReplace')
 
 -- Traduce f via doble negación relativizada, parametrizada por una fórmula
 -- arbitraria R.
