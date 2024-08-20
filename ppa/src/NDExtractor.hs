@@ -6,8 +6,8 @@
 module NDExtractor (translateF, translateP) where
 
 import Debug.Trace (trace)
-import ND (Form (..), Proof (..), Term, proofName)
-import NDProofs (Result, hypForm)
+import ND (Form (..), Proof (..), Term, proofName, HypId)
+import NDProofs (Result, hypForm, cut, hypAndForm)
 import NDReducer (reduce)
 import Text.Printf (printf)
 
@@ -298,6 +298,38 @@ translateForallE
           }
      in
       (proofFormReplace', formReplace')
+
+translateOrE :: Form -> Proof -> Form -> (Proof, Form)
+translateOrE form POrE {
+  left = left,
+  right = right,
+  proofOr = proofOr,
+  hypLeft = hypLeft,
+  proofAssumingLeft = proofAssumingLeft,
+  hypRight = hypRight,
+  proofAssumingRight = proofAssumingRight
+ }
+ r = let
+        (proofAssumingLeft', _) = translateP proofAssumingLeft form r
+        (proofAssumingRight', _) = translateP proofAssumingRight form r
+        form' = translateF form r
+        (dNegRForm', h_dNegRForm') = hypAndForm (FImp (FImp form' r) r)
+        -- ~r~r form'
+        proofDNegRForm = PImpI {
+          hypAntecedent = hypForm (FImp form' r),
+          proofConsequent = PImpE {
+            antecedent = form',
+            proofImp = PAx hypForm (FImp form' r),
+            proofAntecedent = undefined -- TODO
+           }
+         }
+        proofForm' = cut
+          dNegRForm' proofDNegRForm h_dNegRForm' (dNegRElim form' h_dNegRForm')
+    in (proofForm', form')
+
+-- Demuestra ~r~r A |- A
+dNegRElim :: Form -> HypId -> Proof
+dNegRElim f h_dneg = undefined
 
 -- Traduce f via doble negación relativizada, parametrizada por una fórmula
 -- arbitraria R.
