@@ -3,11 +3,11 @@
   debería ser necesario)
 
 -}
-module NDExtractor (translateF, translateP) where
+module NDExtractor (translateF, translateP, dNegRElim) where
 
 import Debug.Trace (trace)
-import ND (Form (..), Proof (..), Term, proofName, HypId)
-import NDProofs (Result, hypForm, cut, hypAndForm)
+import ND (Form (..), HypId, Proof (..), Term, proofName)
+import NDProofs (Result, cut, hypAndForm, hypForm)
 import NDReducer (reduce)
 import Text.Printf (printf)
 
@@ -49,6 +49,7 @@ translateP proof form r = case proof of
   {- Or -}
   POrI1{} -> translateOrI1 form proof r
   POrI2{} -> translateOrI2 form proof r
+  POrE{} -> translateOrE form proof r
   {- Forall -}
   PForallI{} -> translateForallI form proof r
   PForallE{} -> translateForallE form proof r
@@ -300,36 +301,154 @@ translateForallE
       (proofFormReplace', formReplace')
 
 translateOrE :: Form -> Proof -> Form -> (Proof, Form)
-translateOrE form POrE {
-  left = left,
-  right = right,
-  proofOr = proofOr,
-  hypLeft = hypLeft,
-  proofAssumingLeft = proofAssumingLeft,
-  hypRight = hypRight,
-  proofAssumingRight = proofAssumingRight
- }
- r = let
-        (proofAssumingLeft', _) = translateP proofAssumingLeft form r
-        (proofAssumingRight', _) = translateP proofAssumingRight form r
+translateOrE
+  form
+  POrE
+    { left = left
+    , right = right
+    , proofOr = proofOr
+    , hypLeft = hypLeft
+    , proofAssumingLeft = proofAssumingLeft
+    , hypRight = hypRight
+    , proofAssumingRight = proofAssumingRight
+    }
+  r = case translateP proofOr (FOr left right) r of
+    (proofOr', or'@(FImp (FAnd (FImp left' _) (FImp right' _)) _)) ->
+      let
+        (proofAssumingLeft', _) = translateP proofAssumingLeft left r
+        (proofAssumingRight', _) = translateP proofAssumingRight right r
+
         form' = translateF form r
         (dNegRForm', h_dNegRForm') = hypAndForm (FImp (FImp form' r) r)
         -- ~r~r form'
-        proofDNegRForm = PImpI {
-          hypAntecedent = hypForm (FImp form' r),
-          proofConsequent = PImpE {
-            antecedent = form',
-            proofImp = PAx hypForm (FImp form' r),
-            proofAntecedent = undefined -- TODO
-           }
-         }
-        proofForm' = cut
-          dNegRForm' proofDNegRForm h_dNegRForm' (dNegRElim form' h_dNegRForm')
-    in (proofForm', form')
+        proofDNegRForm =
+          PImpI
+            { hypAntecedent = hypForm (FImp form' r)
+            , proofConsequent =
+                PImpE
+                  { antecedent = form'
+                  , proofImp = PAx $ hypForm (FImp form' r)
+                  , -- proof r asumiendo ~r form.
+                    -- Como sabemos que vale left | right, y su traducción es ~r(~r left~~ & ~r right~~)
+                    -- podemos eliminar ese no, y demostrar el and de forma simétrica, asumimos left~~ o right~~
+                    -- y llegamos a un absurdo usando la demo que lo asume correspondiente.
+                    proofAntecedent =
+                      PImpE
+                        { antecedent = undefined
+                        , proofImp = undefined
+                        , proofAntecedent = undefined
+                        }
+                  }
+            }
+        proofForm' =
+          cut
+            dNegRForm'
+            proofDNegRForm
+            h_dNegRForm'
+            (dNegRElim form h_dNegRForm' r)
+       in
+        (proofForm', form')
+    f' -> error ("unexpected format " ++ show f')
 
--- Demuestra ~r~r A |- A
-dNegRElim :: Form -> HypId -> Proof
-dNegRElim f h_dneg = undefined
+-- Demuestra ~r~r A~~ |- A~~ por inducción estructural en A (sin traducir)
+dNegRElim :: Form -> HypId -> Form -> Proof
+dNegRElim f h_dneg_f' r = case (f, translateF f r) of
+  (FFalse, r2) ->
+    PImpE
+      { antecedent = FImp r r
+      , proofImp = PAx h_dneg_f'
+      , proofAntecedent =
+          PImpI
+            { hypAntecedent = hypForm r
+            , proofConsequent = PAx $ hypForm r
+            }
+      }
+  (FTrue, FTrue) -> PTrueI
+  -- dneg en realidad es qneg, entonces eliminando triple quedan iguales.
+  (FPred p ts, FImp (FImp f _) _) -> tNegRElim (FImp f r) h_dneg_f' r
+  (FAnd left right, f'@(FAnd left' right')) ->
+    let
+      (dneg_left', h_dneg_left') = hypAndForm $ FImp (FImp left' r) r
+      proof_left' = dNegRElim left h_dneg_left' r
+      proof_dneg_left' =
+        PImpI
+          { hypAntecedent = hypForm $ FImp left' r
+          , proofConsequent =
+              PImpE
+                { antecedent = FImp f' r
+                , proofImp = PAx h_dneg_f'
+                , proofAntecedent =
+                    PImpI
+                      { hypAntecedent = hypForm f'
+                      , -- ~r left~~, left~~ & right~~ |- r
+                        proofConsequent =
+                          PImpE
+                            { antecedent = left'
+                            , proofImp = PAx $ hypForm $ FImp left' r
+                            , proofAntecedent =
+                                PAndE1
+                                  { right = right'
+                                  , proofAnd = PAx $ hypForm f'
+                                  }
+                            }
+                      }
+                }
+          }
+
+      (dneg_right', h_dneg_right') = hypAndForm $ FImp (FImp right' r) r
+      proof_right' = dNegRElim right h_dneg_right' r
+      proof_dneg_right' =
+        PImpI
+          { hypAntecedent = hypForm $ FImp right' r
+          , proofConsequent =
+              PImpE
+                { antecedent = FImp f' r
+                , proofImp = PAx h_dneg_f'
+                , proofAntecedent =
+                    PImpI
+                      { hypAntecedent = hypForm f'
+                      , -- ~r right~~, left~~ & right~~ |- r
+                        proofConsequent =
+                          PImpE
+                            { antecedent = right'
+                            , proofImp = PAx $ hypForm $ FImp right' r
+                            , proofAntecedent =
+                                PAndE2
+                                  { left = left'
+                                  , proofAnd = PAx $ hypForm f'
+                                  }
+                            }
+                      }
+                }
+          }
+     in
+      PAndI
+        { proofLeft = cut dneg_left' proof_dneg_left' h_dneg_left' proof_left'
+        , proofRight = cut dneg_right' proof_dneg_right' h_dneg_right' proof_right'
+        }
+  (_, f') -> error $ printf "dnegRElim: unexpected form '%s', translated: '%s'" (show f) (show f')
+
+-- Demuestra ~r~r~r A |- ~r A
+tNegRElim :: Form -> HypId -> Form -> Proof
+tNegRElim f h_tneg r =
+  PImpI
+    { hypAntecedent = hypForm f
+    , proofConsequent =
+        PImpE
+          { antecedent = FImp (FImp f r) r
+          , proofImp = PAx h_tneg
+          , proofAntecedent =
+              PImpI
+                { hypAntecedent = hypForm $ FImp f r
+                , proofConsequent =
+                    PImpE
+                      { antecedent = f
+                      , proofImp = PAx $ hypForm (FImp f r)
+                      , proofAntecedent = PAx $ hypForm f
+                      }
+                }
+          }
+    }
 
 -- Traduce f via doble negación relativizada, parametrizada por una fórmula
 -- arbitraria R.

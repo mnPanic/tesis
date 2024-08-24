@@ -1,8 +1,8 @@
 module TestNDExtractor (testExtractor) where
 
-import ND (Env (EEmpty), Form (..), Proof (..), Term (..), fPred0, fPred1, fPredVar, tFun0, tFun1)
+import ND (Env (EEmpty, EExtend), Form (..), Proof (..), Term (..), fPred0, fPred1, fPredVar, tFun0, tFun1)
 import NDChecker (CheckResult (CheckOK), check)
-import NDExtractor (translateF, translateP)
+import NDExtractor (dNegRElim, translateF, translateP)
 import NDReducer (reduce)
 import Test.HUnit (
     Assertion,
@@ -28,6 +28,7 @@ testExtractor =
     test
         [ "translateF" ~: testTranslateForm
         , "translateP" ~: testTranslateProof
+        , "dNegRElim" ~: testDNegRElim
         ]
 
 doTestTranslate :: Proof -> Form -> Proof -> Form -> Assertion
@@ -222,6 +223,23 @@ testTranslateForm =
 
             expected ~?= translateF f r
         ]
+
+testDNegRElim :: Test
+testDNegRElim =
+    test
+        [ "false" ~: doTestDNegRElim FFalse
+        , "true" ~: doTestDNegRElim FTrue
+        , "pred" ~: doTestDNegRElim (fPredVar "p" "x")
+        , "and" ~: doTestDNegRElim (FAnd (fPred0 "p") (fPred0 "q"))
+        ]
+
+doTestDNegRElim :: Form -> Assertion
+doTestDNegRElim f = do
+    let h = "h"
+    let f' = translateF f r
+    let p = dNegRElim f h r
+    let env = EExtend h (doubleNegR f') EEmpty
+    assertEqual "translated doesn't check" CheckOK (check env p f')
 
 r :: Form
 r = fPred0 "r"
