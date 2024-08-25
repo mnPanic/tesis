@@ -215,8 +215,8 @@ testTranslateForm =
                             (tripleNegR (FPred "p" [TVar "x", tFun1 "f" (TVar "y")]))
                             (FForall "x" (fNotR $ fNotR (fPred0 "p")))
                         )
-                        ( fNotR
-                            $ FAnd
+                        ( fNotR $
+                            FAnd
                                 (tripleNegR (fPred1 "p" (TVar "x")))
                                 (fNotR $ fNotR (FForall "y" (fNotR (FAnd FTrue r))))
                         )
@@ -231,6 +231,7 @@ testDNegRElim =
         , "true" ~: doTestDNegRElim FTrue
         , "pred" ~: doTestDNegRElim (fPredVar "p" "x")
         , "and" ~: doTestDNegRElim (FAnd (fPred0 "p") (fPred0 "q"))
+        , "imp" ~: doTestDNegRElim (FImp (fPred0 "p") (fPred0 "q"))
         ]
 
 doTestDNegRElim :: Form -> Assertion

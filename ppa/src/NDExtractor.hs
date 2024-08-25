@@ -426,6 +426,39 @@ dNegRElim f h_dneg_f' r = case (f, translateF f r) of
         { proofLeft = cut dneg_left' proof_dneg_left' h_dneg_left' proof_left'
         , proofRight = cut dneg_right' proof_dneg_right' h_dneg_right' proof_right'
         }
+  (FImp ant cons, f'@(FImp ant' cons')) ->
+    let
+      (dneg_cons', h_dneg_cons') = hypAndForm $ FImp (FImp cons' r) r
+      proof_dneg_elim_cons' = dNegRElim cons h_dneg_cons' r
+      proof_dneg_cons' =
+        PImpI
+          { hypAntecedent = hypForm $ FImp cons' r
+          , proofConsequent =
+              PImpE
+                { antecedent = FImp f' r
+                , proofImp = PAx h_dneg_f'
+                , proofAntecedent =
+                    PImpI
+                      { hypAntecedent = hypForm f'
+                      , proofConsequent =
+                          PImpE
+                            { antecedent = cons'
+                            , proofImp = PAx $ hypForm $ FImp cons' r
+                            , proofAntecedent =
+                                PImpE
+                                  { antecedent = ant'
+                                  , proofImp = PAx $ hypForm f'
+                                  , proofAntecedent = PAx $ hypForm ant'
+                                  }
+                            }
+                      }
+                }
+          }
+     in
+      PImpI
+        { hypAntecedent = hypForm ant'
+        , proofConsequent = cut dneg_cons' proof_dneg_cons' h_dneg_cons' proof_dneg_elim_cons'
+        }
   (_, f') -> error $ printf "dnegRElim: unexpected form '%s', translated: '%s'" (show f) (show f')
 
 -- Demuestra ~r~r~r A |- ~r A
