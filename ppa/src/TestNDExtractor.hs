@@ -232,6 +232,10 @@ testDNegRElim =
         , "pred" ~: doTestDNegRElim (fPredVar "p" "x")
         , "and" ~: doTestDNegRElim (FAnd (fPred0 "p") (fPred0 "q"))
         , "imp" ~: doTestDNegRElim (FImp (fPred0 "p") (fPred0 "q"))
+        , "not" ~: doTestDNegRElim (FNot (fPred0 "p"))
+        , "forall" ~: doTestDNegRElim (FForall "x" (fPred0 "p"))
+        , "exists" ~: doTestDNegRElim (FExists "x" (fPred0 "p"))
+        , "or" ~: doTestDNegRElim (FOr (fPred0 "p") (fPred0 "q"))
         ]
 
 doTestDNegRElim :: Form -> Assertion

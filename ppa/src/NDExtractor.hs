@@ -6,7 +6,7 @@
 module NDExtractor (translateF, translateP, dNegRElim) where
 
 import Debug.Trace (trace)
-import ND (Form (..), HypId, Proof (..), Term, proofName)
+import ND (Form (..), HypId, Proof (..), Term (TVar), proofName)
 import NDProofs (Result, cut, hypAndForm, hypForm)
 import NDReducer (reduce)
 import Text.Printf (printf)
@@ -350,7 +350,16 @@ translateOrE
         (proofForm', form')
     f' -> error ("unexpected format " ++ show f')
 
--- Demuestra ~r~r A~~ |- A~~ por inducción estructural en A (sin traducir)
+{- Demuestra ~r~r A~~ |- A~~ por inducción estructural en A (sin traducir)
+
+Intuición atrás del truquito
+
+por ej. para A & B. Si sabemos que vale
+~r~r (A~~ & B~~) y lo queremos eliminar para demostrar, va a demostrar r, pero no
+tenemos que demostrar r sino A~~ & B~~.
+Por eso usamos el truco de dneg elim (HI) para pasar a demostrar ~r~r A~~,
+porque introduciendo, tenemos que demostrar r.
+-}
 dNegRElim :: Form -> HypId -> Form -> Proof
 dNegRElim f h_dneg_f' r = case (f, translateF f r) of
   (FFalse, r2) ->
@@ -364,8 +373,14 @@ dNegRElim f h_dneg_f' r = case (f, translateF f r) of
             }
       }
   (FTrue, FTrue) -> PTrueI
+  -- Todas las que su traducción arranca con un ~r son iguales, porque
+  -- alcanza con hacer eliminación de triple negación que vale siempre.
+
   -- dneg en realidad es qneg, entonces eliminando triple quedan iguales.
   (FPred p ts, FImp (FImp f _) _) -> tNegRElim (FImp f r) h_dneg_f' r
+  (FNot g, f'@(FImp g' _)) -> tNegRElim g' h_dneg_f' r
+  (FExists x g, FImp (FForall _ (FImp g' _)) _) -> tNegRElim (FForall x (FImp g' r)) h_dneg_f' r
+  (FOr left right, FImp or' r) -> tNegRElim or' h_dneg_f' r
   (FAnd left right, f'@(FAnd left' right')) ->
     let
       (dneg_left', h_dneg_left') = hypAndForm $ FImp (FImp left' r) r
@@ -458,6 +473,40 @@ dNegRElim f h_dneg_f' r = case (f, translateF f r) of
       PImpI
         { hypAntecedent = hypForm ant'
         , proofConsequent = cut dneg_cons' proof_dneg_cons' h_dneg_cons' proof_dneg_elim_cons'
+        }
+  (FForall x g, f'@(FForall _ g')) ->
+    let
+      (dneg_g', h_dneg_g') = hypAndForm $ FImp (FImp g' r) r
+      proof_dneg_elim_g' = dNegRElim g h_dneg_g' r
+      proof_dneg_g' =
+        PImpI
+          { hypAntecedent = hypForm $ FImp g' r
+          , proofConsequent =
+              PImpE
+                { antecedent = FImp f' r
+                , proofImp = PAx h_dneg_f'
+                , proofAntecedent =
+                    PImpI
+                      { hypAntecedent = hypForm f'
+                      , proofConsequent =
+                          PImpE
+                            { antecedent = g'
+                            , proofImp = PAx $ hypForm $ FImp g' r
+                            , proofAntecedent =
+                                PForallE
+                                  { var = x
+                                  , form = g'
+                                  , termReplace = TVar x
+                                  , proofForall = PAx $ hypForm f'
+                                  }
+                            }
+                      }
+                }
+          }
+     in
+      PForallI
+        { newVar = x
+        , proofForm = cut dneg_g' proof_dneg_g' h_dneg_g' proof_dneg_elim_g'
         }
   (_, f') -> error $ printf "dnegRElim: unexpected form '%s', translated: '%s'" (show f) (show f')
 
