@@ -9,6 +9,7 @@ import Debug.Trace (trace)
 import ND (Form (..), HypId, Proof (..), Term (TVar), proofName)
 import NDProofs (Result, cut, hypAndForm, hypForm)
 import NDReducer (reduce)
+import NDSubst (subst)
 import Text.Printf (printf)
 
 {- Dada una demostración de exists X . p(X) devuelve t tal que p(t)
@@ -43,7 +44,9 @@ translateP proof form r = case proof of
   PAndE1{} -> translateAndE1 form proof r
   PAndE2{} -> translateAndE2 form proof r
   {- False -}
+  -- TODO!!
   {- True -}
+  PTrueI -> (PTrueI, translateF form r)
   {- LEM -}
   PLEM -> translateLEM form proof r
   {- Or -}
@@ -54,6 +57,8 @@ translateP proof form r = case proof of
   PForallI{} -> translateForallI form proof r
   PForallE{} -> translateForallE form proof r
   {- Exists -}
+  PExistsI{} -> translateExistsI form proof r
+  PExistsE{} -> translateExistsE form proof r
   {- Not -}
   PNotI{} -> translateNotI form proof r
   PNotE{} -> translateNotE form proof r
@@ -416,6 +421,92 @@ translateNotE
           }
      in
       (proofFalse', false')
+
+translateExistsI :: Form -> Proof -> Form -> (Proof, Form)
+translateExistsI
+  formExists@(FExists x g)
+  PExistsI
+    { inst = t
+    , proofFormWithInst = proofFormWithInst
+    }
+  r = case translateF formExists r of
+    formExists'@(FImp (FForall _ (FImp g' _)) _) ->
+      let
+        _forall = FForall x (FImp g' r)
+        (proofFormWithInst', formWithInst') = translateP proofFormWithInst (subst x t g) r
+        proofExists' =
+          PImpI
+            { hypAntecedent = hypForm _forall
+            , proofConsequent =
+                PImpE
+                  { antecedent = formWithInst'
+                  , proofImp =
+                      PForallE
+                        { var = x
+                        , form = FImp g' r
+                        , termReplace = t
+                        , proofForall = PAx $ hypForm _forall
+                        }
+                  , proofAntecedent = proofFormWithInst'
+                  }
+            }
+       in
+        (proofExists', formExists')
+    f' -> error ("unexpected format " ++ show f')
+
+translateExistsE :: Form -> Proof -> Form -> (Proof, Form)
+translateExistsE
+  form
+  PExistsE
+    { var = x
+    , form = g
+    , proofExists = proofExists
+    , hyp = h_g
+    , proofAssuming = proofAssuming
+    }
+  r =
+    case translateP proofExists (FExists x g) r of
+      (proofExists', exists'@(FImp (FForall _ (FImp g' _)) _)) ->
+        let
+          _forall = FForall x (FImp g' r)
+          (proofAssuming', _) = translateP proofAssuming form r
+          form' = translateF form r
+          (dnegr_form', h_dnegr_form') = hypAndForm (FImp (FImp form' r) r)
+          proof_dnegr_elim_form' = dNegRElim form h_dnegr_form' r
+          -- ~r~r form'
+          proof_dnegr_form' =
+            PImpI
+              { hypAntecedent = hypForm $ FImp form' r
+              , proofConsequent =
+                  PImpE
+                    { antecedent = _forall
+                    , proofImp = proofExists'
+                    , proofAntecedent =
+                        PForallI
+                          { newVar = x
+                          , proofForm =
+                              PImpI
+                                { hypAntecedent = h_g -- Misma
+                                , proofConsequent =
+                                    PImpE
+                                      { antecedent = form'
+                                      , proofImp = PAx $ hypForm $ FImp form' r
+                                      , proofAntecedent = proofAssuming'
+                                      }
+                                }
+                          }
+                    }
+              }
+
+          proofForm' =
+            cut
+              dnegr_form'
+              proof_dnegr_form'
+              h_dnegr_form'
+              proof_dnegr_elim_form'
+         in
+          (proofForm', form')
+      f' -> error ("unexpected format " ++ show f')
 
 {- Demuestra ~r~r A~~ |- A~~ por inducción estructural en A (sin traducir)
 

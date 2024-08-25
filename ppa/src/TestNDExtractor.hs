@@ -53,6 +53,16 @@ assertTranslateChecks p f = do
     let reducedP' = reduce p'
     assertEqual "reduced doesn't check" CheckOK (check EEmpty p' f')
 
+assertTranslateChecksAllowSame :: Proof -> Form -> Assertion
+assertTranslateChecksAllowSame p f = do
+    let expectedF' = translateF f r
+    let (p', f') = translateP p f r
+    expectedF' @=? f'
+    assertEqual "original doesn't check" CheckOK (check EEmpty p f)
+    assertEqual "translated doesn't check" CheckOK (check EEmpty p' f')
+    let reducedP' = reduce p'
+    assertEqual "reduced doesn't check" CheckOK (check EEmpty p' f')
+
 testTranslateProof :: Test
 testTranslateProof =
     test
@@ -252,6 +262,43 @@ testTranslateProof =
                                         { form = a
                                         , proofNotForm = PAx "h not a"
                                         , proofForm = PAx "h a"
+                                        }
+                                }
+                        }
+            assertTranslateChecks p f
+        , "true" ~: assertTranslateChecksAllowSame PTrueI FTrue
+        , "ExistsI" ~: do
+            let f = FImp (fPred1 "p" (tFun0 "k")) (FExists "x" $ fPredVar "p" "x")
+            let p =
+                    PImpI
+                        { hypAntecedent = "h p(k)"
+                        , proofConsequent =
+                            PExistsI
+                                { inst = tFun0 "k"
+                                , proofFormWithInst = PAx "h p(k)"
+                                }
+                        }
+            assertTranslateChecks p f
+        , "ExistsE" ~: do
+            let (px, qx) = (fPredVar "p" "x", fPredVar "q" "x")
+            let f = FImp (FExists "x" (FAnd px qx)) (FExists "x" px)
+            let p =
+                    PImpI
+                        { hypAntecedent = "h exists"
+                        , proofConsequent =
+                            PExistsE
+                                { var = "x"
+                                , form = FAnd px qx
+                                , proofExists = PAx "h exists"
+                                , hyp = "h and"
+                                , proofAssuming =
+                                    PExistsI
+                                        { inst = TVar "x"
+                                        , proofFormWithInst =
+                                            PAndE1
+                                                { right = qx
+                                                , proofAnd = PAx "h and"
+                                                }
                                         }
                                 }
                         }
