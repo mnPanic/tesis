@@ -55,6 +55,8 @@ translateP proof form r = case proof of
   PForallE{} -> translateForallE form proof r
   {- Exists -}
   {- Not -}
+  PNotI{} -> translateNotI form proof r
+  PNotE{} -> translateNotE form proof r
   p -> error $ printf "translateP: unexpected proof %s for form %s" (proofName p) (show form)
 
 translateImpI :: Form -> Proof -> Form -> (Proof, Form)
@@ -315,40 +317,105 @@ translateOrE
   r = case translateP proofOr (FOr left right) r of
     (proofOr', or'@(FImp (FAnd (FImp left' _) (FImp right' _)) _)) ->
       let
+        and' = FAnd (FImp left' r) (FImp right' r)
         (proofAssumingLeft', _) = translateP proofAssumingLeft left r
         (proofAssumingRight', _) = translateP proofAssumingRight right r
 
         form' = translateF form r
-        (dNegRForm', h_dNegRForm') = hypAndForm (FImp (FImp form' r) r)
+        (dnegr_form', h_dnegr_form') = hypAndForm (FImp (FImp form' r) r)
+        proof_dnegr_elim_form' = dNegRElim form h_dnegr_form' r
         -- ~r~r form'
-        proofDNegRForm =
+        proof_dnegr_form' =
           PImpI
             { hypAntecedent = hypForm (FImp form' r)
-            , proofConsequent =
+            , {- proof r asumiendo ~r form.
+              Como sabemos que vale left | right, y su traducción es ~r(~r left~~ & ~r right~~)
+              podemos eliminar ese no, y demostrar el and de forma simétrica,
+              asumimos left~~ o right~~ y llegamos a un absurdo usando la demo que
+              lo asume correspondiente.
+              -}
+              -- Acá si o si hay que eliminar ~r(~r left~~ & ~r right~~) en vez de
+              -- ~r (form~~) porque es el único lugar en la demo en el que hay que
+              -- demostrar r.
+              proofConsequent =
                 PImpE
-                  { antecedent = form'
-                  , proofImp = PAx $ hypForm (FImp form' r)
-                  , -- proof r asumiendo ~r form.
-                    -- Como sabemos que vale left | right, y su traducción es ~r(~r left~~ & ~r right~~)
-                    -- podemos eliminar ese no, y demostrar el and de forma simétrica, asumimos left~~ o right~~
-                    -- y llegamos a un absurdo usando la demo que lo asume correspondiente.
-                    proofAntecedent =
-                      PImpE
-                        { antecedent = undefined
-                        , proofImp = undefined
-                        , proofAntecedent = undefined
+                  { antecedent = and'
+                  , proofImp = proofOr'
+                  , proofAntecedent =
+                      PAndI
+                        { proofLeft =
+                            PImpI
+                              { hypAntecedent = hypLeft
+                              , proofConsequent =
+                                  PImpE
+                                    { antecedent = form'
+                                    , proofImp = PAx $ hypForm (FImp form' r)
+                                    , proofAntecedent = proofAssumingLeft'
+                                    }
+                              }
+                        , proofRight =
+                            PImpI
+                              { hypAntecedent = hypRight
+                              , proofConsequent =
+                                  PImpE
+                                    { antecedent = form'
+                                    , proofImp = PAx $ hypForm (FImp form' r)
+                                    , proofAntecedent = proofAssumingRight'
+                                    }
+                              }
                         }
                   }
             }
         proofForm' =
           cut
-            dNegRForm'
-            proofDNegRForm
-            h_dNegRForm'
-            (dNegRElim form h_dNegRForm' r)
+            dnegr_form'
+            proof_dnegr_form'
+            h_dnegr_form'
+            proof_dnegr_elim_form'
        in
         (proofForm', form')
     f' -> error ("unexpected format " ++ show f')
+
+translateNotI :: Form -> Proof -> Form -> (Proof, Form)
+translateNotI
+  formNot
+  PNotI
+    { hyp = h
+    , proofBot = proofBot
+    }
+  r =
+    let
+      (proofBot', _) = translateP proofBot FFalse r
+      formNot' = translateF formNot r
+      proofNot' =
+        PImpI
+          { hypAntecedent = h
+          , proofConsequent = proofBot'
+          }
+     in
+      (proofNot', formNot')
+
+translateNotE :: Form -> Proof -> Form -> (Proof, Form)
+translateNotE
+  false
+  PNotE
+    { form = form
+    , proofNotForm = proofNotForm
+    , proofForm = proofForm
+    }
+  r =
+    let
+      (proofNotForm', _) = translateP proofNotForm (FNot form) r
+      (proofForm', form') = translateP proofForm form r
+      false' = translateF false r
+      proofFalse' =
+        PImpE
+          { antecedent = form'
+          , proofImp = proofNotForm'
+          , proofAntecedent = proofForm'
+          }
+     in
+      (proofFalse', false')
 
 {- Demuestra ~r~r A~~ |- A~~ por inducción estructural en A (sin traducir)
 

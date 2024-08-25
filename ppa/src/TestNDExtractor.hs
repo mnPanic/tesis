@@ -175,9 +175,90 @@ testTranslateProof =
                                 }
                         }
             assertTranslateChecks p f
+        , "OrE" ~: do
+            let f = FImp (FOr a a) a
+            let p =
+                    PImpI
+                        { hypAntecedent = "h Or"
+                        , proofConsequent =
+                            POrE
+                                { left = a
+                                , right = a
+                                , proofOr = PAx "h Or"
+                                , hypLeft = "h a"
+                                , proofAssumingLeft = PAx "h a"
+                                , hypRight = "h a"
+                                , proofAssumingRight = PAx "h a"
+                                }
+                        }
+            assertTranslateChecks p f
+        , "OrE + AndE1/2 + ImpE" ~: do
+            let f = FImp (FAnd (FOr a b) (FAnd (FImp b c) (FImp a c))) c
+            let p =
+                    PImpI
+                        { hypAntecedent = "h"
+                        , proofConsequent =
+                            POrE
+                                { left = a
+                                , right = b
+                                , proofOr =
+                                    PAndE1
+                                        { right = FAnd (FImp b c) (FImp a c)
+                                        , proofAnd = PAx "h"
+                                        }
+                                , hypLeft = "h a"
+                                , proofAssumingLeft =
+                                    PImpE
+                                        { antecedent = a
+                                        , proofImp =
+                                            PAndE2
+                                                { left = FImp b c
+                                                , proofAnd =
+                                                    PAndE2
+                                                        { left = FOr a b
+                                                        , proofAnd = PAx "h"
+                                                        }
+                                                }
+                                        , proofAntecedent = PAx "h a"
+                                        }
+                                , hypRight = "h b"
+                                , proofAssumingRight =
+                                    PImpE
+                                        { antecedent = b
+                                        , proofImp =
+                                            PAndE1
+                                                { right = FImp a c
+                                                , proofAnd =
+                                                    PAndE2
+                                                        { left = FOr a b
+                                                        , proofAnd = PAx "h"
+                                                        }
+                                                }
+                                        , proofAntecedent = PAx "h b"
+                                        }
+                                }
+                        }
+            assertTranslateChecks p f
+        , "NotI + NotE" ~: do
+            let f = FImp a (FNot $ FNot a)
+            let p =
+                    PImpI
+                        { hypAntecedent = "h a"
+                        , proofConsequent =
+                            PNotI
+                                { hyp = "h not a"
+                                , proofBot =
+                                    PNotE
+                                        { form = a
+                                        , proofNotForm = PAx "h not a"
+                                        , proofForm = PAx "h a"
+                                        }
+                                }
+                        }
+            assertTranslateChecks p f
         ]
   where
-    (a, b) = (fPred0 "a", fPred0 "b")
+    (a, b, c) = (fPred0 "a", fPred0 "b", fPred0 "c")
 
 testTranslateForm :: Test
 testTranslateForm =
