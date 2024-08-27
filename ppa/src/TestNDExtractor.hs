@@ -2,7 +2,7 @@ module TestNDExtractor (testExtractor) where
 
 import ND (Env (EEmpty, EExtend), Form (..), Proof (..), Term (..), fPred0, fPred1, fPredVar, tFun0, tFun1)
 import NDChecker (CheckResult (CheckOK), check)
-import NDExtractor (dNegRElim, translateF, translateP)
+import NDExtractor (dNegRElim, rElim, translateF, translateP)
 import NDReducer (reduce)
 import Test.HUnit (
     Assertion,
@@ -29,6 +29,7 @@ testExtractor =
         [ "translateF" ~: testTranslateForm
         , "translateP" ~: testTranslateProof
         , "dNegRElim" ~: testDNegRElim
+        , "rElim" ~: testRElim
         ]
 
 doTestTranslate :: Proof -> Form -> Proof -> Form -> Assertion
@@ -303,6 +304,26 @@ testTranslateProof =
                                 }
                         }
             assertTranslateChecks p f
+        , "FalseE" ~: do
+            let f' =
+                    FImp
+                        ( FAnd
+                            (FNot (FPred "p" [TVar "x", tFun1 "f" (TVar "y")]))
+                            (FForall "x" (fPred0 "p"))
+                        )
+                        ( FOr
+                            (fPred1 "p" (TVar "x"))
+                            (FExists "y" (FAnd FTrue FFalse))
+                        )
+
+            let f = FImp FFalse f'
+
+            let p =
+                    PImpI
+                        { hypAntecedent = "h"
+                        , proofConsequent = PFalseE (PAx "h")
+                        }
+            assertTranslateChecks p f
         ]
   where
     (a, b, c) = (fPred0 "a", fPred0 "b", fPred0 "c")
@@ -372,6 +393,28 @@ doTestDNegRElim f = do
     let f' = translateF f r
     let p = dNegRElim f h r
     let env = EExtend h (doubleNegR f') EEmpty
+    assertEqual "translated doesn't check" CheckOK (check env p f')
+
+testRElim :: Test
+testRElim =
+    test
+        [ "false" ~: doTestRElim FFalse
+        , "true" ~: doTestRElim FTrue
+        , "pred" ~: doTestRElim (fPredVar "p" "x")
+        , "and" ~: doTestRElim (FAnd (fPred0 "p") (fPred0 "q"))
+        , "imp" ~: doTestRElim (FImp (fPred0 "p") (fPred0 "q"))
+        , "not" ~: doTestRElim (FNot (fPred0 "p"))
+        , "forall" ~: doTestRElim (FForall "x" (fPred0 "p"))
+        , "exists" ~: doTestRElim (FExists "x" (fPred0 "p"))
+        , "or" ~: doTestRElim (FOr (fPred0 "p") (fPred0 "q"))
+        ]
+
+doTestRElim :: Form -> Assertion
+doTestRElim f = do
+    let h = "h"
+    let f' = translateF f r
+    let p = rElim f (PAx h) r
+    let env = EExtend h r EEmpty
     assertEqual "translated doesn't check" CheckOK (check env p f')
 
 r :: Form

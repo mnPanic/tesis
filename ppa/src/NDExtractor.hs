@@ -3,7 +3,7 @@
   debería ser necesario)
 
 -}
-module NDExtractor (translateF, translateP, dNegRElim) where
+module NDExtractor (translateF, translateP, dNegRElim, rElim) where
 
 import Debug.Trace (trace)
 import ND (Form (..), HypId, Proof (..), Term (TVar), proofName)
@@ -44,7 +44,11 @@ translateP proof form r = case proof of
   PAndE1{} -> translateAndE1 form proof r
   PAndE2{} -> translateAndE2 form proof r
   {- False -}
-  -- TODO!!
+  PFalseE proofBot ->
+    let (proofBot', _) = translateP proofBot FFalse r
+        form' = translateF form r
+        proofForm' = rElim form proofBot' r
+     in (proofForm', form')
   {- True -}
   PTrueI -> (PTrueI, translateF form r)
   {- LEM -}
@@ -62,7 +66,6 @@ translateP proof form r = case proof of
   {- Not -}
   PNotI{} -> translateNotI form proof r
   PNotE{} -> translateNotE form proof r
-  p -> error $ printf "translateP: unexpected proof %s for form %s" (proofName p) (show form)
 
 translateImpI :: Form -> Proof -> Form -> (Proof, Form)
 translateImpI
@@ -507,6 +510,51 @@ translateExistsE
          in
           (proofForm', form')
       f' -> error ("unexpected format " ++ show f')
+
+{- Demuestra r |- A~~ por inducción estructural en A.
+
+Asume que la demostración de r ya está traducida.
+-}
+rElim :: Form -> Proof -> Form -> Proof
+rElim f proof_r r = case (f, translateF f r) of
+  (FFalse, _) -> proof_r
+  (FTrue, FTrue) -> PTrueI
+  (FPred p ts, FImp (FImp f _) _) ->
+    PImpI
+      { hypAntecedent = hypForm $ FImp f r
+      , proofConsequent = proof_r
+      }
+  (FNot g, FImp g' _) ->
+    PImpI
+      { hypAntecedent = hypForm g'
+      , proofConsequent = proof_r
+      }
+  (FExists x g, FImp _forall _) ->
+    PImpI
+      { hypAntecedent = hypForm _forall
+      , proofConsequent = proof_r
+      }
+  (FOr left right, FImp or' r) ->
+    PImpI
+      { hypAntecedent = hypForm or'
+      , proofConsequent = proof_r
+      }
+  (FAnd left right, FAnd left' right') ->
+    PAndI
+      { proofLeft = rElim left proof_r r
+      , proofRight = rElim right proof_r r
+      }
+  (FImp ant cons, FImp ant' cons') ->
+    PImpI
+      { hypAntecedent = hypForm ant'
+      , proofConsequent = rElim cons proof_r r
+      }
+  (FForall x g, FForall _ g') ->
+    PForallI
+      { newVar = x
+      , proofForm = rElim g proof_r r
+      }
+  (_, f') -> error $ printf "rElim: unexpected form '%s', translated: '%s'" (show f) (show f')
 
 {- Demuestra ~r~r A~~ |- A~~ por inducción estructural en A (sin traducir)
 
