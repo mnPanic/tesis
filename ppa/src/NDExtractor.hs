@@ -126,7 +126,7 @@ translateAndI
     let
       (proofLeft', _) = translateP proofL left r
       (proofRight', _) = translateP proofR right r
-      and' = translateF and right
+      and' = translateF and r
       proofAnd' =
         PAndI
           { proofLeft = proofLeft'
