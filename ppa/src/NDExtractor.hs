@@ -3,10 +3,16 @@
   debería ser necesario)
 
 -}
-module NDExtractor (translateF, translateP, dNegRElim, rElim) where
+module NDExtractor (
+  translateF,
+  translateP,
+  translateE,
+  dNegRElim,
+  rElim,
+) where
 
 import Debug.Trace (trace)
-import ND (Form (..), HypId, Proof (..), Term (TVar), proofName)
+import ND (Env (EEmpty, EExtend), Form (..), HypId, Proof (..), Term (TVar), proofName)
 import NDProofs (Result, cut, hypAndForm, hypForm)
 import NDReducer (reduce)
 import NDSubst (subst)
@@ -755,3 +761,9 @@ translateF f r = case f of
  where
   rec g = translateF g r
   fNotR f = FImp f r
+
+-- Necesario para algunos tests que hacen check con un env que no es empty
+translateE :: Env -> Form -> Env
+translateE env r = case env of
+  EEmpty -> EEmpty
+  EExtend h f env2 -> EExtend h (translateF f r) (translateE env2 r)

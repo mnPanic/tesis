@@ -9,6 +9,7 @@ import ND (
     Term (..),
     VarId,
     dneg,
+    fPred0,
     fPred1,
     fromList,
     fv,
@@ -82,6 +83,7 @@ import Test.HUnit (
 
 import Data.Map qualified as Map
 import Data.Set qualified as Set
+import NDExtractor (translateE, translateP)
 import Unifier (Substitution, unifyF, unifyT)
 
 main :: IO Counts
@@ -114,13 +116,13 @@ testEnv =
 
 longForm :: Form
 longForm =
-    FExists "z"
-        $ FForall
+    FExists "z" $
+        FForall
             "x"
             ( FImp
                 (FPred "A" [TVar "y"])
-                ( FNot
-                    $ FAnd
+                ( FNot $
+                    FAnd
                         (FOr FTrue (FPred "B" [TVar "y"]))
                         (FPred "A" [TVar "x", TVar "y", TFun "f" [TVar "z"]])
                 )
@@ -261,15 +263,15 @@ testAlphaEq =
                 , "fun arity"
                     ~: TFun "f" [TVar "x", TVar "y"]
                     == TFun "f" [TVar "x"]
-                    ~?= False
+                        ~?= False
                 , "fun vars neq"
                     ~: TFun "f" [TVar "x", TVar "y"]
                     == TFun "f" [TVar "x", TVar "z"]
-                    ~?= False
+                        ~?= False
                 , "fun vars eq"
                     ~: TFun "f" [TVar "x", TVar "y"]
                     == TFun "f" [TVar "x", TVar "y"]
-                    ~?= True
+                        ~?= True
                 ]
         , "true" ~: FTrue == FTrue ~?= True
         , "predicate name eq " ~: FPred "A" [] == FPred "A" [] ~?= True
@@ -278,23 +280,23 @@ testAlphaEq =
         , "forall eq"
             ~: FForall "x" (FPred "A" [TVar "x"])
             == FForall "y" (FPred "A" [TVar "y"])
-            ~?= True
+                ~?= True
         , "exists eq"
             ~: FExists "x" (FPred "A" [TVar "x"])
             == FExists "y" (FPred "A" [TVar "y"])
-            ~?= True
+                ~?= True
         , "neq free var"
             ~: FExists "x" (FPred "A" [TVar "z"])
             == FExists "y" (FPred "A" [TVar "x"])
-            ~?= False
+                ~?= False
         , "swapped vars (need two substs)"
             ~: FExists "x" (FForall "y" (FPred "A" [TVar "x", TVar "y"]))
             == FExists "y" (FForall "x" (FPred "A" [TVar "y", TVar "x"]))
-            ~?= True
+                ~?= True
         , "exists and"
             ~: FExists "x" (FAnd (FPred "A" [TVar "x"]) (FPred "A" [TVar "y"]))
             == FExists "x" (FAnd (FPred "A" [TVar "x"]) (FPred "A" [TVar "x"]))
-            ~?= False
+                ~?= False
         , "and exists"
             ~: FAnd
                 (FExists "x" (FPred "A" [TVar "x"]))
@@ -302,7 +304,7 @@ testAlphaEq =
             == FAnd
                 (FExists "x" (FPred "A" [TVar "x"]))
                 (FExists "x" (FPred "A" [TVar "x"]))
-            ~?= False
+                ~?= False
         ]
 
 testSubst :: Test
@@ -432,8 +434,14 @@ testSubst =
 doTestCheckOK :: Env -> Proof -> Form -> Assertion
 doTestCheckOK env p f = do
     assertEqual "check failed" CheckOK (check env p f)
-    let p' = reduce p
-    assertEqual "reduced check failed" CheckOK (check env p' f)
+
+    let r = fPred0 "r"
+    let env' = translateE env r
+    let (p_translate, f') = translateP p f r
+    assertEqual "translated check failed" CheckOK (check env' p_translate f')
+
+    let p_translate_reduced = reduce p_translate
+    assertEqual "reduced check failed" CheckOK (check env' p_translate_reduced f')
 
 testCheckExamples :: Test
 testCheckExamples =
@@ -466,12 +474,12 @@ testCheckExamples =
         , "(A -> (B -> C)) -> [(A -> B) -> (A -> C)] err left"
             ~: rootCause (check EEmpty p4Err1 f4)
             ~?= CheckError
-                ( EExtend "h A" (propVar "A")
-                    $ EExtend "h A -> B" (FImp (propVar "A") (propVar "B"))
-                    $ EExtend
-                        "h A -> (B -> C)"
-                        (FImp (propVar "A") (FImp (propVar "B") (propVar "C")))
-                        EEmpty
+                ( EExtend "h A" (propVar "A") $
+                    EExtend "h A -> B" (FImp (propVar "A") (propVar "B")) $
+                        EExtend
+                            "h A -> (B -> C)"
+                            (FImp (propVar "A") (FImp (propVar "B") (propVar "C")))
+                            EEmpty
                 )
                 (PAx "h B -> C")
                 (FImp (propVar "B") (propVar "C"))
@@ -479,12 +487,12 @@ testCheckExamples =
         , "(A -> (B -> C)) -> [(A -> B) -> (A -> C)] err right"
             ~: rootCause (check EEmpty p4Err2 f4)
             ~?= CheckError
-                ( EExtend "h A" (propVar "A")
-                    $ EExtend "h A -> B" (FImp (propVar "A") (propVar "B"))
-                    $ EExtend
-                        "h A -> (B -> C)"
-                        (FImp (propVar "A") (FImp (propVar "B") (propVar "C")))
-                        EEmpty
+                ( EExtend "h A" (propVar "A") $
+                    EExtend "h A -> B" (FImp (propVar "A") (propVar "B")) $
+                        EExtend
+                            "h A -> (B -> C)"
+                            (FImp (propVar "A") (FImp (propVar "B") (propVar "C")))
+                            EEmpty
                 )
                 (PAx "h B")
                 (propVar "B")
