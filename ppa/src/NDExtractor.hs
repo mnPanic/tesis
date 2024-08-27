@@ -36,7 +36,7 @@ extractWitness _ f = Left $ printf "form %s must be exists" (show f)
 
 -- Convierte una demostración clásica en una intuicionista usando la traducción de friedman.
 translateP :: Proof -> Form -> Form -> (Proof, Form)
--- translateP _ _ _ | trace "translateP" False = undefined
+-- translateP proof form _ | trace (printf "translateP %s %s r" (proofName proof) (show form)) False = undefined
 translateP proof form r = case proof of
   PAx h -> (PAx h, translateF form r)
   PNamed n p ->
@@ -240,6 +240,7 @@ translateOrI1
          in
           (proofOr', or')
       f' -> error ("unexpected format " ++ show f')
+translateOrI1 f p r = error $ printf "translateOrI1: unexpected form '%s' with proof '%s'" (show f) (proofName p)
 
 translateOrI2 :: Form -> Proof -> Form -> (Proof, Form)
 translateOrI2
@@ -332,8 +333,8 @@ translateOrE
     (proofOr', or'@(FImp (FAnd (FImp left' _) (FImp right' _)) _)) ->
       let
         and' = FAnd (FImp left' r) (FImp right' r)
-        (proofAssumingLeft', _) = translateP proofAssumingLeft left r
-        (proofAssumingRight', _) = translateP proofAssumingRight right r
+        (proofAssumingLeft', _) = translateP proofAssumingLeft form r
+        (proofAssumingRight', _) = translateP proofAssumingRight form r
 
         form' = translateF form r
         (dnegr_form', h_dnegr_form') = hypAndForm (FImp (FImp form' r) r)
