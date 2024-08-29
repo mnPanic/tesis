@@ -324,6 +324,50 @@ testTranslateProof =
                         , proofConsequent = PFalseE (PAx "h")
                         }
             assertTranslateChecks p f
+        , "A | true <-> true" ~: do
+            let ida = FImp (FOr a FTrue) FTrue
+            let vuelta = FImp FTrue (FOr a FTrue)
+            let iff = FAnd ida vuelta
+            let pIda =
+                    PImpI
+                        { hypAntecedent = "h a | true"
+                        , proofConsequent = PTrueI
+                        }
+
+            let pIda' =
+                    PImpI
+                        { hypAntecedent = "h a | true"
+                        , proofConsequent =
+                            POrE
+                                { left = a
+                                , right = FTrue
+                                , proofOr = PAx "h a | true"
+                                , hypLeft = "h a"
+                                , proofAssumingLeft = PTrueI
+                                , hypRight = "h true"
+                                , proofAssumingRight = PTrueI
+                                }
+                        }
+
+            let pVuelta =
+                    PImpI
+                        { hypAntecedent = "h true"
+                        , proofConsequent =
+                            POrI2
+                                { proofRight = PAx "h true"
+                                }
+                        }
+
+            let pIff =
+                    PAndI
+                        { proofLeft = pIda'
+                        , proofRight = pVuelta
+                        }
+
+            assertTranslateChecksAllowSame pIda ida
+            assertTranslateChecksAllowSame pIda' ida
+            assertTranslateChecksAllowSame pVuelta vuelta
+            assertTranslateChecksAllowSame pIff iff
         ]
   where
     (a, b, c) = (fPred0 "a", fPred0 "b", fPred0 "c")

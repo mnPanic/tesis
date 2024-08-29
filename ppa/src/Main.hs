@@ -2,7 +2,7 @@
 
 module Main where
 
-import Certifier (certify, checkContext, reduceContext)
+import Certifier (certify, checkContext, reduceContext, translateContext)
 import Parser (parseProgram')
 
 import Data.Text.Lazy (unpack)
@@ -11,8 +11,9 @@ import NDProofs (Result)
 import PPA (Context, Program)
 import System.Environment (getArgs)
 
-import Text.Printf (printf)
-import "pretty-simple" Text.Pretty.Simple (
+import ND (fPred0)
+import PrettyShow (PrettyShow (prettyShow))
+import Text.Pretty.Simple (
     CheckColorTty (NoCheckColorTty),
     OutputOptions (outputOptionsCompact, outputOptionsCompactParens),
     defaultOutputOptionsNoColor,
@@ -21,6 +22,7 @@ import "pretty-simple" Text.Pretty.Simple (
     pShowNoColor,
     pShowOpt,
  )
+import Text.Printf (printf)
 
 data Args = Args {input :: Path, output :: Maybe Path}
 
@@ -51,11 +53,9 @@ main = do
 writeResult :: Maybe Path -> Context -> IO ()
 writeResult Nothing _ = return ()
 writeResult (Just p) ctx = do
-    putStrLn "Reducing..."
+    putStrLn "Translating & Reducing..."
     let ctxReduced = reduceContext ctx
-    case checkContext ctxReduced of
-        Right () -> putStrLn "OK!"
-        Left err -> putStrLn err
+    let ctxTranslated = translateContext ctx (fPred0 "r")
 
     case p of
         Stdout -> do
@@ -65,16 +65,26 @@ writeResult (Just p) ctx = do
             pPrint ctxReduced
         File f -> do
             writeFile (f ++ "_raw.nk") (prettyShow ctx)
+            writeFile (f ++ ".nj") (prettyShow ctxTranslated)
             writeFile (f ++ "_red.nk") (prettyShow ctxReduced)
 
-prettyShow :: (Show a) => a -> String
-prettyShow s = unpack $ pShowOpt opts s
-  where
-    opts =
-        defaultOutputOptionsNoColor
-            { outputOptionsCompact = True
-            -- , outputOptionsCompactParens = True
-            }
+    putStrLn "Checking..."
+    case checkContext ctxReduced of
+        Right () -> putStrLn "Reduced OK!"
+        Left err -> putStrLn $ printf "Reduced failed: %s" err
+
+    case checkContext ctxTranslated of
+        Right () -> putStrLn "Translated OK!"
+        Left err -> putStrLn $ printf "Translated failed: %s " err
+
+-- prettyShow :: (Show a) => a -> String
+-- prettyShow s = unpack $ pShowOpt opts s
+--   where
+--     opts =
+--         defaultOutputOptionsNoColor
+--             { outputOptionsCompact = True
+--             -- , outputOptionsCompactParens = True
+--             }
 
 run :: String -> String -> Result Context
 run path rawProgram = do

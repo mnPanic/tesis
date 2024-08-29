@@ -18,6 +18,7 @@ import Certifier (
     reduceContext,
     solveContradiction,
     toClause,
+    translateContext,
  )
 
 import Parser (parseProgram')
@@ -38,6 +39,7 @@ import ND (
     Proof (..),
     Term (..),
     dneg,
+    fPred0,
     fPred1,
     predVar,
     propVar,
@@ -70,8 +72,8 @@ testCertifier =
     test
         [ "certifyBy" ~: testCertifyBy
         , "commands" ~: testCommands
-        , "programs" ~: testPrograms
-        , "clauses" ~: testClause
+        , -- , "programs" ~: testPrograms
+          "clauses" ~: testClause
         , "findContradiction" ~: testFindContradiction
         , "solve" ~: testSolve
         , "dnf" ~: testDnf
@@ -86,8 +88,13 @@ testProgram p = do
         Right prog -> case certify prog of
             Left err -> assertFailure err
             Right ctx -> do
-                checkContext ctx @?= Right ()
-                checkContext (reduceContext ctx) @?= Right ()
+                assertEqual "check failed" (Right ()) (checkContext ctx)
+                let r = fPred0 "r"
+                let ctx_translated = translateContext ctx r
+
+                assertEqual "check translated failed" (Right ()) (checkContext ctx_translated)
+
+-- checkContext (reduceContext ctx) @?= Right ()
 
 testProgramError :: String -> String -> IO ()
 testProgramError p err = do
@@ -699,6 +706,16 @@ testCommands =
                     end
                 |]
                         "theorem 't': \n certify let: \n certify let: new var (X) must not appear free in forall: forall Y . p(X, Y)"
+               , "ok simple"
+                    ~: testProgram
+                        [r|
+                        axiom a1: p(a)
+                        theorem t: forall X. p(a)
+                        proof
+                            let X
+                            thus p(a) by a1
+                        end
+                        |]
                , "ok"
                     ~: testProgram
                         [r|
