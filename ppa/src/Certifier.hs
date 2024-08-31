@@ -153,7 +153,11 @@ certifyProof ctx f [] = Left $ printf "incomplete proof, still have %s as thesis
 certifyProof ctx f (p : ps) = certifyProofStep' ctx f p ps
 
 certifyProofStep' :: Context -> Form -> ProofStep -> TProof -> Result Proof
-certifyProofStep' ctx f s ps = wrapR ("\n certify " ++ psName s) (certifyProofStep ctx f s ps)
+certifyProofStep' ctx f s ps =
+    either
+        (Left . printf "\ncertify %s : %s" (psName s))
+        (Right . PNamed (show s))
+        (certifyProofStep ctx f s ps)
 
 certifyProofStep ::
     Context -> Form -> ProofStep -> TProof -> Result Proof
@@ -196,8 +200,8 @@ certifyLet ctx forAll@(FForall x f) (PSLet y) ps
                 , proofForm = nextProof
                 }
 certifyLet ctx thesis (PSLet{}) ps =
-    Left $
-        printf
+    Left
+        $ printf
             "can't use with form '%s', must be an universal quantifier (forall)"
             (show thesis)
 
@@ -241,8 +245,8 @@ certifyTake _ f (PSTake _ _) _ = Left $ printf "can't use on form '%s', not exis
 certifySuppose :: Context -> Form -> ProofStep -> TProof -> Result Proof
 certifySuppose ctx (FImp f1 f2) (PSSuppose name form) ps
     | form /= f1 =
-        Left $
-            printf
+        Left
+            $ printf
                 "can't suppose '%s : %s' as it's different from antecedent '%s'"
                 name
                 (show form)
@@ -257,8 +261,8 @@ certifySuppose ctx (FImp f1 f2) (PSSuppose name form) ps
                 }
 certifySuppose ctx (FNot f) (PSSuppose name form) ps
     | form /= f =
-        Left $
-            printf
+        Left
+            $ printf
                 "to prove by contradiction you must suppose the form without negation, but '%s' != '%s : %s'"
                 (show f)
                 name
@@ -272,8 +276,8 @@ certifySuppose ctx (FNot f) (PSSuppose name form) ps
                 , proofBot = proofBot
                 }
 certifySuppose ctx f (PSSuppose name form) ps =
-    Left $
-        printf
+    Left
+        $ printf
             "can't suppose '%s : %s' with form '%s', must be implication or negation"
             name
             (show form)
@@ -325,8 +329,8 @@ orFromCases cs = fromOrListR $ map (\(h, f, p) -> f) cs
 certifyThesisBy :: Context -> Form -> Form -> Justification -> TProof -> Result Proof
 certifyThesisBy ctx thesis f js ps = do
     remainder <-
-        wrapR "not part of thesis" $
-            checkFormIncluded f thesis
+        wrapR "not part of thesis"
+            $ checkFormIncluded f thesis
     case remainder of
         -- No queda nada para demostrar, la tesis es f (modulo permutaciones)
         -- certificamos la tesis directo para evitar demostrar las permutaciones
@@ -437,8 +441,8 @@ solve thesis = do
     let hDNFNotThesis = hypForm fDNFNotThesis
 
     contradictionProof <-
-        wrapR (printf "solving form by finding contradiction of negation:\n'%s',\nin dnf: '%s'" (show fNotThesis) (show fDNFNotThesis)) $
-            solveContradiction (hDNFNotThesis, fDNFNotThesis)
+        wrapR (printf "solving form by finding contradiction of negation:\n'%s',\nin dnf: '%s'" (show fNotThesis) (show fDNFNotThesis))
+            $ solveContradiction (hDNFNotThesis, fDNFNotThesis)
 
     -- Dem de thesis por el absurdo
     return
@@ -871,8 +875,8 @@ solveClauseElimForall' hClause (cL, f@(FForall x g), cR) =
         -- TODO: forall repetido?
 
         let proofDNFToContradiction =
-                PNamed "dnf to contradiction" $
-                    cut
+                PNamed "dnf to contradiction"
+                    $ cut
                         dnfClReplaced
                         proofDnfClReplaced
                         hdnfClReplaced
@@ -968,8 +972,8 @@ findSubstToSolveContradiction clL clR f@(FForall x g) metavar = do
         Right (s : _) -> Right (s, Map.singleton x metavar)
         Left err -> case findSubstToSolveContradiction clL clR gMeta (metavar + 1) of
             Left err2 ->
-                Left $
-                    printf
+                Left
+                    $ printf
                         "solving clause with '%s' replaced by metavar '%s' and reconverting to dnf \n%s\n%s\n%s"
                         x
                         (show meta)
@@ -1025,9 +1029,9 @@ solveClauseUnifying s rawClause = do
     if FFalse `elem` clause
         then return [s]
         else -- No hay por false, buscamos dos opuestas que unifiquen
-            case concatMap (findAllUnifyingWithOpposite s clause) clause of
-                [] -> Left $ printf "(subst %s) no opposites that unify in clause %s" (showSubstitution s) (show clause)
-                ss -> Right ss
+        case concatMap (findAllUnifyingWithOpposite s clause) clause of
+            [] -> Left $ printf "(subst %s) no opposites that unify in clause %s" (showSubstitution s) (show clause)
+            ss -> Right ss
 
 -- Devuelve todas las sustituciones que hacen que la fórmula f unifique con su
 -- opuesto

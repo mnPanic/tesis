@@ -55,7 +55,7 @@ writeResult Nothing _ = return ()
 writeResult (Just p) ctx = do
     putStrLn "Translating & Reducing..."
     let ctxReduced = reduceContext ctx
-    let ctxTranslated = translateContext ctx (fPred0 "r")
+    let ctxTranslated = reduceContext $ translateContext ctx (fPred0 "__r")
 
     case p of
         Stdout -> do

@@ -19,6 +19,7 @@ module ND (
     fvTerm,
     proofName,
     fvE,
+    formsWithFv,
     fvP,
     propVar,
     predVar,
@@ -138,7 +139,9 @@ instance Show Form where
     show (FPred p ts) = p ++ showArgs ts
     show (FAnd l r) = showBinParen l ++ " & " ++ showBinParen r
     show (FOr l r) = showBinParen l ++ " | " ++ showBinParen r
-    show (FImp a c) = showBinParen a ++ " -> " ++ showBinParen c
+    show (FImp a c)
+        | c == fPred0 "__r" = "~r " ++ showBinParen a -- hack for friedman
+        | otherwise = showBinParen a ++ " -> " ++ showBinParen c
     show (FNot f) = "~" ++ showBinParen f
     show FTrue = "true"
     show FFalse = "false"
@@ -252,6 +255,9 @@ forms (EExtend _ f e') = f : forms e'
 
 fvE :: Env -> Set.Set VarId
 fvE e = foldr (Set.union . fv) Set.empty (forms e)
+
+formsWithFv :: Env -> VarId -> [Form]
+formsWithFv env x = filter (elem x . fv) (forms env)
 
 -- Record syntax: https://en.wikibooks.org/wiki/Haskell/More_on_datatypes
 

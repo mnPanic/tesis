@@ -51,7 +51,7 @@ import PPA (Hypothesis (HAxiom))
 
 import Test.HUnit (
     Assertion,
-    Counts,
+    Counts (Counts),
     Test (..),
     Testable (test),
     assertEqual,
@@ -65,7 +65,16 @@ import Test.HUnit (
  )
 
 main :: IO Counts
-main = do runTestTT testCertifier
+main = do runTestWithNames "" testCertifier
+
+runTestWithNames :: String -> Test -> IO Counts
+runTestWithNames prefix (TestLabel label test) = do
+    let fullLabel = prefix ++ label
+    putStrLn $ "Running test: " ++ fullLabel
+    runTestWithNames (fullLabel ++ " > ") test
+runTestWithNames prefix (TestList tests) =
+    foldl (\ioCounts test -> ioCounts >> runTestWithNames prefix test) (return (Counts 0 0 0 0)) tests
+runTestWithNames _ test = runTestTT test
 
 testCertifier :: Test
 testCertifier =
@@ -90,7 +99,7 @@ testProgram p = do
             Right ctx -> do
                 assertEqual "check failed" (Right ()) (checkContext ctx)
                 let r = fPred0 "r"
-                let ctx_translated = translateContext ctx r
+                let ctx_translated = reduceContext $ translateContext ctx r
 
                 assertEqual "check translated failed" (Right ()) (checkContext ctx_translated)
 
