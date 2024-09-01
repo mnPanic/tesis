@@ -136,6 +136,7 @@ data Form
     | FExists VarId Form
 
 instance Show Form where
+    show :: Form -> String
     show (FPred p ts) = p ++ showArgs ts
     show (FAnd l r) = showBinParen l ++ " & " ++ showBinParen r
     show (FOr l r) = showBinParen l ++ " | " ++ showBinParen r
@@ -350,7 +351,7 @@ data Proof
 
 proofName :: Proof -> String
 proofName p = case p of
-    PAx{} -> "PAx"
+    PAx h -> "PAx " ++ h
     PNamed{} -> "PNamed"
     PAndI{} -> "PAndI"
     PAndE1{} -> "PAndE1"

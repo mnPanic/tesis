@@ -368,6 +368,18 @@ testTranslateProof =
             assertTranslateChecksAllowSame pIda' ida
             assertTranslateChecksAllowSame pVuelta vuelta
             assertTranslateChecksAllowSame pIff iff
+        , "a & a" ~: do
+            let f = FImp a (FAnd a a)
+            let p =
+                    PImpI
+                        { hypAntecedent = "h"
+                        , proofConsequent =
+                            PAndI
+                                { proofLeft = PAx "h"
+                                , proofRight = PAx "h"
+                                }
+                        }
+            assertTranslateChecksAllowSame p f
         ]
   where
     (a, b, c) = (fPred0 "a", fPred0 "b", fPred0 "c")

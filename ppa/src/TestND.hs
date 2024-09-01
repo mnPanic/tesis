@@ -539,7 +539,7 @@ testCheckExamples =
                 (EExtend "h A(x)" (FPred "A" [TVar "x"]) EEmpty)
                 (PForallI "x" (PAx "h A(x)"))
                 (FForall "x" (FPred "A" [TVar "x"]))
-                "env shouldn't contain fv 'x'"
+                "env shouldn't contain fv 'x', forms: [A(x)]"
         , -- DeMorgan de Exists y Forall
           "V x. A(x) => ~E x. ~A(x)" ~: doTestCheckOK EEmpty p23Ida f23Ida
         , "~E x. ~A(x) => V x. A(x)" ~: doTestCheckOK EEmpty p23Vuelta f23Vuelta

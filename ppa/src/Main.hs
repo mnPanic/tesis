@@ -63,19 +63,21 @@ writeResult (Just p) ctx = do
             pPrint ctx
             putStrLn "reduced:\n"
             pPrint ctxReduced
-        File f -> do
-            writeFile (f ++ "_raw.nk") (prettyShow ctx)
-            writeFile (f ++ ".nj") (prettyShow ctxTranslated)
-            writeFile (f ++ "_red.nk") (prettyShow ctxReduced)
+        File f ->
+            do
+                writeFile (f ++ "_raw.nk") (prettyShow ctx)
+                writeFile (f ++ ".nj") (prettyShow ctxTranslated)
+                writeFile (f ++ "_red.nk") (prettyShow ctxReduced)
 
     putStrLn "Checking..."
+
     case checkContext ctxReduced of
         Right () -> putStrLn "Reduced OK!"
         Left err -> putStrLn $ printf "Reduced failed: %s" err
 
-    case checkContext ctxTranslated of
-        Right () -> putStrLn "Translated OK!"
-        Left err -> putStrLn $ printf "Translated failed: %s " err
+-- case checkContext ctxTranslated of
+--     Right () -> putStrLn "Translated OK!"
+--     Left err -> putStrLn $ printf "Translated failed: %s " err
 
 -- prettyShow :: (Show a) => a -> String
 -- prettyShow s = unpack $ pShowOpt opts s

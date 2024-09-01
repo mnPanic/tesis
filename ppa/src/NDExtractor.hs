@@ -34,9 +34,34 @@ extractWitness proof (FExists x f) = do
     proof' -> Left "proof not exists introduction, can't extract witness"
 extractWitness _ f = Left $ printf "form %s must be exists" (show f)
 
+-- Traduce f via doble negación relativizada, parametrizada por una fórmula
+-- arbitraria R.
+-- FNot a ~~> FImp a r (FNot_R)
+translateF :: Form -> Form -> Form
+-- translateF f r | trace (printf "translateF %s %s" (show f) (show r)) False = undefined
+translateF form r = case form of
+  FAnd l r -> FAnd (rec l) (rec r)
+  FOr l r -> fNotR (FAnd (fNotR (rec l)) (fNotR (rec r)))
+  FImp l r -> FImp (rec l) (rec r)
+  FNot g -> fNotR (rec g)
+  FForall x g -> FForall x (rec g)
+  FExists x g -> fNotR (FForall x (fNotR (rec g)))
+  FFalse -> r
+  FTrue -> FTrue
+  g@(FPred p ts) -> fNotR (fNotR g)
+ where
+  rec g = translateF g r
+  fNotR g = FImp g r
+
+-- Necesario para algunos tests que hacen check con un env que no es empty
+translateE :: Env -> Form -> Env
+translateE env r = case env of
+  EEmpty -> EEmpty
+  EExtend h f env2 -> EExtend h (translateF f r) (translateE env2 r)
+
 -- Convierte una demostración clásica en una intuicionista usando la traducción de friedman.
 translateP :: Proof -> Form -> Form -> (Proof, Form)
--- translateP proof form _ | trace (printf "translateP %s %s r" (proofName proof) (show form)) False = undefined
+translateP proof form r | trace (printf "translateP %s %s %s" (show proof) (show form) (show r)) False = undefined
 translateP proof form r = case proof of
   PAx h -> (PAx h, translateF form r)
   PNamed n p ->
@@ -82,8 +107,9 @@ translateImpI
     }
   r =
     let
-      (proofCons', _) = translateP proofCons cons r
-      imp' = translateF imp r
+      (proofCons', cons'_1) = translateP proofCons cons r
+      imp'@(FImp _ cons'_2) = translateF imp r
+      _ = assertEq cons'_1 cons'_2
       proofImp' =
         PImpI
           { hypAntecedent = h
@@ -91,6 +117,11 @@ translateImpI
           }
      in
       (proofImp', imp')
+
+assertEq :: Form -> Form -> Form
+assertEq f1 f2
+  | f1 /= f2 = error $ printf "expected %s == %s" (show f1) (show f2)
+  | otherwise = f1
 
 translateImpE :: Form -> Proof -> Form -> (Proof, Form)
 translateImpE
@@ -124,9 +155,11 @@ translateAndI
     }
   r =
     let
-      (proofLeft', _) = translateP proofL left r
-      (proofRight', _) = translateP proofR right r
-      and' = translateF and r
+      (proofLeft', left'_1) = translateP proofL left r
+      (proofRight', right'_1) = translateP proofR right r
+      and'@(FAnd left'_2 right'_2) = translateF and r
+      _ = assertEq left'_1 left'_2
+      _ = assertEq right'_1 right'_2
       proofAnd' =
         PAndI
           { proofLeft = proofLeft'
@@ -744,27 +777,3 @@ tNegRElim f h_tneg r =
                 }
           }
     }
-
--- Traduce f via doble negación relativizada, parametrizada por una fórmula
--- arbitraria R.
--- FNot a ~~> FImp a r (FNot_R)
-translateF :: Form -> Form -> Form
-translateF f r = case f of
-  FAnd l r -> FAnd (rec l) (rec r)
-  FOr l r -> fNotR (FAnd (fNotR (rec l)) (fNotR (rec r)))
-  FImp l r -> FImp (rec l) (rec r)
-  FNot g -> fNotR (rec g)
-  FForall x g -> FForall x (rec g)
-  FExists x g -> fNotR (FForall x (fNotR (rec g)))
-  FFalse -> r
-  FTrue -> FTrue
-  f@(FPred{}) -> fNotR (fNotR f)
- where
-  rec g = translateF g r
-  fNotR f = FImp f r
-
--- Necesario para algunos tests que hacen check con un env que no es empty
-translateE :: Env -> Form -> Env
-translateE env r = case env of
-  EEmpty -> EEmpty
-  EExtend h f env2 -> EExtend h (translateF f r) (translateE env2 r)

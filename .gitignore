@@ -13,3 +13,7 @@
 
 # IDE
 .vscode/
+
+# PPA
+*.nj
+*.nk
