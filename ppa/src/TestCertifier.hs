@@ -65,7 +65,8 @@ import Test.HUnit (
  )
 
 main :: IO Counts
-main = do runTestWithNames "" testCertifier
+-- main = do runTestWithNames "" testCertifier
+main = do runTestTT testCertifier
 
 runTestWithNames :: String -> Test -> IO Counts
 runTestWithNames prefix (TestLabel label test) = do
@@ -81,16 +82,16 @@ testCertifier =
     test
         [ "certifyBy" ~: testCertifyBy
         , "commands" ~: testCommands
-        , -- , "programs" ~: testPrograms
-          "clauses" ~: testClause
+        , "programs" ~: testPrograms
+        , "clauses" ~: testClause
         , "findContradiction" ~: testFindContradiction
         , "solve" ~: testSolve
         , "dnf" ~: testDnf
         , "partitionForalls" ~: testPartitionForalls
         ]
 
-testProgram :: String -> IO ()
-testProgram p = do
+testProgramReduceTranslate :: String -> IO ()
+testProgramReduceTranslate p = do
     let result = parseProgram' "test" p
     case result of
         Left err -> assertFailure err
@@ -102,6 +103,21 @@ testProgram p = do
                 let ctx_translated = reduceContext $ translateContext ctx r
 
                 assertEqual "check translated failed" (Right ()) (checkContext ctx_translated)
+
+testProgram :: String -> IO ()
+testProgram p = do
+    let result = parseProgram' "test" p
+    case result of
+        Left err -> assertFailure err
+        Right prog -> case certify prog of
+            Left err -> assertFailure err
+            Right ctx -> do
+                assertEqual "check failed" (Right ()) (checkContext ctx)
+
+-- let r = fPred0 "_r"
+-- let ctx_translated = reduceContext $ translateContext ctx r
+
+-- assertEqual "check translated failed" (Right ()) (checkContext ctx_translated)
 
 -- checkContext (reduceContext ctx) @?= Right ()
 

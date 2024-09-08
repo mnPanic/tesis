@@ -61,7 +61,7 @@ translateE env r = case env of
 
 -- Convierte una demostración clásica en una intuicionista usando la traducción de friedman.
 translateP :: Proof -> Form -> Form -> (Proof, Form)
-translateP proof form r | trace (printf "translateP %s %s %s" (show proof) (show form) (show r)) False = undefined
+-- translateP proof form r | trace (printf "translateP %s %s %s" (show proof) (show form) (show r)) False = undefined
 translateP proof form r = case proof of
   PAx h -> (PAx h, translateF form r)
   PNamed n p ->

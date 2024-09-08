@@ -75,3 +75,10 @@ executable ppa
 
     -- Base language which the package is written in.
     default-language: GHC2021
+
+test-suite tests
+    type: exitcode-stdio-1.0
+    main-is: Tests.hs
+    build-depends: base ^>=4.17.2.1, containers, array, HUnit, raw-strings-qq
+    hs-source-dirs: src
+    default-language: GHC2021
