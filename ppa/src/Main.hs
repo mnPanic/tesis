@@ -1,4 +1,5 @@
 {-# LANGUAGE PackageImports #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module Main where
 
@@ -11,7 +12,11 @@ import NDProofs (Result)
 import PPA (Context, Program)
 import System.Environment (getArgs)
 
+import Certifier (certify, checkContext, reduceContext, translateContext)
 import ND (fPred0)
+import NDProofs (Result)
+import PPA (Context)
+import Parser (parseProgram')
 import PrettyShow (PrettyShow (prettyShow))
 import Text.Pretty.Simple (
     CheckColorTty (NoCheckColorTty),
@@ -23,6 +28,7 @@ import Text.Pretty.Simple (
     pShowOpt,
  )
 import Text.Printf (printf)
+import Text.RawString.QQ
 
 data Args = Args {input :: Path, output :: Maybe Path}
 

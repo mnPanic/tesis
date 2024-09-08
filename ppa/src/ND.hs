@@ -39,6 +39,7 @@ import Data.Set qualified as Set
 
 import Data.List (intercalate)
 
+import Control.DeepSeq (NFData)
 import Text.Printf (printf)
 
 -- Dada una fórmula A da su doble negación
@@ -352,7 +353,7 @@ data Proof
 proofName :: Proof -> String
 proofName p = case p of
     PAx h -> "PAx " ++ h
-    PNamed{} -> "PNamed"
+    PNamed n _ -> "PNamed " ++ n
     PAndI{} -> "PAndI"
     PAndE1{} -> "PAndE1"
     PAndE2{} -> "PAndE2"

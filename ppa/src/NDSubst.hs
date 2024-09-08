@@ -16,6 +16,7 @@ import ND (
   fv,
   fvP,
   fvTerm,
+  proofName,
  )
 
 import Data.Map qualified as Map
@@ -152,10 +153,12 @@ substHyp :: HypId -> Proof -> Proof -> Proof
 substHyp = substHyp' Map.empty
 
 substHyp' :: HypSubstitution -> HypId -> Proof -> Proof -> Proof
-substHyp' s h p' p = case p of
+-- substHyp' s h p' p | trace (printf "substHyp'") False = undefined
+-- substHyp' s h p' p | trace (printf "substHyp' %s %s %s" h (proofName p') (proofName p)) False = undefined
+substHyp' s hRep pRep p = case p of
   PNamed name p1 -> PNamed name (rec p1)
   PAx h'
-    | h' == h -> p' -- mal, captura
+    | h' == hRep -> pRep -- mal, captura
     | otherwise -> case Map.lookup h' s of
         -- No puede pasar que esté renombrado y el renombre coincida con lo
         -- que se quiere renombrar, si hubiera sido la misma, hubiera cortado
@@ -188,16 +191,16 @@ substHyp' s h p' p = case p of
    where
     (h', pA') = recAvoidingCapture h pA
  where
-  rec = substHyp' s h p'
-  recAvoidingCapture = substHypAvoidCapture s h p'
-  hypsP' = citedHypIds p'
+  rec = substHyp' s hRep pRep
+  recAvoidingCapture = substHypAvoidCapture s hRep pRep
 
 -- Reemplazando hReplace por pReplace, nos encontramos con una sub dem que tiene
 -- h como hipotesis y p como sub-demo. Queremos reemplazar en p sin que eso
 -- genere una captura (si pReplace usa h, hay que renombrar h por h' en p)
 substHypAvoidCapture :: HypSubstitution -> HypId -> Proof -> HypId -> Proof -> (HypId, Proof)
+-- substHypAvoidCapture s h p' h' p | trace "substHypAvoidCapture" False = undefined
 substHypAvoidCapture s hReplace pReplace h p
-  -- Cortamos porque se re-definió la hyp que queremos reemplazar
+  -- Cortamos porque se re-definió la hyp que queremos reemplazar, resetea scope.
   | hReplace == h = (h, p)
   -- Hay captura
   | h `elem` hypsPReplace =

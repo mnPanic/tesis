@@ -2,10 +2,13 @@
 -- a una equivalente más chica.
 module NDReducer (reduce) where
 
+import Control.DeepSeq (force)
 import Data.Map qualified as Map
 import Data.Set qualified as Set
-import ND (HypId, Proof (..), Term (TVar), VarId, VarSubstitution, fvTerm)
+import Debug.Trace (trace)
+import ND (HypId, Proof (..), Term (TVar), VarId, VarSubstitution, fvTerm, proofName)
 import NDSubst (substHyp, substVar)
+import Text.Printf (printf)
 
 -- freshWRT da una hyp no usada con respecto a una lista en donde no queremos
 -- que aparezca
@@ -15,15 +18,17 @@ freshWRT h forbidden = head [h ++ suffix | suffix <- map show [0 ..], h ++ suffi
 -- Reduce una demostración hasta que sea irreducible (big step).
 -- Asume que chequea.
 reduce :: Proof -> Proof
+reduce p | trace (printf "reduce %s" (proofName p)) False = undefined
 reduce p = maybe p reduce (reduce1 p)
 
 -- Realiza un paso small step de reducción de la demostración
 -- Devuelve Nothing si es irreducible.
 reduce1 :: Proof -> Maybe Proof
+reduce1 p | trace (printf "\nreduce1 %s" (show p)) False = undefined
 reduce1 p = case p of
   -- Reducción de And
   -- PAndEi(PAndI(Pi_1, Pi_2)) -> PI_i
-  PAndE1 right (PAndI proofLeft proofRight) -> Just proofLeft
+  PAndE1 right (PAndI proofLeft proofRight) -> Nothing -- Just proofLeft
   PAndE2 left (PAndI proofLeft proofRight) -> Just proofRight
   -- Reducción de Or
   -- POrE(POrI(Pi), h.proofLeft)
@@ -31,13 +36,13 @@ reduce1 p = case p of
     { proofOr = POrI1{proofLeft = proofLeft}
     , hypLeft = hypLeft
     , proofAssumingLeft = proofAssumingLeft
-    } -> Just $ substHyp hypLeft proofLeft proofAssumingLeft
+    } -> Nothing -- Just $ substHyp hypLeft proofLeft proofAssumingLeft
   POrE
     { proofOr = POrI2{proofRight = proofRight}
     , hypRight = hypRight
     , proofAssumingRight = proofAssumingRight
-    } -> Just $ substHyp hypRight proofRight proofAssumingRight
-  -- Reducción de Imp
+    } -> Nothing -- Just $ substHyp hypRight proofRight proofAssumingRight
+    -- Reducción de Imp
   PImpE
     { antecedent = ant
     , proofImp =
@@ -56,8 +61,8 @@ reduce1 p = case p of
         , proofBot = proofBot
         }
     , proofForm = proofForm
-    } -> Just $ substHyp hypForm proofForm proofBot
-  -- Reducción de Forall
+    } -> Nothing -- Just $ substHyp hypForm proofForm proofBot
+    -- Reducción de Forall
   PForallE
     { var = x
     , form = form
@@ -67,8 +72,8 @@ reduce1 p = case p of
         , proofForm = proofForm
         }
     , termReplace = t
-    } -> Just $ substVar x' t proofForm
-  -- Reducción de Exists
+    } -> Nothing -- Just $ substVar x' t proofForm
+    -- Reducción de Exists
   PExistsE
     { var = x
     , form = form
@@ -81,7 +86,7 @@ reduce1 p = case p of
     , proofAssuming = proofAssuming
     } ->
       let proofAssumingWithInst = substVar x t proofAssuming
-       in Just $ substHyp hypForm proofFormWithInst proofAssumingWithInst
+       in Nothing -- Just $ substHyp hypForm proofFormWithInst proofAssumingWithInst
   PNamed _ p -> Just p
   -- Valores
   PAx{} -> Nothing

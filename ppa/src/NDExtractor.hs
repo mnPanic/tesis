@@ -11,7 +11,9 @@ module NDExtractor (
   rElim,
 ) where
 
-import Debug.Trace (trace)
+import Control.DeepSeq (force)
+
+-- import Debug.Trace (trace)
 import ND (Env (EEmpty, EExtend), Form (..), HypId, Proof (..), Term (TVar), proofName)
 import NDProofs (Result, cut, hypAndForm, hypForm)
 import NDReducer (reduce)
@@ -37,12 +39,12 @@ extractWitness _ f = Left $ printf "form %s must be exists" (show f)
 -- Traduce f via doble negación relativizada, parametrizada por una fórmula
 -- arbitraria R.
 -- FNot a ~~> FImp a r (FNot_R)
-translateF :: Form -> Form -> Form
--- translateF f r | trace (printf "translateF %s %s" (show f) (show r)) False = undefined
-translateF form r = case form of
-  FAnd l r -> FAnd (rec l) (rec r)
-  FOr l r -> fNotR (FAnd (fNotR (rec l)) (fNotR (rec r)))
-  FImp l r -> FImp (rec l) (rec r)
+translateF :: Int -> Form -> Form -> Form
+-- translateF idt f r | trace (printf "%s (%d) translateF %s %s" (indent idt) idt (show f) (show r)) False = undefined
+translateF idt form r = case form of
+  FAnd left right -> FAnd (rec left) (rec right)
+  FOr left right -> fNotR (FAnd (fNotR (rec left)) (fNotR (rec right)))
+  FImp left right -> FImp (rec left) (rec right)
   FNot g -> fNotR (rec g)
   FForall x g -> FForall x (rec g)
   FExists x g -> fNotR (FForall x (fNotR (rec g)))
@@ -50,56 +52,63 @@ translateF form r = case form of
   FTrue -> FTrue
   g@(FPred p ts) -> fNotR (fNotR g)
  where
-  rec g = translateF g r
-  fNotR g = FImp g r
+  rec form' = translateF (idt + 1) form' r
+  fNotR form' = FImp form' r
 
 -- Necesario para algunos tests que hacen check con un env que no es empty
 translateE :: Env -> Form -> Env
 translateE env r = case env of
   EEmpty -> EEmpty
-  EExtend h f env2 -> EExtend h (translateF f r) (translateE env2 r)
+  EExtend h f env2 -> EExtend h (translateF 0 f r) (translateE env2 r)
+
+indent :: Int -> String
+indent n = concat $ replicate (n * 2) "  "
+
+translateP :: Int -> Proof -> Form -> Form -> (Proof, Form)
+translateP = force translateP'
 
 -- Convierte una demostración clásica en una intuicionista usando la traducción de friedman.
-translateP :: Proof -> Form -> Form -> (Proof, Form)
--- translateP proof form r | trace (printf "translateP %s %s %s" (show proof) (show form) (show r)) False = undefined
-translateP proof form r = case proof of
-  PAx h -> (PAx h, translateF form r)
+translateP' :: Int -> Proof -> Form -> Form -> (Proof, Form)
+-- translateP' idt proof form r | trace (printf "%s translateP %s %s %s" (indent idt) (proofName proof) (show form) (show proof)) False = undefined
+translateP' idt proof form r = case proof of
+  PAx h -> (PAx h, translateF (idt + 1) form r)
   PNamed n p ->
-    let (p', f') = translateP p form r
+    let (p', f') = translateP (idt + 1) p form r
      in (PNamed n p', f')
   {- Imp -}
-  PImpE{} -> translateImpE form proof r
-  PImpI{} -> translateImpI form proof r
+  PImpE{} -> translateImpE idt form proof r
+  PImpI{} -> translateImpI idt form proof r
   {- And -}
-  PAndI{} -> translateAndI form proof r
-  PAndE1{} -> translateAndE1 form proof r
-  PAndE2{} -> translateAndE2 form proof r
+  PAndI{} -> translateAndI idt form proof r
+  PAndE1{} -> translateAndE1 idt form proof r
+  PAndE2{} -> translateAndE2 idt form proof r
   {- False -}
   PFalseE proofBot ->
-    let (proofBot', _) = translateP proofBot FFalse r
-        form' = translateF form r
-        proofForm' = rElim form proofBot' r
+    let (proofBot', _) = translateP (idt + 1) proofBot FFalse r
+        form' = translateF (idt + 1) form r
+        proofForm' = rElim (idt + 1) form proofBot' r
      in (proofForm', form')
   {- True -}
-  PTrueI -> (PTrueI, translateF form r)
+  PTrueI -> (PTrueI, translateF (idt + 1) form r)
   {- LEM -}
-  PLEM -> translateLEM form proof r
+  PLEM -> translateLEM idt form proof r
   {- Or -}
-  POrI1{} -> translateOrI1 form proof r
-  POrI2{} -> translateOrI2 form proof r
-  POrE{} -> translateOrE form proof r
+  POrI1{} -> translateOrI1 idt form proof r
+  POrI2{} -> translateOrI2 idt form proof r
+  POrE{} -> translateOrE idt form proof r
   {- Forall -}
-  PForallI{} -> translateForallI form proof r
-  PForallE{} -> translateForallE form proof r
+  PForallI{} -> translateForallI idt form proof r
+  PForallE{} -> translateForallE idt form proof r
   {- Exists -}
-  PExistsI{} -> translateExistsI form proof r
-  PExistsE{} -> translateExistsE form proof r
+  PExistsI{} -> translateExistsI idt form proof r
+  PExistsE{} -> translateExistsE idt form proof r
   {- Not -}
-  PNotI{} -> translateNotI form proof r
-  PNotE{} -> translateNotE form proof r
+  PNotI{} -> translateNotI idt form proof r
+  PNotE{} -> translateNotE idt form proof r
 
-translateImpI :: Form -> Proof -> Form -> (Proof, Form)
+translateImpI :: Int -> Form -> Proof -> Form -> (Proof, Form)
 translateImpI
+  idt
   imp@(FImp ant cons)
   PImpI
     { hypAntecedent = h
@@ -107,8 +116,8 @@ translateImpI
     }
   r =
     let
-      (proofCons', cons'_1) = translateP proofCons cons r
-      imp'@(FImp _ cons'_2) = translateF imp r
+      (proofCons', cons'_1) = translateP (idt + 1) proofCons cons r
+      imp'@(FImp _ cons'_2) = translateF (idt + 1) imp r
       _ = assertEq cons'_1 cons'_2
       proofImp' =
         PImpI
@@ -123,8 +132,9 @@ assertEq f1 f2
   | f1 /= f2 = error $ printf "expected %s == %s" (show f1) (show f2)
   | otherwise = f1
 
-translateImpE :: Form -> Proof -> Form -> (Proof, Form)
+translateImpE :: Int -> Form -> Proof -> Form -> (Proof, Form)
 translateImpE
+  idt
   cons
   PImpE
     { antecedent = ant
@@ -134,9 +144,10 @@ translateImpE
   r =
     let
       imp = FImp ant cons
-      (proofImp', _) = translateP proofImp imp r
-      (proofAnt', ant') = translateP proofAnt ant r
-      cons' = translateF cons r
+      (proofImp', imp') = translateP (idt + 1) proofImp imp r
+      (proofAnt', ant') = translateP (idt + 1) proofAnt ant r
+      cons' = translateF (idt + 1) cons r
+      _ = assertEq (FImp ant' cons') imp'
       proofCons' =
         PImpE
           { antecedent = ant'
@@ -146,8 +157,9 @@ translateImpE
      in
       (proofCons', cons')
 
-translateAndI :: Form -> Proof -> Form -> (Proof, Form)
+translateAndI :: Int -> Form -> Proof -> Form -> (Proof, Form)
 translateAndI
+  idt
   and@(FAnd left right)
   PAndI
     { proofLeft = proofL
@@ -155,9 +167,9 @@ translateAndI
     }
   r =
     let
-      (proofLeft', left'_1) = translateP proofL left r
-      (proofRight', right'_1) = translateP proofR right r
-      and'@(FAnd left'_2 right'_2) = translateF and r
+      (proofLeft', left'_1) = translateP (idt + 1) proofL left r
+      (proofRight', right'_1) = translateP (idt + 1) proofR right r
+      and'@(FAnd left'_2 right'_2) = translateF (idt + 1) and r
       _ = assertEq left'_1 left'_2
       _ = assertEq right'_1 right'_2
       proofAnd' =
@@ -168,8 +180,9 @@ translateAndI
      in
       (proofAnd', and')
 
-translateAndE1 :: Form -> Proof -> Form -> (Proof, Form)
+translateAndE1 :: Int -> Form -> Proof -> Form -> (Proof, Form)
 translateAndE1
+  idt
   left
   PAndE1
     { right = right
@@ -178,9 +191,9 @@ translateAndE1
   r =
     let
       and = FAnd left right
-      (proofAnd', _) = translateP proofAnd and r
-      left' = translateF left r
-      right' = translateF right r
+      (proofAnd', _) = translateP (idt + 1) proofAnd and r
+      left' = translateF (idt + 1) left r
+      right' = translateF (idt + 1) right r
       proofL' =
         PAndE1
           { right = right'
@@ -189,8 +202,9 @@ translateAndE1
      in
       (proofL', left')
 
-translateAndE2 :: Form -> Proof -> Form -> (Proof, Form)
+translateAndE2 :: Int -> Form -> Proof -> Form -> (Proof, Form)
 translateAndE2
+  idt
   right
   PAndE2
     { left = left
@@ -199,9 +213,9 @@ translateAndE2
   r =
     let
       and = FAnd left right
-      (proofAnd', _) = translateP proofAnd and r
-      left' = translateF left r
-      right' = translateF right r
+      (proofAnd', _) = translateP (idt + 1) proofAnd and r
+      left' = translateF (idt + 1) left r
+      right' = translateF (idt + 1) right r
       proofR' =
         PAndE2
           { left = left'
@@ -210,51 +224,56 @@ translateAndE2
      in
       (proofR', right')
 
-translateLEM :: Form -> Proof -> Form -> (Proof, Form)
-translateLEM or@(FOr f (FNot g)) PLEM r =
-  -- ~R (~R f~~ & ~R~R f~~)
-  case translateF or r of
-    or'@(FImp and@(FAnd left right) r) ->
-      let
-        hAnd = hypForm and
-        proofOr' =
-          PImpI
-            { -- ~R f~~ & ~R~R f~~
-              hypAntecedent = hAnd
-            , -- R
-              proofConsequent =
-                -- Elimino ~R~R f~~, porque sabemos que vale ~R f~~
-                PImpE
-                  { antecedent = left
-                  , proofImp =
-                      PAndE2
-                        { left = left
-                        , proofAnd = PAx hAnd
-                        }
-                  , -- ~R f~~
-                    proofAntecedent =
-                      PAndE1
-                        { right = right
-                        , proofAnd = PAx hAnd
-                        }
-                  }
-            }
-       in
-        (proofOr', or')
-    or' -> error ("unexpected format " ++ show or')
+translateLEM :: Int -> Form -> Proof -> Form -> (Proof, Form)
+translateLEM
+  idt
+  or@(FOr f (FNot g))
+  PLEM
+  r =
+    -- ~R (~R f~~ & ~R~R f~~)
+    case translateF (idt + 1) or r of
+      or'@(FImp and@(FAnd left right) r) ->
+        let
+          hAnd = hypForm and
+          proofOr' =
+            PImpI
+              { -- ~R f~~ & ~R~R f~~
+                hypAntecedent = hAnd
+              , -- R
+                proofConsequent =
+                  -- Elimino ~R~R f~~, porque sabemos que vale ~R f~~
+                  PImpE
+                    { antecedent = left
+                    , proofImp =
+                        PAndE2
+                          { left = left
+                          , proofAnd = PAx hAnd
+                          }
+                    , -- ~R f~~
+                      proofAntecedent =
+                        PAndE1
+                          { right = right
+                          , proofAnd = PAx hAnd
+                          }
+                    }
+              }
+         in
+          (proofOr', or')
+      or' -> error ("unexpected format " ++ show or')
 
-translateOrI1 :: Form -> Proof -> Form -> (Proof, Form)
+translateOrI1 :: Int -> Form -> Proof -> Form -> (Proof, Form)
 translateOrI1
+  idt
   or@(FOr left right)
   POrI1
     { proofLeft = proofLeft
     }
   r =
     -- ~r (~r left~~ & ~r right~~)
-    case translateF or r of
+    case translateF (idt + 1) or r of
       or'@(FImp and@(FAnd (FImp left' _) notR_right') r) ->
         let
-          (proofLeft', _) = translateP proofLeft left r
+          (proofLeft', _) = translateP (idt + 1) proofLeft left r
           hAnd = hypForm and
           proofOr' =
             PImpI
@@ -273,20 +292,21 @@ translateOrI1
          in
           (proofOr', or')
       f' -> error ("unexpected format " ++ show f')
-translateOrI1 f p r = error $ printf "translateOrI1: unexpected form '%s' with proof '%s'" (show f) (proofName p)
+translateOrI1 _ f p r = error $ printf "translateOrI1: unexpected form '%s' with proof '%s'" (show f) (proofName p)
 
-translateOrI2 :: Form -> Proof -> Form -> (Proof, Form)
+translateOrI2 :: Int -> Form -> Proof -> Form -> (Proof, Form)
 translateOrI2
+  idt
   or@(FOr left right)
   POrI2
     { proofRight = proofRight
     }
   r =
     -- ~r (~r left~~ & ~r right~~)
-    case translateF or r of
+    case translateF (idt + 1) or r of
       or'@(FImp and@(FAnd notR_left' (FImp right' _)) r) ->
         let
-          (proofRight', _) = translateP proofRight right r
+          (proofRight', _) = translateP (idt + 1) proofRight right r
           hAnd = hypForm and
           proofOr' =
             PImpI
@@ -306,8 +326,9 @@ translateOrI2
           (proofOr', or')
       f' -> error ("unexpected format " ++ show f')
 
-translateForallI :: Form -> Proof -> Form -> (Proof, Form)
+translateForallI :: Int -> Form -> Proof -> Form -> (Proof, Form)
 translateForallI
+  idt
   _forall@(FForall x f)
   PForallI
     { newVar = x'
@@ -316,8 +337,8 @@ translateForallI
   r =
     let
       -- TODO: Check que la f' de aca y de proofForm' sean iguales
-      forall' = translateF _forall r
-      (proofForm', _) = translateP proofForm f r
+      forall' = translateF (idt + 1) _forall r
+      (proofForm', _) = translateP (idt + 1) proofForm f r
       proofForall' =
         PForallI
           { newVar = x'
@@ -326,8 +347,9 @@ translateForallI
      in
       (proofForall', forall')
 
-translateForallE :: Form -> Proof -> Form -> (Proof, Form)
+translateForallE :: Int -> Form -> Proof -> Form -> (Proof, Form)
 translateForallE
+  idt
   formReplace
   PForallE
     { var = x
@@ -337,10 +359,10 @@ translateForallE
     }
   r =
     let
-      formReplace' = translateF formReplace r
+      formReplace' = translateF (idt + 1) formReplace r
       _forall = FForall x f
-      f' = translateF f r
-      (proofForall', _) = translateP proofForall _forall r
+      f' = translateF (idt + 1) f r
+      (proofForall', _) = translateP (idt + 1) proofForall _forall r
       proofFormReplace' =
         PForallE
           { var = x
@@ -351,8 +373,9 @@ translateForallE
      in
       (proofFormReplace', formReplace')
 
-translateOrE :: Form -> Proof -> Form -> (Proof, Form)
+translateOrE :: Int -> Form -> Proof -> Form -> (Proof, Form)
 translateOrE
+  idt
   form
   POrE
     { left = left
@@ -363,16 +386,16 @@ translateOrE
     , hypRight = hypRight
     , proofAssumingRight = proofAssumingRight
     }
-  r = case translateP proofOr (FOr left right) r of
+  r = case translateP (idt + 1) proofOr (FOr left right) r of
     (proofOr', or'@(FImp (FAnd (FImp left' _) (FImp right' _)) _)) ->
       let
         and' = FAnd (FImp left' r) (FImp right' r)
-        (proofAssumingLeft', _) = translateP proofAssumingLeft form r
-        (proofAssumingRight', _) = translateP proofAssumingRight form r
+        (proofAssumingLeft', _) = translateP (idt + 1) proofAssumingLeft form r
+        (proofAssumingRight', _) = translateP (idt + 1) proofAssumingRight form r
 
-        form' = translateF form r
+        form' = translateF (idt + 1) form r
         (dnegr_form', h_dnegr_form') = hypAndForm (FImp (FImp form' r) r)
-        proof_dnegr_elim_form' = dNegRElim form h_dnegr_form' r
+        proof_dnegr_elim_form' = dNegRElim (idt + 1) form h_dnegr_form' r
         -- ~r~r form'
         proof_dnegr_form' =
           PImpI
@@ -425,8 +448,9 @@ translateOrE
         (proofForm', form')
     f' -> error ("unexpected format " ++ show f')
 
-translateNotI :: Form -> Proof -> Form -> (Proof, Form)
+translateNotI :: Int -> Form -> Proof -> Form -> (Proof, Form)
 translateNotI
+  idt
   formNot
   PNotI
     { hyp = h
@@ -434,8 +458,8 @@ translateNotI
     }
   r =
     let
-      (proofBot', _) = translateP proofBot FFalse r
-      formNot' = translateF formNot r
+      (proofBot', _) = translateP (idt + 1) proofBot FFalse r
+      formNot' = translateF (idt + 1) formNot r
       proofNot' =
         PImpI
           { hypAntecedent = h
@@ -444,8 +468,9 @@ translateNotI
      in
       (proofNot', formNot')
 
-translateNotE :: Form -> Proof -> Form -> (Proof, Form)
+translateNotE :: Int -> Form -> Proof -> Form -> (Proof, Form)
 translateNotE
+  idt
   false
   PNotE
     { form = form
@@ -454,9 +479,9 @@ translateNotE
     }
   r =
     let
-      (proofNotForm', _) = translateP proofNotForm (FNot form) r
-      (proofForm', form') = translateP proofForm form r
-      false' = translateF false r
+      (proofNotForm', _) = translateP (idt + 1) proofNotForm (FNot form) r
+      (proofForm', form') = translateP (idt + 1) proofForm form r
+      false' = translateF (idt + 1) false r
       proofFalse' =
         PImpE
           { antecedent = form'
@@ -466,18 +491,19 @@ translateNotE
      in
       (proofFalse', false')
 
-translateExistsI :: Form -> Proof -> Form -> (Proof, Form)
+translateExistsI :: Int -> Form -> Proof -> Form -> (Proof, Form)
 translateExistsI
+  idt
   formExists@(FExists x g)
   PExistsI
     { inst = t
     , proofFormWithInst = proofFormWithInst
     }
-  r = case translateF formExists r of
+  r = case translateF (idt + 1) formExists r of
     formExists'@(FImp (FForall _ (FImp g' _)) _) ->
       let
         _forall = FForall x (FImp g' r)
-        (proofFormWithInst', formWithInst') = translateP proofFormWithInst (subst x t g) r
+        (proofFormWithInst', formWithInst') = translateP (idt + 1) proofFormWithInst (subst x t g) r
         proofExists' =
           PImpI
             { hypAntecedent = hypForm _forall
@@ -498,8 +524,9 @@ translateExistsI
         (proofExists', formExists')
     f' -> error ("unexpected format " ++ show f')
 
-translateExistsE :: Form -> Proof -> Form -> (Proof, Form)
+translateExistsE :: Int -> Form -> Proof -> Form -> (Proof, Form)
 translateExistsE
+  idt
   form
   PExistsE
     { var = x
@@ -509,14 +536,14 @@ translateExistsE
     , proofAssuming = proofAssuming
     }
   r =
-    case translateP proofExists (FExists x g) r of
+    case translateP (idt + 1) proofExists (FExists x g) r of
       (proofExists', exists'@(FImp (FForall _ (FImp g' _)) _)) ->
         let
           _forall = FForall x (FImp g' r)
-          (proofAssuming', _) = translateP proofAssuming form r
-          form' = translateF form r
+          (proofAssuming', _) = translateP (idt + 1) proofAssuming form r
+          form' = translateF (idt + 1) form r
           (dnegr_form', h_dnegr_form') = hypAndForm (FImp (FImp form' r) r)
-          proof_dnegr_elim_form' = dNegRElim form h_dnegr_form' r
+          proof_dnegr_elim_form' = dNegRElim (idt + 1) form h_dnegr_form' r
           -- ~r~r form'
           proof_dnegr_form' =
             PImpI
@@ -556,8 +583,9 @@ translateExistsE
 
 Asume que la demostración de r ya está traducida.
 -}
-rElim :: Form -> Proof -> Form -> Proof
-rElim f proof_r r = case (f, translateF f r) of
+rElim :: Int -> Form -> Proof -> Form -> Proof
+-- rElim idt f _ _ | trace (printf "%s rElim %s" (indent idt) (show f)) False = undefined
+rElim idt f proof_r r = case (f, translateF (idt + 1) f r) of
   (FFalse, _) -> proof_r
   (FTrue, FTrue) -> PTrueI
   (FPred p ts, FImp (FImp f _) _) ->
@@ -582,18 +610,18 @@ rElim f proof_r r = case (f, translateF f r) of
       }
   (FAnd left right, FAnd left' right') ->
     PAndI
-      { proofLeft = rElim left proof_r r
-      , proofRight = rElim right proof_r r
+      { proofLeft = rElim (idt + 1) left proof_r r
+      , proofRight = rElim (idt + 1) right proof_r r
       }
   (FImp ant cons, FImp ant' cons') ->
     PImpI
       { hypAntecedent = hypForm ant'
-      , proofConsequent = rElim cons proof_r r
+      , proofConsequent = rElim (idt + 1) cons proof_r r
       }
   (FForall x g, FForall _ g') ->
     PForallI
       { newVar = x
-      , proofForm = rElim g proof_r r
+      , proofForm = rElim (idt + 1) g proof_r r
       }
   (_, f') -> error $ printf "rElim: unexpected form '%s', translated: '%s'" (show f) (show f')
 
@@ -607,8 +635,9 @@ tenemos que demostrar r sino A~~ & B~~.
 Por eso usamos el truco de dneg elim (HI) para pasar a demostrar ~r~r A~~,
 porque introduciendo, tenemos que demostrar r.
 -}
-dNegRElim :: Form -> HypId -> Form -> Proof
-dNegRElim f h_dneg_f' r = case (f, translateF f r) of
+dNegRElim :: Int -> Form -> HypId -> Form -> Proof
+-- dNegRElim idt f h_dneg_f' _ | trace (printf "%s dNegRElim %s" (indent idt) (show f)) False = undefined
+dNegRElim idt f h_dneg_f' r = case (f, translateF (idt + 1) f r) of
   (FFalse, r2) ->
     PImpE
       { antecedent = FImp r r
@@ -631,7 +660,7 @@ dNegRElim f h_dneg_f' r = case (f, translateF f r) of
   (FAnd left right, f'@(FAnd left' right')) ->
     let
       (dneg_left', h_dneg_left') = hypAndForm $ FImp (FImp left' r) r
-      proof_left' = dNegRElim left h_dneg_left' r
+      proof_left' = dNegRElim (idt + 1) left h_dneg_left' r
       proof_dneg_left' =
         PImpI
           { hypAntecedent = hypForm $ FImp left' r
@@ -658,7 +687,7 @@ dNegRElim f h_dneg_f' r = case (f, translateF f r) of
           }
 
       (dneg_right', h_dneg_right') = hypAndForm $ FImp (FImp right' r) r
-      proof_right' = dNegRElim right h_dneg_right' r
+      proof_right' = dNegRElim (idt + 1) right h_dneg_right' r
       proof_dneg_right' =
         PImpI
           { hypAntecedent = hypForm $ FImp right' r
@@ -691,7 +720,7 @@ dNegRElim f h_dneg_f' r = case (f, translateF f r) of
   (FImp ant cons, f'@(FImp ant' cons')) ->
     let
       (dneg_cons', h_dneg_cons') = hypAndForm $ FImp (FImp cons' r) r
-      proof_dneg_elim_cons' = dNegRElim cons h_dneg_cons' r
+      proof_dneg_elim_cons' = dNegRElim (idt + 1) cons h_dneg_cons' r
       proof_dneg_cons' =
         PImpI
           { hypAntecedent = hypForm $ FImp cons' r
@@ -724,7 +753,7 @@ dNegRElim f h_dneg_f' r = case (f, translateF f r) of
   (FForall x g, f'@(FForall _ g')) ->
     let
       (dneg_g', h_dneg_g') = hypAndForm $ FImp (FImp g' r) r
-      proof_dneg_elim_g' = dNegRElim g h_dneg_g' r
+      proof_dneg_elim_g' = dNegRElim (idt + 1) g h_dneg_g' r
       proof_dneg_g' =
         PImpI
           { hypAntecedent = hypForm $ FImp g' r
