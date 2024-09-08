@@ -11,6 +11,10 @@
 *.snm
 *.vrb
 
+# haskell
+dist*/
+*.dyn*
+
 # IDE
 .vscode/
 

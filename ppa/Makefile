@@ -6,6 +6,9 @@ clean:
 	rm src/*.hi
 	rm src/*.o
 	rm src/Main
+	rm -rf dist-newstyle
+	rm src/*.dyn_o
+	rm src/*.dyn_hi
 
 test:
 	cd src && ghc Test*.hs
