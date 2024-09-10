@@ -65,7 +65,6 @@ import Test.HUnit (
  )
 
 main :: IO Counts
--- main = do runTestWithNames "" testCertifier
 main = do runTestTT testCertifier
 
 runTestWithNames :: String -> Test -> IO Counts
@@ -99,13 +98,27 @@ testProgramReduceTranslate p = do
             Left err -> assertFailure err
             Right ctx -> do
                 assertEqual "check failed" (Right ()) (checkContext ctx)
-                let r = fPred0 "r"
+                let r = fPred0 "__r"
                 let ctx_translated = reduceContext $ translateContext ctx r
 
                 assertEqual "check translated failed" (Right ()) (checkContext ctx_translated)
 
 testProgram :: String -> IO ()
 testProgram p = do
+    let result = parseProgram' "test" p
+    case result of
+        Left err -> assertFailure err
+        Right prog -> case certify prog of
+            Left err -> assertFailure err
+            Right ctx -> do
+                assertEqual "check failed" (Right ()) (checkContext ctx)
+                let r = fPred0 "__r"
+                let ctx_translated = translateContext ctx r
+
+                assertEqual "check translated failed" (Right ()) (checkContext ctx_translated)
+
+testProgramJustCheck :: String -> IO ()
+testProgramJustCheck p = do
     let result = parseProgram' "test" p
     case result of
         Left err -> assertFailure err
@@ -132,7 +145,7 @@ testPrograms :: Test
 testPrograms =
     test
         [ "relatives old"
-            ~: testProgram
+            ~: testProgramJustCheck
                 [r|
 axiom todos_tienen_padre: forall P. exists Q. padre(P, Q)
 axiom def_abuelo:
@@ -164,7 +177,7 @@ proof
 end
     |]
         , "relatives new"
-            ~: testProgram
+            ~: testProgramJustCheck
                 [r|
     axiom todos_tienen_padre: forall P. exists Q. padre(P, Q)
 axiom def_abuelo:
@@ -186,7 +199,7 @@ proof
     thus abuelo(A, C) by a_padre_b, b_padre_c, def_abuelo
 end|]
         , "groups"
-            ~: testProgram
+            ~: testProgramJustCheck
                 [r|
     // Teoría matemática de Grupos //
     //
@@ -741,8 +754,9 @@ testCommands =
                             thus p(a) by a1
                         end
                         |]
-               , "ok"
-                    ~: testProgram
+               , -- TODO: translate rompe acá, pero reducido chequea
+                 "ok"
+                    ~: testProgramReduceTranslate
                         [r|
                     axiom a1: forall X . p(X) & q(X)
                     theorem "let" : forall X . p(X)

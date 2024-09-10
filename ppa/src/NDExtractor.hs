@@ -315,6 +315,7 @@ translateForallI
     }
   r =
     let
+      -- TODO: Check que la f' de aca y de proofForm' sean iguales
       forall' = translateF _forall r
       (proofForm', _) = translateP proofForm f r
       proofForall' =
