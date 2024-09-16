@@ -40,17 +40,34 @@ instance Show Path where
     show (File p) = p
 
 main :: (HasCallStack) => IO ()
-main = do
-    rawArgs <- getArgs
-    let args = parseArgs rawArgs
+main =
+    run2
+        [r|
+axiom ax: b
+axiom 1: b -> c
+theorem t: c
+proof
+    thus c by ax, 1
+end
+|]
+        Nothing
 
-    let inputPath = input args
-    rawProgram <- case inputPath of
-        Stdin -> getContents
-        File f -> readFile f
+-- main :: (HasCallStack) => IO ()
+-- main = do
+--     rawArgs <- getArgs
+--     let args = parseArgs rawArgs
 
+--     let inputPath = input args
+--     rawProgram <- case inputPath of
+--         Stdin -> getContents
+--         File f -> readFile f
+
+--     run2 rawProgram
+
+run2 :: String -> Maybe Path -> IO ()
+run2 rawProgram output = do
     putStr "Running program..."
-    case run (show inputPath) rawProgram of
+    case run "" rawProgram of
         Left err -> putStrLn err
         Right ctx -> do
             putStrLn "OK!"
@@ -71,7 +88,7 @@ main = do
                         Left err -> putStrLn err
                         Right _ -> do
                             putStrLn "OK!"
-                            writeResult (output args) ctx ctxR
+                            writeResult output ctx ctxR
 
 writeResult :: Maybe Path -> Context -> Context -> IO ()
 writeResult Nothing _ _ = return ()

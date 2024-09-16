@@ -5,5 +5,5 @@ theorem t1 : a -> c
 proof
     suppose h : a
     // La tesis ahora es c
-    hence c by h, ax_1, ax_2
+    thus c by h, ax_1, ax_2
 end
