@@ -43,41 +43,49 @@ main = do
         Stdin -> getContents
         File f -> readFile f
 
-    putStrLn "Running program..."
+    putStr "Running program..."
     case run (show inputPath) rawProgram of
         Left err -> putStrLn err
         Right ctx -> do
             putStrLn "OK!"
-            writeResult (output args) ctx
+            putStr "Translating..."
+            let ctxT = translateContext ctx (fPred0 "__r")
+            putStrLn "OK!"
+            putStr "Checking translated..."
+            case checkContext ctxT of
+                Left err -> putStrLn err
+                Right _ -> do
+                    putStrLn "OK!"
+                    putStr "Reducing..."
+                    let ctxR = reduceContext ctxT
+                    putStrLn "OK!"
 
-writeResult :: Maybe Path -> Context -> IO ()
-writeResult Nothing _ = return ()
-writeResult (Just p) ctx = do
-    putStrLn "Translating & Reducing..."
-    let ctxReduced = reduceContext ctx
-    let ctxTranslated = reduceContext $ translateContext ctx (fPred0 "__r")
+                    putStr "Checking reduced..."
+                    case checkContext ctxR of
+                        Left err -> putStrLn err
+                        Right _ -> do
+                            putStrLn "OK!"
+                            writeResult (output args) ctx ctxR
 
+writeResult :: Maybe Path -> Context -> Context -> IO ()
+writeResult Nothing _ _ = return ()
+writeResult (Just p) ctxOriginal ctxReduced = do
+    putStrLn "Writing..."
     case p of
         Stdout -> do
             putStrLn "raw context:\n"
-            pPrint ctx
+            pPrint ctxOriginal
             putStrLn "reduced:\n"
             pPrint ctxReduced
-        File f ->
-            do
-                writeFile (f ++ "_raw.nk") (prettyShow ctx)
-                writeFile (f ++ ".nj") (prettyShow ctxTranslated)
-                writeFile (f ++ "_red.nk") (prettyShow ctxReduced)
+        File f -> do
+            writeFile (f ++ "_raw.nk") (prettyShow ctxOriginal)
+            writeFile (f ++ ".nj") (prettyShow ctxReduced)
 
-    putStrLn "Checking..."
+-- writeFile (f ++ "_red.nk") (prettyShow ctxReduced)
 
-    case checkContext ctxReduced of
-        Right () -> putStrLn "Reduced OK!"
-        Left err -> putStrLn $ printf "Reduced failed: %s" err
-
--- case checkContext ctxTranslated of
---     Right () -> putStrLn "Translated OK!"
---     Left err -> putStrLn $ printf "Translated failed: %s " err
+-- case checkContext ctxReduced of
+--     Right () -> putStrLn "Reduced OK!"
+--     Left err -> putStrLn $ printf "Reduced failed: %s" err
 
 -- prettyShow :: (Show a) => a -> String
 -- prettyShow s = unpack $ pShowOpt opts s
