@@ -77,9 +77,12 @@ executable ppa
     default-language: GHC2021
 
     ghc-options: -XImportQualifiedPost
+                -- Flying flags, optimisation
+                -- https://pusher.com/blog/top-tips-and-tools-for-optimising-haskell/#flying-flags-in-ghc
                 -funfolding-use-threshold=16
                 -O2
                 -optc-O3
+                -- Profiling
                 -rtsopts
                 -prof
                 -fprof-auto
