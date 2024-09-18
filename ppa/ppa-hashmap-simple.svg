@@ -1,0 +1,722 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" width="1200" height="486" onload="init(evt)" viewBox="0 0 1200 486" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<!-- Flame graph stack visualization. See https://github.com/brendangregg/FlameGraph for latest version, and http://www.brendangregg.com/flamegraphs.html for examples. -->
+<!-- NOTES:  -->
+<defs >
+	<linearGradient id="background" y1="0" y2="1" x1="0" x2="0" >
+		<stop stop-color="#eeeeee" offset="5%" />
+		<stop stop-color="#eeeeb0" offset="95%" />
+	</linearGradient>
+</defs>
+<style type="text/css">
+	.func_g:hover { stroke:black; stroke-width:0.5; cursor:pointer; }
+</style>
+<script type="text/ecmascript">
+<![CDATA[
+	var details, searchbtn, matchedtxt, svg;
+	function init(evt) {
+		details = document.getElementById("details").firstChild;
+		searchbtn = document.getElementById("search");
+		matchedtxt = document.getElementById("matched");
+		svg = document.getElementsByTagName("svg")[0];
+		searching = 0;
+	}
+
+	// mouse-over for info
+	function s(node) {		// show
+		info = g_to_text(node);
+		details.nodeValue = "Function: " + info;
+	}
+	function c() {			// clear
+		details.nodeValue = ' ';
+	}
+
+	// ctrl-F for search
+	window.addEventListener("keydown",function (e) {
+		if (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70)) {
+			e.preventDefault();
+			search_prompt();
+		}
+	})
+
+	// functions
+	function find_child(parent, name, attr) {
+		var children = parent.childNodes;
+		for (var i=0; i<children.length;i++) {
+			if (children[i].tagName == name)
+				return (attr != undefined) ? children[i].attributes[attr].value : children[i];
+		}
+		return;
+	}
+	function orig_save(e, attr, val) {
+		if (e.attributes["_orig_"+attr] != undefined) return;
+		if (e.attributes[attr] == undefined) return;
+		if (val == undefined) val = e.attributes[attr].value;
+		e.setAttribute("_orig_"+attr, val);
+	}
+	function orig_load(e, attr) {
+		if (e.attributes["_orig_"+attr] == undefined) return;
+		e.attributes[attr].value = e.attributes["_orig_"+attr].value;
+		e.removeAttribute("_orig_"+attr);
+	}
+	function g_to_text(e) {
+		var text = find_child(e, "title").firstChild.nodeValue;
+		return (text)
+	}
+	function g_to_func(e) {
+		var func = g_to_text(e);
+		// if there's any manipulation we want to do to the function
+		// name before it's searched, do it here before returning.
+		return (func);
+	}
+	function update_text(e) {
+		var r = find_child(e, "rect");
+		var t = find_child(e, "text");
+		var w = parseFloat(r.attributes["width"].value) -3;
+		var txt = find_child(e, "title").textContent.replace(/\([^(]*\)$/,"");
+		t.attributes["x"].value = parseFloat(r.attributes["x"].value) +3;
+
+		// Smaller than this size won't fit anything
+		if (w < 2*12*0.59) {
+			t.textContent = "";
+			return;
+		}
+
+		t.textContent = txt;
+		// Fit in full text width
+		if (/^ *$/.test(txt) || t.getSubStringLength(0, txt.length) < w)
+			return;
+
+		for (var x=txt.length-2; x>0; x--) {
+			if (t.getSubStringLength(0, x+2) <= w) {
+				t.textContent = txt.substring(0,x) + "..";
+				return;
+			}
+		}
+		t.textContent = "";
+	}
+
+	// zoom
+	function zoom_reset(e) {
+		if (e.attributes != undefined) {
+			orig_load(e, "x");
+			orig_load(e, "width");
+		}
+		if (e.childNodes == undefined) return;
+		for(var i=0, c=e.childNodes; i<c.length; i++) {
+			zoom_reset(c[i]);
+		}
+	}
+	function zoom_child(e, x, ratio) {
+		if (e.attributes != undefined) {
+			if (e.attributes["x"] != undefined) {
+				orig_save(e, "x");
+				e.attributes["x"].value = (parseFloat(e.attributes["x"].value) - x - 10) * ratio + 10;
+				if(e.tagName == "text") e.attributes["x"].value = find_child(e.parentNode, "rect", "x") + 3;
+			}
+			if (e.attributes["width"] != undefined) {
+				orig_save(e, "width");
+				e.attributes["width"].value = parseFloat(e.attributes["width"].value) * ratio;
+			}
+		}
+
+		if (e.childNodes == undefined) return;
+		for(var i=0, c=e.childNodes; i<c.length; i++) {
+			zoom_child(c[i], x-10, ratio);
+		}
+	}
+	function zoom_parent(e) {
+		if (e.attributes) {
+			if (e.attributes["x"] != undefined) {
+				orig_save(e, "x");
+				e.attributes["x"].value = 10;
+			}
+			if (e.attributes["width"] != undefined) {
+				orig_save(e, "width");
+				e.attributes["width"].value = parseInt(svg.width.baseVal.value) - (10*2);
+			}
+		}
+		if (e.childNodes == undefined) return;
+		for(var i=0, c=e.childNodes; i<c.length; i++) {
+			zoom_parent(c[i]);
+		}
+	}
+	function zoom(node) {
+		var attr = find_child(node, "rect").attributes;
+		var width = parseFloat(attr["width"].value);
+		var xmin = parseFloat(attr["x"].value);
+		var xmax = parseFloat(xmin + width);
+		var ymin = parseFloat(attr["y"].value);
+		var ratio = (svg.width.baseVal.value - 2*10) / width;
+
+		// XXX: Workaround for JavaScript float issues (fix me)
+		var fudge = 0.0001;
+
+		var unzoombtn = document.getElementById("unzoom");
+		unzoombtn.style["opacity"] = "1.0";
+
+		var el = document.getElementsByTagName("g");
+		for(var i=0;i<el.length;i++){
+			var e = el[i];
+			var a = find_child(e, "rect").attributes;
+			var ex = parseFloat(a["x"].value);
+			var ew = parseFloat(a["width"].value);
+			// Is it an ancestor
+			if (0 == 0) {
+				var upstack = parseFloat(a["y"].value) > ymin;
+			} else {
+				var upstack = parseFloat(a["y"].value) < ymin;
+			}
+			if (upstack) {
+				// Direct ancestor
+				if (ex <= xmin && (ex+ew+fudge) >= xmax) {
+					e.style["opacity"] = "0.5";
+					zoom_parent(e);
+					e.onclick = function(e){unzoom(); zoom(this);};
+					update_text(e);
+				}
+				// not in current path
+				else
+					e.style["display"] = "none";
+			}
+			// Children maybe
+			else {
+				// no common path
+				if (ex < xmin || ex + fudge >= xmax) {
+					e.style["display"] = "none";
+				}
+				else {
+					zoom_child(e, xmin, ratio);
+					e.onclick = function(e){zoom(this);};
+					update_text(e);
+				}
+			}
+		}
+	}
+	function unzoom() {
+		var unzoombtn = document.getElementById("unzoom");
+		unzoombtn.style["opacity"] = "0.0";
+
+		var el = document.getElementsByTagName("g");
+		for(i=0;i<el.length;i++) {
+			el[i].style["display"] = "block";
+			el[i].style["opacity"] = "1";
+			zoom_reset(el[i]);
+			update_text(el[i]);
+		}
+	}
+
+	// search
+	function reset_search() {
+		var el = document.getElementsByTagName("rect");
+		for (var i=0; i < el.length; i++) {
+			orig_load(el[i], "fill")
+		}
+	}
+	function search_prompt() {
+		if (!searching) {
+			var term = prompt("Enter a search term (regexp " +
+			    "allowed, eg: ^ext4_)", "");
+			if (term != null) {
+				search(term)
+			}
+		} else {
+			reset_search();
+			searching = 0;
+			searchbtn.style["opacity"] = "0.1";
+			searchbtn.firstChild.nodeValue = "Search"
+			matchedtxt.style["opacity"] = "0.0";
+			matchedtxt.firstChild.nodeValue = ""
+		}
+	}
+	function search(term) {
+		var re = new RegExp(term);
+		var el = document.getElementsByTagName("g");
+		var matches = new Object();
+		var maxwidth = 0;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			if (e.attributes["class"].value != "func_g")
+				continue;
+			var func = g_to_func(e);
+			var rect = find_child(e, "rect");
+			if (rect == null) {
+				// the rect might be wrapped in an anchor
+				// if nameattr href is being used
+				if (rect = find_child(e, "a")) {
+				    rect = find_child(r, "rect");
+				}
+			}
+			if (func == null || rect == null)
+				continue;
+
+			// Save max width. Only works as we have a root frame
+			var w = parseFloat(rect.attributes["width"].value);
+			if (w > maxwidth)
+				maxwidth = w;
+
+			if (func.match(re)) {
+				// highlight
+				var x = parseFloat(rect.attributes["x"].value);
+				orig_save(rect, "fill");
+				rect.attributes["fill"].value =
+				    "rgb(230,0,230)";
+
+				// remember matches
+				if (matches[x] == undefined) {
+					matches[x] = w;
+				} else {
+					if (w > matches[x]) {
+						// overwrite with parent
+						matches[x] = w;
+					}
+				}
+				searching = 1;
+			}
+		}
+		if (!searching)
+			return;
+
+		searchbtn.style["opacity"] = "1.0";
+		searchbtn.firstChild.nodeValue = "Reset Search"
+
+		// calculate percent matched, excluding vertical overlap
+		var count = 0;
+		var lastx = -1;
+		var lastw = 0;
+		var keys = Array();
+		for (k in matches) {
+			if (matches.hasOwnProperty(k))
+				keys.push(k);
+		}
+		// sort the matched frames by their x location
+		// ascending, then width descending
+		keys.sort(function(a, b){
+			return a - b;
+		});
+		// Step through frames saving only the biggest bottom-up frames
+		// thanks to the sort order. This relies on the tree property
+		// where children are always smaller than their parents.
+		var fudge = 0.0001;	// JavaScript floating point
+		for (var k in keys) {
+			var x = parseFloat(keys[k]);
+			var w = matches[keys[k]];
+			if (x >= lastx + lastw - fudge) {
+				count += w;
+				lastx = x;
+				lastw = w;
+			}
+		}
+		// display matched percent
+		matchedtxt.style["opacity"] = "1.0";
+		pct = 100 * count / maxwidth;
+		if (pct == 100)
+			pct = "100"
+		else
+			pct = pct.toFixed(1)
+		matchedtxt.firstChild.nodeValue = "Matched: " + pct + "%";
+	}
+	function searchover(e) {
+		searchbtn.style["opacity"] = "1.0";
+	}
+	function searchout(e) {
+		if (searching) {
+			searchbtn.style["opacity"] = "1.0";
+		} else {
+			searchbtn.style["opacity"] = "0.1";
+		}
+	}
+]]>
+</script>
+<rect x="0.0" y="0" width="1200.0" height="486.0" fill="url(#background)"  />
+<text text-anchor="middle" x="600.00" y="24" font-size="17" font-family="Verdana" fill="rgb(0,0,0)"  >Flame Graph</text>
+<text text-anchor="" x="10.00" y="469" font-size="12" font-family="Verdana" fill="rgb(0,0,0)" id="details" > </text>
+<text text-anchor="" x="10.00" y="24" font-size="12" font-family="Verdana" fill="rgb(0,0,0)" id="unzoom" onclick="unzoom()" style="opacity:0.0;cursor:pointer" >Reset Zoom</text>
+<text text-anchor="" x="1090.00" y="24" font-size="12" font-family="Verdana" fill="rgb(0,0,0)" id="search" onmouseover="searchover()" onmouseout="searchout()" onclick="search_prompt()" style="opacity:0.1;cursor:pointer" >Search</text>
+<text text-anchor="" x="1090.00" y="469" font-size="12" font-family="Verdana" fill="rgb(0,0,0)" id="matched" > </text>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>NDSubst.substHyp'.recAvoidingCapture (212 samples, 21.20%)</title><rect x="20.6" y="229" width="250.2" height="15.0" fill="rgb(231,140,1)" rx="2" ry="2" />
+<text text-anchor="" x="23.62" y="239.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >NDSubst.substHyp'.recAvoidingCapt..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.LowLevel.hashInt (4 samples, 0.40%)</title><rect x="215.3" y="69" width="4.7" height="15.0" fill="rgb(251,148,47)" rx="2" ry="2" />
+<text text-anchor="" x="218.32" y="79.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>ND.hashWithSalt (435 samples, 43.50%)</title><rect x="614.2" y="181" width="513.3" height="15.0" fill="rgb(251,147,5)" rx="2" ry="2" />
+<text text-anchor="" x="617.16" y="191.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >ND.hashWithSalt</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Certifier.reduceContext (991 samples, 99.10%)</title><rect x="10.0" y="357" width="1169.4" height="15.0" fill="rgb(214,15,8)" rx="2" ry="2" />
+<text text-anchor="" x="13.00" y="367.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Certifier.reduceContext</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Class.hashWithSalt1 (135 samples, 13.50%)</title><rect x="279.0" y="133" width="159.3" height="15.0" fill="rgb(207,122,43)" rx="2" ry="2" />
+<text text-anchor="" x="282.04" y="143.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Data.Hashable.Class...</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>ND.alphaEqTerms (2 samples, 0.20%)</title><rect x="253.1" y="101" width="2.3" height="15.0" fill="rgb(248,49,32)" rx="2" ry="2" />
+<text text-anchor="" x="256.08" y="111.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>NDSubst.substHyp' (221 samples, 22.10%)</title><rect x="10.0" y="261" width="260.8" height="15.0" fill="rgb(207,28,33)" rx="2" ry="2" />
+<text text-anchor="" x="13.00" y="271.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >NDSubst.substHyp'</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Class.defaultHash (70 samples, 7.00%)</title><rect x="149.2" y="133" width="82.6" height="15.0" fill="rgb(247,152,12)" rx="2" ry="2" />
+<text text-anchor="" x="152.24" y="143.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Data.Hash..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Mix.mixHash (1 samples, 0.10%)</title><rect x="437.2" y="101" width="1.1" height="15.0" fill="rgb(249,226,25)" rx="2" ry="2" />
+<text text-anchor="" x="440.16" y="111.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.LowLevel.hashInt (2 samples, 0.20%)</title><rect x="436.0" y="117" width="2.3" height="15.0" fill="rgb(219,103,41)" rx="2" ry="2" />
+<text text-anchor="" x="438.98" y="127.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.LowLevel.hashInt (27 samples, 2.70%)</title><rect x="1063.7" y="149" width="31.9" height="15.0" fill="rgb(205,164,49)" rx="2" ry="2" />
+<text text-anchor="" x="1066.74" y="159.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Da..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>ND.alphaEqForm' (8 samples, 0.80%)</title><rect x="246.0" y="133" width="9.4" height="15.0" fill="rgb(205,99,49)" rx="2" ry="2" />
+<text text-anchor="" x="249.00" y="143.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>MAIN.MAIN (991 samples, 99.10%)</title><rect x="10.0" y="421" width="1169.4" height="15.0" fill="rgb(251,68,54)" rx="2" ry="2" />
+<text text-anchor="" x="13.00" y="431.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >MAIN.MAIN</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>ND.from (1 samples, 0.10%)</title><rect x="189.4" y="101" width="1.1" height="15.0" fill="rgb(227,131,42)" rx="2" ry="2" />
+<text text-anchor="" x="192.36" y="111.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Class.defaultHashWithSalt (85 samples, 8.50%)</title><rect x="335.7" y="117" width="100.3" height="15.0" fill="rgb(213,210,8)" rx="2" ry="2" />
+<text text-anchor="" x="338.68" y="127.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Data.Hashabl..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Mix.mixHash (1 samples, 0.10%)</title><rect x="224.8" y="69" width="1.1" height="15.0" fill="rgb(250,14,22)" rx="2" ry="2" />
+<text text-anchor="" x="227.76" y="79.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>NDReducer.reduce' (991 samples, 99.10%)</title><rect x="10.0" y="309" width="1169.4" height="15.0" fill="rgb(222,170,9)" rx="2" ry="2" />
+<text text-anchor="" x="13.00" y="319.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >NDReducer.reduce'</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Mix.mixHash (12 samples, 1.20%)</title><rect x="421.8" y="85" width="14.2" height="15.0" fill="rgb(212,166,38)" rx="2" ry="2" />
+<text text-anchor="" x="424.82" y="95.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>ND.from (9 samples, 0.90%)</title><rect x="443.1" y="133" width="10.6" height="15.0" fill="rgb(214,99,15)" rx="2" ry="2" />
+<text text-anchor="" x="446.06" y="143.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>ND.== (20 samples, 2.00%)</title><rect x="231.8" y="165" width="23.6" height="15.0" fill="rgb(216,96,13)" rx="2" ry="2" />
+<text text-anchor="" x="234.84" y="175.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >N..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Mix.mixHash (3 samples, 0.30%)</title><rect x="184.6" y="53" width="3.6" height="15.0" fill="rgb(235,162,28)" rx="2" ry="2" />
+<text text-anchor="" x="187.64" y="63.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.LowLevel.hashInt (4 samples, 0.40%)</title><rect x="438.3" y="133" width="4.8" height="15.0" fill="rgb(230,211,15)" rx="2" ry="2" />
+<text text-anchor="" x="441.34" y="143.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>NDSubst.substHyp'.(...) (213 samples, 21.30%)</title><rect x="19.4" y="245" width="251.4" height="15.0" fill="rgb(253,103,34)" rx="2" ry="2" />
+<text text-anchor="" x="22.44" y="255.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >NDSubst.substHyp'.(...)</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Mix.mixHash (1 samples, 0.10%)</title><rect x="218.9" y="53" width="1.1" height="15.0" fill="rgb(224,216,21)" rx="2" ry="2" />
+<text text-anchor="" x="221.86" y="63.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>NDSubst.freshWRT (5 samples, 0.50%)</title><rect x="264.9" y="181" width="5.9" height="15.0" fill="rgb(244,54,8)" rx="2" ry="2" />
+<text text-anchor="" x="267.88" y="191.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>NDReducer.reduce1 (991 samples, 99.10%)</title><rect x="10.0" y="293" width="1169.4" height="15.0" fill="rgb(231,211,10)" rx="2" ry="2" />
+<text text-anchor="" x="13.00" y="303.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >NDReducer.reduce1</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>NDReducer.reduce (991 samples, 99.10%)</title><rect x="10.0" y="325" width="1169.4" height="15.0" fill="rgb(248,44,41)" rx="2" ry="2" />
+<text text-anchor="" x="13.00" y="335.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >NDReducer.reduce</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.LowLevel.hashInt (63 samples, 6.30%)</title><rect x="361.6" y="101" width="74.4" height="15.0" fill="rgb(227,54,41)" rx="2" ry="2" />
+<text text-anchor="" x="364.64" y="111.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Data.Has..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.HashMap.Internal.insert (291 samples, 29.10%)</title><rect x="270.8" y="213" width="343.4" height="15.0" fill="rgb(230,110,1)" rx="2" ry="2" />
+<text text-anchor="" x="273.78" y="223.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Data.HashMap.Internal.insert</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Class.defaultHashWithSalt (49 samples, 4.90%)</title><rect x="976.4" y="133" width="57.8" height="15.0" fill="rgb(253,28,12)" rx="2" ry="2" />
+<text text-anchor="" x="979.42" y="143.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Data.H..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.HashMap.Internal.hash (70 samples, 7.00%)</title><rect x="149.2" y="165" width="82.6" height="15.0" fill="rgb(221,41,39)" rx="2" ry="2" />
+<text text-anchor="" x="152.24" y="175.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Data.Hash..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Certifier.reduceHyp (991 samples, 99.10%)</title><rect x="10.0" y="341" width="1169.4" height="15.0" fill="rgb(220,57,39)" rx="2" ry="2" />
+<text text-anchor="" x="13.00" y="351.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Certifier.reduceHyp</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.LowLevel.hashInt (37 samples, 3.70%)</title><rect x="990.6" y="117" width="43.6" height="15.0" fill="rgb(232,138,39)" rx="2" ry="2" />
+<text text-anchor="" x="993.58" y="127.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Data..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Main.run2 (991 samples, 99.10%)</title><rect x="10.0" y="389" width="1169.4" height="15.0" fill="rgb(221,120,11)" rx="2" ry="2" />
+<text text-anchor="" x="13.00" y="399.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Main.run2</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Mix.mixHash (6 samples, 0.60%)</title><rect x="1056.7" y="117" width="7.0" height="15.0" fill="rgb(252,21,6)" rx="2" ry="2" />
+<text text-anchor="" x="1059.66" y="127.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Mix.mixHash (1 samples, 0.10%)</title><rect x="214.1" y="37" width="1.2" height="15.0" fill="rgb(246,88,15)" rx="2" ry="2" />
+<text text-anchor="" x="217.14" y="47.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>ND.hash (435 samples, 43.50%)</title><rect x="614.2" y="213" width="513.3" height="15.0" fill="rgb(245,176,43)" rx="2" ry="2" />
+<text text-anchor="" x="617.16" y="223.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >ND.hash</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>ND.hashWithSalt (35 samples, 3.50%)</title><rect x="190.5" y="101" width="41.3" height="15.0" fill="rgb(212,221,47)" rx="2" ry="2" />
+<text text-anchor="" x="193.54" y="111.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >ND...</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>UNKNOWN (9 samples, 0.90%)</title><rect x="1179.4" y="421" width="10.6" height="15.0" fill="rgb(207,81,5)" rx="2" ry="2" />
+<text text-anchor="" x="1182.38" y="431.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.HashMap.Internal.hash (435 samples, 43.50%)</title><rect x="614.2" y="229" width="513.3" height="15.0" fill="rgb(226,65,40)" rx="2" ry="2" />
+<text text-anchor="" x="617.16" y="239.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Data.HashMap.Internal.hash</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Class.hashWithSalt1 (200 samples, 20.00%)</title><rect x="624.8" y="165" width="236.0" height="15.0" fill="rgb(229,98,21)" rx="2" ry="2" />
+<text text-anchor="" x="627.78" y="175.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Data.Hashable.Class.hashWithSalt1</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Class.defaultHashWithSalt (126 samples, 12.60%)</title><rect x="708.6" y="149" width="148.6" height="15.0" fill="rgb(243,226,38)" rx="2" ry="2" />
+<text text-anchor="" x="711.56" y="159.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Data.Hashable.Class..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Mix.mixHash (4 samples, 0.40%)</title><rect x="567.0" y="85" width="4.7" height="15.0" fill="rgb(205,175,34)" rx="2" ry="2" />
+<text text-anchor="" x="569.96" y="95.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>ND.from (18 samples, 1.80%)</title><rect x="592.9" y="117" width="21.3" height="15.0" fill="rgb(231,91,17)" rx="2" ry="2" />
+<text text-anchor="" x="595.92" y="127.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >N..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>ND.hash (291 samples, 29.10%)</title><rect x="270.8" y="181" width="343.4" height="15.0" fill="rgb(220,41,0)" rx="2" ry="2" />
+<text text-anchor="" x="273.78" y="191.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >ND.hash</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>ND.from (5 samples, 0.50%)</title><rect x="225.9" y="85" width="5.9" height="15.0" fill="rgb(207,209,28)" rx="2" ry="2" />
+<text text-anchor="" x="228.94" y="95.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.LowLevel.hashInt (18 samples, 1.80%)</title><rect x="571.7" y="117" width="21.2" height="15.0" fill="rgb(252,42,2)" rx="2" ry="2" />
+<text text-anchor="" x="574.68" y="127.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >D..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Main.run2.ctxR (991 samples, 99.10%)</title><rect x="10.0" y="373" width="1169.4" height="15.0" fill="rgb(227,216,11)" rx="2" ry="2" />
+<text text-anchor="" x="13.00" y="383.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Main.run2.ctxR</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>ND.hashWithSalt (291 samples, 29.10%)</title><rect x="270.8" y="149" width="343.4" height="15.0" fill="rgb(246,138,41)" rx="2" ry="2" />
+<text text-anchor="" x="273.78" y="159.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >ND.hashWithSalt</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>NDSubst.citedHypIds (90 samples, 9.00%)</title><rect x="149.2" y="181" width="106.2" height="15.0" fill="rgb(229,134,34)" rx="2" ry="2" />
+<text text-anchor="" x="152.24" y="191.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >NDSubst.cited..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>NDSubst.substHypAvoidCapture.h' (13 samples, 1.30%)</title><rect x="255.4" y="197" width="15.4" height="15.0" fill="rgb(226,97,11)" rx="2" ry="2" />
+<text text-anchor="" x="258.44" y="207.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.LowLevel.hashInt (93 samples, 9.30%)</title><rect x="747.5" y="133" width="109.7" height="15.0" fill="rgb(233,29,46)" rx="2" ry="2" />
+<text text-anchor="" x="750.50" y="143.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Data.Hashable..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.LowLevel.hashInt (16 samples, 1.60%)</title><rect x="169.3" y="69" width="18.9" height="15.0" fill="rgb(232,133,46)" rx="2" ry="2" />
+<text text-anchor="" x="172.30" y="79.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Mix.mixHash (1 samples, 0.10%)</title><rect x="859.6" y="133" width="1.2" height="15.0" fill="rgb(250,5,26)" rx="2" ry="2" />
+<text text-anchor="" x="862.60" y="143.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.HashMap.Internal.Strict.insert (291 samples, 29.10%)</title><rect x="270.8" y="229" width="343.4" height="15.0" fill="rgb(254,50,13)" rx="2" ry="2" />
+<text text-anchor="" x="273.78" y="239.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Data.HashMap.Internal.Strict.insert</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Mix.mixHash (17 samples, 1.70%)</title><rect x="837.2" y="117" width="20.0" height="15.0" fill="rgb(222,89,53)" rx="2" ry="2" />
+<text text-anchor="" x="840.18" y="127.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>ND.== (44 samples, 4.40%)</title><rect x="1127.5" y="229" width="51.9" height="15.0" fill="rgb(245,4,46)" rx="2" ry="2" />
+<text text-anchor="" x="1130.46" y="239.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >ND.==</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>NDSubst.substHyp.(...) (770 samples, 77.00%)</title><rect x="270.8" y="261" width="908.6" height="15.0" fill="rgb(232,37,25)" rx="2" ry="2" />
+<text text-anchor="" x="273.78" y="271.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >NDSubst.substHyp.(...)</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.LowLevel.hashInt (24 samples, 2.40%)</title><rect x="524.5" y="85" width="28.3" height="15.0" fill="rgb(226,97,19)" rx="2" ry="2" />
+<text text-anchor="" x="527.48" y="95.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >D..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>ND.from (27 samples, 2.70%)</title><rect x="1095.6" y="149" width="31.9" height="15.0" fill="rgb(210,21,7)" rx="2" ry="2" />
+<text text-anchor="" x="1098.60" y="159.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >ND..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>NDSubst.substHyp (991 samples, 99.10%)</title><rect x="10.0" y="277" width="1169.4" height="15.0" fill="rgb(225,58,1)" rx="2" ry="2" />
+<text text-anchor="" x="13.00" y="287.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >NDSubst.substHyp</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Class.defaultHashWithSalt (22 samples, 2.20%)</title><rect x="162.2" y="85" width="26.0" height="15.0" fill="rgb(249,116,10)" rx="2" ry="2" />
+<text text-anchor="" x="165.22" y="95.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >D..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Mix.mixHash (4 samples, 0.40%)</title><rect x="588.2" y="101" width="4.7" height="15.0" fill="rgb(222,113,35)" rx="2" ry="2" />
+<text text-anchor="" x="591.20" y="111.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.LowLevel.hashInt (3 samples, 0.30%)</title><rect x="857.2" y="149" width="3.6" height="15.0" fill="rgb(214,13,37)" rx="2" ry="2" />
+<text text-anchor="" x="860.24" y="159.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Class.defaultHashWithSalt (8 samples, 0.80%)</title><rect x="205.9" y="69" width="9.4" height="15.0" fill="rgb(226,110,36)" rx="2" ry="2" />
+<text text-anchor="" x="208.88" y="79.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Class.hashWithSalt1 (112 samples, 11.20%)</title><rect x="931.6" y="149" width="132.1" height="15.0" fill="rgb(242,75,47)" rx="2" ry="2" />
+<text text-anchor="" x="934.58" y="159.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Data.Hashable.Cl..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Mix.mixHash (1 samples, 0.10%)</title><rect x="441.9" y="117" width="1.2" height="15.0" fill="rgb(254,202,3)" rx="2" ry="2" />
+<text text-anchor="" x="444.88" y="127.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>ND.hashWithSalt (207 samples, 20.70%)</title><rect x="883.2" y="165" width="244.3" height="15.0" fill="rgb(206,110,40)" rx="2" ry="2" />
+<text text-anchor="" x="886.20" y="175.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >ND.hashWithSalt</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Main.main (991 samples, 99.10%)</title><rect x="10.0" y="405" width="1169.4" height="15.0" fill="rgb(215,62,27)" rx="2" ry="2" />
+<text text-anchor="" x="13.00" y="415.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Main.main</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.LowLevel.hashInt (5 samples, 0.50%)</title><rect x="220.0" y="85" width="5.9" height="15.0" fill="rgb(214,89,36)" rx="2" ry="2" />
+<text text-anchor="" x="223.04" y="95.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>ND.from (14 samples, 1.40%)</title><rect x="866.7" y="165" width="16.5" height="15.0" fill="rgb(232,46,13)" rx="2" ry="2" />
+<text text-anchor="" x="869.68" y="175.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Class.hashWithSalt1 (18 samples, 1.80%)</title><rect x="198.8" y="85" width="21.2" height="15.0" fill="rgb(240,125,25)" rx="2" ry="2" />
+<text text-anchor="" x="201.80" y="95.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >D..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>ND.hashWithSalt (70 samples, 7.00%)</title><rect x="149.2" y="117" width="82.6" height="15.0" fill="rgb(235,83,1)" rx="2" ry="2" />
+<text text-anchor="" x="152.24" y="127.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >ND.hashWi..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.LowLevel.hashInt (5 samples, 0.50%)</title><rect x="860.8" y="165" width="5.9" height="15.0" fill="rgb(233,200,36)" rx="2" ry="2" />
+<text text-anchor="" x="863.78" y="175.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>NDSubst.substHypAvoidCapture (212 samples, 21.20%)</title><rect x="20.6" y="213" width="250.2" height="15.0" fill="rgb(209,203,18)" rx="2" ry="2" />
+<text text-anchor="" x="23.62" y="223.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >NDSubst.substHypAvoidCapture</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Mix.mixHash (6 samples, 0.60%)</title><rect x="1088.5" y="133" width="7.1" height="15.0" fill="rgb(236,119,30)" rx="2" ry="2" />
+<text text-anchor="" x="1091.52" y="143.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Class.defaultHash (291 samples, 29.10%)</title><rect x="270.8" y="165" width="343.4" height="15.0" fill="rgb(252,208,49)" rx="2" ry="2" />
+<text text-anchor="" x="273.78" y="175.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Data.Hashable.Class.defaultHash</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Mix.mixHash (7 samples, 0.70%)</title><rect x="1026.0" y="101" width="8.2" height="15.0" fill="rgb(227,151,7)" rx="2" ry="2" />
+<text text-anchor="" x="1028.98" y="111.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.HashMap.Internal.hash (291 samples, 29.10%)</title><rect x="270.8" y="197" width="343.4" height="15.0" fill="rgb(210,115,38)" rx="2" ry="2" />
+<text text-anchor="" x="273.78" y="207.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Data.HashMap.Internal.hash</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>ND.== (8 samples, 0.80%)</title><rect x="246.0" y="149" width="9.4" height="15.0" fill="rgb(241,142,27)" rx="2" ry="2" />
+<text text-anchor="" x="249.00" y="159.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.LowLevel.hashInt (6 samples, 0.60%)</title><rect x="208.2" y="53" width="7.1" height="15.0" fill="rgb(216,151,14)" rx="2" ry="2" />
+<text text-anchor="" x="211.24" y="63.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.LowLevel.hashInt (16 samples, 1.60%)</title><rect x="552.8" y="101" width="18.9" height="15.0" fill="rgb(205,13,9)" rx="2" ry="2" />
+<text text-anchor="" x="555.80" y="111.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.LowLevel.hashInt (1 samples, 0.10%)</title><rect x="188.2" y="101" width="1.2" height="15.0" fill="rgb(213,14,20)" rx="2" ry="2" />
+<text text-anchor="" x="191.18" y="111.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>all (1,000 samples, 100%)</title><rect x="10.0" y="437" width="1180.0" height="15.0" fill="rgb(224,162,48)" rx="2" ry="2" />
+<text text-anchor="" x="13.00" y="447.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Class.hashWithSalt1 (72 samples, 7.20%)</title><rect x="486.7" y="117" width="85.0" height="15.0" fill="rgb(216,178,29)" rx="2" ry="2" />
+<text text-anchor="" x="489.72" y="127.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Data.Hash..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.LowLevel.hashInt (25 samples, 2.50%)</title><rect x="1034.2" y="133" width="29.5" height="15.0" fill="rgb(207,18,34)" rx="2" ry="2" />
+<text text-anchor="" x="1037.24" y="143.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Da..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Mix.mixHash (1 samples, 0.10%)</title><rect x="865.5" y="149" width="1.2" height="15.0" fill="rgb(206,11,30)" rx="2" ry="2" />
+<text text-anchor="" x="868.50" y="159.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Class.hashWithSalt1 (31 samples, 3.10%)</title><rect x="151.6" y="101" width="36.6" height="15.0" fill="rgb(232,200,4)" rx="2" ry="2" />
+<text text-anchor="" x="154.60" y="111.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Dat..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>NDSubst.citedHypIds (770 samples, 77.00%)</title><rect x="270.8" y="245" width="908.6" height="15.0" fill="rgb(233,139,35)" rx="2" ry="2" />
+<text text-anchor="" x="273.78" y="255.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >NDSubst.citedHypIds</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>ND.hashWithSalt (136 samples, 13.60%)</title><rect x="453.7" y="133" width="160.5" height="15.0" fill="rgb(212,162,1)" rx="2" ry="2" />
+<text text-anchor="" x="456.68" y="143.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >ND.hashWithSalt</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>NDSubst.substHypAvoidCapture.(...) (90 samples, 9.00%)</title><rect x="149.2" y="197" width="106.2" height="15.0" fill="rgb(249,28,50)" rx="2" ry="2" />
+<text text-anchor="" x="152.24" y="207.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >NDSubst.subst..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Class.defaultHash (435 samples, 43.50%)</title><rect x="614.2" y="197" width="513.3" height="15.0" fill="rgb(249,28,54)" rx="2" ry="2" />
+<text text-anchor="" x="617.16" y="207.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Data.Hashable.Class.defaultHash</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>ND.hash (70 samples, 7.00%)</title><rect x="149.2" y="149" width="82.6" height="15.0" fill="rgb(206,135,3)" rx="2" ry="2" />
+<text text-anchor="" x="152.24" y="159.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >ND.hash</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Class.defaultHashWithSalt (32 samples, 3.20%)</title><rect x="515.0" y="101" width="37.8" height="15.0" fill="rgb(221,15,33)" rx="2" ry="2" />
+<text text-anchor="" x="518.04" y="111.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Dat..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>ND.alphaEqForm (8 samples, 0.80%)</title><rect x="246.0" y="117" width="9.4" height="15.0" fill="rgb(237,157,27)" rx="2" ry="2" />
+<text text-anchor="" x="249.00" y="127.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Hashable.Mix.mixHash (5 samples, 0.50%)</title><rect x="546.9" y="69" width="5.9" height="15.0" fill="rgb(227,213,44)" rx="2" ry="2" />
+<text text-anchor="" x="549.90" y="79.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+</svg>
