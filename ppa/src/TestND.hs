@@ -100,7 +100,7 @@ testND =
         , "alphaEq" ~: testAlphaEq
         , "unify" ~: testUnify
         , "reduce" ~: testReduce
-        , "substHyp" ~: testSubstHyp
+        , "substHyp Map.empty" ~: testSubstHyp
         ]
 
 exampleEnv :: Env
@@ -437,7 +437,7 @@ doTestCheckOK env p f = do
 
     let r = fPred0 "r"
     let env' = translateE env r
-    let (p_translate, f') = translateP p f r
+    let (p_translate, f') = translateP 0 p f r
     assertEqual "translated check failed" CheckOK (check env' p_translate f')
 
     let p_translate_reduced = reduce p_translate
@@ -906,28 +906,36 @@ testSubstHyp :: Test
 testSubstHyp =
     test
         [ "simple"
-            ~: substHyp
-                "h"
-                (PAx "b")
-                (PAx "h")
+            ~: ( snd $
+                    substHyp
+                        Map.empty
+                        0
+                        "h"
+                        (PAx "b")
+                        (PAx "h")
+               )
             ~?= PAx "b"
         , "capture"
-            ~: substHyp
-                "h"
-                ( PAndE1
-                    { right = propVar "a"
-                    , proofAnd = PAx "q"
-                    }
-                )
-                ( PImpI
-                    { hypAntecedent = "q" -- son qs diferentes
-                    , proofConsequent =
-                        PAndI
-                            { proofLeft = PAx "h"
-                            , proofRight = PAx "q"
+            ~: ( snd $
+                    substHyp
+                        Map.empty
+                        0
+                        "h"
+                        ( PAndE1
+                            { right = propVar "a"
+                            , proofAnd = PAx "q"
                             }
-                    }
-                )
+                        )
+                        ( PImpI
+                            { hypAntecedent = "q" -- son qs diferentes
+                            , proofConsequent =
+                                PAndI
+                                    { proofLeft = PAx "h"
+                                    , proofRight = PAx "q"
+                                    }
+                            }
+                        )
+               )
             ~?= ( PImpI
                     { hypAntecedent = "q0"
                     , proofConsequent =

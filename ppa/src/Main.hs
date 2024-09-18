@@ -28,7 +28,8 @@ import Text.Pretty.Simple (
     pShowOpt,
  )
 import Text.Printf (printf)
-import Text.RawString.QQ
+
+-- import Text.RawString.QQ
 
 data Args = Args {input :: Path, output :: Maybe Path}
 
@@ -39,35 +40,36 @@ instance Show Path where
     show Stdout = "<stdout>"
     show (File p) = p
 
-main :: (HasCallStack) => IO ()
-main =
-    run2
-        [r|
-axiom ax: b
-axiom 1: b -> c
-theorem t: c
-proof
-    thus c by ax, 1
-end
-|]
-        Nothing
-
 -- main :: (HasCallStack) => IO ()
--- main = do
---     rawArgs <- getArgs
---     let args = parseArgs rawArgs
+-- main =
+--     run2
+--         [r|
+-- axiom ax: b
+-- axiom 1: b -> c
+-- theorem t: c
+-- proof
+--     thus c by ax, 1
+-- end
 
---     let inputPath = input args
---     rawProgram <- case inputPath of
---         Stdin -> getContents
---         File f -> readFile f
+{- | ]
+         Nothing
+-}
+main :: (HasCallStack) => IO ()
+main = do
+    rawArgs <- getArgs
+    let args = parseArgs rawArgs
 
---     run2 rawProgram
+    let inputPath = input args
+    rawProgram <- case inputPath of
+        Stdin -> getContents
+        File f -> readFile f
 
-run2 :: String -> Maybe Path -> IO ()
-run2 rawProgram output = do
+    run2 (show inputPath) rawProgram (output args)
+
+run2 :: String -> String -> Maybe Path -> IO ()
+run2 path rawProgram output = do
     putStr "Running program..."
-    case run "" rawProgram of
+    case run path rawProgram of
         Left err -> putStrLn err
         Right ctx -> do
             putStrLn "OK!"

@@ -7,7 +7,7 @@ import Data.Map qualified as Map
 import Data.Set qualified as Set
 import Debug.Trace (trace)
 import ND (HypId, Proof (..), Term (TVar), VarId, VarSubstitution, fvTerm, proofName)
-import NDSubst (substHyp, substVar)
+import NDSubst (HypMemo, substHyp, substVar)
 import Text.Printf (printf)
 
 -- freshWRT da una hyp no usada con respecto a una lista en donde no queremos
@@ -18,37 +18,39 @@ freshWRT h forbidden = head [h ++ suffix | suffix <- map show [0 ..], h ++ suffi
 -- Reduce una demostración hasta que sea irreducible (big step).
 -- Asume que chequea.
 reduce :: Proof -> Proof
-reduce = reduce' 0
+reduce = reduce' Map.empty 0
 
-reduce' :: Int -> Proof -> Proof
-reduce' iter p | trace (printf "\n\n(%s) reduce %s" (show iter) (proofName p)) False = undefined
-reduce' iter p = maybe p (reduce' (iter + 1)) (reduce1 0 p)
+reduce' :: HypMemo -> Int -> Proof -> Proof
+-- reduce' iter p | trace (printf "\n\n(%s) reduce %s" (show iter) (proofName p)) False = undefined
+reduce' mem iter p = case reduce1 mem 0 p of
+  Nothing -> p
+  Just (mem', p') -> reduce' mem' (iter + 1) p'
 
 indent :: Int -> String
 indent n = concat $ replicate (n * 2) "  "
 
 -- Realiza un paso small step de reducción de la demostración
 -- Devuelve Nothing si es irreducible.
-reduce1 :: Int -> Proof -> Maybe Proof
-reduce1 idt p | trace (printf "%sreduce1 %s" (indent idt) (proofName p)) False = undefined
-reduce1 idt p = case p of
+reduce1 :: HypMemo -> Int -> Proof -> Maybe (HypMemo, Proof)
+-- reduce1 idt proof | trace (printf "%sreduce1 %s" (indent idt) (proofName proof)) False = undefined
+reduce1 mem idt proof = case proof of
   -- Reducción de And
   -- PAndEi(PAndI(Pi_1, Pi_2)) -> PI_i
-  PAndE1 right (PAndI proofLeft proofRight) -> Just proofLeft
-  PAndE2 left (PAndI proofLeft proofRight) -> Just proofRight
+  PAndE1 right (PAndI proofLeft proofRight) -> Just (mem, proofLeft)
+  PAndE2 left (PAndI proofLeft proofRight) -> Just (mem, proofRight)
   -- Reducción de Or
   -- POrE(POrI(Pi), h.proofLeft)
   POrE
     { proofOr = POrI1{proofLeft = proofLeft}
     , hypLeft = hypLeft
     , proofAssumingLeft = proofAssumingLeft
-    } -> Nothing -- Just $ substHyp hypLeft proofLeft proofAssumingLeft
+    } -> Just $ substHyp mem (idt + 1) hypLeft proofLeft proofAssumingLeft
   POrE
     { proofOr = POrI2{proofRight = proofRight}
     , hypRight = hypRight
     , proofAssumingRight = proofAssumingRight
-    } -> Nothing -- Just $ substHyp hypRight proofRight proofAssumingRight
-    -- Reducción de Imp
+    } -> Just $ substHyp mem (idt + 1) hypRight proofRight proofAssumingRight
+  -- Reducción de Imp
   PImpE
     { antecedent = ant
     , proofImp =
@@ -57,7 +59,7 @@ reduce1 idt p = case p of
         , proofConsequent = proofAntThenCons
         }
     , proofAntecedent = proofAnt
-    } -> Just $ substHyp hypAntecedent proofAnt proofAntThenCons
+    } -> Just $ substHyp mem (idt + 1) hypAntecedent proofAnt proofAntThenCons
   -- Reducción de Not
   PNotE
     { form = form
@@ -67,8 +69,8 @@ reduce1 idt p = case p of
         , proofBot = proofBot
         }
     , proofForm = proofForm
-    } -> Nothing -- Just $ substHyp hypForm proofForm proofBot
-    -- Reducción de Forall
+    } -> Just $ substHyp mem (idt + 1) hypForm proofForm proofBot
+  -- Reducción de Forall
   PForallE
     { var = x
     , form = form
@@ -78,8 +80,8 @@ reduce1 idt p = case p of
         , proofForm = proofForm
         }
     , termReplace = t
-    } -> Nothing -- Just $ substVar x' t proofForm
-    -- Reducción de Exists
+    } -> Just $ (mem, substVar x' t proofForm)
+  -- Reducción de Exists
   PExistsE
     { var = x
     , form = form
@@ -92,8 +94,8 @@ reduce1 idt p = case p of
     , proofAssuming = proofAssuming
     } ->
       let proofAssumingWithInst = substVar x t proofAssuming
-       in Nothing -- Just $ substHyp hypForm proofFormWithInst proofAssumingWithInst
-  PNamed _ p -> Just p
+       in Just $ substHyp mem (idt + 1) hypForm proofFormWithInst proofAssumingWithInst
+  PNamed _ p -> Just (mem, p)
   -- Valores
   PAx{} -> Nothing
   PLEM -> Nothing
@@ -101,11 +103,13 @@ reduce1 idt p = case p of
   -- Congruencias
   p@(PImpI hypAntecedent proofConsequent) ->
     reduceCong1
+      mem
       idt
       proofConsequent
       (\proofConsequent' -> p{proofConsequent = proofConsequent'})
   p@(PImpE antecedent proofImp proofAntecedent) ->
     reduceCong2
+      mem
       idt
       proofImp
       (\proofImp' -> p{proofImp = proofImp'})
@@ -113,11 +117,13 @@ reduce1 idt p = case p of
       (\proofAntecedent' -> p{proofAntecedent = proofAntecedent'})
   p@(PNotI hyp proofBot) ->
     reduceCong1
+      mem
       idt
       proofBot
       (\proofBot' -> p{proofBot = proofBot'})
   p@(PNotE form proofNotForm proofForm) ->
     reduceCong2
+      mem
       idt
       proofNotForm
       (\proofNotForm' -> p{proofNotForm = proofNotForm'})
@@ -125,6 +131,7 @@ reduce1 idt p = case p of
       (\proofForm' -> p{proofForm = proofForm'})
   p@(PAndI proofLeft proofRight) ->
     reduceCong2
+      mem
       idt
       proofLeft
       (\proofLeft' -> p{proofLeft = proofLeft'})
@@ -132,26 +139,31 @@ reduce1 idt p = case p of
       (\proofRight' -> p{proofRight = proofRight'})
   p@(PAndE1 right proofAnd) ->
     reduceCong1
+      mem
       idt
       proofAnd
       (\proofAnd' -> p{proofAnd = proofAnd'})
   p@(PAndE2 left proofAnd) ->
     reduceCong1
+      mem
       idt
       proofAnd
       (\proofAnd' -> p{proofAnd = proofAnd'})
   p@(POrI1 proofLeft) ->
     reduceCong1
+      mem
       idt
       proofLeft
       (\proofLeft' -> p{proofLeft = proofLeft'})
   p@(POrI2 proofRight) ->
     reduceCong1
+      mem
       idt
       proofRight
       (\proofRight' -> p{proofRight = proofRight'})
   p@(POrE left right proofOr hypLeft proofAssumingLeft hypRight proofAssumingRight) ->
     reduceCong3
+      mem
       idt
       proofOr
       (\proofOr' -> p{proofOr = proofOr'})
@@ -161,42 +173,46 @@ reduce1 idt p = case p of
       (\proofAssumingRight' -> p{proofAssumingRight = proofAssumingRight'})
   p@(PFalseE proofBot) ->
     reduceCong1
+      mem
       idt
       proofBot
       (\proofBot' -> p{proofBot = proofBot'})
   p@(PForallI newVar proofForm) ->
-    reduceCong1 idt proofForm (\proofForm' -> p{proofForm = proofForm'})
+    reduceCong1 mem idt proofForm (\proofForm' -> p{proofForm = proofForm'})
   p@(PForallE var form proofForall termReplace) ->
-    reduceCong1 idt proofForall (\proofForall' -> p{proofForall = proofForall'})
+    reduceCong1 mem idt proofForall (\proofForall' -> p{proofForall = proofForall'})
   p@(PExistsI t pInst) ->
-    reduceCong1 idt pInst (\pInst' -> p{proofFormWithInst = pInst'})
+    reduceCong1 mem idt pInst (\pInst' -> p{proofFormWithInst = pInst'})
   p@(PExistsE var form proofExists hyp proofAssuming) ->
     reduceCong2
+      mem
       idt
       proofExists
       (\proofExists' -> p{proofExists = proofExists'})
       proofAssuming
       (\proofAssuming' -> p{proofAssuming = proofAssuming'})
 
-reduceCong1 :: Int -> Proof -> (Proof -> Proof) -> Maybe Proof
-reduceCong1 idt p r = do
-  p' <- reduce1 (idt + 1) p
-  return (r p')
+reduceCong1 :: HypMemo -> Int -> Proof -> (Proof -> Proof) -> Maybe (HypMemo, Proof)
+reduceCong1 mem idt p r = do
+  (mem', p') <- reduce1 mem (idt + 1) p
+  return (mem', r p')
 
 reduceCong2 ::
+  HypMemo ->
   Int ->
   Proof ->
   (Proof -> Proof) ->
   Proof ->
   (Proof -> Proof) ->
-  Maybe Proof
-reduceCong2 idt p1 r1 p2 r2 = case reduce1 (idt + 1) p1 of
-  Just p1' -> Just $ r1 p1'
-  Nothing -> case reduce1 (idt + 1) p2 of
-    Just p2' -> Just $ r2 p2'
+  Maybe (HypMemo, Proof)
+reduceCong2 mem idt p1 r1 p2 r2 = case reduce1 mem (idt + 1) p1 of
+  Just (mem', p1') -> Just (mem', r1 p1')
+  Nothing -> case reduce1 mem (idt + 1) p2 of
+    Just (mem', p2') -> Just (mem', r2 p2')
     Nothing -> Nothing
 
 reduceCong3 ::
+  HypMemo ->
   Int ->
   Proof ->
   (Proof -> Proof) ->
@@ -204,9 +220,9 @@ reduceCong3 ::
   (Proof -> Proof) ->
   Proof ->
   (Proof -> Proof) ->
-  Maybe Proof
-reduceCong3 idt p1 r1 p2 r2 p3 r3 = case reduceCong2 idt p1 r1 p2 r2 of
+  Maybe (HypMemo, Proof)
+reduceCong3 mem idt p1 r1 p2 r2 p3 r3 = case reduceCong2 mem idt p1 r1 p2 r2 of
   Just p' -> Just p'
-  Nothing -> case reduce1 (idt + 1) p3 of
-    Just p3' -> Just $ r3 p3'
+  Nothing -> case reduce1 mem (idt + 1) p3 of
+    Just (mem', p3') -> Just (mem', r3 p3')
     Nothing -> Nothing

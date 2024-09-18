@@ -62,7 +62,7 @@ executable ppa
     main-is:          Main.hs
 
     -- Modules included in this executable, other than Main.
-    -- other-modules:
+    other-modules: Certifier, Lexer, ND, NDChecker, NDExtractor, NDProofs, NDReducer, NDSubst, PPA, Parser, PrettyShow, Unifier
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
@@ -75,6 +75,15 @@ executable ppa
 
     -- Base language which the package is written in.
     default-language: GHC2021
+
+    ghc-options: -XImportQualifiedPost
+                -funfolding-use-threshold=16
+                -O2
+                -optc-O3
+                -rtsopts
+                -prof
+                -fprof-auto
+                -fprof-cafs
 
 test-suite tests
     type: exitcode-stdio-1.0

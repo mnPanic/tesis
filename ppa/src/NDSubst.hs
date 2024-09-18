@@ -4,6 +4,7 @@ module NDSubst (
   subst,
   substHyp,
   substVar,
+  HypMemo,
 ) where
 
 import ND (
@@ -20,6 +21,7 @@ import ND (
  )
 
 import Data.Map qualified as Map
+import Data.Set (notMember)
 import Data.Set qualified as Set
 import Debug.Trace (trace)
 import Text.Printf (printf)
@@ -80,10 +82,13 @@ substTerm s x t t' = case t' of
 
 -- freshWRT da una variable libre con respecto a una lista en donde no queremos
 -- que aparezca
-freshWRT :: (Foldable t) => VarId -> t VarId -> VarId
-freshWRT x forbidden = head [x ++ suffix | suffix <- map show [0 ..], x ++ suffix `notElem` forbidden]
+freshWRT :: VarId -> Set.Set VarId -> VarId
+freshWRT x forbidden = head [x ++ suffix | suffix <- map show [0 ..], (x ++ suffix) `notMember` forbidden]
 
 {--------------------- Sustituciones sobre demostraciones ---------------------}
+
+-- TODO: Se puede refactorizar para que use state monad y evitar repetición
+type HypMemo = Map.Map Proof (Set.Set HypId)
 
 -- Sustitución de hipótesis, usado para substHyp sin capturas
 type HypSubstitution = Map.Map HypId HypId
@@ -149,87 +154,158 @@ Una captura sería que reemplazando en una demo que agregue la hip h', y que
 en p' se use esa hyp. Hay que renombrar la que se agrega por otra que no se
 use en p' ni en la demo subsiguiente.
 -}
-substHyp :: HypId -> Proof -> Proof -> Proof
-substHyp = substHyp' Map.empty
+substHyp :: HypMemo -> Int -> HypId -> Proof -> Proof -> (HypMemo, Proof)
+substHyp mem idt h p' =
+  let (mem', hypsP) = citedHypIds mem p'
+   in substHyp' mem' Map.empty idt h p' hypsP
 
-substHyp' :: HypSubstitution -> HypId -> Proof -> Proof -> Proof
+indent :: Int -> String
+indent n = concat $ replicate (n * 2) "  "
+
+substHyp' :: HypMemo -> HypSubstitution -> Int -> HypId -> Proof -> Set.Set HypId -> Proof -> (HypMemo, Proof)
 -- substHyp' s h p' p | trace (printf "substHyp'") False = undefined
--- substHyp' s h p' p | trace (printf "substHyp' %s %s %s" h (proofName p') (proofName p)) False = undefined
-substHyp' s hRep pRep p = case p of
-  PNamed name p1 -> PNamed name (rec p1)
+-- substHyp' s idt hRep pRep hypsPRep p | trace (printf "%ssubstHyp' %s %s %s" (indent idt) hRep (proofName pRep) (proofName p)) False = undefined
+substHyp' mem s idt hRep pRep hypsPRep p = case p of
+  PNamed name p1 -> (mem', PNamed name p1')
+   where
+    (mem', p1') = rec mem p1
   PAx h'
-    | h' == hRep -> pRep -- mal, captura
+    | h' == hRep -> (mem, pRep)
     | otherwise -> case Map.lookup h' s of
         -- No puede pasar que esté renombrado y el renombre coincida con lo
         -- que se quiere renombrar, si hubiera sido la misma, hubiera cortado
-        Just h'' -> PAx h''
-        Nothing -> PAx h'
-  PAndI pL pR -> PAndI (rec pL) (rec pR)
-  PAndE1 r pR -> PAndE1 r (rec pR)
-  PAndE2 l pL -> PAndE2 l (rec pL)
-  POrI1 pL -> POrI1 (rec pL)
-  POrI2 pR -> POrI2 (rec pR)
-  POrE l r pOr hL pL hR pR -> POrE l r (rec pOr) hL' pL' hR' pR'
+        Just h'' -> (mem, PAx h'')
+        Nothing -> (mem, PAx h')
+  PAndI pL pR ->
+    let (mem1, pL') = rec mem pL
+        (mem2, pR') = rec mem1 pR
+     in (mem2, PAndI pL' pR')
+  PAndE1 r pR -> (mem', PAndE1 r pR')
    where
-    (hL', pL') = recAvoidingCapture hL pL
-    (hR', pR') = recAvoidingCapture hR pR
-  PImpI h p1 -> PImpI h' p1'
+    (mem', pR') = rec mem pR
+  PAndE2 l pL -> (mem', PAndE2 l pL')
    where
-    (h', p1') = recAvoidingCapture h p1
-  PImpE f pI pA -> PImpE f (rec pI) (rec pA)
-  PNotI h pB -> PNotI h' pB'
+    (mem', pL') = rec mem pL
+  POrI1 pL -> let in (mem', POrI1 pL')
    where
-    (h', pB') = recAvoidingCapture h pB
-  PNotE f pNotF pF -> PNotE f (rec pNotF) (rec pF)
-  PTrueI -> PTrueI
-  PFalseE pB -> PFalseE (rec pB)
-  PLEM -> PLEM
-  PForallI x pF -> PForallI x (rec pF)
-  PForallE x f pF t -> PForallE x f (rec pF) t
-  PExistsI t p1 -> PExistsI t (rec p1)
-  PExistsE x f pE h pA -> PExistsE x f (rec pE) h' pA'
+    (mem', pL') = rec mem pL
+  POrI2 pR -> (mem', POrI2 pR')
    where
-    (h', pA') = recAvoidingCapture h pA
+    (mem', pR') = rec mem pR
+  POrE l r pOr hL pL hR pR ->
+    let
+      (mem1, pOr') = rec mem pOr
+      (mem2, hL', pL') = recAvoidingCapture mem1 hL pL
+      (mem3, hR', pR') = recAvoidingCapture mem2 hL pR
+     in
+      (mem3, POrE l r pOr' hL' pL' hR' pR')
+  PImpI h p1 -> (mem', PImpI h' p1')
+   where
+    (mem', h', p1') = recAvoidingCapture mem h p1
+  PImpE f pI pA -> (mem2, PImpE f pI' pA')
+   where
+    (mem1, pI') = rec mem pI
+    (mem2, pA') = rec mem1 pA
+  PNotI h pB -> (mem', PNotI h' pB')
+   where
+    (mem', h', pB') = recAvoidingCapture mem h pB
+  PNotE f pNotF pF -> (mem2, PNotE f pNotF' pF')
+   where
+    (mem1, pNotF') = rec mem pNotF
+    (mem2, pF') = rec mem1 pF
+  PTrueI -> (mem, PTrueI)
+  PFalseE pB -> (mem', PFalseE pB')
+   where
+    (mem', pB') = rec mem pB
+  PLEM -> (mem, PLEM)
+  PForallI x pF -> (mem', PForallI x pF')
+   where
+    (mem', pF') = rec mem pF
+  PForallE x f pF t -> (mem', PForallE x f pF' t)
+   where
+    (mem', pF') = rec mem pF
+  PExistsI t p1 -> (mem', PExistsI t p1')
+   where
+    (mem', p1') = rec mem p1
+  PExistsE x f pE h pA -> (mem2, PExistsE x f pE' h' pA')
+   where
+    (mem1, pE') = rec mem pE
+    (mem2, h', pA') = recAvoidingCapture mem1 h pA
  where
-  rec = substHyp' s hRep pRep
-  recAvoidingCapture = substHypAvoidCapture s hRep pRep
+  rec mem = substHyp' mem s (idt + 1) hRep pRep hypsPRep
+  recAvoidingCapture mem = substHypAvoidCapture mem s (idt + 1) hRep pRep hypsPRep
 
 -- Reemplazando hReplace por pReplace, nos encontramos con una sub dem que tiene
 -- h como hipotesis y p como sub-demo. Queremos reemplazar en p sin que eso
 -- genere una captura (si pReplace usa h, hay que renombrar h por h' en p)
-substHypAvoidCapture :: HypSubstitution -> HypId -> Proof -> HypId -> Proof -> (HypId, Proof)
+substHypAvoidCapture ::
+  HypMemo ->
+  HypSubstitution ->
+  Int ->
+  HypId ->
+  Proof ->
+  Set.Set HypId ->
+  HypId ->
+  Proof ->
+  (HypMemo, HypId, Proof)
 -- substHypAvoidCapture s h p' h' p | trace "substHypAvoidCapture" False = undefined
-substHypAvoidCapture s hReplace pReplace h p
+substHypAvoidCapture mem s idt hReplace pReplace hypsPReplace h p
   -- Cortamos porque se re-definió la hyp que queremos reemplazar, resetea scope.
-  | hReplace == h = (h, p)
+  | hReplace == h = (mem, h, p)
   -- Hay captura
   | h `elem` hypsPReplace =
-      let h' = freshWRT h (Set.union hypsPReplace (citedHypIds p))
-          p' = substHyp' (Map.insert h h' s) hReplace pReplace p
-       in (h', p')
+      let (mem1, pHyps) = citedHypIds mem p
+          h' = freshWRT h (Set.union hypsPReplace pHyps)
+          (mem2, p') = substHyp' mem1 (Map.insert h h' s) idt hReplace pReplace hypsPReplace p
+       in (mem2, h', p')
   -- No hay captura, sigue normalmente
-  | otherwise = (h, substHyp' s hReplace pReplace p)
- where
-  hypsPReplace = citedHypIds pReplace
+  | otherwise =
+      let (mem1, hyps) = substHyp' mem s idt hReplace pReplace hypsPReplace p
+       in (mem1, h, hyps)
 
-citedHypIds :: Proof -> Set.Set HypId
-citedHypIds p = case p of
-  PAx h -> Set.singleton h
-  PNamed name p1 -> citedHypIds p1
-  PAndI pL pR -> Set.union (citedHypIds pL) (citedHypIds pR)
-  PAndE1 r pR -> citedHypIds pR
-  PAndE2 l pL -> citedHypIds pL
-  POrI1 pL -> citedHypIds pL
-  POrI2 pR -> citedHypIds pR
-  POrE l r pOr hL pL hR pR -> Set.unions [citedHypIds pOr, citedHypIds pL, citedHypIds pR]
-  PImpI h p1 -> citedHypIds p1
-  PImpE f pI pA -> Set.union (citedHypIds pI) (citedHypIds pA)
-  PNotI h pB -> citedHypIds pB
-  PNotE f pNotF pF -> Set.union (citedHypIds pNotF) (citedHypIds pF)
-  PTrueI -> Set.empty
-  PFalseE pB -> citedHypIds pB
-  PLEM -> Set.empty
-  PForallI x pF -> citedHypIds pF
-  PForallE x f pF t -> citedHypIds pF
-  PExistsI t p1 -> citedHypIds p1
-  PExistsE x f pE h pA -> Set.union (citedHypIds pE) (citedHypIds pA)
+citedHypIds :: HypMemo -> Proof -> (HypMemo, Set.Set HypId)
+citedHypIds mem p = case Map.lookup p mem of
+  Just hyps -> (mem, hyps)
+  Nothing ->
+    let (mem', hyps) = citedHypIds' mem p
+     in (Map.insert p hyps mem', hyps)
+
+citedHypIds' :: HypMemo -> Proof -> (HypMemo, Set.Set HypId)
+citedHypIds' mem p = case p of
+  PAx h -> (mem, Set.singleton h)
+  PNamed name p1 -> rec p1
+  PAndI pL pR ->
+    let (mem1, hyps1) = rec pL
+        (mem2, hyps2) = citedHypIds mem1 pR
+     in (mem2, Set.union hyps1 hyps2)
+  PAndE1 r pR -> rec pR
+  PAndE2 l pL -> rec pL
+  POrI1 pL -> rec pL
+  POrI2 pR -> rec pR
+  POrE l r pOr hL pL hR pR ->
+    let (mem1, hyps1) = citedHypIds mem pOr
+        (mem2, hyps2) = citedHypIds mem1 pL
+        (mem3, hyps3) = citedHypIds mem2 pR
+     in (mem3, Set.unions [hyps1, hyps2, hyps3])
+  PImpI h p1 -> rec p1
+  PImpE f pI pA ->
+    let (mem1, hyps1) = citedHypIds mem pI
+        (mem2, hyps2) = citedHypIds mem1 pA
+     in (mem2, Set.union hyps1 hyps2)
+  PNotI h pB -> rec pB
+  PNotE f pNotF pF ->
+    let (mem1, hyps1) = citedHypIds mem pNotF
+        (mem2, hyps2) = citedHypIds mem1 pF
+     in (mem2, Set.union hyps1 hyps2)
+  PTrueI -> (mem, Set.empty)
+  PFalseE pB -> rec pB
+  PLEM -> (mem, Set.empty)
+  PForallI x pF -> rec pF
+  PForallE x f pF t -> rec pF
+  PExistsI t p1 -> rec p1
+  PExistsE x f pE h pA ->
+    let (mem1, hyps1) = citedHypIds mem pE
+        (mem2, hyps2) = citedHypIds mem1 pA
+     in (mem2, Set.union hyps1 hyps2)
+ where
+  rec = citedHypIds mem
