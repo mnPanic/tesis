@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 
 -- El módulo ND (Natural Deduction) contiene tipos para demostraciones de
@@ -40,6 +41,10 @@ import Data.Set qualified as Set
 import Data.List (intercalate)
 
 import Text.Printf (printf)
+
+-- https://hackage.haskell.org/package/hashable-1.4.3.0/docs/Data-Hashable.html#t:Hashable
+import Data.Hashable
+import GHC.Generics (Generic)
 
 -- Dada una fórmula A da su doble negación
 dneg :: Form -> Form
@@ -90,7 +95,9 @@ data Term
     = TVar VarId
     | TMetavar Metavar
     | TFun FunId [Term]
-    deriving (Ord)
+    deriving (Generic)
+
+instance Hashable Term
 
 instance Show Term where
     show (TVar x) = x
@@ -135,7 +142,9 @@ data Form
     | FFalse
     | FForall VarId Form
     | FExists VarId Form
-    deriving (Ord)
+    deriving (Generic)
+
+instance Hashable Form
 
 instance Show Form where
     show :: Form -> String
@@ -349,7 +358,9 @@ data Proof
         , hyp :: HypId -- x: A
         , proofAssuming :: Proof -- de B con A como hyp
         }
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Generic)
+
+instance Hashable Proof
 
 proofName :: Proof -> String
 proofName p = case p of

@@ -20,6 +20,7 @@ import ND (
   proofName,
  )
 
+import Data.HashMap.Strict qualified as HashMap
 import Data.Map qualified as Map
 import Data.Set (notMember)
 import Data.Set qualified as Set
@@ -88,7 +89,7 @@ freshWRT x forbidden = head [x ++ suffix | suffix <- map show [0 ..], (x ++ suff
 {--------------------- Sustituciones sobre demostraciones ---------------------}
 
 -- TODO: Se puede refactorizar para que use state monad y evitar repetición
-type HypMemo = Map.Map Proof (Set.Set HypId)
+type HypMemo = HashMap.HashMap Proof (Set.Set HypId)
 
 -- Sustitución de hipótesis, usado para substHyp sin capturas
 type HypSubstitution = Map.Map HypId HypId
@@ -232,8 +233,8 @@ substHyp' mem s idt hRep pRep hypsPRep p = case p of
     (mem1, pE') = rec mem pE
     (mem2, h', pA') = recAvoidingCapture mem1 h pA
  where
-  rec mem = substHyp' mem s (idt + 1) hRep pRep hypsPRep
-  recAvoidingCapture mem = substHypAvoidCapture mem s (idt + 1) hRep pRep hypsPRep
+  rec mem' = substHyp' mem' s (idt + 1) hRep pRep hypsPRep
+  recAvoidingCapture mem' = substHypAvoidCapture mem' s (idt + 1) hRep pRep hypsPRep
 
 -- Reemplazando hReplace por pReplace, nos encontramos con una sub dem que tiene
 -- h como hipotesis y p como sub-demo. Queremos reemplazar en p sin que eso
@@ -264,11 +265,11 @@ substHypAvoidCapture mem s idt hReplace pReplace hypsPReplace h p
        in (mem1, h, hyps)
 
 citedHypIds :: HypMemo -> Proof -> (HypMemo, Set.Set HypId)
-citedHypIds mem p = case Map.lookup p mem of
+citedHypIds mem p = case HashMap.lookup p mem of
   Just hyps -> (mem, hyps)
   Nothing ->
     let (mem', hyps) = citedHypIds' mem p
-     in (Map.insert p hyps mem', hyps)
+     in (HashMap.insert p hyps mem', hyps)
 
 citedHypIds' :: HypMemo -> Proof -> (HypMemo, Set.Set HypId)
 citedHypIds' mem p = case p of

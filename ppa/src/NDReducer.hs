@@ -3,6 +3,7 @@
 module NDReducer (reduce) where
 
 import Control.DeepSeq (force)
+import Data.HashMap.Strict qualified as HashMap
 import Data.Map qualified as Map
 import Data.Set qualified as Set
 import Debug.Trace (trace)
@@ -18,7 +19,7 @@ freshWRT h forbidden = head [h ++ suffix | suffix <- map show [0 ..], h ++ suffi
 -- Reduce una demostración hasta que sea irreducible (big step).
 -- Asume que chequea.
 reduce :: Proof -> Proof
-reduce = reduce' Map.empty 0
+reduce = reduce' HashMap.empty 0
 
 reduce' :: HypMemo -> Int -> Proof -> Proof
 -- reduce' iter p | trace (printf "\n\n(%s) reduce %s" (show iter) (proofName p)) False = undefined

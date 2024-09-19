@@ -81,6 +81,7 @@ import Test.HUnit (
     (~?=),
  )
 
+import Data.HashMap.Strict qualified as HashMap
 import Data.Map qualified as Map
 import Data.Set qualified as Set
 import NDExtractor (translateE, translateP)
@@ -100,7 +101,7 @@ testND =
         , "alphaEq" ~: testAlphaEq
         , "unify" ~: testUnify
         , "reduce" ~: testReduce
-        , "substHyp Map.empty" ~: testSubstHyp
+        , "substHyp" ~: testSubstHyp
         ]
 
 exampleEnv :: Env
@@ -908,7 +909,7 @@ testSubstHyp =
         [ "simple"
             ~: ( snd $
                     substHyp
-                        Map.empty
+                        HashMap.empty
                         0
                         "h"
                         (PAx "b")
@@ -918,7 +919,7 @@ testSubstHyp =
         , "capture"
             ~: ( snd $
                     substHyp
-                        Map.empty
+                        HashMap.empty
                         0
                         "h"
                         ( PAndE1
