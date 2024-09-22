@@ -100,7 +100,7 @@ testND =
         , "alphaEq" ~: testAlphaEq
         , "unify" ~: testUnify
         , "reduce" ~: testReduce
-        , "substHyp Map.empty" ~: testSubstHyp
+        , "substHyp" ~: testSubstHyp
         ]
 
 exampleEnv :: Env
@@ -431,11 +431,11 @@ testSubst =
 
 -- chequea que la proof sea correcta y además la reduce y ve que siga chequeando,
 -- de esa forma testeando a mano que la reducción preserve "tipo" (chequeo)
-doTestCheckOK :: Env -> Proof -> Form -> Assertion
-doTestCheckOK env p f = do
+assertCheckTranslatedReducedOK :: Env -> Proof -> Form -> Assertion
+assertCheckTranslatedReducedOK env p f = do
     assertEqual "check failed" CheckOK (check env p f)
 
-    let r = fPred0 "r"
+    let r = fPred0 "__r"
     let env' = translateE env r
     let (p_translate, f') = translateP 0 p f r
     assertEqual "translated check failed" CheckOK (check env' p_translate f')
@@ -447,20 +447,20 @@ testCheckExamples :: Test
 testCheckExamples =
     test
         [ -- PAx
-          "A |- A" ~: doTestCheckOK exampleEnv (PAx "h1") FTrue
+          "A |- A" ~: assertCheckTranslatedReducedOK exampleEnv (PAx "h1") FTrue
         , "A |- B invalid"
             ~: rootCause (check exampleEnv (PAx "h1") FFalse)
             ~?= CheckError exampleEnv (PAx "h1") FFalse "env has hyp 'h1' for different form 'true'"
         , "PAx alpha eq"
-            ~: doTestCheckOK
+            ~: assertCheckTranslatedReducedOK
                 (EExtend "h" (FExists "x" (predVar "p" "x")) EEmpty)
                 (PAx "h")
                 (FExists "y" (predVar "p" "y"))
         , -- PImpI
-          "A -> A" ~: doTestCheckOK EEmpty p1 f1
-        , "A -> (B -> A)" ~: doTestCheckOK EEmpty p2 f2
+          "A -> A" ~: assertCheckTranslatedReducedOK EEmpty p1 f1
+        , "A -> (B -> A)" ~: assertCheckTranslatedReducedOK EEmpty p2 f2
         , -- Usar la misma etiqueta para diferentes hipótesis
-          "A -> (B -> B)" ~: doTestCheckOK EEmpty p3 f3
+          "A -> (B -> B)" ~: assertCheckTranslatedReducedOK EEmpty p3 f3
         , "A -> (B -> A) invalid"
             ~: rootCause (check EEmpty p3 f2)
             ~?= CheckError
@@ -470,7 +470,7 @@ testCheckExamples =
                 "env has hyp 'x' for different form 'B'"
         , -- PImpE
           "(A -> (B -> C)) -> [(A -> B) -> (A -> C)]"
-            ~: doTestCheckOK EEmpty p4 f4
+            ~: assertCheckTranslatedReducedOK EEmpty p4 f4
         , "(A -> (B -> C)) -> [(A -> B) -> (A -> C)] err left"
             ~: rootCause (check EEmpty p4Err1 f4)
             ~?= CheckError
@@ -498,34 +498,34 @@ testCheckExamples =
                 (propVar "B")
                 "hyp h B not in env"
         , -- PFalseE
-          "bot -> P" ~: doTestCheckOK EEmpty p5 f5
+          "bot -> P" ~: assertCheckTranslatedReducedOK EEmpty p5 f5
         , -- PNotE, PNotI
-          "P -> ~~P" ~: doTestCheckOK EEmpty p6 f6
-        , "~~~P -> ~P" ~: doTestCheckOK EEmpty p7 f7
-        , "(A -> B) -> (~B -> ~A)" ~: doTestCheckOK EEmpty p8 f8
+          "P -> ~~P" ~: assertCheckTranslatedReducedOK EEmpty p6 f6
+        , "~~~P -> ~P" ~: assertCheckTranslatedReducedOK EEmpty p7 f7
+        , "(A -> B) -> (~B -> ~A)" ~: assertCheckTranslatedReducedOK EEmpty p8 f8
         , -- And y OR
-          "(~A v ~B) -> ~(A ^ B)" ~: doTestCheckOK EEmpty p10 f10
-        , "((A ^ B) -> C) <-> (A -> (B -> C))" ~: doTestCheckOK EEmpty p11 f11
-        , "~~(A v ~A) con LEM" ~: doTestCheckOK EEmpty p12LEM f12
-        , "~~(A v ~A) sin LEM" ~: doTestCheckOK EEmpty p12 f12
+          "(~A v ~B) -> ~(A ^ B)" ~: assertCheckTranslatedReducedOK EEmpty p10 f10
+        , "((A ^ B) -> C) <-> (A -> (B -> C))" ~: assertCheckTranslatedReducedOK EEmpty p11 f11
+        , "~~(A v ~A) con LEM" ~: assertCheckTranslatedReducedOK EEmpty p12LEM f12
+        , "~~(A v ~A) sin LEM" ~: assertCheckTranslatedReducedOK EEmpty p12 f12
         , -- equivalencias
-          "(A ^ true) <-> A" ~: doTestCheckOK EEmpty p13 f13
-        , "(A v true) <-> true" ~: doTestCheckOK EEmpty p14 f14
+          "(A ^ true) <-> A" ~: assertCheckTranslatedReducedOK EEmpty p13 f13
+        , "(A v true) <-> true" ~: assertCheckTranslatedReducedOK EEmpty p14 f14
         , -- implicaciones de LK
-          "~~P -> P" ~: doTestCheckOK EEmpty p9 f9
-        , "~~P -> P con macro" ~: doTestCheckOK EEmpty (doubleNegElim $ propVar "A") f9
-        , "~(A ^ B) -> (~A v ~B)" ~: doTestCheckOK EEmpty p15 f15
-        , "~A ^ ~B -> ~(A v B)" ~: doTestCheckOK EEmpty p17 f17
-        , "~(A v B) -> ~A ^ ~B" ~: doTestCheckOK EEmpty p16 f16
+          "~~P -> P" ~: assertCheckTranslatedReducedOK EEmpty p9 f9
+        , "~~P -> P con macro" ~: assertCheckTranslatedReducedOK EEmpty (doubleNegElim $ propVar "A") f9
+        , "~(A ^ B) -> (~A v ~B)" ~: assertCheckTranslatedReducedOK EEmpty p15 f15
+        , "~A ^ ~B -> ~(A v B)" ~: assertCheckTranslatedReducedOK EEmpty p17 f17
+        , "~(A v B) -> ~A ^ ~B" ~: assertCheckTranslatedReducedOK EEmpty p16 f16
         , -- Exists y forall
-          "Good(y) => Exists x. Good(x)" ~: doTestCheckOK EEmpty p18 f18
-        , "Exists x. A(x) ^ B(x) => Exists y. A(y)" ~: doTestCheckOK EEmpty p19 f19
+          "Good(y) => Exists x. Good(x)" ~: assertCheckTranslatedReducedOK EEmpty p18 f18
+        , "Exists x. A(x) ^ B(x) => Exists y. A(y)" ~: assertCheckTranslatedReducedOK EEmpty p19 f19
         , "Exists x. A(x) ^ B(x) => Exists y. A(y) con renombre"
-            ~: doTestCheckOK EEmpty p19_rename f19
-        , "Forall x. A(x) ^ B(x) => Forall x. A(x)" ~: doTestCheckOK EEmpty p20 f20
+            ~: assertCheckTranslatedReducedOK EEmpty p19_rename f19
+        , "Forall x. A(x) ^ B(x) => Forall x. A(x)" ~: assertCheckTranslatedReducedOK EEmpty p20 f20
         , "Forall x. A(x) ^ B(x) => Forall x. A(x) with rename in forallI"
-            ~: doTestCheckOK EEmpty p20_2 f20
-        , "Forall x. A(x) ^ B(x) => Forall y. A(y)" ~: doTestCheckOK EEmpty p20' f20'
+            ~: assertCheckTranslatedReducedOK EEmpty p20_2 f20
+        , "Forall x. A(x) ^ B(x) => Forall y. A(y)" ~: assertCheckTranslatedReducedOK EEmpty p20' f20'
         , "Forall x. A(x) => Exists x. B(x)"
             ~: rootCause (check EEmpty p22 f22)
             ~?= CheckError
@@ -541,12 +541,12 @@ testCheckExamples =
                 (FForall "x" (FPred "A" [TVar "x"]))
                 "env shouldn't contain fv 'x', forms: [A(x)]"
         , -- DeMorgan de Exists y Forall
-          "V x. A(x) => ~E x. ~A(x)" ~: doTestCheckOK EEmpty p23Ida f23Ida
-        , "~E x. ~A(x) => V x. A(x)" ~: doTestCheckOK EEmpty p23Vuelta f23Vuelta
-        , "E x. A(x) => ~V x. ~A(x)" ~: doTestCheckOK EEmpty p24Ida f24Ida
-        , "~V x. ~A(x) => E x. A(x)" ~: doTestCheckOK EEmpty p24Vuelta f24Vuelta
+          "V x. A(x) => ~E x. ~A(x)" ~: assertCheckTranslatedReducedOK EEmpty p23Ida f23Ida
+        , "~E x. ~A(x) => V x. A(x)" ~: assertCheckTranslatedReducedOK EEmpty p23Vuelta f23Vuelta
+        , "E x. A(x) => ~V x. ~A(x)" ~: assertCheckTranslatedReducedOK EEmpty p24Ida f24Ida
+        , "~V x. ~A(x) => E x. A(x)" ~: assertCheckTranslatedReducedOK EEmpty p24Vuelta f24Vuelta
         , "alphaEq E x. A(x) => E y. A(y) directo"
-            ~: doTestCheckOK
+            ~: assertCheckTranslatedReducedOK
                 EEmpty
                 (PImpI "h E x. A(x)" (PAx "h E x. A(x)"))
                 ( FImp
@@ -554,7 +554,7 @@ testCheckExamples =
                     (FExists "y" (predVar "A" "y"))
                 )
         , "subst sin captura - E y. V x. A(z) v true"
-            ~: doTestCheckOK
+            ~: assertCheckTranslatedReducedOK
                 EEmpty
                 ( PExistsI
                     (TVar "x") -- generaria captura con V x
@@ -573,13 +573,13 @@ testGeneratedProofs =
         , "equivalences" ~: testEquivalences
         ]
 
-testAndIList :: Test
+testAndIList :: Assertion
 testAndIList = do
     let form = fromClause [propVar "A", propVar "B", propVar "C"]
     let subproofs = [PAx "a", PAx "b", PAx "c"]
     let env = EExtend "a" (propVar "A") (EExtend "b" (propVar "B") (EExtend "c" (propVar "C") EEmpty))
     let proof = proofAndIList subproofs
-    check env proof form ~?= CheckOK
+    assertCheckTranslatedReducedOK env proof form
 
 testAndEProjection :: Test
 testAndEProjection =
@@ -702,29 +702,26 @@ testAndEProj fAnd hAnd f expectedProof = do
     let result = proofAndEProjection (hAnd, fAnd) f
     result @?= Right expectedProof
     let (Right proof) = result
-    check (EExtend hAnd fAnd EEmpty) proof f @?= CheckOK
+    assertCheckTranslatedReducedOK (EExtend hAnd fAnd EEmpty) proof f
 
 -- Test de demostraciones necesarias para la implementación de by
 testByExamples :: Test
 testByExamples =
     test
         [ "X & (Y v Z) -> (X & Y) v (X & Z)"
-            ~: check EEmpty p25' f25'
-            ~?= CheckOK
+            ~: assertCheckTranslatedReducedOK EEmpty p25' f25'
         , "(X & Y) v (X & Z) -> X & (Y v Z) with macro"
-            ~: check EEmpty (proofDistOrOverAnd (propVar "X") (propVar "Y") (propVar "Z")) f25
-            ~?= CheckOK
+            ~: assertCheckTranslatedReducedOK EEmpty (proofDistOrOverAnd (propVar "X") (propVar "Y") (propVar "Z")) f25
         , -- andEProj
           "trans no proj ((A -> B) & (B -> C)) & A -> C"
-            ~: check EEmpty p27 f27
-            ~?= CheckOK
+            ~: assertCheckTranslatedReducedOK EEmpty p27 f27
         , "trans w/ andEProj ((A -> B) & (B -> C)) & A -> C"
             ~: case p27_andEProjection of
                 (Left e) -> assertFailure e
-                (Right p) -> check EEmpty p f27 @?= CheckOK
+                (Right p) -> assertCheckTranslatedReducedOK EEmpty p f27
         , "example solve contradiction manually (A & ~A & ~B) v (A & B & ~B) -> false (bot)" ~: case p28_exampleSolve of
             (Left e) -> assertFailure e
-            (Right p) -> check EEmpty p f28_exampleSolve @?= CheckOK
+            (Right p) -> assertCheckTranslatedReducedOK EEmpty p f28_exampleSolve
             -- , "by manually: ( ( A ^ (A -> B) ) -> B )" f26 p26
         ]
 
@@ -820,8 +817,8 @@ testEquivalences =
                 let (pImpElimLR, pImpElimRL) = proofImpElim x y hImp hOr
 
                 let (pCongLR, pCongRL) = proofAndCongruence2 z fImp fOr hAnd hAnd' hImp pImpElimLR hOr pImpElimRL
-                CheckOK @=? check (EExtend hAnd fAnd EEmpty) pCongLR fAnd'
-                CheckOK @=? check (EExtend hAnd' fAnd' EEmpty) pCongRL fAnd
+                assertCheckTranslatedReducedOK (EExtend hAnd fAnd EEmpty) pCongLR fAnd'
+                assertCheckTranslatedReducedOK (EExtend hAnd' fAnd' EEmpty) pCongRL fAnd
         , "or congruence 1"
             ~: do
                 -- if X => Y -|- ~X v Y then (X => Y) v Z -|- (~X v Y) v Z
@@ -837,8 +834,8 @@ testEquivalences =
                 let (pLL', pL'L) = proofImpElim x y hL hL'
 
                 let (pCongLR, pCongRL) = proofOrCongruence1 left z left' hF hF' hL pLL' hL' pL'L
-                CheckOK @=? check (EExtend hF f EEmpty) pCongLR f'
-                CheckOK @=? check (EExtend hF' f' EEmpty) pCongRL f
+                assertCheckTranslatedReducedOK (EExtend hF f EEmpty) pCongLR f'
+                assertCheckTranslatedReducedOK (EExtend hF' f' EEmpty) pCongRL f
         , "or congruence 2"
             ~: do
                 -- if X => Y -|- ~X v Y then Z v (X => Y) -|- Z v (~X v Y)
@@ -854,8 +851,8 @@ testEquivalences =
                 let (pRR', pR'R) = proofImpElim x y hR hR'
 
                 let (pCongLR, pCongRL) = proofOrCongruence2 z right right' hF hF' hR pRR' hR' pR'R
-                CheckOK @=? check (EExtend hF f EEmpty) pCongLR f'
-                CheckOK @=? check (EExtend hF' f' EEmpty) pCongRL f
+                assertCheckTranslatedReducedOK (EExtend hF f EEmpty) pCongLR f'
+                assertCheckTranslatedReducedOK (EExtend hF' f' EEmpty) pCongRL f
         , "not congruence"
             ~: do
                 let (x, y) = (propVar "X", propVar "Y")
@@ -867,8 +864,8 @@ testEquivalences =
                 let (hNot, hNot') = (hypForm fNot, hypForm fNot')
 
                 let (pCongLR, pCongRL) = proofNotCongruence f f' hNot hNot' hF pFF' hF' pF'F
-                CheckOK @=? check (EExtend hNot fNot EEmpty) pCongLR fNot'
-                CheckOK @=? check (EExtend hNot' fNot' EEmpty) pCongRL fNot
+                assertCheckTranslatedReducedOK (EExtend hNot fNot EEmpty) pCongLR fNot'
+                assertCheckTranslatedReducedOK (EExtend hNot' fNot' EEmpty) pCongRL fNot
         , "imp congruence 1"
             ~: do
                 let (x, y, z) = (propVar "X", propVar "Y", propVar "Z")
@@ -880,8 +877,8 @@ testEquivalences =
                 let (hImp, hImp') = (hypForm fImp, hypForm fImp')
 
                 let (pCongLR, pCongRL) = proofImpCongruence1 f z f' hImp hImp' hF pFF' hF' pF'F
-                CheckOK @=? check (EExtend hImp fImp EEmpty) pCongLR fImp'
-                CheckOK @=? check (EExtend hImp' fImp' EEmpty) pCongRL fImp
+                assertCheckTranslatedReducedOK (EExtend hImp fImp EEmpty) pCongLR fImp'
+                assertCheckTranslatedReducedOK (EExtend hImp' fImp' EEmpty) pCongRL fImp
         , "imp congruence 2"
             ~: do
                 let (x, y, z) = (propVar "X", propVar "Y", propVar "Z")
@@ -893,14 +890,14 @@ testEquivalences =
                 let (hImp, hImp') = (hypForm fImp, hypForm fImp')
 
                 let (pCongLR, pCongRL) = proofImpCongruence2 z f f' hImp hImp' hF pFF' hF' pF'F
-                CheckOK @=? check (EExtend hImp fImp EEmpty) pCongLR fImp'
-                CheckOK @=? check (EExtend hImp' fImp' EEmpty) pCongRL fImp
+                assertCheckTranslatedReducedOK (EExtend hImp fImp EEmpty) pCongLR fImp'
+                assertCheckTranslatedReducedOK (EExtend hImp' fImp' EEmpty) pCongRL fImp
         ]
 
 checkEquiv :: HypId -> Form -> HypId -> Form -> Proof -> Proof -> IO ()
 checkEquiv hF f hF' f' pFThenF' pF'ThenF = do
-    CheckOK @=? check (EExtend hF f EEmpty) pFThenF' f'
-    CheckOK @=? check (EExtend hF' f' EEmpty) pF'ThenF f
+    assertCheckTranslatedReducedOK (EExtend hF f EEmpty) pFThenF' f'
+    assertCheckTranslatedReducedOK (EExtend hF' f' EEmpty) pF'ThenF f
 
 testSubstHyp :: Test
 testSubstHyp =
