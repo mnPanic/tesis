@@ -90,7 +90,6 @@ data Term
     = TVar VarId
     | TMetavar Metavar
     | TFun FunId [Term]
-    deriving (Ord)
 
 instance Show Term where
     show (TVar x) = x
@@ -135,7 +134,6 @@ data Form
     | FFalse
     | FForall VarId Form
     | FExists VarId Form
-    deriving (Ord)
 
 instance Show Form where
     show :: Form -> String
@@ -349,7 +347,7 @@ data Proof
         , hyp :: HypId -- x: A
         , proofAssuming :: Proof -- de B con A como hyp
         }
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq)
 
 proofName :: Proof -> String
 proofName p = case p of

@@ -612,7 +612,6 @@ Por eso usamos el truco de dneg elim (HI) para pasar a demostrar ~r~r A~~,
 porque introduciendo, tenemos que demostrar r.
 -}
 dNegRElim :: Form -> HypId -> Form -> Proof
--- dNegRElim idt f h_dneg_f' _ | trace (printf "%s dNegRElim %s" (indent idt) (show f)) False = undefined
 dNegRElim f h_dneg_f' r = case (f, translateF f r) of
   (FFalse, r2) ->
     PImpE

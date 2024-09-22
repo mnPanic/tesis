@@ -16,15 +16,12 @@ import ND (
   fv,
   fvP,
   fvTerm,
-  proofName,
  )
 
 import Control.DeepSeq (force)
 import Data.Map qualified as Map
 import Data.Set (notMember)
 import Data.Set qualified as Set
-import Debug.Trace (trace)
-import Text.Printf (printf)
 
 {------------------------ Sustituciones sobre fórmulas ------------------------}
 

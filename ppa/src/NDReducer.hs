@@ -2,12 +2,8 @@
 -- a una equivalente más chica.
 module NDReducer (reduce) where
 
-import Data.Map qualified as Map
-import Data.Set qualified as Set
-import Debug.Trace (trace)
-import ND (HypId, Proof (..), Term (TVar), VarId, VarSubstitution, fvTerm, proofName)
+import ND (Proof (..))
 import NDSubst (substHyp, substVar)
-import Text.Printf (printf)
 
 -- Reduce una demostración hasta que sea irreducible (big step).
 -- Asume que chequea.
