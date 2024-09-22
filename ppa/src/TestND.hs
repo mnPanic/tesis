@@ -903,36 +903,29 @@ testSubstHyp :: Test
 testSubstHyp =
     test
         [ "simple"
-            ~: ( snd $
-                    substHyp
-                        Map.empty
-                        0
-                        "h"
-                        (PAx "b")
-                        (PAx "h")
-               )
+            ~: substHyp
+                "h"
+                (PAx "b")
+                (PAx "h")
             ~?= PAx "b"
         , "capture"
-            ~: ( snd $
-                    substHyp
-                        Map.empty
-                        0
-                        "h"
-                        ( PAndE1
-                            { right = propVar "a"
-                            , proofAnd = PAx "q"
-                            }
-                        )
-                        ( PImpI
-                            { hypAntecedent = "q" -- son qs diferentes
-                            , proofConsequent =
-                                PAndI
-                                    { proofLeft = PAx "h"
-                                    , proofRight = PAx "q"
-                                    }
-                            }
-                        )
-               )
+            ~: substHyp
+                    "h"
+                    ( PAndE1
+                        { right = propVar "a"
+                        , proofAnd = PAx "q"
+                        }
+                    )
+                    ( PImpI
+                        { hypAntecedent = "q" -- son qs diferentes
+                        , proofConsequent =
+                            PAndI
+                                { proofLeft = PAx "h"
+                                , proofRight = PAx "q"
+                                }
+                        }
+                    )
+               
             ~?= ( PImpI
                     { hypAntecedent = "q0"
                     , proofConsequent =

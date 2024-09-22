@@ -1,19 +1,18 @@
-axiom ax: b
+//axiom ax: b
+//axiom 1: b -> c
+//theorem t: c
+//proof
+//    thus c by ax, 1
+//end
+
+axiom ax: b | c
 axiom 1: b -> c
 theorem t: c
 proof
-    thus c by ax, 1
+    cases by ax
+        case b
+            hence c by 1
+        case c
+            hence c
+    end
 end
-
-//        TODO: rompe
-//        axiom ax: b | c
-//        axiom 1: b -> c
-//        theorem t: c
-//        proof
-//            cases by ax
-//                case b
-//                    hence c by 1
-//                case c
-//                    hence c
-//            end
-//        end

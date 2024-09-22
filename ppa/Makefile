@@ -17,10 +17,6 @@ test:
 main: lexer-parser
 	cd src && ghc -XImportQualifiedPost -funfolding-use-threshold=16 -O2 -optc-O3 Main.hs
 
-
-main-prof: lexer-parser
-	cd src && ghc -XImportQualifiedPost -funfolding-use-threshold=16 -O2 -optc-O3 -rtsopts -prof -fprof-auto -fprof-cafs Main.hs
-
 # TODO:
 # https://downloads.haskell.org/~ghc/6.0/docs/html/users_guide/options-output.html
 # redirect compilation output
