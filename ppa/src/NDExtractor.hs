@@ -7,12 +7,14 @@ module NDExtractor (
   translateF,
   translateP,
   translateE,
+  translateFriedman,
   dNegRElim,
   rElim,
 ) where
 
 import ND (Env (EEmpty, EExtend), Form (..), HypId, Proof (..), Term (TVar), proofName)
-import NDProofs (Result, cut, hypAndForm, hypForm)
+import NDChecker (check)
+import NDProofs (Result, cut, hypAndForm, hypForm, wrapR)
 import NDReducer (reduce)
 import NDSubst (subst)
 import Text.Printf (printf)
@@ -24,14 +26,70 @@ Para ello,
 - si el resultado es una
 La fórmula debe ser de la clase Sigma^0_1, es decir N existenciales seguidos de una fórmula sin cuantificadores.
 -}
-extractWitness :: Proof -> Form -> Result Term
-extractWitness proof (FExists x f) = do
-  -- TODO: Friedman translation
-  let reducedProof = reduce proof
+extractWitness :: Proof -> Form -> Result (Proof, Term)
+extractWitness proof f_exists@(FExists x f) = do
+  let proofInt = translateFriedman proof f_exists
+  let reducedProof = reduce proofInt
   case reducedProof of
-    (PExistsI t _) -> Right t
+    (PExistsI t _) -> Right (reducedProof, t)
     proof' -> Left "proof not exists introduction, can't extract witness"
 extractWitness _ f = Left $ printf "form %s must be exists" (show f)
+
+-- Dada una demostración en lógica clásica de una fórmula F, usa el truco de la
+-- traducción de Friedman para dar una demostración en lógica intuicionista.
+-- TODO: Bancar foralls
+translateFriedman :: Proof -> Form -> Proof
+translateFriedman p f_exists@(FExists x f) = do
+  let r = f_exists
+  let (p', f_exists'@(FImp _forall@(FForall _ g) _)) = translateP p f_exists r
+  PImpE
+    { antecedent = _forall
+    , proofImp = p'
+    , proofAntecedent =
+        PForallI
+          { newVar = x
+          , proofForm =
+              cut
+                (FImp f r)
+                ( PImpI
+                    { hypAntecedent = hypForm f
+                    , proofConsequent =
+                        PExistsI
+                          { inst = TVar x
+                          , proofFormWithInst = PAx $ hypForm f
+                          }
+                    }
+                )
+                (hypForm (FImp f r))
+                -- ~r A |- ~r A~~
+                (rIntro f (hypForm (FImp f r)) r)
+          }
+    }
+
+-- Demuestra ~r A |- ~r A~~ por inducción estructural en A
+rIntro :: Form -> HypId -> Form -> Proof
+rIntro f h_notr_f r = case (f, translateF f f) of
+  -- ~
+  (FFalse, _) -> PAx h_notr_f
+  (FTrue, FTrue) -> undefined
+  -- ~r A |- ~r ~r ~r A
+  (FPred{}, f'@(FImp (FImp f _) _)) ->
+    PImpI
+      { hypAntecedent = hypForm f'
+      , proofConsequent =
+          PImpE
+            { antecedent = FImp f r
+            , proofImp = PAx (hypForm f')
+            , proofAntecedent = PAx h_notr_f
+            }
+      }
+  (FNot g, FImp g' _) -> undefined
+  (FExists x g, FImp _forall _) -> undefined
+  (FOr left right, FImp or' r) -> undefined
+  (FAnd left right, FAnd left' right') -> undefined
+  (FImp ant cons, FImp ant' cons') -> undefined
+  (FForall x g, FForall _ g') -> undefined
+  (_, f') -> error $ printf "rIntro: unexpected form '%s', translated: '%s'" (show f) (show f')
 
 -- Traduce f via doble negación relativizada, parametrizada por una fórmula
 -- arbitraria R.
@@ -557,7 +615,6 @@ translateExistsE
       f' -> error ("unexpected format " ++ show f')
 
 {- Demuestra r |- A~~ por inducción estructural en A.
-
 Asume que la demostración de r ya está traducida.
 -}
 rElim :: Form -> Proof -> Form -> Proof

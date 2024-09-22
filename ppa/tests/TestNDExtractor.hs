@@ -30,6 +30,7 @@ testExtractor =
         , "translateP" ~: testTranslateProof
         , "dNegRElim" ~: testDNegRElim
         , "rElim" ~: testRElim
+        , "extractWitness" ~: testExtractWitness
         ]
 
 doTestTranslate :: Proof -> Form -> Proof -> Form -> Assertion
@@ -63,6 +64,11 @@ assertTranslateChecksAllowSame p f = do
     assertEqual "translated doesn't check" CheckOK (check EEmpty p' f')
     let reducedP' = reduce p'
     assertEqual "reduced doesn't check" CheckOK (check EEmpty p' f')
+
+-- testExtractWitness :: Test
+-- testExtractWitness = test [
+--         ""
+--     ]
 
 testTranslateProof :: Test
 testTranslateProof =

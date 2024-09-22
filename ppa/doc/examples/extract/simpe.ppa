@@ -1,0 +1,6 @@
+axiom ax: p(v)
+theorem t: exists X . p(X)
+proof
+    take X := v
+    thus p(v) by ax
+end

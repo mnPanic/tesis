@@ -83,7 +83,7 @@ import Text.Printf (printf)
 
 import Data.Either (fromLeft, fromRight, isLeft, isRight, lefts, rights)
 import Debug.Trace
-import NDExtractor (translateF, translateP)
+import NDExtractor (translateF, translateFriedman, translateP)
 import NDReducer (reduce)
 
 reduceContext :: Context -> Context
@@ -92,6 +92,12 @@ reduceContext = map reduceHyp
 reduceHyp :: Hypothesis -> Hypothesis
 reduceHyp (HAxiom h f) = HAxiom h f
 reduceHyp (HTheorem h f p) = HTheorem h f (reduce p)
+
+translateFriedmanContext :: Context -> Context
+translateFriedmanContext ctx = map translateFriedmanHyp ctx
+
+translateFriedmanHyp :: Hyphotesis -> Hyphotesis
+translateFriedmanHyp (HAxiom h f) = HAxiom
 
 translateContext :: Context -> Form -> Context
 translateContext ctx r = map (\h -> translateHyp h r) ctx
