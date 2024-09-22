@@ -78,9 +78,9 @@ run2 path rawProgram output = do
             putStrLn "OK!"
             putStr "Checking translated..."
             case checkContext ctxT of
-                -- Left err -> putStrLn err
-                -- Right _ -> do
-                r -> do
+                Left err -> putStrLn err
+                Right _ -> do
+                    -- r -> do
                     putStrLn "OK!"
                     putStr "Reducing..."
                     let ctxR = reduceContext ctxT
@@ -104,8 +104,12 @@ writeResult (Just p) ctxOriginal ctxReduced = do
             putStrLn "reduced:\n"
             pPrint ctxReduced
         File f -> do
-            writeFile (f ++ "_raw.nk") (prettyShow ctxOriginal)
-            writeFile (f ++ ".nj") (prettyShow ctxReduced)
+            let file_raw = (f ++ "_raw.nk")
+            let file_reduced = (f ++ ".nj")
+            writeFile file_raw (prettyShow ctxOriginal)
+            putStrLn ("Wrote raw to " ++ file_raw)
+            writeFile file_reduced (prettyShow ctxReduced)
+            putStrLn ("Wrote translated+reduced to " ++ file_reduced)
 
 -- writeFile (f ++ "_red.nk") (prettyShow ctxReduced)
 
