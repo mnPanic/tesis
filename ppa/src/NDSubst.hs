@@ -264,11 +264,13 @@ substHypAvoidCapture mem s idt hReplace pReplace hypsPReplace h p
        in (mem1, h, hyps)
 
 citedHypIds :: HypMemo -> Proof -> (HypMemo, Set.Set HypId)
-citedHypIds mem p = case Map.lookup p mem of
-  Just hyps -> (mem, hyps)
-  Nothing ->
-    let (mem', hyps) = citedHypIds' mem p
-     in (Map.insert p hyps mem', hyps)
+citedHypIds mem p = citedHypIds' mem p
+
+-- citedHypIds mem p = case Map.lookup p mem of
+--   Just hyps -> (mem, hyps)
+--   Nothing ->
+--     let (mem', hyps) = citedHypIds' mem p
+--      in (Map.insert p hyps mem', hyps)
 
 citedHypIds' :: HypMemo -> Proof -> (HypMemo, Set.Set HypId)
 citedHypIds' mem p = case p of

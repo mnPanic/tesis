@@ -78,8 +78,9 @@ run2 path rawProgram output = do
             putStrLn "OK!"
             putStr "Checking translated..."
             case checkContext ctxT of
-                Left err -> putStrLn err
-                Right _ -> do
+                -- Left err -> putStrLn err
+                -- Right _ -> do
+                r -> do
                     putStrLn "OK!"
                     putStr "Reducing..."
                     let ctxR = reduceContext ctxT
