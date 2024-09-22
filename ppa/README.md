@@ -18,3 +18,11 @@ Correr con args
 cabal run ppa -- debug-simple.txt out
 
 cabal run ppa -- debug-simple.txt out +RTS -p
+
+## GHCI
+
+Para correr los tests individualmente e incluir `src/`, usar `-i`
+
+```bash
+ghci tests/TestCertifier.hs -isrc
+```

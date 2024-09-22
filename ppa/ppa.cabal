@@ -90,7 +90,8 @@ executable ppa
 
 test-suite tests
     type: exitcode-stdio-1.0
-    main-is: Tests.hs
-    build-depends: base ^>=4.17.2.1, containers, array, HUnit, raw-strings-qq
-    hs-source-dirs: src
+    main-is: Main.hs
+    other-modules: Certifier, Lexer, ND, NDChecker, NDExtractor, NDProofs, NDReducer, NDSubst, PPA, Parser, PrettyShow, Unifier, TestParser, TestNDExtractor, TestND, TestCertifier
+    build-depends: base ^>=4.17.2.1, containers, array, HUnit, raw-strings-qq, deepseq
+    hs-source-dirs: tests, src
     default-language: GHC2021
