@@ -1,0 +1,6 @@
+axiom a1: forall X . p(X) & q(X)
+theorem "let" : forall X . p(X)
+proof
+    let X
+    thus p(X) by a1
+end

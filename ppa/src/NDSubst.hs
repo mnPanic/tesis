@@ -18,10 +18,10 @@ import ND (
   fvTerm,
  )
 
+import Control.DeepSeq (force)
 import Data.Map qualified as Map
+import Data.Set (notMember)
 import Data.Set qualified as Set
-import Debug.Trace (trace)
-import Text.Printf (printf)
 
 {------------------------ Sustituciones sobre fórmulas ------------------------}
 
@@ -79,8 +79,8 @@ substTerm s x t t' = case t' of
 
 -- freshWRT da una variable libre con respecto a una lista en donde no queremos
 -- que aparezca
-freshWRT :: (Foldable t) => VarId -> t VarId -> VarId
-freshWRT x forbidden = head [x ++ suffix | suffix <- map show [0 ..], x ++ suffix `notElem` forbidden]
+freshWRT :: VarId -> Set.Set VarId -> VarId
+freshWRT x forbidden = head [x ++ suffix | suffix <- map show [0 ..], (x ++ suffix) `notMember` forbidden]
 
 {--------------------- Sustituciones sobre demostraciones ---------------------}
 
@@ -149,13 +149,15 @@ en p' se use esa hyp. Hay que renombrar la que se agrega por otra que no se
 use en p' ni en la demo subsiguiente.
 -}
 substHyp :: HypId -> Proof -> Proof -> Proof
-substHyp = substHyp' Map.empty
+substHyp h p' = substHyp' Map.empty h p' hypsP
+ where
+  hypsP = citedHypIds p'
 
-substHyp' :: HypSubstitution -> HypId -> Proof -> Proof -> Proof
-substHyp' s h p' p = case p of
+substHyp' :: HypSubstitution -> HypId -> Proof -> Set.Set HypId -> Proof -> Proof
+substHyp' s hRep pRep hypsPRep p = case p of
   PNamed name p1 -> PNamed name (rec p1)
   PAx h'
-    | h' == h -> p' -- mal, captura
+    | h' == hRep -> pRep
     | otherwise -> case Map.lookup h' s of
         -- No puede pasar que esté renombrado y el renombre coincida con lo
         -- que se quiere renombrar, si hubiera sido la misma, hubiera cortado
@@ -188,26 +190,33 @@ substHyp' s h p' p = case p of
    where
     (h', pA') = recAvoidingCapture h pA
  where
-  rec = substHyp' s h p'
-  recAvoidingCapture = substHypAvoidCapture s h p'
-  hypsP' = citedHypIds p'
+  rec = substHyp' s hRep pRep hypsPRep
+  recAvoidingCapture = substHypAvoidCapture s hRep pRep hypsPRep
 
 -- Reemplazando hReplace por pReplace, nos encontramos con una sub dem que tiene
 -- h como hipotesis y p como sub-demo. Queremos reemplazar en p sin que eso
 -- genere una captura (si pReplace usa h, hay que renombrar h por h' en p)
-substHypAvoidCapture :: HypSubstitution -> HypId -> Proof -> HypId -> Proof -> (HypId, Proof)
-substHypAvoidCapture s hReplace pReplace h p
-  -- Cortamos porque se re-definió la hyp que queremos reemplazar
+substHypAvoidCapture ::
+  HypSubstitution ->
+  HypId ->
+  Proof ->
+  Set.Set HypId ->
+  HypId ->
+  Proof ->
+  (HypId, Proof)
+substHypAvoidCapture s hReplace pReplace hypsPReplace h p
+  -- Cortamos porque se re-definió la hyp que queremos reemplazar, resetea scope.
   | hReplace == h = (h, p)
   -- Hay captura
   | h `elem` hypsPReplace =
-      let h' = freshWRT h (Set.union hypsPReplace (citedHypIds p))
-          p' = substHyp' (Map.insert h h' s) hReplace pReplace p
+      let pHyps = citedHypIds p
+          h' = force freshWRT h (Set.union hypsPReplace pHyps)
+          p' = substHyp' (Map.insert h h' s) hReplace pReplace hypsPReplace p
        in (h', p')
   -- No hay captura, sigue normalmente
-  | otherwise = (h, substHyp' s hReplace pReplace p)
- where
-  hypsPReplace = citedHypIds pReplace
+  | otherwise =
+      let p' = substHyp' s hReplace pReplace hypsPReplace p
+       in (h, p')
 
 citedHypIds :: Proof -> Set.Set HypId
 citedHypIds p = case p of

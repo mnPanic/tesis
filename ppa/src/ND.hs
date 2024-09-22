@@ -245,7 +245,7 @@ asList EEmpty = []
 asList (EExtend h f r) = (h, f) : asList r
 
 get :: Env -> HypId -> Maybe Form
-get EEmpty hyp = Nothing
+get EEmpty _ = Nothing
 get (EExtend hyp' f env) hyp
     | hyp == hyp' = Just f
     | otherwise = get env hyp
@@ -352,7 +352,7 @@ data Proof
 proofName :: Proof -> String
 proofName p = case p of
     PAx h -> "PAx " ++ h
-    PNamed{} -> "PNamed"
+    PNamed n _ -> "PNamed " ++ n
     PAndI{} -> "PAndI"
     PAndE1{} -> "PAndE1"
     PAndE2{} -> "PAndE2"
@@ -373,22 +373,22 @@ proofName p = case p of
 
 fvP :: Proof -> Set.Set VarId
 fvP p = case p of
-    PAx h -> Set.empty
-    PNamed name p1 -> fvP p1
+    PAx _ -> Set.empty
+    PNamed _ p1 -> fvP p1
     PAndI pL pR -> Set.union (fvP pL) (fvP pR)
     PAndE1 r pR -> Set.union (fv r) (fvP pR)
     PAndE2 l pL -> Set.union (fv l) (fvP pL)
     POrI1 pL -> fvP pL
     POrI2 pR -> fvP pR
-    POrE l r pOr hL pL hR pR -> Set.unions [fv l, fv r, fvP pOr, fvP pL, fvP pR]
-    PImpI h p1 -> fvP p1
+    POrE l r pOr _ pL _ pR -> Set.unions [fv l, fv r, fvP pOr, fvP pL, fvP pR]
+    PImpI _ p1 -> fvP p1
     PImpE f pI pA -> Set.unions [fv f, fvP pI, fvP pA]
-    PNotI h pB -> fvP pB
+    PNotI _ pB -> fvP pB
     PNotE f pNotF pF -> Set.unions [fv f, fvP pNotF, fvP pF]
     PTrueI -> Set.empty
     PFalseE pB -> fvP pB
     PLEM -> Set.empty
-    PForallI x pF -> fvP pF
-    PForallE x f pF t -> Set.unions [fv f, fvTerm t, fvP pF]
+    PForallI _ pF -> fvP pF
+    PForallE _ f pF t -> Set.unions [fv f, fvTerm t, fvP pF]
     PExistsI t p1 -> Set.union (fvP p1) (fvTerm t)
-    PExistsE x f pE h pA -> Set.unions [fv f, fvP pE, fvP pA]
+    PExistsE _ f pE h pA -> Set.unions [fv f, fvP pE, fvP pA]

@@ -11,7 +11,6 @@ module NDExtractor (
   rElim,
 ) where
 
-import Debug.Trace (trace)
 import ND (Env (EEmpty, EExtend), Form (..), HypId, Proof (..), Term (TVar), proofName)
 import NDProofs (Result, cut, hypAndForm, hypForm)
 import NDReducer (reduce)
@@ -38,11 +37,10 @@ extractWitness _ f = Left $ printf "form %s must be exists" (show f)
 -- arbitraria R.
 -- FNot a ~~> FImp a r (FNot_R)
 translateF :: Form -> Form -> Form
--- translateF f r | trace (printf "translateF %s %s" (show f) (show r)) False = undefined
 translateF form r = case form of
-  FAnd l r -> FAnd (rec l) (rec r)
-  FOr l r -> fNotR (FAnd (fNotR (rec l)) (fNotR (rec r)))
-  FImp l r -> FImp (rec l) (rec r)
+  FAnd left right -> FAnd (rec left) (rec right)
+  FOr left right -> fNotR (FAnd (fNotR (rec left)) (fNotR (rec right)))
+  FImp left right -> FImp (rec left) (rec right)
   FNot g -> fNotR (rec g)
   FForall x g -> FForall x (rec g)
   FExists x g -> fNotR (FForall x (fNotR (rec g)))
@@ -50,8 +48,8 @@ translateF form r = case form of
   FTrue -> FTrue
   g@(FPred p ts) -> fNotR (fNotR g)
  where
-  rec g = translateF g r
-  fNotR g = FImp g r
+  rec form' = translateF form' r
+  fNotR form' = FImp form' r
 
 -- Necesario para algunos tests que hacen check con un env que no es empty
 translateE :: Env -> Form -> Env
@@ -61,7 +59,6 @@ translateE env r = case env of
 
 -- Convierte una demostración clásica en una intuicionista usando la traducción de friedman.
 translateP :: Proof -> Form -> Form -> (Proof, Form)
--- translateP proof form r | trace (printf "translateP %s %s %s" (show proof) (show form) (show r)) False = undefined
 translateP proof form r = case proof of
   PAx h -> (PAx h, translateF form r)
   PNamed n p ->
@@ -134,9 +131,10 @@ translateImpE
   r =
     let
       imp = FImp ant cons
-      (proofImp', _) = translateP proofImp imp r
+      (proofImp', imp') = translateP proofImp imp r
       (proofAnt', ant') = translateP proofAnt ant r
       cons' = translateF cons r
+      _ = assertEq (FImp ant' cons') imp'
       proofCons' =
         PImpE
           { antecedent = ant'
@@ -211,37 +209,40 @@ translateAndE2
       (proofR', right')
 
 translateLEM :: Form -> Proof -> Form -> (Proof, Form)
-translateLEM or@(FOr f (FNot g)) PLEM r =
-  -- ~R (~R f~~ & ~R~R f~~)
-  case translateF or r of
-    or'@(FImp and@(FAnd left right) r) ->
-      let
-        hAnd = hypForm and
-        proofOr' =
-          PImpI
-            { -- ~R f~~ & ~R~R f~~
-              hypAntecedent = hAnd
-            , -- R
-              proofConsequent =
-                -- Elimino ~R~R f~~, porque sabemos que vale ~R f~~
-                PImpE
-                  { antecedent = left
-                  , proofImp =
-                      PAndE2
-                        { left = left
-                        , proofAnd = PAx hAnd
-                        }
-                  , -- ~R f~~
-                    proofAntecedent =
-                      PAndE1
-                        { right = right
-                        , proofAnd = PAx hAnd
-                        }
-                  }
-            }
-       in
-        (proofOr', or')
-    or' -> error ("unexpected format " ++ show or')
+translateLEM
+  or@(FOr f (FNot g))
+  PLEM
+  r =
+    -- ~R (~R f~~ & ~R~R f~~)
+    case translateF or r of
+      or'@(FImp and@(FAnd left right) r) ->
+        let
+          hAnd = hypForm and
+          proofOr' =
+            PImpI
+              { -- ~R f~~ & ~R~R f~~
+                hypAntecedent = hAnd
+              , -- R
+                proofConsequent =
+                  -- Elimino ~R~R f~~, porque sabemos que vale ~R f~~
+                  PImpE
+                    { antecedent = left
+                    , proofImp =
+                        PAndE2
+                          { left = left
+                          , proofAnd = PAx hAnd
+                          }
+                    , -- ~R f~~
+                      proofAntecedent =
+                        PAndE1
+                          { right = right
+                          , proofAnd = PAx hAnd
+                          }
+                    }
+              }
+         in
+          (proofOr', or')
+      or' -> error ("unexpected format " ++ show or')
 
 translateOrI1 :: Form -> Proof -> Form -> (Proof, Form)
 translateOrI1
@@ -305,6 +306,7 @@ translateOrI2
          in
           (proofOr', or')
       f' -> error ("unexpected format " ++ show f')
+translateOrI2 f p _ = error $ printf "translateOrI2: unexpected form '%s' with proof '%s'" (show f) (proofName p)
 
 translateForallI :: Form -> Proof -> Form -> (Proof, Form)
 translateForallI
@@ -325,6 +327,7 @@ translateForallI
           }
      in
       (proofForall', forall')
+translateForallI f p _ = error $ printf "translateForallI: unexpected form '%s' with proof '%s'" (show f) (proofName p)
 
 translateForallE :: Form -> Proof -> Form -> (Proof, Form)
 translateForallE
@@ -350,6 +353,7 @@ translateForallE
           }
      in
       (proofFormReplace', formReplace')
+translateForallE f p _ = error $ printf "translateForallE: unexpected form '%s' with proof '%s'" (show f) (proofName p)
 
 translateOrE :: Form -> Proof -> Form -> (Proof, Form)
 translateOrE

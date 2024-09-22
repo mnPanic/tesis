@@ -13,8 +13,9 @@ clean:
 test:
 	cd src && ghc Test*.hs
 
+# https://pusher.com/blog/top-tips-and-tools-for-optimising-haskell/#introduction
 main: lexer-parser
-	cd src && ghc -XImportQualifiedPost Main.hs
+	cd src && ghc -XImportQualifiedPost -funfolding-use-threshold=16 -O2 -optc-O3 Main.hs
 
 # TODO:
 # https://downloads.haskell.org/~ghc/6.0/docs/html/users_guide/options-output.html

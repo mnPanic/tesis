@@ -3,13 +3,13 @@ axiom "b then d": b -> d
 
 theorem t: a & b -> c & d
 proof
-    suppose h : a & b;
-    hence c & d by "a then c", "b then d";
+    suppose h : a & b
+    hence c & d by "a then c", "b then d"
 end
 
 theorem t_alt: a & b -> c & d
 proof
-    suppose h : a & b;
-    hence c by "a then c";
-    thus d by "b then d", h;
+    suppose h : a & b
+    hence c by "a then c"
+    thus d by "b then d", h
 end

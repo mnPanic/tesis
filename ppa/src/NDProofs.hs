@@ -167,8 +167,8 @@ proofAndEProjection' fAnd@(FAnd l r) f
         Right p -> Right $ \next -> p (PAndE1 r next)
         Left el -> case proofAndEProjection' r f of
             Left er ->
-                Left
-                    $ printf
+                Left $
+                    printf
                         "%s |- %s not possible by left (%s) or right (%s)"
                         (show fAnd)
                         (show f)
@@ -229,7 +229,6 @@ proofAndDistOverOrL x y z hAnd hOr =
             }
     hY = hypForm y
     hZ = hypForm z
-    hYOrZ = hypForm (FOr y z)
 
     -- (x ^ y) v (x ^ z) |- x ^ (y v z)
     proofOrToAnd =
@@ -396,7 +395,7 @@ proofNotTrue hNotTrue hFalse =
 
 -- Da una dem para ~F -|- T
 proofNotFalse :: HypId -> HypId -> (Proof, Proof)
-proofNotFalse hNotFalse hTrue = (pNotFalseThenTrue, pTrueThenNotFalse)
+proofNotFalse _ _ = (pNotFalseThenTrue, pTrueThenNotFalse)
   where
     -- ~F |- T
     pNotFalseThenTrue = PTrueI
@@ -730,13 +729,13 @@ proofNotDistOverAnd x y hNotAnd hOr =
 -- Da una demostración para X => Y -|- ~X v Y
 proofImpElim :: Form -> Form -> HypId -> HypId -> (Proof, Proof)
 proofImpElim x y hImp hOr =
-    ( PNamed "imp elim LR" proofImpElim
+    ( PNamed "imp elim LR" proofImpToOr
     , PNamed "imp elim RL" proofOrToImp
     )
   where
     -- X => Y |- ~X v Y
     -- Usando LEM, si vale X entonces vale Y. Si no vale X, vale ~X
-    proofImpElim =
+    proofImpToOr =
         POrE
             { left = x
             , right = FNot x
