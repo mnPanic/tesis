@@ -437,7 +437,7 @@ assertCheckTranslatedReducedOK env p f = do
 
     let r = fPred0 "__r"
     let env' = translateE env r
-    let (p_translate, f') = translateP 0 p f r
+    let (p_translate, f') = translateP p f r
     assertEqual "translated check failed" CheckOK (check env' p_translate f')
 
     let p_translate_reduced = reduce p_translate

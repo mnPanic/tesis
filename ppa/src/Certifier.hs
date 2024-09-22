@@ -98,8 +98,8 @@ translateContext ctx r = map (\h -> translateHyp h r) ctx
 
 translateHyp :: Hypothesis -> Form -> Hypothesis
 translateHyp hyp r = case hyp of
-    HAxiom h f -> HAxiom h (translateF 0 f r)
-    HTheorem h f p -> let (p', f') = translateP 0 p f r in HTheorem h f' p'
+    HAxiom h f -> HAxiom h (translateF f r)
+    HTheorem h f p -> let (p', f') = translateP p f r in HTheorem h f' p'
 
 -- En un contexto cada demostración de teorema es válida en el contexto que
 -- contiene el prefijo estricto anterior a él.

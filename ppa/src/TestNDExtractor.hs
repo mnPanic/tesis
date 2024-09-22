@@ -36,7 +36,7 @@ doTestTranslate :: Proof -> Form -> Proof -> Form -> Assertion
 doTestTranslate p f expectedP expectedF = do
     assertEqual "original doesn't check" CheckOK (check EEmpty p f)
     assertEqual "expected translated doesn't check" CheckOK (check EEmpty expectedP expectedF)
-    let (p', f') = translateP 0 p f r
+    let (p', f') = translateP p f r
     expectedF @=? f'
     expectedP @=? p'
 
@@ -45,8 +45,8 @@ doTestTranslate p f expectedP expectedF = do
 
 assertTranslateChecks :: Proof -> Form -> Assertion
 assertTranslateChecks p f = do
-    let expectedF' = translateF 0 f r
-    let (p', f') = translateP 0 p f r
+    let expectedF' = translateF f r
+    let (p', f') = translateP p f r
     expectedF' @=? f'
     assertBool "translated and reduced proofs aren't different" (p /= p')
     assertEqual "original doesn't check" CheckOK (check EEmpty p f)
@@ -56,8 +56,8 @@ assertTranslateChecks p f = do
 
 assertTranslateChecksAllowSame :: Proof -> Form -> Assertion
 assertTranslateChecksAllowSame p f = do
-    let expectedF' = translateF 0 f r
-    let (p', f') = translateP 0 p f r
+    let expectedF' = translateF f r
+    let (p', f') = translateP p f r
     expectedF' @=? f'
     assertEqual "original doesn't check" CheckOK (check EEmpty p f)
     assertEqual "translated doesn't check" CheckOK (check EEmpty p' f')
@@ -398,11 +398,11 @@ testTranslateForm =
                                 (tripleNegR (fPred0 "c"))
                             )
                         )
-            expected ~?= translateF 0 f r
+            expected ~?= translateF f r
         , "exists" ~: do
             let f = FExists "y" (FAnd FTrue FFalse)
             let expected = fNotR (FForall "y" (fNotR (FAnd FTrue r)))
-            expected ~?= translateF 0 f r
+            expected ~?= translateF f r
         , "complex and complete" ~: do
             let f =
                     FImp
@@ -426,7 +426,7 @@ testTranslateForm =
                                 (fNotR $ fNotR (FForall "y" (fNotR (FAnd FTrue r))))
                         )
 
-            expected ~?= translateF 0 f r
+            expected ~?= translateF f r
         ]
 
 testDNegRElim :: Test
@@ -446,8 +446,8 @@ testDNegRElim =
 doTestDNegRElim :: Form -> Assertion
 doTestDNegRElim f = do
     let h = "h"
-    let f' = translateF 0 f r
-    let p = dNegRElim 0 f h r
+    let f' = translateF f r
+    let p = dNegRElim f h r
     let env = EExtend h (doubleNegR f') EEmpty
     assertEqual "translated doesn't check" CheckOK (check env p f')
 
@@ -468,8 +468,8 @@ testRElim =
 doTestRElim :: Form -> Assertion
 doTestRElim f = do
     let h = "h"
-    let f' = translateF 0 f r
-    let p = rElim 0 f (PAx h) r
+    let f' = translateF f r
+    let p = rElim f (PAx h) r
     let env = EExtend h r EEmpty
     assertEqual "translated doesn't check" CheckOK (check env p f')
 
