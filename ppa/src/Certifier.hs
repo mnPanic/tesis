@@ -96,7 +96,7 @@ reduceHyp (HTheorem h f p) = HTheorem h f (reduce p)
 translateFriedmanContext :: Context -> Context
 translateFriedmanContext ctx = map translateFriedmanHyp ctx
 
-translateFriedmanHyp :: Hyphotesis -> Hyphotesis
+translateFriedmanHyp :: Hypothesis -> Hypothesis
 translateFriedmanHyp (HAxiom h f) = HAxiom
 
 translateContext :: Context -> Form -> Context
