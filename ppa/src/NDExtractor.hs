@@ -17,7 +17,32 @@ import NDChecker (check)
 import NDProofs (Result, cut, hypAndForm, hypForm, wrapR)
 import NDReducer (reduce)
 import NDSubst (subst)
+import PPA (Context, Hypothesis (HAxiom, HTheorem), findHyp, getForm)
 import Text.Printf (printf)
+
+-- TODO: inline proofs
+translateFriedmanContext :: Context -> Form -> Context
+translateFriedmanContext ctx r = map (translateFriedmanHyp r) ctx
+
+translateFriedmanHyp :: Form -> Hypothesis -> Hypothesis
+translateFriedmanHyp r (HAxiom h f) = HAxiom h f
+-- TODO: si f no es r, probablemente queres hacer translateF
+translateFriedmanHyp r (HTheorem h f p) = HTheorem h f (translateFriedman p f r)
+
+translateContext :: Context -> Form -> Context
+translateContext ctx r = map (\h -> translateHyp h r) ctx
+
+translateHyp :: Hypothesis -> Form -> Hypothesis
+translateHyp hyp r = case hyp of
+  HAxiom h f -> HAxiom h (translateF f r)
+  HTheorem h f p -> let (p', f') = translateP p f r in HTheorem h f' p'
+
+extractWitnessCtx :: Context -> HypId -> Result Term
+extractWitnessCtx ctx theorem = do
+  h_theorem <- findHyp ctx theorem
+  let f_theorem = getForm h_theorem
+
+-- TODO: inline otras proofs en la proof del teorema
 
 {- Dada una demostración de exists X . p(X) devuelve t tal que p(t)
 Para ello,
@@ -28,7 +53,7 @@ La fórmula debe ser de la clase Sigma^0_1, es decir N existenciales seguidos de
 -}
 extractWitness :: Proof -> Form -> Result (Proof, Term)
 extractWitness proof f_exists@(FExists x f) = do
-  let proofInt = translateFriedman proof f_exists
+  let proofInt = translateFriedman proof f_exists f_exists
   let reducedProof = reduce proofInt
   case reducedProof of
     (PExistsI t _) -> Right (reducedProof, t)
@@ -38,7 +63,7 @@ extractWitness _ f = Left $ printf "form %s must be exists" (show f)
 -- Dada una demostración en lógica clásica de una fórmula F, usa el truco de la
 -- traducción de Friedman para dar una demostración en lógica intuicionista.
 -- TODO: Bancar foralls
-translateFriedman :: Proof -> Form -> Proof
+translateFriedman :: Proof -> Form -> Form -> Proof
 translateFriedman p f_exists@(FExists x f) = do
   let r = f_exists
   let (p', f_exists'@(FImp _forall@(FForall _ g) _)) = translateP p f_exists r

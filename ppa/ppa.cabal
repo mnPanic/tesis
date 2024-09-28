@@ -68,7 +68,7 @@ executable ppa
     -- other-extensions:
 
     -- Other library packages from which modules are imported.
-    build-depends:    base ^>=4.17.2.1, containers, array, deepseq, raw-strings-qq, pretty-simple, text
+    build-depends:    base ^>=4.17.2.0, containers, array, deepseq, raw-strings-qq, pretty-simple, text
 
     -- Directories containing source files.
     hs-source-dirs:   src
@@ -92,6 +92,6 @@ test-suite tests
     type: exitcode-stdio-1.0
     main-is: Main.hs
     other-modules: Certifier, Lexer, ND, NDChecker, NDExtractor, NDProofs, NDReducer, NDSubst, PPA, Parser, PrettyShow, Unifier, TestParser, TestNDExtractor, TestND, TestCertifier
-    build-depends: base ^>=4.17.2.1, containers, array, HUnit, raw-strings-qq, deepseq
+    build-depends: base ^>=4.17.2.0, containers, array, HUnit, raw-strings-qq, deepseq
     hs-source-dirs: tests, src
     default-language: GHC2021

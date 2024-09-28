@@ -13,7 +13,7 @@ import PPA (Context, Program)
 import System.Environment (getArgs)
 
 import Certifier (certify, checkContext, reduceContext, translateContext)
-import ND (fPred0)
+import ND (HypId, fPred0)
 import NDProofs (Result)
 import PPA (Context)
 import Parser (parseProgram')
@@ -31,13 +31,14 @@ import Text.Printf (printf)
 
 -- import Text.RawString.QQ
 
-data Args = Args {input :: Path, output :: Maybe Path}
+data Args
+    = ArgsCheck {input :: Path, output :: Maybe Path}
+    | ArgsTranslate {input :: Path, output :: Maybe Path, theorem :: HypId}
 
-data Path = Stdin | Stdout | File FilePath
+data Path = Std | File FilePath
 
 instance Show Path where
-    show Stdin = "<stdin>"
-    show Stdout = "<stdout>"
+    show Std = "<std>"
     show (File p) = p
 
 -- main :: (HasCallStack) => IO ()
@@ -59,17 +60,28 @@ main = do
     rawArgs <- getArgs
     let args = parseArgs rawArgs
 
-    let inputPath = input args
-    rawProgram <- case inputPath of
-        Stdin -> getContents
+    case args of
+        ArgsCheck{} -> runCheck args
+        ArgsTranslate{} -> runTranslate args
+
+runCheck :: Args -> IO ()
+runCheck (ArgsCheck inPath outPath) = do
+    rawProgram <- case inPath of
+        Std -> getContents
         File f -> readFile f
 
-    run2 (show inputPath) rawProgram (output args)
+    putStr "Checking..."
+    let ctx = parseAndCheck (show inPath) rawProgram
+    putStrLn "OK!"
 
-run2 :: String -> String -> Maybe Path -> IO ()
-run2 path rawProgram output = do
+runTranslate :: Args -> IO ()
+runTranslate (ArgsTranslate inPath outPath theorem) = do
+    rawProgram <- case inPath of
+        Std -> getContents
+        File f -> readFile f
+
     putStr "Running program..."
-    case run path rawProgram of
+    case parseAndCheck (show inPath) rawProgram of
         Left err -> putStrLn err
         Right ctx -> do
             putStrLn "OK!"
@@ -91,14 +103,14 @@ run2 path rawProgram output = do
                         Left err -> putStrLn err
                         Right _ -> do
                             putStrLn "OK!"
-                            writeResult output ctx ctxR
+                            writeResult outPath ctx ctxR
 
 writeResult :: Maybe Path -> Context -> Context -> IO ()
 writeResult Nothing _ _ = return ()
 writeResult (Just p) ctxOriginal ctxReduced = do
     putStrLn "Writing..."
     case p of
-        Stdout -> do
+        Std -> do
             putStrLn "raw context:\n"
             pPrint ctxOriginal
             putStrLn "reduced:\n"
@@ -126,18 +138,30 @@ writeResult (Just p) ctxOriginal ctxReduced = do
 --             -- , outputOptionsCompactParens = True
 --             }
 
-run :: String -> String -> Result Context
-run path rawProgram = do
+parseAndCheck :: String -> String -> Result Context
+parseAndCheck path rawProgram = do
     prog <- parseProgram' (show path) rawProgram
     ctx <- certify prog
     checkContext ctx
     return ctx
 
 parseArgs :: [String] -> Args
-parseArgs args = case args of
-    [] -> Args{input = Stdin, output = Nothing}
-    [f] -> Args{input = inputPath f, output = Nothing}
-    [f, o] -> Args{input = inputPath f, output = Just $ outputPath o}
-  where
-    inputPath s = if s == "-" then Stdin else File s
-    outputPath s = if s == "-" then Stdout else File s
+parseArgs (cmd : args) = case cmd of
+    "check" -> parseCheckArgs args
+    "translate" -> parseTranslateArgs args
+
+parseTranslateArgs :: [String] -> Args
+parseTranslateArgs args = case args of
+    [t] -> ArgsTranslate{theorem = t, input = Std, output = Nothing}
+    [t, f] -> ArgsTranslate{theorem = t, input = parsePath f, output = Nothing}
+    [t, f, o] -> ArgsTranslate{theorem = t, input = parsePath f, output = Just $ parsePath o}
+
+parseCheckArgs :: [String] -> Args
+parseCheckArgs args = case args of
+    [] -> ArgsCheck{input = Std, output = Nothing}
+    [f] -> ArgsCheck{input = parsePath f, output = Nothing}
+    [f, o] -> ArgsCheck{input = parsePath f, output = Just $ parsePath o}
+
+parsePath :: String -> Path
+parsePath "-" = Std
+parsePath s = File s
