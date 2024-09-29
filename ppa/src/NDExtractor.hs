@@ -50,7 +50,11 @@ extractWitnessCtx ctx theoremId = do
       checkContext (axioms ctx ++ [HTheorem h f pInlined])
       let translatedAxioms = translateContext (axioms ctx) r
       (pInlinedTranslated, t) <- extractWitness translatedAxioms pInlined f
-      let ctxResult = translatedAxioms ++ [HTheorem h f pInlinedTranslated]
+
+      -- TODO: ver de sacar el doble reduce
+      -- esto anda, pero faltan casos para transIntro que TIENE que andaR!!
+      let pInlinedTranslatedAxioms = reduce $ inlineAxioms (axioms ctx) pInlinedTranslated r
+      let ctxResult = axioms ctx ++ [HTheorem h f pInlinedTranslatedAxioms]
       return (ctxResult, t)
 
 -- Inlinea todos los proofs del context en el proof
@@ -60,6 +64,17 @@ inlineProofs ctx p = foldr inlineHyp p ctx
   inlineHyp hyp proof = case hyp of
     HAxiom{} -> proof
     HTheorem h f p_f -> substHyp h p_f proof
+
+inlineAxioms :: Context -> Proof -> Form -> Proof
+inlineAxioms ctx p r = foldr inlineAxiom p ctx
+ where
+  inlineAxiom hyp proof = case hyp of
+    HTheorem{} -> proof
+    HAxiom h f ->
+      substHyp
+        h
+        (cut f (PAx h) h (transIntro f h r))
+        proof
 
 {- Dada una demostración de exists X . p(X) devuelve t tal que p(t)
 Para ello,
@@ -223,14 +238,14 @@ transIntro f h_f r = case (f, translateF f r) of
                 h_right
                 proofRightThenRight'
           }
-  (FImp ant cons, FImp ant' cons') ->
-    let (h_ant, h_cons) = (hypForm ant, hypForm cons)
-        proofAntThenAnt' = transIntro ant h_ant r
-        proofConsThenCons' = transIntro cons h_cons r
-     in PImpI
-          { hypAntecedent = hypForm ant'
-          , proofConsequent = cut cons
-          }
+  (FImp ant cons, FImp ant' cons') -> undefined
+  -- let (h_ant, h_cons) = (hypForm ant, hypForm cons)
+  --     proofAntThenAnt' = transIntro ant h_ant r
+  --     proofConsThenCons' = transIntro cons h_cons r
+  --  in PImpI
+  --       { hypAntecedent = hypForm ant'
+  --       , proofConsequent = cut cons
+  --       }
   (FForall x g, FForall _ g') ->
     let
       h_g = hypForm g
