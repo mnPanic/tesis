@@ -8,6 +8,8 @@ module PPA (
   Decl (..),
   Case,
   findHyp,
+  axioms,
+  removeHyp,
   getHypId,
   getProof,
   getForm,
@@ -96,6 +98,10 @@ getProof :: Hypothesis -> Proof
 getProof (HAxiom h _) = PAx h
 getProof (HTheorem _ _ p) = p
 
+isAxiom :: Hypothesis -> Bool
+isAxiom HAxiom{} = True
+isAxiom HTheorem{} = False
+
 type Context = [Hypothesis]
 
 findHyp :: Context -> HypId -> Result Hypothesis
@@ -104,6 +110,12 @@ findHyp ctx h
   | otherwise = case find (\h' -> getHypId h' == h) ctx of
       Just hyp -> Right hyp
       Nothing -> Left $ printf "'%s' not present in ctx" h
+
+removeHyp :: Context -> HypId -> Context
+removeHyp ctx id = filter (\h -> getHypId h /= id) ctx
+
+axioms :: Context -> Context
+axioms = filter isAxiom
 
 -- hypId especial que se refiere a la anterior
 prevHypId :: String

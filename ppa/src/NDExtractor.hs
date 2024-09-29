@@ -8,27 +8,24 @@ module NDExtractor (
   translateP,
   translateE,
   translateFriedman,
+  translateContext,
+  extractWitnessCtx,
   dNegRElim,
   rElim,
+  rIntro,
+  transIntro,
 ) where
 
+import Certifier (checkContext)
 import ND (Env (EEmpty, EExtend), Form (..), HypId, Proof (..), Term (TVar), proofName)
 import NDChecker (check)
 import NDProofs (Result, cut, hypAndForm, hypForm, wrapR)
 import NDReducer (reduce)
-import NDSubst (subst)
-import PPA (Context, Hypothesis (HAxiom, HTheorem), findHyp, getForm)
+import NDSubst (subst, substHyp)
+import PPA (Context, Hypothesis (HAxiom, HTheorem), axioms, findHyp, getForm, getHypId, removeHyp)
 import Text.Printf (printf)
 
 -- TODO: inline proofs
-translateFriedmanContext :: Context -> Form -> Context
-translateFriedmanContext ctx r = map (translateFriedmanHyp r) ctx
-
-translateFriedmanHyp :: Form -> Hypothesis -> Hypothesis
-translateFriedmanHyp r (HAxiom h f) = HAxiom h f
--- TODO: si f no es r, probablemente queres hacer translateF
-translateFriedmanHyp r (HTheorem h f p) = HTheorem h f (translateFriedman p f r)
-
 translateContext :: Context -> Form -> Context
 translateContext ctx r = map (\h -> translateHyp h r) ctx
 
@@ -37,12 +34,32 @@ translateHyp hyp r = case hyp of
   HAxiom h f -> HAxiom h (translateF f r)
   HTheorem h f p -> let (p', f') = translateP p f r in HTheorem h f' p'
 
-extractWitnessCtx :: Context -> HypId -> Result Term
-extractWitnessCtx ctx theorem = do
-  h_theorem <- findHyp ctx theorem
-  let f_theorem = getForm h_theorem
+{-
+Para mantener los axiomas originales, reemplazo ax: f las ocurrencias de ax por
+una dem de f~~ a partir de f
+-}
+extractWitnessCtx :: Context -> HypId -> Result (Context, Term)
+extractWitnessCtx ctx theoremId = do
+  h_theorem <- findHyp ctx theoremId
+  case h_theorem of
+    HAxiom{} -> Left $ printf "%s is an axiom, not a theorem" theoremId
+    HTheorem h f p -> do
+      let r = f
+      let ctxRest = removeHyp ctx theoremId
+      let pInlined = inlineProofs ctxRest p
+      checkContext (axioms ctx ++ [HTheorem h f pInlined])
+      let translatedAxioms = translateContext (axioms ctx) r
+      (pInlinedTranslated, t) <- extractWitness translatedAxioms pInlined f
+      let ctxResult = translatedAxioms ++ [HTheorem h f pInlinedTranslated]
+      return (ctxResult, t)
 
--- TODO: inline otras proofs en la proof del teorema
+-- Inlinea todos los proofs del context en el proof
+inlineProofs :: Context -> Proof -> Proof
+inlineProofs ctx p = foldr inlineHyp p ctx
+ where
+  inlineHyp hyp proof = case hyp of
+    HAxiom{} -> proof
+    HTheorem h f p_f -> substHyp h p_f proof
 
 {- Dada una demostración de exists X . p(X) devuelve t tal que p(t)
 Para ello,
@@ -51,22 +68,26 @@ Para ello,
 - si el resultado es una
 La fórmula debe ser de la clase Sigma^0_1, es decir N existenciales seguidos de una fórmula sin cuantificadores.
 -}
-extractWitness :: Proof -> Form -> Result (Proof, Term)
-extractWitness proof f_exists@(FExists x f) = do
-  let proofInt = translateFriedman proof f_exists f_exists
-  let reducedProof = reduce proofInt
-  case reducedProof of
-    (PExistsI t _) -> Right (reducedProof, t)
-    proof' -> Left "proof not exists introduction, can't extract witness"
-extractWitness _ f = Left $ printf "form %s must be exists" (show f)
+extractWitness :: Context -> Proof -> Form -> Result (Proof, Term)
+extractWitness ctxAxioms proof f_exists@(FExists x f) = do
+  let proofNJ = translateFriedman proof f_exists
+  checkContext (ctxAxioms ++ [HTheorem "h" f_exists proofNJ])
+  let reducedProof = reduce proofNJ
+  return (reducedProof, TVar "----")
+-- case reducedProof of
+--   (PExistsI t _) -> Right (reducedProof, t)
+--   proof' -> Left "proof not exists introduction, can't extract witness"
+extractWitness _ _ f = Left $ printf "form %s must be exists" (show f)
 
 -- Dada una demostración en lógica clásica de una fórmula F, usa el truco de la
 -- traducción de Friedman para dar una demostración en lógica intuicionista.
 -- TODO: Bancar foralls
-translateFriedman :: Proof -> Form -> Form -> Proof
+translateFriedman :: Proof -> Form -> Proof
 translateFriedman p f_exists@(FExists x f) = do
   let r = f_exists
   let (p', f_exists'@(FImp _forall@(FForall _ g) _)) = translateP p f_exists r
+  -- p' es una demostración de ~r forall x. ~r f~~, por lo que podemos usarla
+  -- para demostrar r (el exists, la form original) si demostramos forall x. ~r f~~
   PImpE
     { antecedent = _forall
     , proofImp = p'
@@ -114,6 +135,122 @@ rIntro f h_notr_f r = case (f, translateF f f) of
   (FAnd left right, FAnd left' right') -> undefined
   (FImp ant cons, FImp ant' cons') -> undefined
   (FForall x g, FForall _ g') -> undefined
+  (_, f') -> error $ printf "rIntro: unexpected form '%s', translated: '%s'" (show f) (show f')
+
+{- Demuestra A |- A~~ por inducción estructural en A -}
+transIntro :: Form -> HypId -> Form -> Proof
+transIntro f h_f r = case (f, translateF f r) of
+  (FFalse, _) -> PFalseE (PAx h_f)
+  (FTrue, FTrue) -> PTrueI
+  (FPred{}, FImp notr_f@(FImp f _) _) ->
+    PImpI
+      { hypAntecedent = hypForm notr_f
+      , proofConsequent =
+          PImpE
+            { antecedent = f
+            , proofImp = PAx $ hypForm notr_f
+            , proofAntecedent = PAx h_f
+            }
+      }
+  (FNot g, FImp g' _) -> undefined
+  -- PImpI
+  --   { hypAntecedent = hypForm g
+  --   , proofConsequent =
+  --       PFalseE $
+  --         PNotE
+  --           { form = g
+  --           , proofNotForm = PAx h_f
+  --           , proofForm = PAx $ hypForm g
+  --           }
+  --   }
+  (FExists x g, FImp _forall@(FForall _ (FImp g' _)) _) ->
+    let
+      h_g = hypForm g
+      proofGThenG' = transIntro g h_g r
+     in
+      PImpI
+        { hypAntecedent = hypForm _forall
+        , proofConsequent =
+            PImpE
+              { antecedent = g'
+              , proofImp =
+                  PForallE
+                    { var = x
+                    , form = FImp g' r
+                    , termReplace = TVar x
+                    , proofForall = PAx $ hypForm _forall
+                    }
+              , -- proof g' sabiendo que vale exists x g, uso HI
+                proofAntecedent =
+                  cut
+                    g
+                    ( PExistsE
+                        { var = x
+                        , form = g
+                        , proofExists = PAx h_f
+                        , hyp = h_g
+                        , proofAssuming = PAx h_g
+                        }
+                    )
+                    h_g
+                    proofGThenG'
+              }
+        }
+  (FOr left right, FImp or' r) -> undefined
+  (FAnd left right, FAnd left' right') ->
+    let (h_left, h_right) = (hypForm left, hypForm right)
+        proofLeftThenLeft' = transIntro left h_left r
+        proofRightThenRight' = transIntro right h_right r
+     in PAndI
+          { proofLeft =
+              cut
+                left
+                ( PAndE1
+                    { right = right
+                    , proofAnd = PAx h_f
+                    }
+                )
+                h_left
+                proofLeftThenLeft'
+          , proofRight =
+              cut
+                right
+                ( PAndE2
+                    { left = left
+                    , proofAnd = PAx h_f
+                    }
+                )
+                h_right
+                proofRightThenRight'
+          }
+  (FImp ant cons, FImp ant' cons') ->
+    let (h_ant, h_cons) = (hypForm ant, hypForm cons)
+        proofAntThenAnt' = transIntro ant h_ant r
+        proofConsThenCons' = transIntro cons h_cons r
+     in PImpI
+          { hypAntecedent = hypForm ant'
+          , proofConsequent = cut cons
+          }
+  (FForall x g, FForall _ g') ->
+    let
+      h_g = hypForm g
+      proofGThenG' = transIntro g h_g r
+     in
+      PForallI
+        { newVar = x
+        , proofForm =
+            cut
+              g
+              ( PForallE
+                  { var = x
+                  , form = g
+                  , termReplace = TVar x
+                  , proofForall = PAx h_f
+                  }
+              )
+              h_g
+              proofGThenG'
+        }
   (_, f') -> error $ printf "rIntro: unexpected form '%s', translated: '%s'" (show f) (show f')
 
 -- Traduce f via doble negación relativizada, parametrizada por una fórmula

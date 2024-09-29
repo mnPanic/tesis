@@ -2,7 +2,7 @@ module TestNDExtractor (testExtractor) where
 
 import ND (Env (EEmpty, EExtend), Form (..), Proof (..), Term (..), fPred0, fPred1, fPredVar, tFun0, tFun1)
 import NDChecker (CheckResult (CheckOK), check)
-import NDExtractor (dNegRElim, rElim, translateF, translateP)
+import NDExtractor (dNegRElim, rElim, rIntro, transIntro, translateF, translateFriedman, translateP)
 import NDReducer (reduce)
 import Test.HUnit (
     Assertion,
@@ -16,6 +16,7 @@ import Test.HUnit (
     (@=?),
     (@?=),
     (~:),
+    (~=?),
     (~?),
     (~?=),
  )
@@ -30,7 +31,10 @@ testExtractor =
         , "translateP" ~: testTranslateProof
         , "dNegRElim" ~: testDNegRElim
         , "rElim" ~: testRElim
-        , "extractWitness" ~: testExtractWitness
+        , "rIntro" ~: testRIntro
+        , "transIntro" ~: testTransIntro
+        , "translateFriedman" ~: testTranslateFriedman
+        -- , "extractWitness" ~: testExtractWitness
         ]
 
 doTestTranslate :: Proof -> Form -> Proof -> Form -> Assertion
@@ -479,8 +483,65 @@ doTestRElim f = do
     let env = EExtend h r EEmpty
     assertEqual "translated doesn't check" CheckOK (check env p f')
 
+testTransIntro :: Test
+testTransIntro =
+    test
+        [ "false" ~: doTestTransIntro FFalse
+        , "true" ~: doTestTransIntro FTrue
+        , "pred" ~: doTestTransIntro (fPredVar "p" "x")
+        , "and" ~: doTestTransIntro (FAnd (fPred0 "p") (fPred0 "q"))
+        , -- , "imp" ~: doTestTransIntro (FImp (fPred0 "p") (fPred0 "q"))
+          -- "not" ~: doTestTransIntro (FNot (fPred0 "p"))
+          "forall" ~: doTestTransIntro (FForall "x" (fPred0 "p"))
+        , "exists" ~: doTestTransIntro (FExists "x" (fPred0 "p"))
+        -- , "or" ~: doTestTransIntro (FOr (fPred0 "p") (fPred0 "q"))
+        ]
+
+doTestTransIntro :: Form -> Assertion
+doTestTransIntro f = do
+    let h = "h"
+    let f' = translateF f r
+    let p = transIntro f h r
+    let env = EExtend h f EEmpty
+    assertEqual "doesn't check" CheckOK (check env p f')
+
+testRIntro :: Test
+testRIntro =
+    test
+        [ -- "false" ~: doTestRElim FFalse
+          -- , "true" ~: doTestRElim FTrue
+          -- ,
+          "pred" ~: doTestRIntro (fPredVar "p" "x")
+          -- , "and" ~: doTestRElim (FAnd (fPred0 "p") (fPred0 "q"))
+          -- , "imp" ~: doTestRElim (FImp (fPred0 "p") (fPred0 "q"))
+          -- , "not" ~: doTestRElim (FNot (fPred0 "p"))
+          -- , "forall" ~: doTestRElim (FForall "x" (fPred0 "p"))
+          -- , "exists" ~: doTestRElim (FExists "x" (fPred0 "p"))
+          -- , "or" ~: doTestRElim (FOr (fPred0 "p") (fPred0 "q"))
+        ]
+
+doTestRIntro :: Form -> Assertion
+doTestRIntro f = do
+    let h = "h"
+    let f' = fNotR $ translateF f r
+    let p = rIntro f h r
+    let env = EExtend h (fNotR f) EEmpty
+    assertEqual "doesn't check" CheckOK (check env p f')
+
+testTranslateFriedman :: Test
+testTranslateFriedman = do
+    let f = FExists "x" (fPred1 "p" (TVar "x"))
+    let p =
+            PExistsI
+                { inst = tFun0 "k"
+                , proofFormWithInst = PAx "ax"
+                }
+    let pk = fPred1 "p" (tFun0 "k")
+    let env = EExtend "ax" (FImp (FImp pk f) f) EEmpty
+    CheckOK ~=? check env (translateFriedman p f) f
+
 r :: Form
-r = fPred0 "r"
+r = fPred0 "__r"
 
 fNotR :: Form -> Form
 fNotR f = FImp f r

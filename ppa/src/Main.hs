@@ -3,8 +3,8 @@
 
 module Main where
 
-import Certifier (certify, checkContext, reduceContext, translateContext)
-import Parser (parseProgram')
+import Certifier (certify, checkContext, reduceContext)
+import NDExtractor (extractWitnessCtx, translateContext)
 
 import Data.Text.Lazy (unpack)
 import GHC.Stack (HasCallStack)
@@ -12,7 +12,6 @@ import NDProofs (Result)
 import PPA (Context, Program)
 import System.Environment (getArgs)
 
-import Certifier (certify, checkContext, reduceContext, translateContext)
 import ND (HypId, fPred0)
 import NDProofs (Result)
 import PPA (Context)
@@ -58,11 +57,11 @@ instance Show Path where
 main :: (HasCallStack) => IO ()
 main = do
     rawArgs <- getArgs
-    let args = parseArgs rawArgs
-
-    case args of
-        ArgsCheck{} -> runCheck args
-        ArgsTranslate{} -> runTranslate args
+    case parseArgs rawArgs of
+        Left err -> putStrLn err
+        Right args -> case args of
+            ArgsCheck{} -> runCheck args
+            ArgsTranslate{} -> runTranslate args
 
 runCheck :: Args -> IO ()
 runCheck (ArgsCheck inPath outPath) = do
@@ -75,7 +74,7 @@ runCheck (ArgsCheck inPath outPath) = do
     putStrLn "OK!"
 
 runTranslate :: Args -> IO ()
-runTranslate (ArgsTranslate inPath outPath theorem) = do
+runTranslate (ArgsTranslate inPath outPath theoremId) = do
     rawProgram <- case inPath of
         Std -> getContents
         File f -> readFile f
@@ -85,25 +84,36 @@ runTranslate (ArgsTranslate inPath outPath theorem) = do
         Left err -> putStrLn err
         Right ctx -> do
             putStrLn "OK!"
-            putStr "Translating..."
-            let ctxT = translateContext ctx (fPred0 "__r")
-            putStrLn "OK!"
-            putStr "Checking translated..."
-            case checkContext ctxT of
+            putStrLn "Translating"
+            case extractWitnessCtx ctx theoremId of
                 Left err -> putStrLn err
-                Right _ -> do
-                    -- r -> do
+                Right (ctx', t) -> do
                     putStrLn "OK!"
-                    putStr "Reducing..."
-                    let ctxR = reduceContext ctxT
-                    putStrLn "OK!"
-
-                    putStr "Checking reduced..."
-                    case checkContext ctxR of
+                    putStr "Checking translated..."
+                    case checkContext ctx' of
                         Left err -> putStrLn err
                         Right _ -> do
-                            putStrLn "OK!"
-                            writeResult outPath ctx ctxR
+                            putStrLn $ printf "OK! Extracted witness: %s" (show t)
+                            writeResult outPath ctx ctx'
+
+-- let ctxT = translateContext ctx (fPred0 "__r")
+-- putStrLn "OK!"
+-- putStr "Checking translated..."
+-- case checkContext ctxT of
+--     Left err -> putStrLn err
+--     Right _ -> do
+--         -- r -> do
+--         putStrLn "OK!"
+--         putStr "Reducing..."
+--         let ctxR = reduceContext ctxT
+--         putStrLn "OK!"
+
+--         putStr "Checking reduced..."
+--         case checkContext ctxR of
+--             Left err -> putStrLn err
+--             Right _ -> do
+--                 putStrLn "OK!"
+--                 writeResult outPath ctx ctxR
 
 writeResult :: Maybe Path -> Context -> Context -> IO ()
 writeResult Nothing _ _ = return ()
@@ -145,10 +155,11 @@ parseAndCheck path rawProgram = do
     checkContext ctx
     return ctx
 
-parseArgs :: [String] -> Args
+parseArgs :: [String] -> Result Args
 parseArgs (cmd : args) = case cmd of
-    "check" -> parseCheckArgs args
-    "translate" -> parseTranslateArgs args
+    "check" -> return $ parseCheckArgs args
+    "translate" -> return $ parseTranslateArgs args
+    c -> Left $ printf "invalid command '%s', do 'check' or 'translate'" c
 
 parseTranslateArgs :: [String] -> Args
 parseTranslateArgs args = case args of

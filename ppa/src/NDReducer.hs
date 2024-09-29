@@ -11,6 +11,7 @@ reduce :: Proof -> Proof
 reduce p = maybe p reduce (reduce1 p)
 
 -- Hack porque en las cong tengo que saber si devolver nothing
+-- TODO: reworkear un poco
 reduce' :: Proof -> Maybe Proof
 reduce' p = case reduce1 p of
   Nothing -> Nothing
