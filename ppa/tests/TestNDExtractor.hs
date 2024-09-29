@@ -494,7 +494,7 @@ testTransIntro =
           -- "not" ~: doTestTransIntro (FNot (fPred0 "p"))
           "forall" ~: doTestTransIntro (FForall "x" (fPred0 "p"))
         , "exists" ~: doTestTransIntro (FExists "x" (fPred0 "p"))
-        -- , "or" ~: doTestTransIntro (FOr (fPred0 "p") (fPred0 "q"))
+        , "or" ~: doTestTransIntro (FOr (fPred0 "p") (fPred0 "q"))
         ]
 
 doTestTransIntro :: Form -> Assertion

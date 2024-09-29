@@ -211,7 +211,41 @@ transIntro f h_f r = case (f, translateF f r) of
                     proofGThenG'
               }
         }
-  (FOr left right, FImp or' r) -> undefined
+  (FOr left right, FImp and@(FAnd (FImp left' _) (FImp right' _)) _) ->
+    let (h_left, h_right) = (hypForm left, hypForm right)
+        proofLeftThenLeft' = transIntro left h_left r
+        proofRightThenRight' = transIntro right h_right r
+     in PImpI
+          { hypAntecedent = hypForm and
+          , proofConsequent =
+              POrE
+                { left = left
+                , right = right
+                , proofOr = PAx h_f
+                , hypLeft = h_left
+                , proofAssumingLeft =
+                    PImpE
+                      { antecedent = left'
+                      , proofImp =
+                          PAndE1
+                            { right = FImp right' r
+                            , proofAnd = PAx $ hypForm and
+                            }
+                      , proofAntecedent = proofLeftThenLeft'
+                      }
+                , hypRight = h_right
+                , proofAssumingRight =
+                    PImpE
+                      { antecedent = right'
+                      , proofImp =
+                          PAndE2
+                            { left = FImp left' r
+                            , proofAnd = PAx $ hypForm and
+                            }
+                      , proofAntecedent = proofRightThenRight'
+                      }
+                }
+          }
   (FAnd left right, FAnd left' right') ->
     let (h_left, h_right) = (hypForm left, hypForm right)
         proofLeftThenLeft' = transIntro left h_left r
