@@ -48,13 +48,9 @@ extractWitnessCtx ctx theoremId = do
       let ctxRest = removeHyp ctx theoremId
       let pInlined = inlineProofs ctxRest p
       checkContext (axioms ctx ++ [HTheorem h f pInlined])
-      let translatedAxioms = translateContext (axioms ctx) r
-      (pInlinedTranslated, t) <- extractWitness translatedAxioms pInlined f
 
-      -- TODO: ver de sacar el doble reduce
-      -- esto anda, pero faltan casos para transIntro que TIENE que andaR!!
-      let pInlinedTranslatedAxioms = reduce $ inlineAxioms (axioms ctx) pInlinedTranslated r
-      let ctxResult = axioms ctx ++ [HTheorem h f pInlinedTranslatedAxioms]
+      (pInlinedTranslated, t) <- extractWitness (axioms ctx) pInlined f
+      let ctxResult = axioms ctx ++ [HTheorem h f pInlinedTranslated]
       return (ctxResult, t)
 
 -- Inlinea todos los proofs del context en el proof
@@ -86,12 +82,15 @@ La fórmula debe ser de la clase Sigma^0_1, es decir N existenciales seguidos de
 extractWitness :: Context -> Proof -> Form -> Result (Proof, Term)
 extractWitness ctxAxioms proof f_exists@(FExists x f) = do
   let proofNJ = translateFriedman proof f_exists
-  checkContext (ctxAxioms ++ [HTheorem "h" f_exists proofNJ])
-  let reducedProof = reduce proofNJ
-  return (reducedProof, TVar "----")
--- case reducedProof of
---   (PExistsI t _) -> Right (reducedProof, t)
---   proof' -> Left "proof not exists introduction, can't extract witness"
+
+  -- esto anda, pero faltan casos para transIntro que TIENE que andaR!!
+  let proofNJAdaptedAxioms = inlineAxioms ctxAxioms proofNJ f_exists
+  checkContext (ctxAxioms ++ [HTheorem "h" f_exists proofNJAdaptedAxioms])
+  let reducedProof = reduce proofNJAdaptedAxioms
+  case reducedProof of
+    (PExistsI t _) -> Right (reducedProof, t)
+    proof' -> return (reducedProof, TVar "(broken)")
+-- Left "proof not exists introduction, can't extract witness"
 extractWitness _ _ f = Left $ printf "form %s must be exists" (show f)
 
 -- Dada una demostración en lógica clásica de una fórmula F, usa el truco de la
