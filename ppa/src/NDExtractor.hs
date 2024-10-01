@@ -319,12 +319,105 @@ transIntro f h_f r = case (f, translateF f r) of
   -- Lo transformo al equivalente por el contra-recíproco mediante dos cuts
   -- ~r b -> ~r a |- ~r b~~ -> ~r b~~
   (FImp ant cons, FImp ant' cons') ->
-    cut
-      (FImp (FImp cons r) (FImp ant r))
-      -- a -> b |- ~r b -> ~ra
-      (undefined)
-      (hypForm)
-      ()
+    let
+      proofConsThenCons' = transIntro cons (hypForm cons) r
+      -- a -> b |- ~r b -> ~r a
+      proofContraRepRL =
+        PNamed
+          "proofContraRepRL"
+          PImpI
+            { hypAntecedent = hypForm (FImp cons r)
+            , proofConsequent =
+                PImpI
+                  { hypAntecedent = hypForm ant
+                  , proofConsequent =
+                      PImpE
+                        { antecedent = cons
+                        , proofImp = PAx $ hypForm (FImp cons r)
+                        , proofAntecedent =
+                            PImpE
+                              { antecedent = ant
+                              , proofImp = PAx h_f
+                              , proofAntecedent = PAx $ hypForm ant
+                              }
+                        }
+                  }
+            }
+      -- ~r b~~ -> ~r a~~ |- a~~ -> b~~
+      proofContraRepLR =
+        PNamed
+          "proofContraRepLR"
+          PImpI
+            { hypAntecedent = hypForm ant'
+            , proofConsequent =
+                -- Por el absurdo: dneg elim sobre b~~
+                cut
+                  (FImp (FImp cons' r) r)
+                  ( PNamed
+                      "proof b~~"
+                      PImpI
+                        { hypAntecedent = hypForm (FImp cons' r)
+                        , proofConsequent =
+                            PImpE
+                              { antecedent = ant'
+                              , proofImp =
+                                  PImpE
+                                    { antecedent = FImp cons' r
+                                    , proofImp = PAx (hypForm (FImp (FImp cons' r) (FImp ant' r)))
+                                    , proofAntecedent = PAx (hypForm (FImp cons' r))
+                                    }
+                              , proofAntecedent = PAx (hypForm ant')
+                              }
+                        }
+                  )
+                  (hypForm (FImp (FImp cons' r) r))
+                  (PNamed "proof ~r~r b~~ |- b~~" $ dNegRElim cons (hypForm (FImp (FImp cons' r) r)) r)
+            }
+      --  ~r b -> ~r a |-  ~r b~~ -> ~r a~~. Demo real
+      proofTransIntro =
+        PNamed
+          "proofTransIntro"
+          PImpI
+            { hypAntecedent = hypForm (FImp cons' r)
+            , -- ~r a~~
+              proofConsequent =
+                cut
+                  (FImp ant r)
+                  -- ~r a
+                  ( PImpE
+                      { antecedent = FImp cons r
+                      , proofImp = PAx (hypForm (FImp (FImp cons r) (FImp ant r)))
+                      , proofAntecedent =
+                          -- ~r b~~ |- ~r b
+                          PImpI
+                            { hypAntecedent = hypForm cons
+                            , proofConsequent =
+                                PImpE
+                                  { antecedent = cons'
+                                  , proofImp = PAx $ hypForm (FImp cons' r)
+                                  , proofAntecedent = proofConsThenCons'
+                                  }
+                            }
+                      }
+                  )
+                  (hypForm (FImp ant r))
+                  (rIntro ant (hypForm (FImp ant r)) r)
+            }
+     in
+      -- a -> b |- a~~ -> b~~
+      cut
+        (FImp (FImp cons r) (FImp ant r))
+        -- a -> b |- ~r b -> ~r a
+        proofContraRepRL
+        (hypForm (FImp (FImp cons r) (FImp ant r)))
+        ( cut
+            (FImp (FImp cons' r) (FImp ant' r))
+            --  ~r b -> ~r a |-  ~r b~~ -> ~r a~~. Demo real
+            proofTransIntro
+            (hypForm (FImp (FImp cons' r) (FImp ant' r)))
+            -- ~r b~~ -> ~r a~~ |- a~~ -> b~~
+            proofContraRepLR
+        )
   -- let (h_ant, h_cons) = (hypForm ant, hypForm cons)
   --     proofAntThenAnt' = transIntro ant h_ant r
   --     proofConsThenCons' = transIntro cons h_cons r

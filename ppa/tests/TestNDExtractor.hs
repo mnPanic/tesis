@@ -490,8 +490,8 @@ testTransIntro =
         , "true" ~: doTestTransIntro FTrue
         , "pred" ~: doTestTransIntro (fPredVar "p" "x")
         , "and" ~: doTestTransIntro (FAnd (fPred0 "p") (fPred0 "q"))
-        , -- , "imp" ~: doTestTransIntro (FImp (fPred0 "p") (fPred0 "q"))
-          -- TODO: probar casos de falla del lema rIntro
+        , "imp" ~: doTestTransIntro (FImp (fPred0 "p") (fPred0 "q"))
+        , -- TODO: probar casos de falla del lema rIntro
           "not" ~: doTestTransIntro (FNot (fPred0 "p"))
         , "forall" ~: doTestTransIntro (FForall "x" (fPred0 "p"))
         , "exists" ~: doTestTransIntro (FExists "x" (fPred0 "p"))

@@ -111,15 +111,17 @@ Permite evitar Imp-E y Imp-I para demostrar a partir de una implicación conocid
 -}
 cut :: Form -> Proof -> HypId -> Proof -> Proof
 cut fA pA hypA pAThenB =
-    PImpE
-        { antecedent = fA
-        , proofImp =
-            PImpI
-                { hypAntecedent = hypA
-                , proofConsequent = pAThenB
-                }
-        , proofAntecedent = pA
-        }
+    PNamed
+        "cut"
+        PImpE
+            { antecedent = fA
+            , proofImp =
+                PImpI
+                    { hypAntecedent = hypA
+                    , proofConsequent = pAThenB
+                    }
+            , proofAntecedent = pA
+            }
 
 {- proofAndIList
 

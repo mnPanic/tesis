@@ -18,8 +18,9 @@ import Certifier (
     reduceContext,
     solveContradiction,
     toClause,
-    translateContext,
  )
+
+import NDExtractor (translateContext)
 
 import Parser (parseProgram')
 
