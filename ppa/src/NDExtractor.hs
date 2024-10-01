@@ -50,7 +50,11 @@ extractWitnessCtx ctx theoremId = do
       checkContext (axioms ctx ++ [HTheorem h f pInlined])
 
       (pInlinedTranslated, t) <- extractWitness (axioms ctx) pInlined f
-      let ctxResult = axioms ctx ++ [HTheorem h f pInlinedTranslated]
+      let ctxResult = addImps (axioms ctx) r ++ [HTheorem h f pInlinedTranslated]
+      -- let ctxResult = axioms ctx ++ [HTheorem h f pInlinedTranslated]
+
+      -- TODO: for translated axioms
+      -- let ctxResult = (translateContext (axioms ctx) r) ++ [HTheorem h f pInlinedTranslated]
       return (ctxResult, t)
 
 -- Inlinea todos los proofs del context en el proof
@@ -72,6 +76,30 @@ inlineAxioms ctx p r = foldr inlineAxiom p ctx
         (cut f (PAx h) h (transIntro f h r))
         proof
 
+inlineAxioms2 :: Context -> Proof -> Proof
+inlineAxioms2 ctx p = foldr inlineAxiom p ctx
+ where
+  inlineAxiom hyp proof = case hyp of
+    HTheorem{} -> proof
+    HAxiom h f ->
+      substHyp
+        h
+        ( PImpE
+            { antecedent = f
+            , proofImp = PAx (h ++ "_imp")
+            , proofAntecedent = PAx h
+            }
+        )
+        proof
+
+addImps :: Context -> Form -> Context
+addImps ctx r = foldr addImp [] ctx
+ where
+  addImp ax@(HAxiom h f) ctx' =
+    ax
+      : HAxiom (h ++ "_imp") (FImp f (translateF f r))
+      : ctx'
+
 {- Dada una demostración de exists X . p(X) devuelve t tal que p(t)
 Para ello,
 - (wip) traduce la demostración de clásica a intuicionista usando la traducción de Friedman
@@ -84,8 +112,14 @@ extractWitness ctxAxioms proof f_exists@(FExists x f) = do
   let proofNJ = translateFriedman proof f_exists
 
   -- esto anda, pero faltan casos para transIntro que TIENE que andaR!!
-  let proofNJAdaptedAxioms = inlineAxioms ctxAxioms proofNJ f_exists
-  checkContext (ctxAxioms ++ [HTheorem "h" f_exists proofNJAdaptedAxioms])
+  -- let proofNJAdaptedAxioms = inlineAxioms ctxAxioms proofNJ f_exists
+  -- checkContext (ctxAxioms ++ [HTheorem "h" f_exists proofNJAdaptedAxioms])
+
+  let proofNJAdaptedAxioms = inlineAxioms2 ctxAxioms proofNJ
+
+  -- TODO: For translated axioms
+  -- let proofNJAdaptedAxioms = inlineProofs (translateContext ctxAxioms f_exists) proofNJ
+
   let reducedProof = reduce proofNJAdaptedAxioms
   case reducedProof of
     (PExistsI t _) -> Right (reducedProof, t)
@@ -130,8 +164,12 @@ translateFriedman p f_exists@(FExists x f) = do
 rIntro :: Form -> HypId -> Form -> Proof
 rIntro f h_notr_f r = case (f, translateF f f) of
   -- ~
-  (FFalse, _) -> PAx h_notr_f
-  (FTrue, FTrue) -> undefined
+  (FFalse, _) ->
+    PImpI
+      { hypAntecedent = hypForm r
+      , proofConsequent = PAx $ hypForm r
+      }
+  (FTrue, FTrue) -> PAx h_notr_f
   -- ~r A |- ~r ~r ~r A
   (FPred{}, f'@(FImp (FImp f _) _)) ->
     PImpI
@@ -166,17 +204,24 @@ transIntro f h_f r = case (f, translateF f r) of
             , proofAntecedent = PAx h_f
             }
       }
-  (FNot g, FImp g' _) -> undefined
-  -- PImpI
-  --   { hypAntecedent = hypForm g
-  --   , proofConsequent =
-  --       PFalseE $
-  --         PNotE
-  --           { form = g
-  --           , proofNotForm = PAx h_f
-  --           , proofForm = PAx $ hypForm g
-  --           }
-  --   }
+  (FNot g, FImp g' _) ->
+    cut
+      (FImp g r)
+      ( PImpI
+          { hypAntecedent = hypForm g
+          , proofConsequent =
+              PFalseE
+                { proofBot =
+                    PNotE
+                      { form = g
+                      , proofNotForm = PAx h_f
+                      , proofForm = PAx $ hypForm g
+                      }
+                }
+          }
+      )
+      (hypForm $ FImp g r)
+      (rIntro g (hypForm $ FImp g r) r)
   (FExists x g, FImp _forall@(FForall _ (FImp g' _)) _) ->
     let
       h_g = hypForm g
@@ -271,7 +316,15 @@ transIntro f h_f r = case (f, translateF f r) of
                 h_right
                 proofRightThenRight'
           }
-  (FImp ant cons, FImp ant' cons') -> undefined
+  -- Lo transformo al equivalente por el contra-recíproco mediante dos cuts
+  -- ~r b -> ~r a |- ~r b~~ -> ~r b~~
+  (FImp ant cons, FImp ant' cons') ->
+    cut
+      (FImp (FImp cons r) (FImp ant r))
+      -- a -> b |- ~r b -> ~ra
+      (undefined)
+      (hypForm)
+      ()
   -- let (h_ant, h_cons) = (hypForm ant, hypForm cons)
   --     proofAntThenAnt' = transIntro ant h_ant r
   --     proofConsThenCons' = transIntro cons h_cons r

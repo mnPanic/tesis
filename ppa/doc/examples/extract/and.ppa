@@ -1,0 +1,8 @@
+axiom ax_1: p(v)
+axiom ax_2: q(v)
+theorem t: exists X . p(X) & q(X)
+proof
+    take X := v
+    thus p(v) by ax_1
+    thus q(v) by ax_2
+end

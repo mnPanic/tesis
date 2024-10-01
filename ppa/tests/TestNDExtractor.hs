@@ -491,8 +491,9 @@ testTransIntro =
         , "pred" ~: doTestTransIntro (fPredVar "p" "x")
         , "and" ~: doTestTransIntro (FAnd (fPred0 "p") (fPred0 "q"))
         , -- , "imp" ~: doTestTransIntro (FImp (fPred0 "p") (fPred0 "q"))
-          -- "not" ~: doTestTransIntro (FNot (fPred0 "p"))
-          "forall" ~: doTestTransIntro (FForall "x" (fPred0 "p"))
+          -- TODO: probar casos de falla del lema rIntro
+          "not" ~: doTestTransIntro (FNot (fPred0 "p"))
+        , "forall" ~: doTestTransIntro (FForall "x" (fPred0 "p"))
         , "exists" ~: doTestTransIntro (FExists "x" (fPred0 "p"))
         , "or" ~: doTestTransIntro (FOr (fPred0 "p") (fPred0 "q"))
         ]
@@ -508,16 +509,17 @@ doTestTransIntro f = do
 testRIntro :: Test
 testRIntro =
     test
-        [ -- "false" ~: doTestRElim FFalse
-          -- , "true" ~: doTestRElim FTrue
-          -- ,
-          "pred" ~: doTestRIntro (fPredVar "p" "x")
-          -- , "and" ~: doTestRElim (FAnd (fPred0 "p") (fPred0 "q"))
-          -- , "imp" ~: doTestRElim (FImp (fPred0 "p") (fPred0 "q"))
-          -- , "not" ~: doTestRElim (FNot (fPred0 "p"))
-          -- , "forall" ~: doTestRElim (FForall "x" (fPred0 "p"))
-          -- , "exists" ~: doTestRElim (FExists "x" (fPred0 "p"))
-          -- , "or" ~: doTestRElim (FOr (fPred0 "p") (fPred0 "q"))
+        [ "false" ~: doTestRIntro FFalse
+        , "true" ~: doTestRIntro FTrue
+        , -- ,
+          "pred"
+            ~: doTestRIntro (fPredVar "p" "x")
+            -- , "and" ~: doTestRIntro (FAnd (fPred0 "p") (fPred0 "q"))
+            -- , "imp" ~: doTestRIntro (FImp (fPred0 "p") (fPred0 "q"))
+            -- , "not" ~: doTestRIntro (FNot (fPred0 "p"))
+            -- , "forall" ~: doTestRIntro (FForall "x" (fPred0 "p"))
+            -- , "exists" ~: doTestRIntro (FExists "x" (fPred0 "p"))
+            -- , "or" ~: doTestRIntro (FOr (fPred0 "p") (fPred0 "q"))
         ]
 
 doTestRIntro :: Form -> Assertion
