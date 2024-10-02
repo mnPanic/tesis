@@ -161,6 +161,9 @@ translateFriedman p f_exists@(FExists x f) = do
     }
 
 -- Demuestra ~r A |- ~r A~~ por inducción estructural en A
+--
+-- Como no vale siempre A |- A~~ (ver Peter Selinger), y para los casos de not e
+-- imp se usa este lema, no siempre puede valer tampoco.
 rIntro :: Form -> HypId -> Form -> Proof
 rIntro f h_notr_f r = case (f, translateF f f) of
   -- ~
