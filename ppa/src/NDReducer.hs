@@ -23,8 +23,8 @@ reduce1 :: Proof -> Maybe Proof
 reduce1 proof = case proof of
   -- Reducción de And
   -- PAndEi(PAndI(Pi_1, Pi_2)) -> PI_i
-  PAndE1 right (PAndI proofLeft proofRight) -> Just proofLeft
-  PAndE2 left (PAndI proofLeft proofRight) -> Just proofRight
+  PAndE1 _ (PAndI proofLeft _) -> Just proofLeft
+  PAndE2 _ (PAndI _ proofRight) -> Just proofRight
   -- Reducción de Or
   -- POrE(POrI(Pi), h.proofLeft)
   POrE
@@ -39,8 +39,7 @@ reduce1 proof = case proof of
     } -> Just $ substHyp hypRight proofRight proofAssumingRight
   -- Reducción de Imp
   PImpE
-    { antecedent = ant
-    , proofImp =
+    { proofImp =
       PImpI
         { hypAntecedent = hypAntecedent
         , proofConsequent = proofAntThenCons
@@ -49,8 +48,7 @@ reduce1 proof = case proof of
     } -> Just $ substHyp hypAntecedent proofAnt proofAntThenCons
   -- Reducción de Not
   PNotE
-    { form = form
-    , proofNotForm =
+    { proofNotForm =
       PNotI
         { hyp = hypForm
         , proofBot = proofBot
@@ -59,9 +57,7 @@ reduce1 proof = case proof of
     } -> Just $ substHyp hypForm proofForm proofBot
   -- Reducción de Forall
   PForallE
-    { var = x
-    , form = form
-    , proofForall =
+    { proofForall =
       PForallI
         { newVar = x'
         , proofForm = proofForm
@@ -71,7 +67,6 @@ reduce1 proof = case proof of
   -- Reducción de Exists
   PExistsE
     { var = x
-    , form = form
     , proofExists =
       PExistsI
         { inst = t
@@ -88,20 +83,20 @@ reduce1 proof = case proof of
   PLEM -> Nothing
   PTrueI -> Nothing
   -- Congruencias
-  p@(PImpI hypAntecedent proofConsequent) ->
+  p@(PImpI _ proofConsequent) ->
     reduceCong1
       proofConsequent
       (\proofConsequent' -> p{proofConsequent = proofConsequent'})
-  p@(PImpE antecedent proofImp proofAntecedent) ->
+  p@(PImpE _ proofImp proofAntecedent) ->
     reduceCong2
       proofImp
       proofAntecedent
       (\proofImp' proofAntecedent' -> p{proofImp = proofImp', proofAntecedent = proofAntecedent'})
-  p@(PNotI hyp proofBot) ->
+  p@(PNotI _ proofBot) ->
     reduceCong1
       proofBot
       (\proofBot' -> p{proofBot = proofBot'})
-  p@(PNotE form proofNotForm proofForm) ->
+  p@(PNotE _ proofNotForm proofForm) ->
     reduceCong2
       proofNotForm
       proofForm
@@ -111,11 +106,11 @@ reduce1 proof = case proof of
       proofLeft
       proofRight
       (\proofLeft' proofRight' -> p{proofRight = proofRight', proofLeft = proofLeft'})
-  p@(PAndE1 right proofAnd) ->
+  p@(PAndE1 _ proofAnd) ->
     reduceCong1
       proofAnd
       (\proofAnd' -> p{proofAnd = proofAnd'})
-  p@(PAndE2 left proofAnd) ->
+  p@(PAndE2 _ proofAnd) ->
     reduceCong1
       proofAnd
       (\proofAnd' -> p{proofAnd = proofAnd'})
@@ -127,7 +122,7 @@ reduce1 proof = case proof of
     reduceCong1
       proofRight
       (\proofRight' -> p{proofRight = proofRight'})
-  p@(POrE left right proofOr hypLeft proofAssumingLeft hypRight proofAssumingRight) ->
+  p@(POrE{proofOr = proofOr, proofAssumingLeft = proofAssumingLeft, proofAssumingRight = proofAssumingRight}) ->
     reduceCong3
       proofOr
       proofAssumingLeft
@@ -137,13 +132,13 @@ reduce1 proof = case proof of
     reduceCong1
       proofBot
       (\proofBot' -> p{proofBot = proofBot'})
-  p@(PForallI newVar proofForm) ->
+  p@(PForallI{proofForm = proofForm}) ->
     reduceCong1 proofForm (\proofForm' -> p{proofForm = proofForm'})
-  p@(PForallE var form proofForall termReplace) ->
+  p@(PForallE{proofForall = proofForall}) ->
     reduceCong1 proofForall (\proofForall' -> p{proofForall = proofForall'})
-  p@(PExistsI t pInst) ->
+  p@(PExistsI{proofFormWithInst = pInst}) ->
     reduceCong1 pInst (\pInst' -> p{proofFormWithInst = pInst'})
-  p@(PExistsE var form proofExists hyp proofAssuming) ->
+  p@(PExistsE{proofExists = proofExists, proofAssuming = proofAssuming}) ->
     reduceCong2
       proofExists
       proofAssuming

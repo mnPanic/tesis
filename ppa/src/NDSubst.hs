@@ -81,7 +81,7 @@ substTerm s x t t' = case t' of
 -- freshWRT da una variable libre con respecto a una lista en donde no queremos
 -- que aparezca
 freshWRT :: VarId -> Set.Set VarId -> VarId
-freshWRT x forbidden = head [x ++ suffix | suffix <- map show [0 ..], (x ++ suffix) `notMember` forbidden]
+freshWRT x forbidden = head [x ++ suffix | suffix <- map show [0 :: Integer ..], (x ++ suffix) `notMember` forbidden]
 
 {--------------------- Sustituciones sobre demostraciones ---------------------}
 
@@ -93,7 +93,7 @@ substVar = substVar' Map.empty
 
 -- Hace (subst varid term) en toda la proof recursivamente
 substVar' :: VarSubstitution -> VarId -> Term -> Proof -> Proof
-substVar' s x t p = case p of
+substVar' s x t proof = case proof of
   PNamed name p1 -> PNamed name (rec p1)
   PAx h -> PAx h
   PAndI pL pR -> PAndI (rec pL) (rec pR)
@@ -116,7 +116,7 @@ substVar' s x t p = case p of
             s' = Map.insert y y' s
          in PForallI y' (recS s' pF)
     | otherwise -> PForallI y (rec pF)
-  p@(PForallE y f pF t')
+  PForallE y f pF t'
     -- Cortas cambiando T (todavía no está en el scope del nuevo x, pero f si)
     -- También seguís por pF, porque no está alcanzado por el scope de y.
     | x == y -> PForallE y f (rec pF) (doSubstT t')
@@ -128,7 +128,7 @@ substVar' s x t p = case p of
     | otherwise -> PForallE y (doSubst f) (rec pF) (doSubstT t')
   PExistsI t' p1 -> PExistsI (doSubstT t') (rec p1)
   -- TODO tests estos casos
-  p@(PExistsE y f pE h pA)
+  PExistsE y f pE h pA
     | x == y -> PExistsE y f (rec pE) h pA
     | y `elem` fvTerm t ->
         let y' = freshWRT y (Set.unions [fvTerm t, fvP pA, fvP pE, fv f])
@@ -222,21 +222,21 @@ substHypAvoidCapture s hReplace pReplace hypsPReplace h p
 citedHypIds :: Proof -> Set.Set HypId
 citedHypIds p = case p of
   PAx h -> Set.singleton h
-  PNamed name p1 -> citedHypIds p1
+  PNamed _ p1 -> citedHypIds p1
   PAndI pL pR -> Set.union (citedHypIds pL) (citedHypIds pR)
-  PAndE1 r pR -> citedHypIds pR
-  PAndE2 l pL -> citedHypIds pL
+  PAndE1 _ pR -> citedHypIds pR
+  PAndE2 _ pL -> citedHypIds pL
   POrI1 pL -> citedHypIds pL
   POrI2 pR -> citedHypIds pR
-  POrE l r pOr hL pL hR pR -> Set.unions [citedHypIds pOr, citedHypIds pL, citedHypIds pR]
-  PImpI h p1 -> citedHypIds p1
-  PImpE f pI pA -> Set.union (citedHypIds pI) (citedHypIds pA)
-  PNotI h pB -> citedHypIds pB
-  PNotE f pNotF pF -> Set.union (citedHypIds pNotF) (citedHypIds pF)
+  POrE _ _ pOr _ pL _ pR -> Set.unions [citedHypIds pOr, citedHypIds pL, citedHypIds pR]
+  PImpI _ p1 -> citedHypIds p1
+  PImpE _ pI pA -> Set.union (citedHypIds pI) (citedHypIds pA)
+  PNotI _ pB -> citedHypIds pB
+  PNotE _ pNotF pF -> Set.union (citedHypIds pNotF) (citedHypIds pF)
   PTrueI -> Set.empty
   PFalseE pB -> citedHypIds pB
   PLEM -> Set.empty
-  PForallI x pF -> citedHypIds pF
-  PForallE x f pF t -> citedHypIds pF
-  PExistsI t p1 -> citedHypIds p1
-  PExistsE x f pE h pA -> Set.union (citedHypIds pE) (citedHypIds pA)
+  PForallI _ pF -> citedHypIds pF
+  PForallE{proofForall=pF} -> citedHypIds pF
+  PExistsI _ p1 -> citedHypIds p1
+  PExistsE{proofExists=pE, proofAssuming=pA} -> Set.union (citedHypIds pE) (citedHypIds pA)

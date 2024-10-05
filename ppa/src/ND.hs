@@ -391,4 +391,4 @@ fvP p = case p of
     PForallI _ pF -> fvP pF
     PForallE _ f pF t -> Set.unions [fv f, fvTerm t, fvP pF]
     PExistsI t p1 -> Set.union (fvP p1) (fvTerm t)
-    PExistsE _ f pE h pA -> Set.unions [fv f, fvP pE, fvP pA]
+    PExistsE _ f pE _ pA -> Set.unions [fv f, fvP pE, fvP pA]

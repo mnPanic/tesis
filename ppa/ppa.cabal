@@ -51,9 +51,14 @@ extra-doc-files:    CHANGELOG.md
 -- Extra source files to be distributed with the package, such as examples, or a tutorial module.
 -- extra-source-files:
 
+-- https://downloads.haskell.org/ghc/latest/docs/users_guide/using-warnings.html
 common warnings
-    --ghc-options: -Wall -Werror
-    ghc-options: -Wall
+    default-extensions: ImportQualifiedPost
+    ghc-options:
+        -Wall
+        -Werror
+        -Wno-incomplete-patterns
+        -Wno-incomplete-uni-patterns
 
 executable ppa
     -- Import common warning flags.

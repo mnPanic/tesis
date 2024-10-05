@@ -24,7 +24,6 @@ import PPA (
     findHyp,
     fvC,
     getForm,
-    getHypId,
     getProof,
     psName,
  )
@@ -62,26 +61,24 @@ import ND (
     HypId,
     Metavar,
     Proof (..),
-    Term (TFun, TMetavar, TVar),
+    Term (TMetavar, TVar),
     VarId,
     dneg,
     fv,
     isForall,
  )
 
-import Unifier (Substitution, showSubstitution, unifyF, unifyT)
+import Unifier (Substitution, showSubstitution, unifyF)
 
 import NDChecker (CheckResult (CheckOK), check, checkResultIsErr)
 import NDSubst (subst)
 
 import Data.List (find, intercalate, nub, (\\))
 import Data.Map qualified as Map
-import Data.Maybe (fromJust, fromMaybe, isJust, isNothing)
 import Data.Set (Set)
 import Text.Printf (printf)
 
-import Data.Either (fromLeft, fromRight, isLeft, isRight, lefts, rights)
-import Debug.Trace
+import Data.Either (fromLeft, isLeft, isRight, lefts, rights)
 import NDReducer (reduce)
 
 reduceContext :: Context -> Context
@@ -139,7 +136,7 @@ certifyTheorem ctx (DTheorem h f p) = do
 
 certifyProof :: Context -> Form -> TProof -> Result Proof
 -- certifyProof ctx f ps | trace (printf "certifyProof %s %s %s" (show ctx) (show f) (show ps)) False = undefined
-certifyProof ctx f [] = Left $ printf "incomplete proof, still have %s as thesis" (show f)
+certifyProof _ f [] = Left $ printf "incomplete proof, still have %s as thesis" (show f)
 certifyProof ctx f (p : ps) = certifyProofStep' ctx f p ps
 
 certifyProofStep' :: Context -> Form -> ProofStep -> TProof -> Result Proof
@@ -189,7 +186,7 @@ certifyLet ctx forAll@(FForall x f) (PSLet y) ps
                 { newVar = y
                 , proofForm = nextProof
                 }
-certifyLet ctx thesis (PSLet{}) ps =
+certifyLet _ thesis (PSLet{}) _ =
     Left $
         printf
             "can't use with form '%s', must be an universal quantifier (forall)"
@@ -265,7 +262,7 @@ certifySuppose ctx (FNot f) (PSSuppose name form) ps
                 { hyp = name
                 , proofBot = proofBot
                 }
-certifySuppose ctx f (PSSuppose name form) ps =
+certifySuppose _ f (PSSuppose name form) _ =
     Left $
         printf
             "can't suppose '%s : %s' with form '%s', must be implication or negation"
@@ -287,7 +284,7 @@ certifyCases ctx thesis js cases ps = do
 
 certifyCases' :: Context -> Form -> Proof -> [Case] -> TProof -> Result (HypId, Proof)
 -- certifyCases' ctx thesis proofOr cases ps | trace (printf "certifyCases' %s %s %s %s %s" (show ctx) (show thesis) (show proofOr) (show cases) (show ps)) False = undefined
-certifyCases' ctx thesis _ [(h, f, p)] ps = do
+certifyCases' ctx thesis _ [(h, f, p)] _ = do
     proof <- certifyProof (HAxiom h f : ctx) thesis p
     return (h, proof)
 certifyCases' ctx thesis proofOr cases@((h, f, p) : cs) ps = do
@@ -312,7 +309,7 @@ certifyCases' ctx thesis proofOr cases@((h, f, p) : cs) ps = do
 
 -- Dados los casos de un cases, devuelve el or que representan (right assoc)
 orFromCases :: [Case] -> Form
-orFromCases cs = fromOrListR $ map (\(h, f, p) -> f) cs
+orFromCases cs = fromOrListR $ map (\(_, f, _) -> f) cs
 
 {- Certifica que f sea una parte de la tesis y una consecuencia de las justificaciones
 -}
@@ -386,7 +383,7 @@ pero en realidad por abajo demuestra
 -}
 certifyBy :: Context -> Form -> Justification -> Result Proof
 -- certifyBy ctx f js | trace (printf "certifyBy %s %s %s" (show ctx) (show f) (show js)) False = undefined
-certifyBy ctx f [] = solve f
+certifyBy _ f [] = solve f
 certifyBy ctx f js = do
     jsHyps <- findJustification ctx js
     let jsForms = map getForm jsHyps
@@ -408,11 +405,11 @@ certifyBy ctx f js = do
 findJustification :: Context -> Justification -> Result [Hypothesis]
 findJustification ctx js
     | not (null missingHyps) =
-        Left $ "finding hyps in context: " ++ intercalate "; " (map (\(h, Left err) -> err) missingHyps)
-    | otherwise = Right $ map (\(h, Right hyp) -> hyp) hyps
+        Left $ "finding hyps in context: " ++ intercalate "; " (lefts $ map snd missingHyps)
+    | otherwise = Right (rights $ map snd hyps)
   where
     hyps = zip js $ map (findHyp ctx) js
-    missingHyps = filter (\(h, r) -> isLeft r) hyps
+    missingHyps = filter (\(_, r) -> isLeft r) hyps
 
 {- solve encuentra una demostración automáticamente para thesis.
 
@@ -460,7 +457,7 @@ Dada una fórmula F y una versión en DNF F' (no es única), da una demostració
 F |- F'.
 -}
 dnf :: EnvItem -> (Form, Proof)
-dnf i@(h, f) = (f', PNamed "dnf" p)
+dnf i = (f', PNamed "dnf" p)
   where
     (f', p) = convertToDnf i
 
@@ -553,7 +550,7 @@ dnfStep (hAndR, FAnd x (FAnd y z)) =
     hAndL = hypForm fAndL
     (pAndAssocLR, pAndAssocRL) = proofAndAssoc x y z hAndL hAndR
 -- ~~x -|- x
-dnfStep (hDNeg, FNot (FNot x)) =
+dnfStep (_, FNot (FNot x)) =
     Just
         ( (hX, x)
         , pDNegElimLR
@@ -843,15 +840,15 @@ elimForalls g _ _ = g
 
 solveClauseElimForall' :: HypId -> (Clause, Form, Clause) -> Result Proof
 -- solveClauseElimForall' hClause t | trace (printf "solveClauseElimForall' h:'%s' t:%s" hClause (show t)) False = undefined
-solveClauseElimForall' hClause (cL, f@(FForall x g), cR) =
+solveClauseElimForall' hClause (cL, f@(FForall{}), cR) =
     do
         -- Primero encontramos por qué reemplazar x para que sea refutable
-        (subst, usedVars) <- findSubstToSolveContradiction cL cR f 0
+        (sub, usedVars) <- findSubstToSolveContradiction cL cR f 0
 
         -- Ya sé por qué tengo que sustituir la var del forall cuando lo
         -- elimine, así que lo pego con cut a la fórmula con eso eliminado y
         -- sigo por ahí
-        let g' = elimForalls f subst usedVars
+        let g' = elimForalls f sub usedVars
         let (clReplaced, hclReplaced) = hypAndForm $ fromClause $ cL ++ g' : cR
 
         let (dnfClReplaced, proofDnfClReplaced) = dnf (hclReplaced, clReplaced)
@@ -860,7 +857,7 @@ solveClauseElimForall' hClause (cL, f@(FForall x g), cR) =
         contradictionProof <- solveContradiction (hdnfClReplaced, dnfClReplaced)
 
         let origClause = cL ++ f : cR
-        proofClReplacedList <- proveClauseWithForallReplaced (hClause, fromClause origClause) subst usedVars origClause f
+        proofClReplacedList <- proveClauseWithForallReplaced (hClause, fromClause origClause) sub usedVars origClause f
         let proofClReplaced = proofAndIList proofClReplacedList
         -- TODO: forall repetido?
 
@@ -893,13 +890,13 @@ Por ejemplo,
 -}
 proveClauseWithForallReplaced :: EnvItem -> Substitution -> Map.Map VarId Metavar -> Clause -> Form -> Result [Proof]
 proveClauseWithForallReplaced _ _ _ [] _ = Right []
-proveClauseWithForallReplaced clause subst usedVars (f : fs) fForall@(FForall x g) =
+proveClauseWithForallReplaced clause sub usedVars (f : fs) fForall@(FForall{}) =
     do
-        proofRest <- proveClauseWithForallReplaced clause subst usedVars fs fForall
+        proofRest <- proveClauseWithForallReplaced clause sub usedVars fs fForall
         if f == fForall
             then do
                 proofForall <- proofAndEProjection clause fForall
-                let proofForallReplaced = proveForallWithElim fForall subst usedVars proofForall
+                let proofForallReplaced = proveForallWithElim fForall sub usedVars proofForall
 
                 return (proofForallReplaced : proofRest)
             else do
@@ -914,7 +911,7 @@ Dado {x = a, y = b, z = c}, demuestra
     forall x. forall y. forall z. f(x) & f(y) & f(z) |- f(a) & f(b) & f(c)
 -}
 proveForallWithElim :: Form -> Substitution -> Map.Map VarId Metavar -> Proof -> Proof
-proveForallWithElim f@(FForall x g) s m proofForall = case Map.lookup x m of
+proveForallWithElim (FForall x g) s m proofForall = case Map.lookup x m of
     -- No fue necesario eliminar más foralls
     Nothing -> proofForall
     -- Se eliminó el forall
@@ -934,7 +931,7 @@ proveForallWithElim f@(FForall x g) s m proofForall = case Map.lookup x m of
                     }
         let proofG' = proveForallWithElim g' s m (PAx h_g')
         cut g' proofGThenG' h_g' proofG'
-proveForallWithElim g _ _ proofForm = proofForm
+proveForallWithElim _ _ _ proofForm = proofForm
 
 {-
 Como el contenido de forall pegado con el resto de la cláusula puede no
@@ -949,7 +946,7 @@ que no está en dnf
     (dnf) (a & c) | (b & c)
 -}
 findSubstToSolveContradiction :: Clause -> Clause -> Form -> Metavar -> Result (Substitution, Map.Map VarId Metavar)
-findSubstToSolveContradiction clL clR f@(FForall x g) metavar = do
+findSubstToSolveContradiction clL clR (FForall x g) metavar = do
     -- Reemplazo la variable por una metavariable así unificando encontramos la
     -- sustitución que permite refutarla (en caso de que exista)
     let meta = TMetavar metavar
@@ -973,14 +970,6 @@ findSubstToSolveContradiction clL clR f@(FForall x g) metavar = do
             Right (s, ms) -> Right (s, Map.insert x metavar ms)
 findSubstToSolveContradiction _ _ _ _ = Left "no more foralls"
 
--- splitForalls
--- (forall x . forall y . exists w -> p(x) & g(y) & forall w . true)
--- -> [x, y] (exists w -> p(x) & g(y) & forall w . true)
-splitForalls :: Form -> ([VarId], Form)
-splitForalls (FForall x g) = (x : xs, g')
-  where
-    (xs, g') = splitForalls g
-splitForalls g = ([], g)
 
 {- solveContradictionUnifying encuentra la sustitución que hace a la fórmula
 refutable (en caso de que exista).
@@ -1008,7 +997,7 @@ solveContradictionUnifyingWithMany ss f =
     let substs = map (`solveContradictionUnifying` f) ss
      in case filter isRight substs of
             [] -> Left (intercalate "\n" (lefts substs))
-            ss -> Right (concat (rights substs))
+            _ -> Right (concat (rights substs))
 
 -- Encuentra las sustituciones que permite una contradicción: dos literales
 -- opuestos que unifican o false.
@@ -1033,12 +1022,6 @@ findAllUnifyingWithOpposite s (f' : fs) f =
     )
         ++ findAllUnifyingWithOpposite s fs f
 findAllUnifyingWithOpposite _ [] _ = []
-
-replaceFirst :: (Eq a) => [a] -> a -> a -> [a]
-replaceFirst (x : xs) old new
-    | x == old = new : xs
-    | otherwise = x : replaceFirst xs old new
-replaceFirst [] _ _ = []
 
 toClause :: Form -> Result Clause
 toClause (FAnd l r) = do

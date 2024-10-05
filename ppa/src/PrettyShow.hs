@@ -27,7 +27,7 @@ instance PrettyShow Hypothesis where
     prettyShow (HTheorem h f p) = printf "(theorem) %s : %s . Proof =\n %s" h (prettyShow f) (prettyShow p)
 
 instance PrettyShow Proof where
-    prettyShow p = case p of
+    prettyShow proof = case proof of
         PNamed n prf ->
             printf "PNamed {\n  name = %s,\n  proof =%s\n}" n (formatSubProof prf)
         PAx h ->

@@ -1029,7 +1029,7 @@ proofNotCongruence' ::
     HypId ->
     Proof ->
     Proof
-proofNotCongruence' x x' hNotX hX' proofX'ThenX =
+proofNotCongruence' x _ hNotX hX' proofX'ThenX =
     PNotI
         { hyp = hX'
         , proofBot =
@@ -1068,7 +1068,7 @@ proofImpCongruence1 x y x' hImp hImp' hX proofXThenX' hX' proofX'ThenX =
     x => y |- x' => y
 -}
 proofImpCongruence1' :: Form -> Form -> HypId -> HypId -> Proof -> Proof
-proofImpCongruence1' x y hImp hX' proofX'ThenX =
+proofImpCongruence1' x _ hImp hX' proofX'ThenX =
     PImpI
         { hypAntecedent = hX'
         , -- x', x => y |- y

@@ -1,8 +1,8 @@
 module PPA (
   TProof,
   ProofStep (..),
-  Program (..),
-  Context (..),
+  Program,
+  Context,
   Justification,
   Hypothesis (..),
   Decl (..),
@@ -17,9 +17,8 @@ module PPA (
   psName,
 ) where
 
-import Data.List (find, intercalate)
+import Data.List (find)
 import ND (
-  Env (EEmpty),
   Form (..),
   HypId,
   Proof (..),
@@ -27,10 +26,7 @@ import ND (
   VarId,
   fv,
  )
-import NDChecker (
-  CheckResult,
-  check,
- )
+
 import NDProofs (Result)
 import Text.Printf (printf)
 
@@ -112,7 +108,7 @@ findHyp ctx h
       Nothing -> Left $ printf "'%s' not present in ctx" h
 
 removeHyp :: Context -> HypId -> Context
-removeHyp ctx id = filter (\h -> getHypId h /= id) ctx
+removeHyp ctx hypId = filter (\h -> getHypId h /= hypId) ctx
 
 axioms :: Context -> Context
 axioms = filter isAxiom
