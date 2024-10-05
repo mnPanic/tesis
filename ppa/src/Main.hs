@@ -48,7 +48,7 @@ runCheck (ArgsCheck inPath outPath) = do
         Std -> getContents
         File f -> readFile f
 
-    putStr "Checking..."
+    putStr "Checking... "
     case parseAndCheck (show inPath) rawProgram of
         Left err -> putStrLn err
         Right ctx -> do
@@ -123,7 +123,7 @@ writeResult (Just p) ctxOriginal ctxReduced = do
 
 parseAndCheck :: String -> String -> Result Context
 parseAndCheck path rawProgram = do
-    prog <- parseProgram' (show path) rawProgram
+    prog <- parseProgram' path rawProgram
     ctx <- certify prog
     checkContext ctx
     return ctx
