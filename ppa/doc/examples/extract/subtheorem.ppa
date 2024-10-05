@@ -1,0 +1,17 @@
+// Muestra como puede tener sentido la extracción porque es indirecto.
+
+axiom ax0: q(m)
+axiom ax1: forall X. q(X) -> p(X)
+
+theorem t0: exists X. q(X)
+proof
+    take X := m
+    thus q(m) by ax0
+end
+
+theorem t: exists X. p(X)
+proof
+    consider Y st h: q(Y) by t0
+    take X := Y
+    hence p(Y) by ax1
+end

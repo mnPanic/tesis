@@ -20,7 +20,7 @@ import Text.Printf (printf)
 
 data Args
     = ArgsCheck {input :: Path, output :: Maybe Path}
-    | ArgsTranslate
+    | ArgsExtract
         { input :: Path
         , output :: Maybe Path
         , theorem :: HypId
@@ -40,7 +40,7 @@ main = do
         Left err -> putStrLn err
         Right args -> case args of
             ArgsCheck{} -> runCheck args
-            ArgsTranslate{} -> runTranslate args
+            ArgsExtract{} -> runExtract args
 
 runCheck :: Args -> IO ()
 runCheck (ArgsCheck inPath outPath) = do
@@ -66,9 +66,9 @@ runCheck (ArgsCheck inPath outPath) = do
                             writeFile file_raw (prettyShow ctx)
                             putStrLn ("Wrote raw to " ++ file_raw)
 
-runTranslate :: Args -> IO ()
-runTranslate (ArgsCheck{}) = undefined
-runTranslate (ArgsTranslate inPath outPath theoremId terms) = do
+runExtract :: Args -> IO ()
+runExtract (ArgsCheck{}) = undefined
+runExtract (ArgsExtract inPath outPath theoremId terms) = do
     rawProgram <- case inPath of
         Std -> getContents
         File f -> readFile f
@@ -76,21 +76,22 @@ runTranslate (ArgsTranslate inPath outPath theoremId terms) = do
     case mapM parseTerm terms of
         Left err -> putStrLn $ "Parsing terms: " ++ err
         Right parsedTerms -> do
-            putStr "Running program..."
+            putStr "Running program... "
             case parseAndCheck (show inPath) rawProgram of
                 Left err -> putStrLn err
                 Right ctx -> do
                     putStrLn "OK!"
-                    putStrLn "Translating"
+                    putStr "Translating... "
                     case extractWitnessCtx ctx theoremId parsedTerms of
                         Left err -> putStrLn err
                         Right (ctx', t) -> do
                             putStrLn "OK!"
-                            putStr "Checking translated..."
+                            putStr "Checking translated... "
                             case checkContext ctx' of
                                 Left err -> putStrLn err
                                 Right _ -> do
-                                    putStrLn $ printf "OK! Extracted witness: %s" (show t)
+                                    putStrLn "OK!"
+                                    putStrLn $ printf "Extracted witness: %s" (show t)
                                     writeResult outPath ctx ctx'
 
 writeResult :: Maybe Path -> Context -> Context -> IO ()
@@ -132,15 +133,15 @@ parseArgs :: [String] -> Result Args
 parseArgs [] = Left "empty args"
 parseArgs (cmd : args) = case cmd of
     "check" -> parseCheckArgs args
-    "translate" -> parseTranslateArgs args
-    c -> Left $ printf "invalid command '%s', do 'check' or 'translate'" c
+    "extract" -> parseExtractArgs args
+    c -> Left $ printf "invalid command '%s', do 'check' or 'extract'" c
 
-parseTranslateArgs :: [String] -> Result Args
-parseTranslateArgs args = case args of
+parseExtractArgs :: [String] -> Result Args
+parseExtractArgs args = case args of
     [] -> Left "empty translate args"
-    [t] -> Right ArgsTranslate{theorem = t, input = Std, output = Nothing, terms = []}
-    [t, f] -> Right ArgsTranslate{theorem = t, input = parsePath f, output = Nothing, terms = []}
-    t : f : o : ts -> Right ArgsTranslate{theorem = t, input = parsePath f, output = Just $ parsePath o, terms = ts}
+    [t] -> Right ArgsExtract{theorem = t, input = Std, output = Nothing, terms = []}
+    [t, f] -> Right ArgsExtract{theorem = t, input = parsePath f, output = Nothing, terms = []}
+    t : f : o : ts -> Right ArgsExtract{theorem = t, input = parsePath f, output = Just $ parsePath o, terms = ts}
 
 parseCheckArgs :: [String] -> Result Args
 parseCheckArgs args = case args of
