@@ -1,9 +1,17 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module TestNDExtractor (testExtractor) where
 
-import ND (Env (EEmpty, EExtend), Form (..), Proof (..), Term (..), fPred0, fPred1, fPredVar, tFun0, tFun1)
+import Text.RawString.QQ
+
+import Certifier (certify, checkContext)
+import Data.Either (fromRight, isRight)
+import ND (Env (EEmpty, EExtend), Form (..), HypId, Proof (..), Term (..), fPred0, fPred1, fPredVar, tFun0, tFun1)
 import NDChecker (CheckResult (CheckOK), check)
-import NDExtractor (dNegRElim, rElim, rIntro, transIntro, translateF, translateFriedman, translateP)
+import NDExtractor (dNegRElim, extractWitnessCtx, fromPi02, rElim, rIntro, toPi02, transIntro, translateF, translateFriedman, translateP)
+import NDProofs (Result)
 import NDReducer (reduce)
+import Parser (parseProgram')
 import Test.HUnit (
     Assertion,
     Counts,
@@ -34,14 +42,14 @@ testExtractor =
         , "rIntro" ~: testRIntro
         , "transIntro" ~: testTransIntro
         , "translateFriedman" ~: testTranslateFriedman
-        -- , "extractWitness" ~: testExtractWitness
+        , "extractWitness" ~: testExtractWitness
         ]
 
 doTestTranslate :: Proof -> Form -> Proof -> Form -> Assertion
 doTestTranslate p f expectedP expectedF = do
     assertEqual "original doesn't check" CheckOK (check EEmpty p f)
     assertEqual "expected translated doesn't check" CheckOK (check EEmpty expectedP expectedF)
-    let (p', f') = translateP p f r
+    let (p', f') = translateP p f _r
     expectedF @=? f'
     expectedP @=? p'
 
@@ -50,8 +58,8 @@ doTestTranslate p f expectedP expectedF = do
 
 assertTranslateChecks :: Proof -> Form -> Assertion
 assertTranslateChecks p f = do
-    let expectedF' = translateF f r
-    let (p', f') = translateP p f r
+    let expectedF' = translateF f _r
+    let (p', f') = translateP p f _r
     expectedF' @=? f'
     assertBool "translated and reduced proofs aren't different" (p /= p')
     assertEqual "original doesn't check" CheckOK (check EEmpty p f)
@@ -61,18 +69,13 @@ assertTranslateChecks p f = do
 
 assertTranslateChecksAllowSame :: Proof -> Form -> Assertion
 assertTranslateChecksAllowSame p f = do
-    let expectedF' = translateF f r
-    let (p', f') = translateP p f r
+    let expectedF' = translateF f _r
+    let (p', f') = translateP p f _r
     expectedF' @=? f'
     assertEqual "original doesn't check" CheckOK (check EEmpty p f)
     assertEqual "translated doesn't check" CheckOK (check EEmpty p' f')
     let reducedP' = reduce p'
     assertEqual "reduced doesn't check" CheckOK (check EEmpty p' f')
-
--- testExtractWitness :: Test
--- testExtractWitness = test [
---         ""
---     ]
 
 testTranslateProof :: Test
 testTranslateProof =
@@ -408,11 +411,11 @@ testTranslateForm =
                                 (tripleNegR (fPred0 "c"))
                             )
                         )
-            expected ~?= translateF f r
+            expected ~?= translateF f _r
         , "exists" ~: do
             let f = FExists "y" (FAnd FTrue FFalse)
-            let expected = fNotR (FForall "y" (fNotR (FAnd FTrue r)))
-            expected ~?= translateF f r
+            let expected = fNotR (FForall "y" (fNotR (FAnd FTrue _r)))
+            expected ~?= translateF f _r
         , "complex and complete" ~: do
             let f =
                     FImp
@@ -433,10 +436,10 @@ testTranslateForm =
                         ( fNotR $
                             FAnd
                                 (tripleNegR (fPred1 "p" (TVar "x")))
-                                (fNotR $ fNotR (FForall "y" (fNotR (FAnd FTrue r))))
+                                (fNotR $ fNotR (FForall "y" (fNotR (FAnd FTrue _r))))
                         )
 
-            expected ~?= translateF f r
+            expected ~?= translateF f _r
         ]
 
 testDNegRElim :: Test
@@ -456,8 +459,8 @@ testDNegRElim =
 doTestDNegRElim :: Form -> Assertion
 doTestDNegRElim f = do
     let h = "h"
-    let f' = translateF f r
-    let p = dNegRElim f h r
+    let f' = translateF f _r
+    let p = dNegRElim f h _r
     let env = EExtend h (doubleNegR f') EEmpty
     assertEqual "translated doesn't check" CheckOK (check env p f')
 
@@ -478,9 +481,9 @@ testRElim =
 doTestRElim :: Form -> Assertion
 doTestRElim f = do
     let h = "h"
-    let f' = translateF f r
-    let p = rElim f (PAx h) r
-    let env = EExtend h r EEmpty
+    let f' = translateF f _r
+    let p = rElim f (PAx h) _r
+    let env = EExtend h _r EEmpty
     assertEqual "translated doesn't check" CheckOK (check env p f')
 
 testTransIntro :: Test
@@ -501,8 +504,8 @@ testTransIntro =
 doTestTransIntro :: Form -> Assertion
 doTestTransIntro f = do
     let h = "h"
-    let f' = translateF f r
-    let p = transIntro f h r
+    let f' = translateF f _r
+    let p = transIntro f h _r
     let env = EExtend h f EEmpty
     assertEqual "doesn't check" CheckOK (check env p f')
 
@@ -525,28 +528,141 @@ testRIntro =
 doTestRIntro :: Form -> Assertion
 doTestRIntro f = do
     let h = "h"
-    let f' = fNotR $ translateF f r
-    let p = rIntro f h r
+    let f' = fNotR $ translateF f _r
+    let p = rIntro f h _r
     let env = EExtend h (fNotR f) EEmpty
     assertEqual "doesn't check" CheckOK (check env p f')
 
 testTranslateFriedman :: Test
-testTranslateFriedman = do
-    let f = FExists "x" (fPred1 "p" (TVar "x"))
-    let p =
-            PExistsI
-                { inst = tFun0 "k"
-                , proofFormWithInst = PAx "ax"
-                }
-    let pk = fPred1 "p" (tFun0 "k")
-    let env = EExtend "ax" (FImp (FImp pk f) f) EEmpty
-    CheckOK ~=? check env (translateFriedman p f) f
+testTranslateFriedman =
+    test
+        [ "exists" ~: do
+            let f = FExists "x" (fPred1 "p" (TVar "x"))
+            let p =
+                    PExistsI
+                        { inst = tFun0 "k"
+                        , proofFormWithInst = PAx "ax"
+                        }
+            let pk = fPred1 "p" (tFun0 "k")
+            let env = EExtend "ax" (FImp (FImp pk f) f) EEmpty
+            f_pi <- assertRight "pi02" $ toPi02 f
+            CheckOK @=? check env (translateFriedman p f_pi) f
+        , "forall redundant" ~: do
+            let f_exists = FExists "x" (fPred1 "p" (TVar "x"))
+            let f = FForall "y" f_exists
+            let p =
+                    PForallI
+                        { newVar = "y"
+                        , proofForm =
+                            PExistsI
+                                { inst = tFun0 "k"
+                                , proofFormWithInst = PAx "ax"
+                                }
+                        }
+            let pk = fPred1 "p" (tFun0 "k")
+            let env = EExtend "ax" (FImp (FImp pk f_exists) f_exists) EEmpty
 
-r :: Form
-r = fPred0 "__r"
+            f_pi <- assertRight "pi02" $ toPi02 f
+            CheckOK @=? check env (translateFriedman p f_pi) f
+        , "forall" ~: do
+            let f_exists = FExists "x" (FPred "p" [TVar "x", TVar "y"])
+            let _r = f_exists
+            let f = FForall "y" f_exists
+
+            let ax = FForall "y" (FPred "p" [tFun0 "k", TVar "y"])
+            let p =
+                    PForallI
+                        { newVar = "y"
+                        , proofForm =
+                            PExistsI
+                                { inst = tFun0 "k"
+                                , proofFormWithInst =
+                                    PForallE
+                                        { var = "y"
+                                        , form = FPred "p" [tFun0 "k", TVar "y"]
+                                        , termReplace = TVar "y"
+                                        , proofForall = PAx "ax"
+                                        }
+                                }
+                        }
+            let ax' = translateF ax _r
+            let env = EExtend "ax" ax' EEmpty
+
+            f_pi <- assertRight "pi02" $ toPi02 f
+            CheckOK @=? check env (translateFriedman p f_pi) f
+        ]
+
+testExtractWitness :: Test
+testExtractWitness =
+    test
+        [ "exists simple"
+            ~: assertExtractProgramEquals
+                "t"
+                []
+                (tFun0 "v")
+                [r|
+                    axiom ax: p(v)
+                    theorem t: exists X . p(X)
+                    proof
+                        take X := v
+                        thus p(v) by ax
+                    end
+                |]
+        , "forall"
+            ~: assertExtractProgramEquals
+                "t"
+                [tFun0 "k"]
+                (tFun0 "v")
+                [r|
+                    axiom ax: forall Y . p(v, Y)
+                    theorem t: forall Y. exists X . p(X, Y)
+                    proof
+                        let Y
+                        take X := v
+                        thus p(v, Y) by ax
+                    end
+                |]
+        , "forall"
+            ~: assertExtractProgramEquals
+                "t"
+                [tFun0 "k", tFun0 "r"]
+                (tFun0 "v")
+                [r|
+                    axiom ax: forall Y . forall Z . p(v, Y, Z)
+                    theorem t: forall Y. forall Z. exists X . p(X, Y, Z)
+                    proof
+                        let Y
+                        let Z
+                        take X := v
+                        thus p(v, Y, Z) by ax
+                    end
+                |]
+        ]
+
+assertExtractProgramEquals :: HypId -> [Term] -> Term -> String -> IO ()
+assertExtractProgramEquals theorem terms expectedTerm rawProgram = do
+    prog <- assertRight "parse program" $ parseProgram' "test" rawProgram
+    ctx <- assertRight "certify" $ certify prog
+    assertEqual "check failed" (Right ()) (checkContext ctx)
+
+    (ctx_translated, obtainedTerm) <-
+        assertRight "extract failed" $
+            extractWitnessCtx ctx theorem terms
+
+    assertEqual "terms don't match" expectedTerm obtainedTerm
+
+    assertEqual "check translated failed" (Right ()) (checkContext ctx_translated)
+
+assertRight :: String -> Result a -> IO a
+assertRight msg res = case res of
+    Left err -> assertFailure (msg ++ ": " ++ err)
+    Right v -> return v
+
+_r :: Form
+_r = fPred0 "__r"
 
 fNotR :: Form -> Form
-fNotR f = FImp f r
+fNotR f = FImp f _r
 
 tripleNegR :: Form -> Form
 tripleNegR f = fNotR $ doubleNegR f

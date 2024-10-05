@@ -4,6 +4,7 @@ module NDSubst (
   subst,
   substHyp,
   substVar,
+  freshWRT,
 ) where
 
 import ND (

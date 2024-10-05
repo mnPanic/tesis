@@ -12,10 +12,10 @@ import NDProofs (Result)
 import PPA (Context, Program)
 import System.Environment (getArgs)
 
-import ND (HypId, fPred0)
+import ND (HypId, Term, fPred0)
 import NDProofs (Result)
 import PPA (Context)
-import Parser (parseProgram')
+import Parser (parseProgram', parseTerm)
 import PrettyShow (PrettyShow (prettyShow))
 import Text.Pretty.Simple (
     CheckColorTty (NoCheckColorTty),
@@ -32,7 +32,12 @@ import Text.Printf (printf)
 
 data Args
     = ArgsCheck {input :: Path, output :: Maybe Path}
-    | ArgsTranslate {input :: Path, output :: Maybe Path, theorem :: HypId}
+    | ArgsTranslate
+        { input :: Path
+        , output :: Maybe Path
+        , theorem :: HypId
+        , terms :: [String]
+        }
 
 data Path = Std | File FilePath
 
@@ -74,27 +79,31 @@ runCheck (ArgsCheck inPath outPath) = do
     putStrLn "OK!"
 
 runTranslate :: Args -> IO ()
-runTranslate (ArgsTranslate inPath outPath theoremId) = do
+runTranslate (ArgsCheck{}) = undefined
+runTranslate (ArgsTranslate inPath outPath theoremId terms) = do
     rawProgram <- case inPath of
         Std -> getContents
         File f -> readFile f
 
-    putStr "Running program..."
-    case parseAndCheck (show inPath) rawProgram of
-        Left err -> putStrLn err
-        Right ctx -> do
-            putStrLn "OK!"
-            putStrLn "Translating"
-            case extractWitnessCtx ctx theoremId of
+    case mapM parseTerm terms of
+        Left err -> putStrLn $ "Parsing terms: " ++ err
+        Right parsedTerms -> do
+            putStr "Running program..."
+            case parseAndCheck (show inPath) rawProgram of
                 Left err -> putStrLn err
-                Right (ctx', t) -> do
+                Right ctx -> do
                     putStrLn "OK!"
-                    putStr "Checking translated..."
-                    case checkContext ctx' of
+                    putStrLn "Translating"
+                    case extractWitnessCtx ctx theoremId parsedTerms of
                         Left err -> putStrLn err
-                        Right _ -> do
-                            putStrLn $ printf "OK! Extracted witness: %s" (show t)
-                            writeResult outPath ctx ctx'
+                        Right (ctx', t) -> do
+                            putStrLn "OK!"
+                            putStr "Checking translated..."
+                            case checkContext ctx' of
+                                Left err -> putStrLn err
+                                Right _ -> do
+                                    putStrLn $ printf "OK! Extracted witness: %s" (show t)
+                                    writeResult outPath ctx ctx'
 
 -- let ctxT = translateContext ctx (fPred0 "__r")
 -- putStrLn "OK!"
@@ -126,10 +135,11 @@ writeResult (Just p) ctxOriginal ctxReduced = do
             putStrLn "reduced:\n"
             pPrint ctxReduced
         File f -> do
-            let file_raw = (f ++ "_raw.nk")
-            let file_reduced = (f ++ ".nj")
+            let file_raw = f ++ "_raw.nk"
             writeFile file_raw (prettyShow ctxOriginal)
             putStrLn ("Wrote raw to " ++ file_raw)
+
+            let file_reduced = f ++ ".nj"
             writeFile file_reduced (prettyShow ctxReduced)
             putStrLn ("Wrote translated+reduced to " ++ file_reduced)
 
@@ -156,22 +166,25 @@ parseAndCheck path rawProgram = do
     return ctx
 
 parseArgs :: [String] -> Result Args
+parseArgs [] = Left "empty args"
 parseArgs (cmd : args) = case cmd of
-    "check" -> return $ parseCheckArgs args
-    "translate" -> return $ parseTranslateArgs args
+    "check" -> parseCheckArgs args
+    "translate" -> parseTranslateArgs args
     c -> Left $ printf "invalid command '%s', do 'check' or 'translate'" c
 
-parseTranslateArgs :: [String] -> Args
+parseTranslateArgs :: [String] -> Result Args
 parseTranslateArgs args = case args of
-    [t] -> ArgsTranslate{theorem = t, input = Std, output = Nothing}
-    [t, f] -> ArgsTranslate{theorem = t, input = parsePath f, output = Nothing}
-    [t, f, o] -> ArgsTranslate{theorem = t, input = parsePath f, output = Just $ parsePath o}
+    [] -> Left "empty translate args"
+    [t] -> Right ArgsTranslate{theorem = t, input = Std, output = Nothing, terms = []}
+    [t, f] -> Right ArgsTranslate{theorem = t, input = parsePath f, output = Nothing, terms = []}
+    t : f : o : ts -> Right ArgsTranslate{theorem = t, input = parsePath f, output = Just $ parsePath o, terms = ts}
 
-parseCheckArgs :: [String] -> Args
+parseCheckArgs :: [String] -> Result Args
 parseCheckArgs args = case args of
-    [] -> ArgsCheck{input = Std, output = Nothing}
-    [f] -> ArgsCheck{input = parsePath f, output = Nothing}
-    [f, o] -> ArgsCheck{input = parsePath f, output = Just $ parsePath o}
+    [] -> Right ArgsCheck{input = Std, output = Nothing}
+    [f] -> Right ArgsCheck{input = parsePath f, output = Nothing}
+    [f, o] -> Right ArgsCheck{input = parsePath f, output = Just $ parsePath o}
+    _ -> Left "just two args supported for command check"
 
 parsePath :: String -> Path
 parsePath "-" = Std
