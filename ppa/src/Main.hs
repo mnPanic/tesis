@@ -1,30 +1,18 @@
-{-# LANGUAGE PackageImports #-}
-{-# LANGUAGE QuasiQuotes #-}
-
 module Main where
 
-import Certifier (certify, checkContext, reduceContext)
-import NDExtractor (extractWitnessCtx, translateContext)
+import Certifier (certify, checkContext)
+import NDExtractor (extractWitnessCtx)
 
-import Data.Text.Lazy (unpack)
 import GHC.Stack (HasCallStack)
-import NDProofs (Result)
-import PPA (Context, Program)
-import System.Environment (getArgs)
-
-import ND (HypId, Term, fPred0)
+import ND (HypId)
 import NDProofs (Result)
 import PPA (Context)
+import System.Environment (getArgs)
+
 import Parser (parseProgram', parseTerm)
 import PrettyShow (PrettyShow (prettyShow))
 import Text.Pretty.Simple (
-    CheckColorTty (NoCheckColorTty),
-    OutputOptions (outputOptionsCompact, outputOptionsCompactParens),
-    defaultOutputOptionsNoColor,
     pPrint,
-    pPrintOpt,
-    pShowNoColor,
-    pShowOpt,
  )
 import Text.Printf (printf)
 
@@ -45,20 +33,6 @@ instance Show Path where
     show Std = "<std>"
     show (File p) = p
 
--- main :: (HasCallStack) => IO ()
--- main =
---     run2
---         [r|
--- axiom ax: b
--- axiom 1: b -> c
--- theorem t: c
--- proof
---     thus c by ax, 1
--- end
-
-{- | ]
-         Nothing
--}
 main :: (HasCallStack) => IO ()
 main = do
     rawArgs <- getArgs
@@ -75,8 +49,22 @@ runCheck (ArgsCheck inPath outPath) = do
         File f -> readFile f
 
     putStr "Checking..."
-    let ctx = parseAndCheck (show inPath) rawProgram
-    putStrLn "OK!"
+    case parseAndCheck (show inPath) rawProgram of
+        Left err -> putStrLn err
+        Right ctx -> do
+            putStrLn "OK!"
+            case outPath of
+                Nothing -> return ()
+                Just path -> do
+                    putStrLn "Writing..."
+                    case path of
+                        Std -> do
+                            putStrLn "context:\n"
+                            pPrint ctx
+                        File f -> do
+                            let file_raw = f ++ "_raw.nk"
+                            writeFile file_raw (prettyShow ctx)
+                            putStrLn ("Wrote raw to " ++ file_raw)
 
 runTranslate :: Args -> IO ()
 runTranslate (ArgsCheck{}) = undefined
@@ -105,25 +93,6 @@ runTranslate (ArgsTranslate inPath outPath theoremId terms) = do
                                     putStrLn $ printf "OK! Extracted witness: %s" (show t)
                                     writeResult outPath ctx ctx'
 
--- let ctxT = translateContext ctx (fPred0 "__r")
--- putStrLn "OK!"
--- putStr "Checking translated..."
--- case checkContext ctxT of
---     Left err -> putStrLn err
---     Right _ -> do
---         -- r -> do
---         putStrLn "OK!"
---         putStr "Reducing..."
---         let ctxR = reduceContext ctxT
---         putStrLn "OK!"
-
---         putStr "Checking reduced..."
---         case checkContext ctxR of
---             Left err -> putStrLn err
---             Right _ -> do
---                 putStrLn "OK!"
---                 writeResult outPath ctx ctxR
-
 writeResult :: Maybe Path -> Context -> Context -> IO ()
 writeResult Nothing _ _ = return ()
 writeResult (Just p) ctxOriginal ctxReduced = do
@@ -142,12 +111,6 @@ writeResult (Just p) ctxOriginal ctxReduced = do
             let file_reduced = f ++ ".nj"
             writeFile file_reduced (prettyShow ctxReduced)
             putStrLn ("Wrote translated+reduced to " ++ file_reduced)
-
--- writeFile (f ++ "_red.nk") (prettyShow ctxReduced)
-
--- case checkContext ctxReduced of
---     Right () -> putStrLn "Reduced OK!"
---     Left err -> putStrLn $ printf "Reduced failed: %s" err
 
 -- prettyShow :: (Show a) => a -> String
 -- prettyShow s = unpack $ pShowOpt opts s
