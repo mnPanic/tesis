@@ -9,23 +9,17 @@ module NDChecker (
 import ND (
     Env (..),
     Form (..),
-    FunId,
-    PredId,
     Proof (..),
     Term (..),
-    VarId,
-    VarSubstitution,
+    formsWithFv,
     fv,
     fvE,
-    fvTerm,
     get,
     proofName,
  )
 
 import NDSubst (subst)
 
-import Data.Map qualified as Map
-import Data.Set qualified as Set
 import Text.Printf (printf)
 
 data CheckResult
@@ -83,6 +77,7 @@ showInTree (CheckErrorN name res) =
         "Checking proof '%s': \n%s"
         name
         (showInTree res)
+showInTree CheckOK = undefined
 
 checkResultIsErr :: CheckResult -> Bool
 checkResultIsErr (CheckError{}) = True
@@ -96,6 +91,7 @@ rootCause :: CheckResult -> CheckResult
 rootCause e@(CheckError{}) = e
 rootCause (CheckErrorW _ _ _ _ e) = rootCause e
 rootCause (CheckErrorN _ e) = rootCause e
+rootCause (CheckOK) = undefined
 
 wrap :: CheckResult -> String -> Env -> Proof -> Form -> CheckResult
 wrap res msg env proof form = case res of
@@ -123,7 +119,7 @@ check env proof@(PAx hyp) f =
         Nothing -> CheckError env proof f (printf "hyp %s not in env" hyp)
 -- no importa quien es f, false demuestra cualquier cosa
 check env (PFalseE pFalse) _ = check env pFalse FFalse
-check env PTrueI FTrue = CheckOK
+check _ PTrueI FTrue = CheckOK
 -- dem A -> B
 check env p@(PImpI hyp proofB) f@(FImp fA fB) =
     wrap (check (EExtend hyp fA env) proofB fB) "proof consequent" env p f
@@ -174,7 +170,7 @@ check env proof@(PExistsE x fA proofExistsxA hypA proofB) fB
         CheckOK -> wrap (check (EExtend hypA fA env) proofB fB) "proof assuming" env proof fB
 -- dem de Forall x. A
 check env proof@(PForallI x' proofA) form@(FForall x fA)
-    | x' `elem` fvE env = CheckError env proof form (printf "env shouldn't contain fv '%s'" x')
+    | x' `elem` fvE env = CheckError env proof form (printf "env shouldn't contain fv '%s', forms: %s" x' (show $ formsWithFv env x))
     | x' `elem` fv form = CheckError env proof form (printf "new var (%s) shouldn't be in fv of forall form %s" x' (show form))
     | otherwise =
         let fA' = subst x (TVar x') fA

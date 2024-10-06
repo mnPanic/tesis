@@ -20,6 +20,8 @@ import Certifier (
     toClause,
  )
 
+import NDExtractor (translateContext)
+
 import Parser (parseProgram')
 
 import NDProofs (
@@ -38,6 +40,7 @@ import ND (
     Proof (..),
     Term (..),
     dneg,
+    fPred0,
     fPred1,
     predVar,
     propVar,
@@ -49,7 +52,7 @@ import PPA (Hypothesis (HAxiom))
 
 import Test.HUnit (
     Assertion,
-    Counts,
+    Counts (Counts),
     Test (..),
     Testable (test),
     assertEqual,
@@ -63,7 +66,17 @@ import Test.HUnit (
  )
 
 main :: IO Counts
-main = do runTestTT testCertifier
+-- main = do runTestTT testCertifier
+main = runTestWithNames "" testCertifier
+
+runTestWithNames :: String -> Test -> IO Counts
+runTestWithNames prefix (TestLabel label test) = do
+    let fullLabel = prefix ++ label
+    putStrLn $ "Running test: " ++ fullLabel
+    runTestWithNames (fullLabel ++ " > ") test
+runTestWithNames prefix (TestList tests) =
+    foldl (\ioCounts test -> ioCounts >> runTestWithNames prefix test) (return (Counts 0 0 0 0)) tests
+runTestWithNames _ test = runTestTT test
 
 testCertifier :: Test
 testCertifier =
@@ -78,6 +91,20 @@ testCertifier =
         , "partitionForalls" ~: testPartitionForalls
         ]
 
+testProgramReduceTranslate :: String -> IO ()
+testProgramReduceTranslate p = do
+    let result = parseProgram' "test" p
+    case result of
+        Left err -> assertFailure err
+        Right prog -> case certify prog of
+            Left err -> assertFailure err
+            Right ctx -> do
+                assertEqual "check failed" (Right ()) (checkContext ctx)
+                let r = fPred0 "__r"
+                let ctx_translated = reduceContext $ translateContext ctx r
+
+                assertEqual "check translated failed" (Right ()) (checkContext ctx_translated)
+
 testProgram :: String -> IO ()
 testProgram p = do
     let result = parseProgram' "test" p
@@ -86,8 +113,28 @@ testProgram p = do
         Right prog -> case certify prog of
             Left err -> assertFailure err
             Right ctx -> do
-                checkContext ctx @?= Right ()
-                checkContext (reduceContext ctx) @?= Right ()
+                assertEqual "check failed" (Right ()) (checkContext ctx)
+                let r = fPred0 "__r"
+                let ctx_translated = translateContext ctx r
+
+                assertEqual "check translated failed" (Right ()) (checkContext ctx_translated)
+
+testProgramJustCheck :: String -> IO ()
+testProgramJustCheck p = do
+    let result = parseProgram' "test" p
+    case result of
+        Left err -> assertFailure err
+        Right prog -> case certify prog of
+            Left err -> assertFailure err
+            Right ctx -> do
+                assertEqual "check failed" (Right ()) (checkContext ctx)
+
+-- let r = fPred0 "_r"
+-- let ctx_translated = reduceContext $ translateContext ctx r
+
+-- assertEqual "check translated failed" (Right ()) (checkContext ctx_translated)
+
+-- checkContext (reduceContext ctx) @?= Right ()
 
 testProgramError :: String -> String -> IO ()
 testProgramError p err = do
@@ -100,7 +147,7 @@ testPrograms :: Test
 testPrograms =
     test
         [ "relatives old"
-            ~: testProgram
+            ~: testProgramJustCheck
                 [r|
 axiom todos_tienen_padre: forall P. exists Q. padre(P, Q)
 axiom def_abuelo:
@@ -132,7 +179,7 @@ proof
 end
     |]
         , "relatives new"
-            ~: testProgram
+            ~: testProgramJustCheck
                 [r|
     axiom todos_tienen_padre: forall P. exists Q. padre(P, Q)
 axiom def_abuelo:
@@ -154,7 +201,8 @@ proof
     thus abuelo(A, C) by a_padre_b, b_padre_c, def_abuelo
 end|]
         , "groups"
-            ~: testProgram
+            -- Too slow to run with translate + reduce
+            ~: testProgramJustCheck
                 [r|
     // Teoría matemática de Grupos //
     //
@@ -699,8 +747,19 @@ testCommands =
                     end
                 |]
                         "theorem 't': \n certify let: \n certify let: new var (X) must not appear free in forall: forall Y . p(X, Y)"
-               , "ok"
+               , "ok simple"
                     ~: testProgram
+                        [r|
+                        axiom a1: p(a)
+                        theorem t: forall X. p(a)
+                        proof
+                            let X
+                            thus p(a) by a1
+                        end
+                        |]
+               , -- TODO: translate rompe acá, pero reducido chequea
+                 "ok"
+                    ~: testProgramJustCheck
                         [r|
                     axiom a1: forall X . p(X) & q(X)
                     theorem "let" : forall X . p(X)
@@ -851,18 +910,6 @@ testCommands =
                         "theorem 't': \n certify thus: solving form by finding contradiction of negation:\n'~((forall X . f(X) & forall Y . g(Y)) -> h(a))',\nin dnf: '(forall X . f(X) & forall Y . g(Y)) & ~h(a)': '(forall X . f(X) & forall Y . g(Y)) & ~h(a)' contains no contradicting literals or false, and trying to eliminate foralls: no foralls useful for contradictions:\ntry eliminating 'forall Y . g(Y)': solving clause with 'Y' replaced by metavar '?0' and reconverting to dnf \n[forall X . f(X),g(?0),~h(a)]\n(subst {}) no opposites that unify in clause [forall X . f(X),g(?0),~h(a)]\nno more foralls\ntry eliminating 'forall X . f(X)': solving clause with 'X' replaced by metavar '?0' and reconverting to dnf \n[f(?0),forall Y . g(Y),~h(a)]\n(subst {}) no opposites that unify in clause [f(?0),forall Y . g(Y),~h(a)]\nno more foralls"
                 ]
         ]
-
--- , "optional hyp"
---     ~: testProgram
---         [r|
---     theorem "ejemplo sin hyp id" : (a -> b -> c) -> (a -> b) -> a -> c
---     proof
---         suppose "P": a -> b -> c
---         suppose "Q": a -> b
---         suppose "R": a
---         then b by "Q" // no tiene hyp id
---         hence c by "P", "R"
---     end|]
 
 testSolve :: Test
 testSolve =

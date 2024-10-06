@@ -1,4 +1,4 @@
-module Tests where
+module Main where
 
 import Test.HUnit (
     Counts,
@@ -16,6 +16,7 @@ import Test.HUnit.Text (runTestText)
 import System.IO (stdout)
 import TestCertifier (testCertifier)
 import TestND (testND)
+import TestNDExtractor (testExtractor)
 import TestParser (testParserLexer)
 
 main :: IO Counts
@@ -31,5 +32,6 @@ tests =
     test
         [ "parser and lexer" ~: testParserLexer
         , "natural deduction" ~: testND
+        , "natural deduction translations" ~: testExtractor
         , "certifier" ~: testCertifier
         ]

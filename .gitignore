@@ -11,5 +11,13 @@
 *.snm
 *.vrb
 
+# haskell
+dist*/
+*.dyn*
+
 # IDE
 .vscode/
+
+# PPA
+*.nj
+*.nk

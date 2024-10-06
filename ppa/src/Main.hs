@@ -1,93 +1,155 @@
-{-# LANGUAGE PackageImports #-}
-
 module Main where
 
-import Certifier (certify, checkContext, reduceContext)
-import Parser (parseProgram')
+import Certifier (certify, checkContext)
+import NDExtractor (extractWitnessCtx)
 
-import Data.Text.Lazy (unpack)
 import GHC.Stack (HasCallStack)
+import ND (HypId)
 import NDProofs (Result)
-import PPA (Context, Program)
+import PPA (Context)
 import System.Environment (getArgs)
 
-import Text.Printf (printf)
-import "pretty-simple" Text.Pretty.Simple (
-    CheckColorTty (NoCheckColorTty),
-    OutputOptions (outputOptionsCompact, outputOptionsCompactParens),
-    defaultOutputOptionsNoColor,
+import Parser (parseProgram', parseTerm)
+import PrettyShow (PrettyShow (prettyShow))
+import Text.Pretty.Simple (
     pPrint,
-    pPrintOpt,
-    pShowNoColor,
-    pShowOpt,
  )
+import Text.Printf (printf)
 
-data Args = Args {input :: Path, output :: Maybe Path}
+-- import Text.RawString.QQ
 
-data Path = Stdin | Stdout | File FilePath
+data Args
+    = ArgsCheck {input :: Path, output :: Maybe Path}
+    | ArgsExtract
+        { input :: Path
+        , output :: Maybe Path
+        , theorem :: HypId
+        , terms :: [String]
+        }
+
+data Path = Std | File FilePath
 
 instance Show Path where
-    show Stdin = "<stdin>"
-    show Stdout = "<stdout>"
+    show Std = "<std>"
     show (File p) = p
 
 main :: (HasCallStack) => IO ()
 main = do
     rawArgs <- getArgs
-    let args = parseArgs rawArgs
+    case parseArgs rawArgs of
+        Left err -> putStrLn err
+        Right args -> case args of
+            ArgsCheck{} -> runCheck args
+            ArgsExtract{} -> runExtract args
 
-    let inputPath = input args
-    rawProgram <- case inputPath of
-        Stdin -> getContents
+runCheck :: Args -> IO ()
+runCheck (ArgsCheck inPath outPath) = do
+    rawProgram <- case inPath of
+        Std -> getContents
         File f -> readFile f
 
-    putStrLn "Running program..."
-    case run (show inputPath) rawProgram of
+    putStr "Checking... "
+    case parseAndCheck (show inPath) rawProgram of
         Left err -> putStrLn err
         Right ctx -> do
             putStrLn "OK!"
-            writeResult (output args) ctx
+            case outPath of
+                Nothing -> return ()
+                Just path -> do
+                    putStrLn "Writing..."
+                    case path of
+                        Std -> do
+                            putStrLn "context:\n"
+                            pPrint ctx
+                        File f -> do
+                            let file_raw = f ++ "_raw.nk"
+                            writeFile file_raw (prettyShow ctx)
+                            putStrLn ("Wrote raw to " ++ file_raw)
 
-writeResult :: Maybe Path -> Context -> IO ()
-writeResult Nothing _ = return ()
-writeResult (Just p) ctx = do
-    putStrLn "Reducing..."
-    let ctxReduced = reduceContext ctx
-    case checkContext ctxReduced of
-        Right () -> putStrLn "OK!"
-        Left err -> putStrLn err
+runExtract :: Args -> IO ()
+runExtract (ArgsCheck{}) = undefined
+runExtract (ArgsExtract inPath outPath theoremId terms) = do
+    rawProgram <- case inPath of
+        Std -> getContents
+        File f -> readFile f
 
+    case mapM parseTerm terms of
+        Left err -> putStrLn $ "Parsing terms: " ++ err
+        Right parsedTerms -> do
+            putStr "Running program... "
+            case parseAndCheck (show inPath) rawProgram of
+                Left err -> putStrLn err
+                Right ctx -> do
+                    putStrLn "OK!"
+                    putStr "Translating... "
+                    case extractWitnessCtx ctx theoremId parsedTerms of
+                        Left err -> putStrLn err
+                        Right (ctx', t) -> do
+                            putStrLn "OK!"
+                            putStr "Checking translated... "
+                            case checkContext ctx' of
+                                Left err -> putStrLn err
+                                Right _ -> do
+                                    putStrLn "OK!"
+                                    putStrLn $ printf "Extracted witness: %s" (show t)
+                                    writeResult outPath ctx ctx'
+
+writeResult :: Maybe Path -> Context -> Context -> IO ()
+writeResult Nothing _ _ = return ()
+writeResult (Just p) ctxOriginal ctxReduced = do
+    putStrLn "Writing..."
     case p of
-        Stdout -> do
+        Std -> do
             putStrLn "raw context:\n"
-            pPrint ctx
+            pPrint ctxOriginal
             putStrLn "reduced:\n"
             pPrint ctxReduced
         File f -> do
-            writeFile (f ++ "_raw.nk") (prettyShow ctx)
-            writeFile (f ++ "_red.nk") (prettyShow ctxReduced)
+            let file_raw = f ++ "_raw.nk"
+            writeFile file_raw (prettyShow ctxOriginal)
+            putStrLn ("Wrote raw to " ++ file_raw)
 
-prettyShow :: (Show a) => a -> String
-prettyShow s = unpack $ pShowOpt opts s
-  where
-    opts =
-        defaultOutputOptionsNoColor
-            { outputOptionsCompact = True
-            -- , outputOptionsCompactParens = True
-            }
+            let file_reduced = f ++ ".nj"
+            writeFile file_reduced (prettyShow ctxReduced)
+            putStrLn ("Wrote translated+reduced to " ++ file_reduced)
 
-run :: String -> String -> Result Context
-run path rawProgram = do
-    prog <- parseProgram' (show path) rawProgram
+-- prettyShow :: (Show a) => a -> String
+-- prettyShow s = unpack $ pShowOpt opts s
+--   where
+--     opts =
+--         defaultOutputOptionsNoColor
+--             { outputOptionsCompact = True
+--             -- , outputOptionsCompactParens = True
+--             }
+
+parseAndCheck :: String -> String -> Result Context
+parseAndCheck path rawProgram = do
+    prog <- parseProgram' path rawProgram
     ctx <- certify prog
     checkContext ctx
     return ctx
 
-parseArgs :: [String] -> Args
-parseArgs args = case args of
-    [] -> Args{input = Stdin, output = Nothing}
-    [f] -> Args{input = inputPath f, output = Nothing}
-    [f, o] -> Args{input = inputPath f, output = Just $ outputPath o}
-  where
-    inputPath s = if s == "-" then Stdin else File s
-    outputPath s = if s == "-" then Stdout else File s
+parseArgs :: [String] -> Result Args
+parseArgs [] = Left "empty args"
+parseArgs (cmd : args) = case cmd of
+    "check" -> parseCheckArgs args
+    "extract" -> parseExtractArgs args
+    c -> Left $ printf "invalid command '%s', do 'check' or 'extract'" c
+
+parseExtractArgs :: [String] -> Result Args
+parseExtractArgs args = case args of
+    [] -> Left "empty translate args"
+    [t] -> Right ArgsExtract{theorem = t, input = Std, output = Nothing, terms = []}
+    [t, f] -> Right ArgsExtract{theorem = t, input = parsePath f, output = Nothing, terms = []}
+    t : f : o : ts -> Right ArgsExtract{theorem = t, input = parsePath f, output = Just $ parsePath o, terms = ts}
+
+parseCheckArgs :: [String] -> Result Args
+parseCheckArgs args = case args of
+    [] -> Right ArgsCheck{input = Std, output = Nothing}
+    [f] -> Right ArgsCheck{input = parsePath f, output = Nothing}
+    [f, o] -> Right ArgsCheck{input = parsePath f, output = Just $ parsePath o}
+    _ -> Left "just two args supported for command check"
+
+parsePath :: String -> Path
+parsePath "-" = Std
+parsePath s = File s

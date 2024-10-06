@@ -1,13 +1,15 @@
 module PPA (
   TProof,
   ProofStep (..),
-  Program (..),
-  Context (..),
+  Program,
+  Context,
   Justification,
   Hypothesis (..),
   Decl (..),
   Case,
   findHyp,
+  axioms,
+  removeHyp,
   getHypId,
   getProof,
   getForm,
@@ -15,9 +17,8 @@ module PPA (
   psName,
 ) where
 
-import Data.List (find, intercalate)
+import Data.List (find)
 import ND (
-  Env (EEmpty),
   Form (..),
   HypId,
   Proof (..),
@@ -25,10 +26,7 @@ import ND (
   VarId,
   fv,
  )
-import NDChecker (
-  CheckResult,
-  check,
- )
+
 import NDProofs (Result)
 import Text.Printf (printf)
 
@@ -96,6 +94,10 @@ getProof :: Hypothesis -> Proof
 getProof (HAxiom h _) = PAx h
 getProof (HTheorem _ _ p) = p
 
+isAxiom :: Hypothesis -> Bool
+isAxiom HAxiom{} = True
+isAxiom HTheorem{} = False
+
 type Context = [Hypothesis]
 
 findHyp :: Context -> HypId -> Result Hypothesis
@@ -104,6 +106,12 @@ findHyp ctx h
   | otherwise = case find (\h' -> getHypId h' == h) ctx of
       Just hyp -> Right hyp
       Nothing -> Left $ printf "'%s' not present in ctx" h
+
+removeHyp :: Context -> HypId -> Context
+removeHyp ctx hypId = filter (\h -> getHypId h /= hypId) ctx
+
+axioms :: Context -> Context
+axioms = filter isAxiom
 
 -- hypId especial que se refiere a la anterior
 prevHypId :: String

@@ -1,5 +1,5 @@
 {
-module Parser(parseProgram, parseProgram') where
+module Parser(parseProgram, parseProgram', parseTerm) where
 
 import ND ( Form(..), Term(..) )
 import PPA ( TProof, ProofStep(..), Program(..), Decl(..), Justification, Case )
@@ -13,6 +13,10 @@ import Debug.Trace (trace)
 %monad { Alex }
 %lexer { lexwrap } { Token _ TokenEOF }
 %error { parseError }
+
+-- https://monlih.github.io/happy-docs/#_sec_multiple_parsers
+%name hParseProgram Prog
+%name hParseTerm Term
 
 -- % https://monlih.github.io/happy-docs/#_sec_errorhandlertype_directive
 %errorhandlertype explist
@@ -149,8 +153,11 @@ parseError ((Token p t), next) =
         --alexError' p ("parse error at token '" ++ unLex t ++ "', possible tokens:" ++ trace ("a" ++ (show $ null next)) (show next))
 
 parseProgram' :: FilePath -> String -> Either String Program
-parseProgram' = runAlex' parse
+parseProgram' = runAlex' hParseProgram
 
 parseProgram :: String -> Either String Program
-parseProgram s = runAlex s parse
+parseProgram s = runAlex s hParseProgram
+
+parseTerm :: String -> Either String Term
+parseTerm s = runAlex s hParseTerm
 }

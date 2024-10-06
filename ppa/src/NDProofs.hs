@@ -111,15 +111,17 @@ Permite evitar Imp-E y Imp-I para demostrar a partir de una implicación conocid
 -}
 cut :: Form -> Proof -> HypId -> Proof -> Proof
 cut fA pA hypA pAThenB =
-    PImpE
-        { antecedent = fA
-        , proofImp =
-            PImpI
-                { hypAntecedent = hypA
-                , proofConsequent = pAThenB
-                }
-        , proofAntecedent = pA
-        }
+    PNamed
+        "cut"
+        PImpE
+            { antecedent = fA
+            , proofImp =
+                PImpI
+                    { hypAntecedent = hypA
+                    , proofConsequent = pAThenB
+                    }
+            , proofAntecedent = pA
+            }
 
 {- proofAndIList
 
@@ -167,8 +169,8 @@ proofAndEProjection' fAnd@(FAnd l r) f
         Right p -> Right $ \next -> p (PAndE1 r next)
         Left el -> case proofAndEProjection' r f of
             Left er ->
-                Left
-                    $ printf
+                Left $
+                    printf
                         "%s |- %s not possible by left (%s) or right (%s)"
                         (show fAnd)
                         (show f)
@@ -229,7 +231,6 @@ proofAndDistOverOrL x y z hAnd hOr =
             }
     hY = hypForm y
     hZ = hypForm z
-    hYOrZ = hypForm (FOr y z)
 
     -- (x ^ y) v (x ^ z) |- x ^ (y v z)
     proofOrToAnd =
@@ -396,7 +397,7 @@ proofNotTrue hNotTrue hFalse =
 
 -- Da una dem para ~F -|- T
 proofNotFalse :: HypId -> HypId -> (Proof, Proof)
-proofNotFalse hNotFalse hTrue = (pNotFalseThenTrue, pTrueThenNotFalse)
+proofNotFalse _ _ = (pNotFalseThenTrue, pTrueThenNotFalse)
   where
     -- ~F |- T
     pNotFalseThenTrue = PTrueI
@@ -730,13 +731,13 @@ proofNotDistOverAnd x y hNotAnd hOr =
 -- Da una demostración para X => Y -|- ~X v Y
 proofImpElim :: Form -> Form -> HypId -> HypId -> (Proof, Proof)
 proofImpElim x y hImp hOr =
-    ( PNamed "imp elim LR" proofImpElim
+    ( PNamed "imp elim LR" proofImpToOr
     , PNamed "imp elim RL" proofOrToImp
     )
   where
     -- X => Y |- ~X v Y
     -- Usando LEM, si vale X entonces vale Y. Si no vale X, vale ~X
-    proofImpElim =
+    proofImpToOr =
         POrE
             { left = x
             , right = FNot x
@@ -1028,7 +1029,7 @@ proofNotCongruence' ::
     HypId ->
     Proof ->
     Proof
-proofNotCongruence' x x' hNotX hX' proofX'ThenX =
+proofNotCongruence' x _ hNotX hX' proofX'ThenX =
     PNotI
         { hyp = hX'
         , proofBot =
@@ -1067,7 +1068,7 @@ proofImpCongruence1 x y x' hImp hImp' hX proofXThenX' hX' proofX'ThenX =
     x => y |- x' => y
 -}
 proofImpCongruence1' :: Form -> Form -> HypId -> HypId -> Proof -> Proof
-proofImpCongruence1' x y hImp hX' proofX'ThenX =
+proofImpCongruence1' x _ hImp hX' proofX'ThenX =
     PImpI
         { hypAntecedent = hX'
         , -- x', x => y |- y

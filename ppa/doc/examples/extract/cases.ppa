@@ -1,0 +1,16 @@
+axiom ax_1: forall X. p(X, k) | q(X, k)
+axiom ax_2: forall X. forall Y. p(X, Y) -> r(X, Y)
+axiom ax_3: forall X. forall Y. q(X, Y) -> r(X, Y)
+
+theorem t: forall X. exists Y . r(X, Y)
+proof
+    let X
+    take Y := k
+    cases by ax_1
+        case p(X, k)
+            hence r(X, k) by ax_2
+        
+        case q(X, k)
+            hence r(X, k) by ax_3
+    end
+end

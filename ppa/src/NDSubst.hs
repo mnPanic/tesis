@@ -4,6 +4,7 @@ module NDSubst (
   subst,
   substHyp,
   substVar,
+  freshWRT,
 ) where
 
 import ND (
@@ -18,10 +19,10 @@ import ND (
   fvTerm,
  )
 
+import Control.DeepSeq (force)
 import Data.Map qualified as Map
+import Data.Set (notMember)
 import Data.Set qualified as Set
-import Debug.Trace (trace)
-import Text.Printf (printf)
 
 {------------------------ Sustituciones sobre fórmulas ------------------------}
 
@@ -79,8 +80,8 @@ substTerm s x t t' = case t' of
 
 -- freshWRT da una variable libre con respecto a una lista en donde no queremos
 -- que aparezca
-freshWRT :: (Foldable t) => VarId -> t VarId -> VarId
-freshWRT x forbidden = head [x ++ suffix | suffix <- map show [0 ..], x ++ suffix `notElem` forbidden]
+freshWRT :: VarId -> Set.Set VarId -> VarId
+freshWRT x forbidden = head [x ++ suffix | suffix <- map show [0 :: Integer ..], (x ++ suffix) `notMember` forbidden]
 
 {--------------------- Sustituciones sobre demostraciones ---------------------}
 
@@ -92,7 +93,7 @@ substVar = substVar' Map.empty
 
 -- Hace (subst varid term) en toda la proof recursivamente
 substVar' :: VarSubstitution -> VarId -> Term -> Proof -> Proof
-substVar' s x t p = case p of
+substVar' s x t proof = case proof of
   PNamed name p1 -> PNamed name (rec p1)
   PAx h -> PAx h
   PAndI pL pR -> PAndI (rec pL) (rec pR)
@@ -115,7 +116,7 @@ substVar' s x t p = case p of
             s' = Map.insert y y' s
          in PForallI y' (recS s' pF)
     | otherwise -> PForallI y (rec pF)
-  p@(PForallE y f pF t')
+  PForallE y f pF t'
     -- Cortas cambiando T (todavía no está en el scope del nuevo x, pero f si)
     -- También seguís por pF, porque no está alcanzado por el scope de y.
     | x == y -> PForallE y f (rec pF) (doSubstT t')
@@ -127,7 +128,7 @@ substVar' s x t p = case p of
     | otherwise -> PForallE y (doSubst f) (rec pF) (doSubstT t')
   PExistsI t' p1 -> PExistsI (doSubstT t') (rec p1)
   -- TODO tests estos casos
-  p@(PExistsE y f pE h pA)
+  PExistsE y f pE h pA
     | x == y -> PExistsE y f (rec pE) h pA
     | y `elem` fvTerm t ->
         let y' = freshWRT y (Set.unions [fvTerm t, fvP pA, fvP pE, fv f])
@@ -149,13 +150,15 @@ en p' se use esa hyp. Hay que renombrar la que se agrega por otra que no se
 use en p' ni en la demo subsiguiente.
 -}
 substHyp :: HypId -> Proof -> Proof -> Proof
-substHyp = substHyp' Map.empty
+substHyp h p' = substHyp' Map.empty h p' hypsP
+ where
+  hypsP = citedHypIds p'
 
-substHyp' :: HypSubstitution -> HypId -> Proof -> Proof -> Proof
-substHyp' s h p' p = case p of
+substHyp' :: HypSubstitution -> HypId -> Proof -> Set.Set HypId -> Proof -> Proof
+substHyp' s hRep pRep hypsPRep p = case p of
   PNamed name p1 -> PNamed name (rec p1)
   PAx h'
-    | h' == h -> p' -- mal, captura
+    | h' == hRep -> pRep
     | otherwise -> case Map.lookup h' s of
         -- No puede pasar que esté renombrado y el renombre coincida con lo
         -- que se quiere renombrar, si hubiera sido la misma, hubiera cortado
@@ -188,45 +191,52 @@ substHyp' s h p' p = case p of
    where
     (h', pA') = recAvoidingCapture h pA
  where
-  rec = substHyp' s h p'
-  recAvoidingCapture = substHypAvoidCapture s h p'
-  hypsP' = citedHypIds p'
+  rec = substHyp' s hRep pRep hypsPRep
+  recAvoidingCapture = substHypAvoidCapture s hRep pRep hypsPRep
 
 -- Reemplazando hReplace por pReplace, nos encontramos con una sub dem que tiene
 -- h como hipotesis y p como sub-demo. Queremos reemplazar en p sin que eso
 -- genere una captura (si pReplace usa h, hay que renombrar h por h' en p)
-substHypAvoidCapture :: HypSubstitution -> HypId -> Proof -> HypId -> Proof -> (HypId, Proof)
-substHypAvoidCapture s hReplace pReplace h p
-  -- Cortamos porque se re-definió la hyp que queremos reemplazar
+substHypAvoidCapture ::
+  HypSubstitution ->
+  HypId ->
+  Proof ->
+  Set.Set HypId ->
+  HypId ->
+  Proof ->
+  (HypId, Proof)
+substHypAvoidCapture s hReplace pReplace hypsPReplace h p
+  -- Cortamos porque se re-definió la hyp que queremos reemplazar, resetea scope.
   | hReplace == h = (h, p)
   -- Hay captura
   | h `elem` hypsPReplace =
-      let h' = freshWRT h (Set.union hypsPReplace (citedHypIds p))
-          p' = substHyp' (Map.insert h h' s) hReplace pReplace p
+      let pHyps = citedHypIds p
+          h' = force freshWRT h (Set.union hypsPReplace pHyps)
+          p' = substHyp' (Map.insert h h' s) hReplace pReplace hypsPReplace p
        in (h', p')
   -- No hay captura, sigue normalmente
-  | otherwise = (h, substHyp' s hReplace pReplace p)
- where
-  hypsPReplace = citedHypIds pReplace
+  | otherwise =
+      let p' = substHyp' s hReplace pReplace hypsPReplace p
+       in (h, p')
 
 citedHypIds :: Proof -> Set.Set HypId
 citedHypIds p = case p of
   PAx h -> Set.singleton h
-  PNamed name p1 -> citedHypIds p1
+  PNamed _ p1 -> citedHypIds p1
   PAndI pL pR -> Set.union (citedHypIds pL) (citedHypIds pR)
-  PAndE1 r pR -> citedHypIds pR
-  PAndE2 l pL -> citedHypIds pL
+  PAndE1 _ pR -> citedHypIds pR
+  PAndE2 _ pL -> citedHypIds pL
   POrI1 pL -> citedHypIds pL
   POrI2 pR -> citedHypIds pR
-  POrE l r pOr hL pL hR pR -> Set.unions [citedHypIds pOr, citedHypIds pL, citedHypIds pR]
-  PImpI h p1 -> citedHypIds p1
-  PImpE f pI pA -> Set.union (citedHypIds pI) (citedHypIds pA)
-  PNotI h pB -> citedHypIds pB
-  PNotE f pNotF pF -> Set.union (citedHypIds pNotF) (citedHypIds pF)
+  POrE _ _ pOr _ pL _ pR -> Set.unions [citedHypIds pOr, citedHypIds pL, citedHypIds pR]
+  PImpI _ p1 -> citedHypIds p1
+  PImpE _ pI pA -> Set.union (citedHypIds pI) (citedHypIds pA)
+  PNotI _ pB -> citedHypIds pB
+  PNotE _ pNotF pF -> Set.union (citedHypIds pNotF) (citedHypIds pF)
   PTrueI -> Set.empty
   PFalseE pB -> citedHypIds pB
   PLEM -> Set.empty
-  PForallI x pF -> citedHypIds pF
-  PForallE x f pF t -> citedHypIds pF
-  PExistsI t p1 -> citedHypIds p1
-  PExistsE x f pE h pA -> Set.union (citedHypIds pE) (citedHypIds pA)
+  PForallI _ pF -> citedHypIds pF
+  PForallE{proofForall=pF} -> citedHypIds pF
+  PExistsI _ p1 -> citedHypIds p1
+  PExistsE{proofExists=pE, proofAssuming=pA} -> Set.union (citedHypIds pE) (citedHypIds pA)

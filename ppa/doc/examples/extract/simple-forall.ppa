@@ -1,0 +1,8 @@
+axiom ax: forall Y . forall Z . p(v, Y, Z)
+theorem t: forall Y. forall Z. exists X . p(X, Y, Z)
+proof
+    let Y
+    let Z
+    take X := v
+    thus p(v, Y, Z) by ax
+end

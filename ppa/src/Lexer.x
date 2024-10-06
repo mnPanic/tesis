@@ -171,7 +171,7 @@ alexEOF = do
 
 firstLast :: [a] -> [a]
 firstLast [] = []
-firstLast [x] = []
+firstLast [_] = []
 firstLast xs = tail (init xs)
 
 -- Unfortunately, we have to extract the matching bit of string
@@ -195,7 +195,7 @@ alexMonadScan' = do
     AlexEOF -> alexEOF
     AlexError (p, _, _, s) ->
         alexError' p ("lexical error at character '" ++ take 1 s ++ "'")
-    AlexSkip  inp' len -> do
+    AlexSkip  inp' _ -> do
         alexSetInput inp'
         alexMonadScan'
     AlexToken inp' len action -> do

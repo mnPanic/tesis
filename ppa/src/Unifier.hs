@@ -15,7 +15,7 @@ import ND (
  )
 
 import NDProofs (
-    Result (..),
+    Result,
  )
 
 import Data.List (intercalate)
@@ -67,7 +67,7 @@ unifyF' n r1 r2 s f0 g0 = case (f0, g0) of
                 r1' = Map.insert x freshVar r1
                 r2' = Map.insert y freshVar r2
              in unifyF' (n + 1) r1' r2' s f1 f2
-    (f0, g0) -> Left $ printf "different form types: %s /= %s" (show f0) (show g0)
+    _ -> Left $ printf "different form types: %s /= %s" (show f0) (show g0)
 
 unifyT :: VarSubstitution -> VarSubstitution -> Substitution -> Term -> Term -> Result Substitution
 unifyT r1 r2 subst t0 s0 =
@@ -82,14 +82,14 @@ unifyT r1 r2 subst t0 s0 =
             -- "compatibilizar" las substs, porque ya se hace implícitamente
             -- al buscar los representantes. Si la metavar tuviera otro termino
             -- que t, acá estaría comparando contra eso y no una metavar.
-            (TMetavar x, t)
-                | occurs subst x t -> Left $ printf "Occurs check: %s occurs in %s, can't {?%s\\%s}" (show x) (show t) (show x) (show t)
-                | occursInRename r2 t -> Left $ printf "Rename check: '%s' has free variables that were renamed for alpha equivalence" (show t)
-                | otherwise -> Right $ Map.insert x t subst
-            (t, TMetavar x)
-                | occurs subst x t -> Left $ printf "Occurs check: %s occurs in %s, can't {?%s\\%s}" (show x) (show t) (show x) (show t)
-                | occursInRename r1 t -> Left $ printf "Rename check: '%s' has free variables that were renamed for alpha equivalence" (show t)
-                | otherwise -> Right $ Map.insert x t subst
+            (TMetavar x, t')
+                | occurs subst x t' -> Left $ printf "Occurs check: %s occurs in %s, can't {?%s\\%s}" (show x) (show t') (show x) (show t')
+                | occursInRename r2 t' -> Left $ printf "Rename check: '%s' has free variables that were renamed for alpha equivalence" (show t')
+                | otherwise -> Right $ Map.insert x t' subst
+            (t', TMetavar x)
+                | occurs subst x t' -> Left $ printf "Occurs check: %s occurs in %s, can't {?%s\\%s}" (show x) (show t') (show x) (show t')
+                | occursInRename r1 t' -> Left $ printf "Rename check: '%s' has free variables that were renamed for alpha equivalence" (show t')
+                | otherwise -> Right $ Map.insert x t' subst
             (TVar x1, TVar x2)
                 | x1 == x2 -> Right subst
                 | otherwise -> case Map.lookup x1 r1 of
@@ -102,7 +102,7 @@ unifyT r1 r2 subst t0 s0 =
             (TFun f1 ts1, TFun f2 ts2)
                 | f1 /= f2 -> Left $ printf "different function names: %s /= %s" f1 f2
                 | otherwise -> unifyTs r1 r2 subst ts1 ts2
-            (t, s) -> Left $ printf "different term types: %s /= %s" (show t) (show s)
+            (_, _) -> Left $ printf "different term types: %s /= %s" (show t) (show s)
 
 -- Chequea que en el término no ocurra una metavariable (occurs check)
 -- Asume que t es un representante
@@ -128,9 +128,9 @@ occursInRename :: VarSubstitution -> Term -> Bool
 occursInRename r t = any (\x -> x `elem` Map.keys r) (fvTerm t)
 
 unifyTs :: VarSubstitution -> VarSubstitution -> Substitution -> [Term] -> [Term] -> Result Substitution
-unifyTs r1 r2 subst [] [] = Right subst
-unifyTs r1 r2 subst _ [] = Left "different length"
-unifyTs r1 r2 subst [] _ = Left "different length"
+unifyTs _ _ subst [] [] = Right subst
+unifyTs _ _ _ _ [] = Left "different length"
+unifyTs _ _ _ [] _ = Left "different length"
 unifyTs r1 r2 subst (t : ts) (s : ss) = case unifyT r1 r2 subst t s of
     Left err -> Left err
     Right subst' -> unifyTs r1 r2 subst' ts ss

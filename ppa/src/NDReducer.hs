@@ -2,29 +2,29 @@
 -- a una equivalente más chica.
 module NDReducer (reduce) where
 
-import Data.Map qualified as Map
-import Data.Set qualified as Set
-import ND (HypId, Proof (..), Term (TVar), VarId, VarSubstitution, fvTerm)
+import ND (Proof (..))
 import NDSubst (substHyp, substVar)
-
--- freshWRT da una hyp no usada con respecto a una lista en donde no queremos
--- que aparezca
-freshWRT :: (Foldable t) => HypId -> t HypId -> HypId
-freshWRT h forbidden = head [h ++ suffix | suffix <- map show [0 ..], h ++ suffix `notElem` forbidden]
 
 -- Reduce una demostración hasta que sea irreducible (big step).
 -- Asume que chequea.
 reduce :: Proof -> Proof
 reduce p = maybe p reduce (reduce1 p)
 
+-- Hack porque en las cong tengo que saber si devolver nothing
+-- TODO: reworkear un poco
+reduce' :: Proof -> Maybe Proof
+reduce' p = case reduce1 p of
+  Nothing -> Nothing
+  Just p' -> Just $ reduce p'
+
 -- Realiza un paso small step de reducción de la demostración
 -- Devuelve Nothing si es irreducible.
 reduce1 :: Proof -> Maybe Proof
-reduce1 p = case p of
+reduce1 proof = case proof of
   -- Reducción de And
   -- PAndEi(PAndI(Pi_1, Pi_2)) -> PI_i
-  PAndE1 right (PAndI proofLeft proofRight) -> Just proofLeft
-  PAndE2 left (PAndI proofLeft proofRight) -> Just proofRight
+  PAndE1 _ (PAndI proofLeft _) -> Just proofLeft
+  PAndE2 _ (PAndI _ proofRight) -> Just proofRight
   -- Reducción de Or
   -- POrE(POrI(Pi), h.proofLeft)
   POrE
@@ -39,8 +39,7 @@ reduce1 p = case p of
     } -> Just $ substHyp hypRight proofRight proofAssumingRight
   -- Reducción de Imp
   PImpE
-    { antecedent = ant
-    , proofImp =
+    { proofImp =
       PImpI
         { hypAntecedent = hypAntecedent
         , proofConsequent = proofAntThenCons
@@ -49,8 +48,7 @@ reduce1 p = case p of
     } -> Just $ substHyp hypAntecedent proofAnt proofAntThenCons
   -- Reducción de Not
   PNotE
-    { form = form
-    , proofNotForm =
+    { proofNotForm =
       PNotI
         { hyp = hypForm
         , proofBot = proofBot
@@ -59,9 +57,7 @@ reduce1 p = case p of
     } -> Just $ substHyp hypForm proofForm proofBot
   -- Reducción de Forall
   PForallE
-    { var = x
-    , form = form
-    , proofForall =
+    { proofForall =
       PForallI
         { newVar = x'
         , proofForm = proofForm
@@ -71,7 +67,6 @@ reduce1 p = case p of
   -- Reducción de Exists
   PExistsE
     { var = x
-    , form = form
     , proofExists =
       PExistsI
         { inst = t
@@ -88,37 +83,34 @@ reduce1 p = case p of
   PLEM -> Nothing
   PTrueI -> Nothing
   -- Congruencias
-  p@(PImpI hypAntecedent proofConsequent) ->
+  p@(PImpI _ proofConsequent) ->
     reduceCong1
       proofConsequent
       (\proofConsequent' -> p{proofConsequent = proofConsequent'})
-  p@(PImpE antecedent proofImp proofAntecedent) ->
+  p@(PImpE _ proofImp proofAntecedent) ->
     reduceCong2
       proofImp
-      (\proofImp' -> p{proofImp = proofImp'})
       proofAntecedent
-      (\proofAntecedent' -> p{proofAntecedent = proofAntecedent'})
-  p@(PNotI hyp proofBot) ->
+      (\proofImp' proofAntecedent' -> p{proofImp = proofImp', proofAntecedent = proofAntecedent'})
+  p@(PNotI _ proofBot) ->
     reduceCong1
       proofBot
       (\proofBot' -> p{proofBot = proofBot'})
-  p@(PNotE form proofNotForm proofForm) ->
+  p@(PNotE _ proofNotForm proofForm) ->
     reduceCong2
       proofNotForm
-      (\proofNotForm' -> p{proofNotForm = proofNotForm'})
       proofForm
-      (\proofForm' -> p{proofForm = proofForm'})
+      (\proofNotForm' proofForm' -> p{proofNotForm = proofNotForm', proofForm = proofForm'})
   p@(PAndI proofLeft proofRight) ->
     reduceCong2
       proofLeft
-      (\proofLeft' -> p{proofLeft = proofLeft'})
       proofRight
-      (\proofRight' -> p{proofRight = proofRight'})
-  p@(PAndE1 right proofAnd) ->
+      (\proofLeft' proofRight' -> p{proofRight = proofRight', proofLeft = proofLeft'})
+  p@(PAndE1 _ proofAnd) ->
     reduceCong1
       proofAnd
       (\proofAnd' -> p{proofAnd = proofAnd'})
-  p@(PAndE2 left proofAnd) ->
+  p@(PAndE2 _ proofAnd) ->
     reduceCong1
       proofAnd
       (\proofAnd' -> p{proofAnd = proofAnd'})
@@ -130,58 +122,65 @@ reduce1 p = case p of
     reduceCong1
       proofRight
       (\proofRight' -> p{proofRight = proofRight'})
-  p@(POrE left right proofOr hypLeft proofAssumingLeft hypRight proofAssumingRight) ->
+  p@(POrE{proofOr = proofOr, proofAssumingLeft = proofAssumingLeft, proofAssumingRight = proofAssumingRight}) ->
     reduceCong3
       proofOr
-      (\proofOr' -> p{proofOr = proofOr'})
       proofAssumingLeft
-      (\proofAssumingLeft' -> p{proofAssumingLeft = proofAssumingLeft'})
       proofAssumingRight
-      (\proofAssumingRight' -> p{proofAssumingRight = proofAssumingRight'})
+      (\proofOr' proofAssumingLeft' proofAssumingRight' -> p{proofOr = proofOr', proofAssumingLeft = proofAssumingLeft', proofAssumingRight = proofAssumingRight'})
   p@(PFalseE proofBot) ->
     reduceCong1
       proofBot
       (\proofBot' -> p{proofBot = proofBot'})
-  p@(PForallI newVar proofForm) ->
+  p@(PForallI{proofForm = proofForm}) ->
     reduceCong1 proofForm (\proofForm' -> p{proofForm = proofForm'})
-  p@(PForallE var form proofForall termReplace) ->
+  p@(PForallE{proofForall = proofForall}) ->
     reduceCong1 proofForall (\proofForall' -> p{proofForall = proofForall'})
-  p@(PExistsI t pInst) ->
+  p@(PExistsI{proofFormWithInst = pInst}) ->
     reduceCong1 pInst (\pInst' -> p{proofFormWithInst = pInst'})
-  p@(PExistsE var form proofExists hyp proofAssuming) ->
+  p@(PExistsE{proofExists = proofExists, proofAssuming = proofAssuming}) ->
     reduceCong2
       proofExists
-      (\proofExists' -> p{proofExists = proofExists'})
       proofAssuming
-      (\proofAssuming' -> p{proofAssuming = proofAssuming'})
+      (\proofExists' proofAssuming' -> p{proofExists = proofExists', proofAssuming = proofAssuming'})
 
 reduceCong1 :: Proof -> (Proof -> Proof) -> Maybe Proof
 reduceCong1 p r = do
-  p' <- reduce1 p
+  p' <- reduce' p
   return (r p')
 
 reduceCong2 ::
   Proof ->
-  (Proof -> Proof) ->
   Proof ->
-  (Proof -> Proof) ->
+  (Proof -> Proof -> Proof) ->
   Maybe Proof
-reduceCong2 p1 r1 p2 r2 = case reduce1 p1 of
-  Just p1' -> Just $ r1 p1'
-  Nothing -> case reduce1 p2 of
-    Just p2' -> Just $ r2 p2'
+reduceCong2 p1 p2 r = case reduceCong2NoRep p1 p2 of
+  Just (p1', p2') -> Just (r p1' p2')
+  Nothing -> Nothing
+
+reduceCong2NoRep ::
+  Proof ->
+  Proof ->
+  Maybe (Proof, Proof)
+reduceCong2NoRep p1 p2 = case reduce' p1 of
+  Just p1' -> case reduce' p2 of
+    Just p2' -> Just (p1', p2')
+    Nothing -> Just (p1', p2)
+  Nothing -> case reduce' p2 of
+    Just p2' -> Just (p1, p2')
     Nothing -> Nothing
 
 reduceCong3 ::
   Proof ->
-  (Proof -> Proof) ->
   Proof ->
-  (Proof -> Proof) ->
   Proof ->
-  (Proof -> Proof) ->
+  (Proof -> Proof -> Proof -> Proof) ->
   Maybe Proof
-reduceCong3 p1 r1 p2 r2 p3 r3 = case reduceCong2 p1 r1 p2 r2 of
-  Just p' -> Just p'
-  Nothing -> case reduce1 p3 of
-    Just p3' -> Just $ r3 p3'
-    Nothing -> Nothing
+reduceCong3 p1 p2 p3 r =
+  case reduceCong2NoRep p1 p2 of
+    Just (p1', p2') -> case reduce' p3 of
+      Just p3' -> Just (r p1' p2' p3')
+      Nothing -> Nothing
+    Nothing -> case reduce' p3 of
+      Just p3' -> Just (r p1 p2 p3')
+      Nothing -> Nothing

@@ -1,0 +1,166 @@
+{
+	// Place your snippets for haskell here. Each snippet is defined under a snippet name and has a prefix, body and 
+	// description. The prefix is what is used to trigger the snippet and the body will be expanded and inserted. Possible variables are:
+	// $1, $2 for tab stops, $0 for the final cursor position, and ${1:label}, ${2:another} for placeholders. Placeholders with the 
+	// same ids are connected.
+	// Example:
+	// "Print to console": {
+	// 	"prefix": "log",
+	// 	"body": [
+	// 		"console.log('$1');",
+	// 		"$2"
+	// 	],
+	// 	"description": "Log output to console"
+	// }
+	"POrE": {
+		"prefix": "POrE",
+		"description": "Insert Or elimination",
+		"body": [
+			"POrE {",
+			"	left = ${1:undefined},",
+			"	right = ${2:undefined},",
+			"	proofOr = ${3:undefined},",
+			"	hypLeft = ${4:undefined},",
+			"	proofAssumingLeft = ${5:undefined},",
+			"	hypRight = ${6:undefined},",
+			"	proofAssumingRight = ${7:undefined}",
+			" }"
+		]
+	},
+	"PAndI": {
+		"prefix": "PAndI",
+		"description": "Insert And introduction",
+		"body": [
+			"PAndI {",
+        	"	proofLeft = ${1:undefined},",
+        	"	proofRight = ${2:undefined}",
+			" }"
+		]
+        },
+    "PAndE1": {
+		"prefix": "PAndE1",
+		"description": "Insert And elimination 1",
+		"body": [
+			"PAndE1 {",
+        	"	right = ${1:undefined},",
+        	"	proofAnd = ${2:undefined}",
+			" }"
+		]
+        },
+    "PAndE2": {
+		"prefix": "PAndE2",
+		"description": "Insert And elimination 2",
+		"body": [
+			"PAndE2 {",
+        	"	left = ${1:undefined},",
+        	"	proofAnd = ${2:undefined}",
+			" }"
+		]
+        },
+    "POrI1": {
+		"prefix": "POrI1",
+		"description": "Insert Or introduction 1",
+		"body": [
+			"POrI1 {",
+			"	proofLeft = ${1:undefined}",
+			" }"
+		]
+	},
+    "POrI2": {
+		"prefix": "POrI2",
+		"description": "Insert Or introduction 2",
+		"body": [
+			"POrI2 {",
+        	"	proofRight = ${1:undefined},",
+        	"	}"
+		]
+	},
+	"PImpI": {
+		"prefix": "PImpI",
+		"description": "Insert imp intro",
+		"body": [
+			"PImpI {",
+			"	hypAntecedent = ${1:undefined},",
+			"	proofConsequent = ${2:undefined}",
+			" }"
+		]
+	},
+	"PNotI": {
+		"prefix": "PNotI",
+		"description": "Insert not intro",
+		"body": [
+			"PNotI {",
+			"	hyp = ${1:undefined},",
+			"	proofBot = ${2:undefined}",
+			" }"
+		]
+	},
+ 	"PImpE" : {
+		"prefix": "PImpE",
+		"description": "Insert imp elim",
+		"body": [
+			"PImpE {",
+        	"	antecedent = ${1:undefined},",
+        	"	proofImp = ${2:undefined},",
+        	"	proofAntecedent = ${3:undefined}",
+			" }"
+		]
+	},
+ 	"PNotE" : {
+		"prefix": "PNotE",
+		"description": "Insert not elim",
+		"body": [
+			"PNotE {",
+        	"	form = ${1:undefined},",
+        	"	proofNotForm = ${2:undefined},",
+        	"	proofForm = ${3:undefined}",
+			" }"
+		]
+	},
+	"PForallI": {
+        "prefix": "PForallI",
+        "description": "Insert Forall introduction",
+        "body": [
+            "PForallI {",
+            "    newVar = ${1:undefined},",
+            "    proofForm = ${2:undefined}",
+            "}"
+        ]
+    },
+    "PForallE": {
+        "prefix": "PForallE",
+        "description": "Insert Forall elimination",
+        "body": [
+            "PForallE {",
+            "    var = ${1:undefined},",
+            "    form = ${2:undefined},",
+            "    termReplace = ${4:undefined},",
+            "    proofForall = ${3:undefined}",
+            "}"
+        ]
+    },
+    "PExistsI": {
+        "prefix": "PExistsI",
+        "description": "Insert Exists introduction",
+        "body": [
+            "PExistsI {",
+            "    inst = ${1:undefined},",
+            "    proofFormWithInst = ${2:undefined}",
+            "}"
+        ]
+    },
+    "PExistsE": {
+        "prefix": "PExistsE",
+        "description": "Insert Exists elimination",
+        "body": [
+            "PExistsE {",
+            "    var = ${1:undefined},",
+            "    form = ${2:undefined},",
+            "    proofExists = ${3:undefined},",
+            "    hyp = ${4:undefined},",
+            "    proofAssuming = ${5:undefined}",
+            "}"
+        ]
+    }
+
+}

@@ -1,0 +1,11 @@
+axiom "a": a
+axiom "b": b
+axiom "c": c
+axiom "d": d
+axiom "e": e
+theorem "andi_variant" : (a & b) & ((c & d) & e)
+proof
+    thus a & e by "a", "e"
+    thus d by "d"
+    thus b & c by "b", "c"
+end

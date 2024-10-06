@@ -1,0 +1,5 @@
+Comparación entre usar un hashmap
+(https://github.com/haskell-unordered-containers/unordered-containers) vs un Map
+basado en orden para la cache de citedHypIds que es lo que más tiempo se lleva.
+
+Terminó siendo más lento el hash map.

@@ -10,3 +10,9 @@ theorem algo3_corr_algo1: correlativa(algo3, algo1)
 proof
     thus correlativa(algo3, algo1) by trans_corr, corr_algo3, corr_algo2
 end
+
+theorem t1: exists M . correlativa(algo3, M)
+proof
+    take algo1
+    thus correlativa(algo3, algo1) by trans_corr, corr_algo3, corr_algo2
+end

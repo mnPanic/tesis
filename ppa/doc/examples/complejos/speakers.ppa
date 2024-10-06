@@ -1,0 +1,59 @@
+// Dominio de una conferencia científica
+
+// Predicados:
+// - participant/1: Indica si alguien es participante
+// - speaker/1: Indica si alguien es un orador (speaker)
+// - session/1: Indica si un evento es una sesión
+// - talks_in/2: talks_in(S, X) significa que S (un orador) da una ponencia en X (una sesión)
+// - registered_for/2: registered_for(P, X) significa que P (un participante) está registrado para la sesión X
+// - conflict/2: conflict(S1, S2) significa que las sesiones S1 y S2 están en conflicto (ocurren al mismo tiempo)
+
+// Axiomas:
+
+// Todo orador es también un participante
+axiom speaker_is_participant:
+    forall X. speaker(X) -> participant(X)
+
+// Un participante está registrado en al menos una sesión
+axiom participant_registered_in_session:
+    forall P. participant(P) -> exists X. session(X) & registered_for(P, X)
+
+// Un orador habla en al menos una sesión
+axiom speaker_gives_talk:
+    forall S. speaker(S) -> exists X. session(X) & talks_in(S, X)
+
+// Un participante no puede estar registrado en dos sesiones que están en conflicto
+axiom no_conflicting_sessions:
+    forall P. forall X. forall Y.
+        ~(registered_for(P, X) & registered_for(P, Y) & conflict(X, Y))
+
+// Un orador solo puede dar una charla por sesión
+axiom one_talk_per_session:
+    forall S. forall X. forall Y.
+        talks_in(S, X) & talks_in(S, Y) -> eq(X, Y)
+
+axiom registered_for_cong_eq:
+    forall P. forall X. forall Y.
+        registered_for(P, Y) & eq(X, Y) -> registered_for(P, X)
+
+// Ejemplo de teorema:
+// Si un orador da una charla en una sesión, entonces está registrado en esa sesión
+theorem speaker_registered_in_own_session:
+    forall S. forall X.
+        speaker(S) & talks_in(S, X) -> registered_for(S, X)
+proof
+    let S
+    let X
+    suppose hyp: speaker(S) & talks_in(S, X)
+    
+    // Sabemos que todo orador es un participante
+    have -:participant(S) by hyp, speaker_is_participant
+    
+    // Los participantes están registrados en al menos una sesión
+    consider Y st y_session: session(Y) & registered_for(S, Y) by -, participant_registered_in_session
+    
+    // Si el orador da una charla en X y está registrado en Y, deben ser la misma sesión
+    have -:eq(X, Y) by hyp, one_talk_per_session
+    
+    hence registered_for(S, X) by y_session, registered_for_cong_eq
+end
