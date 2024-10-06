@@ -1,1 +1,5 @@
-- Code listings con minted/algo con highlighting. Robar de plp https://github.com/mnPanic/plp/blob/master/final/notas.tex#L61
+- Code listings con minted/algo con highlighting. Robar de plp
+https://github.com/mnPanic/plp/blob/master/final/notas.tex#L61
+- Usar template de tesis de la facu
+- Referencias a teoremas, lemas, etc. que pongan el nombre de lo que citan (creo
+que tengo el style asi en el resumen de plp)
