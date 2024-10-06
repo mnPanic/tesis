@@ -1,0 +1,80 @@
+\ProvidesPackage{thesis}
+
+\usepackage[spanish]{babel}
+\usepackage{amsmath}
+\usepackage{amsthm}     % teoremas
+\usepackage{float}      % [H]
+\usepackage{abraces}    % \aunderbrace y \aoverbrace
+\usepackage[dvipsnames]{xcolor}     % \textcolor
+\usepackage[colorlinks=true]{hyperref}
+\usepackage[spanish]{babel}
+
+% https://tex.stackexchange.com/questions/32701/side-by-side-equations-with-equation-numbers-for-each
+\usepackage{multicol}
+
+\usepackage{csquotes}
+\usepackage[
+    backend=biber,
+    style=alphabetic,
+]{biblatex}
+\addbibresource{sources.bib}
+
+% Teoremas, corolarios, etc.
+% https://www.overleaf.com/learn/latex/theorems_and_proofs
+\theoremstyle{definition} % Para que no salga en italicas
+
+\newtheorem{theorem}{Teorema}
+\newtheorem*{theorem*}{Teorema}
+
+\newtheorem{lemma}{Lema}
+\newtheorem*{lemma*}{Lema}
+
+\newtheorem{prop}{Prop.}
+\newtheorem*{prop*}{Prop}
+
+\newtheorem{definition}{Def.}
+\newtheorem*{definition*}{Def}
+
+\newtheorem{obs}{Obs.}
+\newtheorem*{obs*}{Obs}
+
+\newtheorem{example}{Ejemplo}
+\newtheorem*{example*}{Ejemplo}
+
+% https://tex.stackexchange.com/questions/468/what-is-the-best-package-out-there-to-typeset-proof-trees
+% https://mathweb.ucsd.edu/~sbuss/ResearchWeb/bussproofs/BussGuide2_Smith2012.pdf
+% https://mathweb.ucsd.edu/~sbuss/ResearchWeb/bussproofs/
+\usepackage{bussproofs}
+
+\newcommand{\LL}[1]{\LeftLabel{#1}}
+\newcommand{\RL}[1]{\RightLabel{#1}}
+
+\newcommand{\ruleI}[1]{I#1}
+\newcommand{\ruleE}[1]{E#1}
+
+% Tipado
+%% Contextos
+\newcommand{\ctx}{\Gamma}
+\newcommand{\ctxTwo}{\Delta}
+\newcommand{\hypId}{h}
+%% Fórmulas
+\newcommand{\var}{x}
+\newcommand{\term}{t}
+\newcommand{\form}{A}
+\newcommand{\formTwo}{B}
+\newcommand{\formThree}{C}
+
+%% Juicios
+\newcommand{\judg}[2]{#1 \vdash #2}
+
+% Misceláneos
+\newcommand{\ubrace}[2]{\aunderbrace[l1r]{#1}_{#2}}
+\newcommand{\obrace}[2]{\aoverbrace[L1R]{#1}^{#2}}
+
+\newcommand{\todo}[1]{\textcolor{red}{(TODO: #1)}}
+
+%% Friedman
+\newcommand{\someProof}{\Pi}
+\newcommand{\dneg}[1]{#1^{\neg\neg}}
+\newcommand{\judgC}{\vdash_C}
+\newcommand{\judgI}{\vdash_I}

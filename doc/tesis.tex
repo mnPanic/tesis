@@ -1,70 +1,9 @@
 \documentclass{report}
 
-\usepackage[spanish]{babel}
-\usepackage{amsmath}
-\usepackage{amsthm}     % teoremas
-\usepackage{float}      % [H]
-\usepackage{abraces}    % \aunderbrace y \aoverbrace
-\usepackage[dvipsnames]{xcolor}     % \textcolor
-\usepackage[colorlinks=true]{hyperref}
-\usepackage[spanish]{babel}
+\usepackage{thesis}
 
-% https://tex.stackexchange.com/questions/32701/side-by-side-equations-with-equation-numbers-for-each
-\usepackage{multicol}
-
-% Teoremas, corolarios, etc.
-% https://www.overleaf.com/learn/latex/theorems_and_proofs
-\theoremstyle{definition} % Para que no salga en italicas
-
-\newtheorem{theorem}{Teorema}
-\newtheorem*{theorem*}{Teorema}
-
-\newtheorem{lemma}{Lema}
-\newtheorem*{lemma*}{Lema}
-
-\newtheorem{prop}{Prop.}
-\newtheorem*{prop*}{Prop}
-
-\newtheorem{definition}{Def.}
-\newtheorem*{definition*}{Def}
-
-\newtheorem{obs}{Obs.}
-\newtheorem*{obs*}{Obs}
-
-\newtheorem{example}{Ejemplo}
-\newtheorem*{example*}{Ejemplo}
-
-% https://tex.stackexchange.com/questions/468/what-is-the-best-package-out-there-to-typeset-proof-trees
-% https://mathweb.ucsd.edu/~sbuss/ResearchWeb/bussproofs/BussGuide2_Smith2012.pdf
-% https://mathweb.ucsd.edu/~sbuss/ResearchWeb/bussproofs/
-\usepackage{bussproofs}
-
-\newcommand{\LL}[1]{\LeftLabel{#1}}
-\newcommand{\RL}[1]{\RightLabel{#1}}
-
-\newcommand{\ruleI}[1]{I#1}
-\newcommand{\ruleE}[1]{E#1}
-
-% Tipado
-%% Contextos
-\newcommand{\ctx}{\Gamma}
-\newcommand{\ctxTwo}{\Delta}
-\newcommand{\hypId}{h}
-%% Fórmulas
-\newcommand{\var}{x}
-\newcommand{\term}{t}
-\newcommand{\form}{A}
-\newcommand{\formTwo}{B}
-\newcommand{\formThree}{C}
-
-%% Juicios
-\newcommand{\judg}[2]{#1 \vdash #2}
-
-% Misceláneos
-\newcommand{\ubrace}[2]{\aunderbrace[l1r]{#1}_{#2}}
-\newcommand{\obrace}[2]{\aoverbrace[L1R]{#1}^{#2}}
-
-\newcommand{\todo}[1]{\textcolor{red}{(TODO: #1)}}
+% Para solo agregar algunas secciones
+\includeonly{sections/friedman} 
 
 \title{Tesis de licenciatura}
 \author{
@@ -75,161 +14,18 @@
 \begin{document}
 \maketitle
 
-% TODO: Mover a .tex a parte y agregar con \include
+\chapter{Deducción natural}
 
-Dos tipos de reglas
+\todo{cambiar el nombre}
 
-\begin{itemize}
-    \item \textbf{Introducción}: Cómo demuestro?
-    \item \textbf{Eliminación}: Cómo lo uso para demostrar?
-\end{itemize}
+\cite{FreekBy}
 
-\begin{multicols}{2}
-    \begin{prooftree}
-        \AxiomC{$\judg{\ctx}{\bot}$}
-        \RL{\ruleE{$\bot$}}
-        \UnaryInfC{$\judg{\ctx}{\form}$}
-    \end{prooftree}
-    \begin{prooftree}
-        \AxiomC{}
-        \RL{\ruleI{$\top$}}
-        \UnaryInfC{$\judg{\ctx}{\top}$}
-    \end{prooftree}
-\end{multicols}
+\include{sections/natural_deduction}
 
-\begin{multicols}{2}
-    \begin{prooftree}
-        \AxiomC{}
-        \RL{LEM}
-        \UnaryInfC{$\judg{\ctx}{\form \vee \neg \form}$}
-    \end{prooftree}
-    \begin{prooftree}
-        \AxiomC{}
-        \RL{Ax}
-        \UnaryInfC{$\judg{\ctx, \hypId:\form}{\hypId:\form}$}
-    \end{prooftree}
-\end{multicols}
+\chapter{Extracción de testigos}
 
-\vspace*{0.5cm}
+\include{sections/friedman}
 
-
-\begin{prooftree}
-    \AxiomC{$\judg{\ctx}{\form}$}
-    \AxiomC{$\judg{\ctx}{\formTwo}$}
-    \RL{\ruleI{$\wedge$}}
-    \BinaryInfC{$\judg{\ctx}{\form \wedge \formTwo}$}
-\end{prooftree}
-
-\begin{multicols}{2}
-    \begin{prooftree}
-        \AxiomC{$\judg{\ctx}{\form \wedge \formTwo}$}
-        \RL{\ruleE{$\wedge_1$}}
-        \UnaryInfC{$\judg{\ctx}{\form}$}
-    \end{prooftree}
-    \begin{prooftree}
-        \AxiomC{$\judg{\ctx}{\form \wedge \formTwo}$}
-        \RL{\ruleE{$\wedge_2$}}
-        \UnaryInfC{$\judg{\ctx}{\formTwo}$}
-    \end{prooftree}
-\end{multicols}
-
-\begin{multicols}{2}
-    \begin{prooftree}
-        \AxiomC{$\judg{\ctx}{\form}$}
-        \RL{\ruleI{$\vee_1$}}
-        \UnaryInfC{$\judg{\ctx}{\form \vee \formTwo}$}
-    \end{prooftree}
-    \begin{prooftree}
-        \AxiomC{$\judg{\ctx}{\formTwo}$}
-        \RL{\ruleI{$\vee_2$}}
-        \UnaryInfC{$\judg{\ctx}{\form \vee \formTwo}$}
-    \end{prooftree}
-\end{multicols}
-
-\begin{prooftree}
-    \AxiomC{$\judg{\ctx}{\form \vee \formTwo}$}
-    \AxiomC{$\judg{\ctx, \form}{\formThree}$}
-    \AxiomC{$\judg{\ctx, \formTwo}{\formThree}$}
-    \RL{\ruleE{$\vee$}}
-    \TrinaryInfC{$\judg{\ctx}{\formThree}$}
-\end{prooftree}
-
-\ruleE{$\vee$} nos deja inferir una conclusión a partir de una disyunción dando sub demostraciones que muestran como la conclusión se puede deducir asumiendo cualquiera de los elementos.
-
-\begin{prooftree}
-    \AxiomC{$\judg{\ctx, \form}{\formTwo}$}
-    \RL{\ruleI{$\to$}}
-    \UnaryInfC{$\judg{\ctx}{\form \to \formTwo}$}
-\end{prooftree}
-
-\begin{prooftree}
-    \AxiomC{$\judg{\ctx}{\form \to \formTwo}$}
-    \AxiomC{$\judg{\ctx}{\form}$}
-    \RL{\ruleE{$\to$} \scriptsize (modus ponens)}
-    \BinaryInfC{$\judg{\ctx}{\formTwo}$}
-\end{prooftree}
-
-\vspace{0.5cm}
-
-\begin{multicols}{2}
-    \begin{prooftree}
-        \AxiomC{$\judg{\ctx, \form}{\bot}$}
-        \RL{\ruleI{$\neg$}}
-        \UnaryInfC{$\judg{\ctx}{\neg \form}$}
-    \end{prooftree}
-    
-    \begin{prooftree}
-        \AxiomC{$\judg{\ctx}{\neg \form}$}
-        \AxiomC{$\judg{\ctx}{\form}$}
-        \RL{\ruleE{$\neg$}}
-        \BinaryInfC{$\judg{\ctx}{\bot}$}
-    \end{prooftree}
-    
-\end{multicols}
-
-\todo{Validar las justificaciones coloquiales de acá}
-
-Las reglas de $\forall$ y $\exists$ se pueden ver como extensiones a las de $\wedge$ y $\vee$.
-
-Un $\forall$ se puede pensar como una conjunción con un elemento por cada uno dl dominio sobre el cual se cuantifica.
-
-\begin{multicols}{2}
-    \begin{prooftree}
-        \AxiomC{$\judg{\ctx}{\form}$}
-        \AxiomC{$x \notin fv(\ctx)$}
-        \RL{\ruleI{$\forall$}}
-        \BinaryInfC{$\judg{\ctx}{\forall \var.\form}$}
-    \end{prooftree}
-    \begin{prooftree}
-        \AxiomC{$\judg{\ctx}{\forall \var.\form}$}
-        \RL{\ruleE{$\forall$}}
-        \UnaryInfC{$\judg{\ctx}{\form \{\var := \term\}}$}
-    \end{prooftree}
-\end{multicols}
-
-\begin{itemize}
-    \item \ruleE{$\forall$}: Para usar un $\forall x.\form$ para demostrar (eliminar) instancio el $x$ en cualquier \textit{término} $t$, ya que es válido para todos.
-    \item \ruleI{$\forall$}: Para demostrar (introducir) un $\forall x. \form$, quiero ver que sin importar el valor que tome $x$ yo puedo demostrar $\form$. Pero para eso en mi contexto $\Gamma$ no tengo que tenerlo ligado a nada, sino no lo estaría demostrando en general
-\end{itemize}
-
-\begin{prooftree}
-    \AxiomC{$\judg{\ctx}{\form\{\var := \term\}}$}
-    \RL{\ruleI{$\exists$}}
-    \UnaryInfC{$\judg{\ctx}{\exists \var. \form}$}
-\end{prooftree}
-
-\begin{prooftree}
-    \AxiomC{$\judg{\ctx}{\exists \var.\form}$}
-    \AxiomC{$\judg{\ctx, \form}{\formTwo}$}
-    \AxiomC{$x \notin fv(\ctx, \formTwo)$}
-    \RL{\ruleE{$\exists$}}
-    \TrinaryInfC{$\judg{\ctx}{\formTwo}$}
-\end{prooftree}
-
-
-\begin{itemize}
-    \item \ruleI{$\exists$}: Para demostrar un $\exists$, alcanza con instanciar la variable en un término $t$ que sea válido.
-    \item \ruleE{$\exists$}: Para usar un $\exists$ para demostrar, es parecido a \ruleE{$\vee$}. Como tenemos que ver que vale para cualquier $\var$, podemos concluir $\formTwo$ tomando como hipótesis $\form$ con $\var$ sin instanciar. 
-\end{itemize}
+\printbibliography
 
 \end{document}
