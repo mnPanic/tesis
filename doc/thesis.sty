@@ -1,5 +1,8 @@
 \ProvidesPackage{thesis}
 
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+
 \usepackage[spanish]{babel}
 \usepackage{amsmath}
 \usepackage{amsthm}     % teoremas
@@ -72,6 +75,9 @@
 \newcommand{\obrace}[2]{\aoverbrace[L1R]{#1}^{#2}}
 
 \newcommand{\todo}[1]{\textcolor{red}{(TODO: #1)}}
+
+%ND
+\newcommand{\existsI}{\ruleI{\exists}}
 
 %% Friedman
 \newcommand{\someProof}{\Pi}

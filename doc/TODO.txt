@@ -1,0 +1,1 @@
+- Code listings con minted/algo con highlighting. Robar de plp https://github.com/mnPanic/plp/blob/master/final/notas.tex#L61
