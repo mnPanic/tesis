@@ -162,9 +162,20 @@ original}. Finalmente podremos reducirla y hacer la extracción de forma usual.
 Veamos cómo podemos usarla para, dada una demostración clásica de $\exists \var
 \form$ obtener una intuicionista.
 
+\begin{prop}
+    Sea $\someProof$ una demostración clásica de $\exists \var . \form$, y
+    $\form$ una fórmula atómica.
+    Si tenemos
+    \[
+        \ctx \judgC \exists \var . \form,
+    \]
+    luego
+    \[
+        \transDNeg{\ctx} \judgI \exists \var . \form.
+    \]
+\end{prop}
 \begin{proof}
-Sea $\someProof$ una demostración clásica de $\exists \var . \form$, y
-$\form$ una fórmula atómica.
+
 Aplicando la traducción, tenemos que
 
 \begin{prooftree}
@@ -203,3 +214,15 @@ luego, tomando $R$ como la fórmula que queremos probar, $\exists \var . \form$
 \end{obs}
 
 \todo{IDem pero en ND, y también para $\forall$}
+
+Puntos que falta abordar
+\begin{itemize}
+    \item Como necesitamos reducir en ND, necesitamos la demo en ND. Escribirla
+    en este caso.
+    \item También queremos para $\piZeroTwo$, mostrar la extensión en ND.
+    \item En realidad no nos sirve $\transDNeg{\Gamma}$, queremos dejarlo como
+    está y demostrar que los axiomas demuestran sus traducciones. Pero no vale
+    siempre (buscar c.ej), caracterizar cuando.
+    \item Sumarizar cómo queda, vincular con reducción. Mostrar ejemplos en PPA
+    que funcionan y ejemplos que no.
+\end{itemize}
