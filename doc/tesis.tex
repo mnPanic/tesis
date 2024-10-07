@@ -1,18 +1,49 @@
-\documentclass{report}
+\documentclass[11pt,a4paper]{tesis}
 
 \usepackage{thesis}
 
 % Para solo agregar algunas secciones
 \includeonly{sections/friedman} 
 
-\title{Tesis de licenciatura}
-\author{
-    Manuel Panichelli
-}
-\date{\today}
-
 \begin{document}
-\maketitle
+%%%% CARATULA
+
+\def\autor{Manuel Panichelli}
+\def\tituloTesis{
+    PPA \vspace{.2cm} \\
+    Un asistente de demostraciones tipo\\
+    Mizar para lógica clásica de primer orden,\\
+    con extracción de testigos basada\vspace{.1cm}\\
+    en la traducción de Friedman
+}
+\def\runtitulo{PPA: Un asistente de demostraciones tipo Mizar para lógica clásica de primer orden con extracción de testigos basada en la traducción de Friedman}
+\def\runtitle{PPA: a Mizar-like proof-assistant for classical first-order logic with witness extraction based on Friedman's translation}
+\def\director{Pablo Barenbaum}
+\def\lugar{Buenos Aires, 2024}
+
+\input{caratula}
+
+\frontmatter
+\pagestyle{empty}
+\input{sections/abs_es.tex}
+
+\cleardoublepage
+\input{sections/abs_en.tex}
+
+\cleardoublepage
+\input{sections/agradecimientos.tex}
+
+\cleardoublepage
+\tableofcontents
+
+\mainmatter
+\pagestyle{headings}
+
+%%%% CONTENIDO DE LA TESIS
+
+\chapter{Introducción}
+
+\include{sections/intro.tex}
 
 \chapter{Deducción natural}
 
@@ -24,6 +55,8 @@
 
 \include{sections/friedman}
 
+%%%% BIBLIOGRAFIA
+\backmatter
 \printbibliography
 
 \end{document}
