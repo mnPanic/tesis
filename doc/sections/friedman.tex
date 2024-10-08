@@ -1,4 +1,29 @@
-\section{Lógica clásica}
+Puntos a abordar
+
+\begin{itemize}
+    \item Motivación, limitaciones de lógica clásica. Demostración sqrt 2
+    \item Lógica intuicionista
+    \item Como necesitamos reducir en ND, necesitamos la demo en ND. Escribirla
+    en este caso.
+    \item También queremos para $\piZeroTwo$, mostrar la extensión en ND.
+    \item En realidad no nos sirve $\transDNeg{\Gamma}$, queremos dejarlo como
+    está y demostrar que los axiomas demuestran sus traducciones. Pero no vale
+    siempre (buscar c.ej), caracterizar cuando.
+    \item Sumarizar cómo queda, vincular con reducción. Mostrar ejemplos en PPA
+    que funcionan y ejemplos que no.
+    \item Extensión a demostraciones. Mostrar algunos ejemplos interesantes (y
+    los que usen los lemas dNegRElim y rElim)
+    \item Lemas para demostraciones: dNegRElim, rElim, tNegRElim
+    \item Reducción
+    \begin{itemize}
+        \item Similitud con reducción en cálculo lambda.
+        \item Ejemplos de LP y todo LPO
+        \item substHyp, substVar en proofs
+        \item Argumentos de que es correcto y completo?
+        \item Small step vs big step
+    \end{itemize}
+\end{itemize}
+
 Queremos, dado un teorema, \textit{extraer testigos de un existencial}. Por
 ejemplo, si tenemos una demostración de $\exists x . p(x)$ la extracción nos
 debería instanciar $x$ en un término $t$ tal que $p(t)$. Imaginemos que tenemos
@@ -70,7 +95,7 @@ y pensamos en $C$ como algo indecidible, por ejemplo \texttt{HALT}, trivialmente
 podemos demostrarlo de forma no constructiva (LEM con $C \vee \neg C$) pero no
 de forma constructiva.
 
-\subsection{Lógica intuicionista}
+\section{Lógica intuicionista}
 
 Para solucionar estos problemas existe la lógica \textbf{intuicionista}, que se
 puede definir como la lógica clásica sin LEM. Al no contar con ese principio,
@@ -214,15 +239,3 @@ luego, tomando $R$ como la fórmula que queremos probar, $\exists \var . \form$
 \end{obs}
 
 \todo{IDem pero en ND, y también para $\forall$}
-
-Puntos que falta abordar
-\begin{itemize}
-    \item Como necesitamos reducir en ND, necesitamos la demo en ND. Escribirla
-    en este caso.
-    \item También queremos para $\piZeroTwo$, mostrar la extensión en ND.
-    \item En realidad no nos sirve $\transDNeg{\Gamma}$, queremos dejarlo como
-    está y demostrar que los axiomas demuestran sus traducciones. Pero no vale
-    siempre (buscar c.ej), caracterizar cuando.
-    \item Sumarizar cómo queda, vincular con reducción. Mostrar ejemplos en PPA
-    que funcionan y ejemplos que no.
-\end{itemize}
