@@ -522,6 +522,7 @@
      \gdef\@chapterauthor{}\gdef\@shortauthor{}
      \gdef\@thanks{}\setcounter{footnote}{0}}
 \fi
+%%% Acá para sacar el empty page después del título del chapter
 \newcommand{\chapter}{\if@openright\cleardoublepage\else\clearpage\fi
                     \thispagestyle{plain}
                     \global\@topnum\z@

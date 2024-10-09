@@ -1,6 +1,3 @@
-Vamos a arrancar por las fundaciones: ¿Cómo se representa una demostración en la
-computadora?
-
 \begin{itemize}
     \item Ejemplo de demostración en lenguaje natural
     \item Necesitamos una forma estructural de representar demostraciones
@@ -15,6 +12,30 @@ computadora?
     \item Algoritmo de chequeo
     \item Algoritmos adicionales: alpha igualdad, variables libres, sust sin capturas
 \end{itemize}
+
+Vamos a arrancar por las fundaciones: Queremos armar un programa que permita
+escribir teoremas y demostraciones. ¿Cómo se representa una demostración en la
+computadora? En el área de estudio de \textit{proof theory}, en la cuál las
+demostraciones son tratadas como objetos matemáticos formales, nos encontramos
+con los \textit{proof calculi} o \textit{proof systems}, que son sistemas
+lógicos que permiten demostrar sentencias.
+
+Por ejemplo, la siguiente demostración
+
+si un alumno reprueba el parcial y el recuperatorio, recursa
+
+
+\begin{ejemplo}
+    Si ((llueve entonces el patio se moja) y ), y llueve, entonces el patio se moja.
+
+    Demostración:
+\begin{itemize}
+    \item Asumo que si llueve, el patio se moja.
+    \item Asumo que llueve.
+    \item Como si llueve el patio se moja, entonces el patio se moja.
+\end{itemize}
+    \qed
+\end{ejemplo}
 
 \section{Deducción natural}
 Dos tipos de reglas
