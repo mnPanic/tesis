@@ -14,7 +14,9 @@ Puntos a abordar
     \item Extensión a demostraciones. Mostrar algunos ejemplos interesantes (y
     los que usen los lemas dNegRElim y rElim)
     \item Lemas para demostraciones: dNegRElim, rElim, tNegRElim
-    \item Reducción (buena explicación \url{https://plato.stanford.edu/entries/natural-deduction/})
+    \item Reducción (buena explicación
+    \url{https://plato.stanford.edu/entries/natural-deduction/}). En realidad se
+    conoce como \textbf{normalization}.
     \begin{itemize}
         \item Similitud con reducción en cálculo lambda.
         \item Ejemplos de LP y todo LPO
@@ -83,7 +85,7 @@ existencia de un objeto que cumpla cierta propiedad, no necesariamente nos da
 una forma de encontrar tal objeto. Entonces tampoco vamos a poder extraer un
 testigo.
 
-En el caso de \ref{thm:irrat}, lo demostramos de una forma no constructiva pero
+En el caso de \fullref{thm:irrat}, lo demostramos de una forma no constructiva pero
 existen formas constructivas de hacerlo \todo{citar}. Pero hay casos en donde
 no. Por ejemplo, si consideramos la fórmula
 
@@ -220,10 +222,10 @@ luego, tomando $R$ como la fórmula que queremos probar, $\exists \var . \form$
 \begin{align*}
     \transDNeg{\someProof} \vartriangleright\ & \transDNeg{\ctx} \judgI \negR \forall \var . \negR \negR \negR \form\\
     \iff & \transDNeg{\ctx} \judgI \negR \forall \var . \negR \form
-    &&(\ref{lemma:tnegr-elim})\\
+    &&(\fullref{lemma:tnegr-elim})\\
     =\ &\transDNeg{\ctx} \judgI (\forall \var . (\form \rightarrow R)) \rightarrow R\\
     =\ &\transDNeg{\ctx} \judgI (\forall \var . (\form \rightarrow \exists \var . \form)) \rightarrow \exists \var . \form && (R = \exists \var \form)\\
-    \Rightarrow\ &\transDNeg{\ctx} \judgI \exists \var . \form && (\ref{obs:forall-exists})
+    \Rightarrow\ &\transDNeg{\ctx} \judgI \exists \var . \form && (\fullref{obs:forall-exists})
 \end{align*}
 \end{proof}
 

@@ -18,10 +18,11 @@ escribir teoremas y demostraciones. ¿Cómo se representa una demostración en l
 computadora? En el área de estudio de \textit{proof theory}, en la cuál las
 demostraciones son tratadas como objetos matemáticos formales, nos encontramos
 con los \textit{proof calculi} o \textit{proof systems}, que son sistemas
-lógicos que permiten demostrar sentencias.
-
-Por ejemplo, la siguiente demostración en el dominio de exámenes en la facultad,
-que vamos a ir iterando a lo largo de la tesis.
+lógicos formales que permiten demostrar sentencias. Pueden ser modelados como un
+tipo abstracto de datos, así siendo representados en la computadora. Por
+ejemplo, veamos la siguiente demostración en el dominio de exámenes en la
+facultad, que vamos a ir iterando a lo largo de la tesis. Por ahora en su
+versión proposicional, sin cuantificadores.
 
 \begin{itemize}
     \item Si un alumno reprueba un final, entonces recursa (un criterio un poco duro)
@@ -30,7 +31,7 @@ que vamos a ir iterando a lo largo de la tesis.
     entonces recursa.
 \end{itemize}
 
-\begin{ejemplo}
+\begin{ejemplo}\label{nd:ex:exam}
     Si ((reprueba entonces recursa) y (falta entonces reprueba)) y falta, entonces recursa.
 
     Demostración:
@@ -43,13 +44,51 @@ que vamos a ir iterando a lo largo de la tesis.
     \qed
 \end{ejemplo}
 
-\section{Deducción natural}
-Dos tipos de reglas
+¿Cómo podemos escribirla en un \textit{proof system}? En general, van a incluir
+los siguientes componentes
 
 \begin{itemize}
-    \item \textbf{Introducción}: Cómo demuestro?
-    \item \textbf{Eliminación}: Cómo lo uso para demostrar?
+    \item \textbf{Lenguaje formal}: el conjunto $L$ de fórmulas admitidas por
+    el sistema. En nuestro caso, lógica de primer órden.
+    \item \textbf{Reglas de inferencia}: lista de reglas que se usan para probar
+    teoremas de axiomas y otros teoremas. Por ejemplo, \textit{modus ponens} (si
+    es cierto $\form \rightarrow \formTwo$ y $\form$, se puede concluir $\formTwo$) o
+    \textit{modus tollens} (si es cierto $\form \rightarrow \formTwo$ y $\neg
+    \formTwo$, se puede concluir $\neg\form$)
+    \item \textbf{Axiomas}: fórmulas de $L$ que se asumen válidas. Todos los
+    teoremas se derivan de axiomas. Por ejemplo, como estamos en lógica clásica,
+    vale el axioma \textit{LEM} (Law of Excluded Middle): $\form \vee \neg \form$
 \end{itemize}
+
+\section{Deducción natural}
+
+El sistema que usamos se conoce como \textbf{deducción natural}, introducido por
+Gerhard Gentzen en \cite{gentzen-1935} \todo{Chequear cita}. Tiene dos tipos de
+reglas de inferencia
+
+\begin{itemize}
+    \item \textbf{Introducción}: ¿Cómo demuestro este operador?
+    \item \textbf{Eliminación}: ¿Cómo uso este operador para demostrar otra fórmula?
+\end{itemize}
+
+\begin{ejemplo}
+    Demostración de \fullref{nd:ex:exam}. Usamos
+    \begin{itemize}
+        \item $X \equiv$ reprueba
+        \item $R \equiv$ recursa
+        \item $F \equiv$ falta
+    \end{itemize}
+
+    Queremos probar entonces 
+    \(
+        \Big(
+            (X \rightarrow R) \wedge (F \rightarrow X)
+        \Big)
+        \rightarrow
+        (F \rightarrow R)
+    \)
+    \todo{Seguir}
+\end{ejemplo}
 
 \begin{multicols}{2}
     \begin{prooftree}
@@ -198,3 +237,11 @@ Un $\forall$ se puede pensar como una conjunción con un elemento por cada uno d
     \item \ruleI{$\exists$}: Para demostrar un $\exists$, alcanza con instanciar la variable en un término $t$ que sea válido.
     \item \ruleE{$\exists$}: Para usar un $\exists$ para demostrar, es parecido a \ruleE{$\vee$}. Como tenemos que ver que vale para cualquier $\var$, podemos concluir $\formTwo$ tomando como hipótesis $\form$ con $\var$ sin instanciar. 
 \end{itemize}
+
+
+Antes mencionamos \textit{modus tollens} como regla de inferencia. Pero como nos
+va a interesar tener un sistema lógico minimal, para simplificar el
+\texttt{Checker} y todo el resto de los módulos que interactúen con él, lo
+podemos demostrar como \textbf{meta-teorema}.
+
+\todo{Demo modus tollens}

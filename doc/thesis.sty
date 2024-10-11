@@ -10,12 +10,16 @@
 \usepackage[spanish]{babel}
 \usepackage{amsmath}
 \usepackage{amssymb}
-\usepackage{amsthm}     % teoremas
 \usepackage{float}      % [H]
 \usepackage{abraces}    % \aunderbrace y \aoverbrace
 \usepackage[dvipsnames]{xcolor}     % \textcolor
-\usepackage[colorlinks=true]{hyperref}
-\usepackage[spanish]{babel}
+
+\usepackage[colorlinks=true]{hyperref}  % referencias
+
+% https://tex.stackexchange.com/questions/121865/nameref-how-to-display-section-name-and-its-number
+\newcommand*{\ejemploautorefname}{Ejemplo}
+\newcommand*{\fullref}[1]{\hyperref[{#1}]{\autoref*{#1} \nameref*{#1}}}
+
 
 % https://tex.stackexchange.com/questions/32701/side-by-side-equations-with-equation-numbers-for-each
 \usepackage{multicol}
@@ -26,6 +30,8 @@
     style=alphabetic,
 ]{biblatex}
 \addbibresource{sources.bib}
+
+\usepackage{amsthm}     % teoremas
 
 % Teoremas, corolarios, etc.
 % https://www.overleaf.com/learn/latex/theorems_and_proofs
