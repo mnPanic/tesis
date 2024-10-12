@@ -8,13 +8,23 @@
 \usepackage[left=3cm,right=3cm,bottom=3.5cm,top=3.5cm]{geometry}
 
 \usepackage[spanish]{babel}
+
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{float}      % [H]
 \usepackage{abraces}    % \aunderbrace y \aoverbrace
-\usepackage[dvipsnames]{xcolor}     % \textcolor
+
+% Colores 
+% https://es.overleaf.com/learn/latex/Using_colors_in_LaTeX
+\usepackage[dvipsnames]{xcolor} % \textcolor
 
 \usepackage[colorlinks=true]{hyperref}  % referencias
+
+% Programas
+% https://tex.stackexchange.com/questions/116595/highlighting-haskell-listings-in-large-tex-document
+% https://leportella.com/minted-vscode/
+% https://tex.stackexchange.com/questions/367332/minted-error-undefined-control-sequence-pyg-with-texmaker
+\usepackage[cache=false]{minted}     % código
 
 % https://tex.stackexchange.com/questions/121865/nameref-how-to-display-section-name-and-its-number
 \newcommand*{\ejemploautorefname}{Ejemplo}
@@ -60,6 +70,22 @@
 % https://mathweb.ucsd.edu/~sbuss/ResearchWeb/bussproofs/
 \usepackage{bussproofs}
 
+%%%%%%%%%%%%%%%%%%%%%%%%% COMANDOS %%%%%%%%%%%%%%%%%%%%%
+
+% Misceláneos
+\newcommand{\ubrace}[2]{\aunderbrace[l1r]{#1}_{#2}}
+\newcommand{\obrace}[2]{\aoverbrace[L1R]{#1}^{#2}}
+
+% "Comunicacionales", para que el director (Pablo) o yo lea en el futuro
+\newcommand{\todo}[1]{\textcolor{BrickRed}{(TODO: #1)}}
+\newcommand{\duda}[1]{\textcolor{Plum}{(DUDA: #1)}}
+
+% Diffs, para que el director pueda ver bien distinguidos los cambios que voy haciendo
+%\newcommand{\diffNew}[1]{\textcolor{LimeGreen}{#1}}
+%\newcommand{\diffChanged}[1]{\textcolor{Goldenrod}{#1}}
+%\newcommand{\diffDeleted}[1]{\textcolor{RedOrange}{#1}}
+
+% Demostraciones de ND
 \newcommand{\LL}[1]{\LeftLabel{#1}}
 \newcommand{\RL}[1]{\RightLabel{#1}}
 
@@ -114,12 +140,6 @@
 %% Juicios
 \newcommand{\judg}[2]{#1 \vdash #2}
 \newcommand{\judG}{\vdash}
-
-% Misceláneos
-\newcommand{\ubrace}[2]{\aunderbrace[l1r]{#1}_{#2}}
-\newcommand{\obrace}[2]{\aoverbrace[L1R]{#1}^{#2}}
-
-\newcommand{\todo}[1]{\textcolor{red}{(TODO: #1)}}
 
 %% Friedman
 \newcommand{\someProof}{\Pi}

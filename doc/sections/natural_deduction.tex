@@ -91,52 +91,98 @@ reglas de inferencia para cada operador ($\wedge$, $\vee$, $\exists$, $\dots$)
         \fImp
         (\falta \fImp \recursa)
     \)
-    \todo{Seguir}
 
-    \begin{prooftree}
-        \AxiomC{}
-        \RL{\ruleAx}
-        \UnaryInfC{$\ctx \judG (\reprueba \fImp \recursa) \wedge (\falta \fImp \reprueba)$}
-        \RL{\ruleAndEOne}
-        \UnaryInfC{$\ctx \judG \reprueba \fImp \recursa$}
-        \AxiomC{\todo{TODO}}
-        \RL{\ruleImpE}
-        \UnaryInfC{$\ctx \judG \reprueba$}
-        \RL{\ruleImpE}
-        \BinaryInfC{\(
-            \ctx =
-            \hypId_1: (\reprueba \fImp \recursa) \wedge (\falta \fImp \reprueba),\
-            \hypId_2: \falta
-            \judG
-            \recursa
-        \)}
-        \RL{\ruleImpI}
-        \UnaryInfC{\(
-            \hypId_1: (\reprueba \fImp \recursa) \wedge (\falta \fImp \reprueba)
-            \judG
-            \falta \fImp \recursa 
-        \)}
-        \RL{\ruleImpI}
-        \UnaryInfC{\(
-            \judG
-            \Big(
-                (\reprueba \fImp \recursa) \wedge (\falta \fImp \reprueba)
-            \Big)
-            \fImp
-            (\falta \fImp \recursa)
-        \)}
-    \end{prooftree}
+    \todo{Validar poner la hyp arriba de los \ruleAx}
+    \begin{figure}[H]
+        \begin{prooftree}
+            \AxiomC{$\hypId_1$}
+            \RL{\ruleAx}
+            \UnaryInfC{$\ctx \judG (\reprueba \fImp \recursa) \wedge (\falta \fImp \reprueba)$}
+            \RL{\ruleAndEOne}
+            \UnaryInfC{$\ctx \judG \reprueba \fImp \recursa$}
+    
+            \AxiomC{$\hypId_1$}
+            \RL{\ruleAx}
+            \UnaryInfC{$\ctx \judG (\reprueba \fImp \recursa) \wedge (\falta \fImp \reprueba)$}
+            \RL{\ruleAndETwo}
+            \UnaryInfC{$\ctx \judG \falta \fImp \reprueba$}
+            \AxiomC{$\hypId_2$}
+            \RL{\ruleAx}
+            \UnaryInfC{$\ctx \judG \falta$}
+            \RL{\ruleImpE}
+            \BinaryInfC{$\ctx \judG \reprueba$}
+            \RL{\ruleImpE}
+            \BinaryInfC{\(
+                \ctx =
+                \hypId_1: (\reprueba \fImp \recursa) \wedge (\falta \fImp \reprueba),\
+                \hypId_2: \falta
+                \judG
+                \recursa
+            \)}
+            \RL{\ruleImpI}
+            \UnaryInfC{\(
+                \hypId_1: (\reprueba \fImp \recursa) \wedge (\falta \fImp \reprueba)
+                \judG
+                \falta \fImp \recursa 
+            \)}
+            \RL{\ruleImpI}
+            \UnaryInfC{\(
+                \judG
+                \Big(
+                    (\reprueba \fImp \recursa) \wedge (\falta \fImp \reprueba)
+                \Big)
+                \fImp
+                (\falta \fImp \recursa)
+            \)}
+        \end{prooftree}
+    
+        \caption{Demostración de \(
+        \big(
+            (\reprueba \fImp \recursa) \wedge (\falta \fImp \reprueba)
+        \big)
+        \fImp
+        (\falta \fImp \recursa)
+    \) en deducción natural}
+        \label{nd:fig:proof-exam-nd}
+    \end{figure}
+
+    Paso por paso,
 
     \begin{itemize}
-        \item \ruleImpI: \textit{introducimos} la implicación, para demostrarla, asumimos el antecedente y en base a eso demostramos el consecuente.
-            Asumimos $izq$, queremos probar $der$
-        \item \ruleImpI: Asumimos $\falta$, nos queda probar $\recursa$
-        \item La estrategia para probar $\recursa$ es usando la siguiente cadena de implicaciones: $\falta \fImp \reprueba \fImp \recursa$, y sabemos que $\falta$. Como tenemos que probar $\recursa$, arrancamos de atrás para adelante.
-        \item \ruleImpE
+        \item \ruleImpI: \textit{introducimos} la implicación. Para demostrarla,
+        asumimos el antecedente y en base a eso demostramos el consecuente. Es
+        decir asumimos $(\reprueba \fImp \recursa) \wedge (\falta \fImp
+        \reprueba)$, y en base a eso queremos deducir $\falta \fImp \recursa$.
+        Las \textit{hipótesis} están etiquetadas, en este caso $\hypId_1$.
+        \item \ruleImpI: Asumimos $\falta$, nos queda probar $\recursa$.
+        Renombramos el \textit{contexto} de hipótesis como $\ctx$.
+        \item La estrategia para probar $\recursa$ es usando la siguiente cadena
+        de implicaciones: $\falta \fImp \reprueba \fImp \recursa$, y sabemos que
+        vale $\falta$. Como tenemos que probar $\recursa$, arrancamos de atrás para
+        adelante.
+        \item \ruleImpE: \textit{eliminamos} una implicación, la usamos para
+        deducir su conclusión demostrando el antecedente. Esta regla de
+        inferencia tiene dos partes, probar la implicación ($\reprueba \fImp
+        \recursa$), y probar el antecedente ($\reprueba$).
+        \begin{itemize}
+            \item Para probar la implicación, tenemos que usar la hipótesis
+            $\hypId_1$, \textit{eliminando} la conjunción y especificando cuál
+            de las dos cláusulas estamos usando.
+            \item Para probar el antecedente $\reprueba$, es un proceso análogo
+            pero usando la otra implicación y el hecho de que vale $\falta$ por hipótesis.
+        \end{itemize}
+        \item Las raíces del árbol, los casos base, suelen ser aplicaciones de
+        la regla de inferencia \ruleAx, que permite deducir fórmulas citando
+        hipótesis del contexto.
     \end{itemize}
 \end{ejemplo}
 
-Reglas de deducción natural para lógica de primer órden:
+\subsection{Reglas de inferencia}
+
+A continuación introducimos todas las reglas de inferencia para deducción
+natural para lógica de primer órden.
+
+\todo{Incluir explicación de cada una?}
 
 \begin{multicols}{2}
     \begin{prooftree}
@@ -286,6 +332,18 @@ Un $\forall$ se puede pensar como una conjunción con un elemento por cada uno d
     \item \ruleExistsE: Para usar un $\exists$ para demostrar, es parecido a \ruleE{$\vee$}. Como tenemos que ver que vale para cualquier $\var$, podemos concluir $\formTwo$ tomando como hipótesis $\form$ con $\var$ sin instanciar. 
 \end{itemize}
 
+\todo{Ejemplo con cuantificadores}
+
+En síntesis,
+
+
+\begin{figure}[H]
+    \todo{Copiar y pegar todo cuando esté terminado}
+    \caption{Reglas de inferencia para deducción natural de lógica de primer órden}
+    \label{nd:inference-rules}
+\end{figure}
+
+\subsection{Meta-teoremas}
 
 Antes mencionamos \textit{modus tollens} como regla de inferencia. Pero como nos
 va a interesar tener un sistema lógico minimal, para simplificar el
@@ -293,3 +351,138 @@ va a interesar tener un sistema lógico minimal, para simplificar el
 podemos demostrar como \textbf{meta-teorema}.
 
 \todo{Demo modus tollens}
+
+\todo{Cut como meta teorema}
+
+\section{Implementación}
+
+Data types principales
+
+\begin{figure}[H]
+\begin{minted}{haskell}
+type VarId = String
+type FunId = String
+type PredId = String
+type HypId = String
+
+data Term
+    = TVar VarId
+    | TMetavar Metavar
+    | TFun FunId [Term]
+
+data Form
+    = FPred PredId [Term]
+    | FAnd Form Form
+    | FOr Form Form
+    | FImp Form Form
+    | FNot Form
+    | FTrue
+    | FFalse
+    | FForall VarId Form
+    | FExists VarId Form
+\end{minted}
+    \caption{Extracto de modelado de deducción natural. Detalles de
+    implementación irrelevantes fueron omitidos. Ver \texttt{src/ND.hs}}
+\end{figure}
+
+\todo{Mejorar formatting, 2 columnas?}
+\begin{minted}{haskell}
+data Proof =
+    | PAx HypId
+    | PAndI
+        { proofLeft :: Proof
+        , proofRight :: Proof
+        }
+    | PAndE1
+        { right :: Form
+        , proofAnd :: Proof
+        }
+    | PAndE2
+        { left :: Form
+        , proofAnd :: Proof
+        }
+    | POrI1
+        { proofLeft :: Proof
+        }
+    | POrI2
+        { proofRight :: Proof
+        }
+    | POrE
+        { left :: Form
+        , right :: Form
+        , proofOr :: Proof
+        , hypLeft :: HypId
+        , proofAssumingLeft :: Proof
+        , hypRight :: HypId
+        , proofAssumingRight :: Proof
+        }
+    | PImpI
+        { hypAntecedent :: HypId
+        , proofConsequent :: Proof
+        }
+    | PImpE
+        { antecedent :: Form
+        , proofImp :: Proof
+        , proofAntecedent :: Proof
+        }
+    | PNotI
+        { hyp :: HypId
+        , proofBot :: Proof
+        }
+    | PNotE
+        { form :: Form
+        , proofNotForm :: Proof
+        , proofForm :: Proof
+        }
+    | PTrueI
+    | PFalseE
+        { proofBot :: Proof
+        }
+    | PLEM
+    | PForallI
+        { newVar :: VarId
+        , proofForm :: Proof
+        }
+    | PForallE
+        { var :: VarId
+        , form :: Form
+        , proofForall :: Proof
+        , termReplace :: Term
+        }
+    | PExistsI
+        { inst :: Term
+        , proofFormWithInst :: Proof
+        }
+    | PExistsE
+        { var :: VarId
+        , form :: Form
+        , proofExists :: Proof
+        , hyp :: HypId
+        , proofAssuming :: Proof
+        }
+\end{minted}
+
+Las meta-variables se usan para unificación, que es parte del solver de PPA. Ver
+más en \fullref{ppa:sec:unification}
+
+El modelado de las reglas de inferencia omite varios detalles que están
+implícitos y serán inferidos por el algoritmo de chequeo. De esa forma las
+demostraciones son más fáciles de escribir y generar.
+
+\subsection{Chequeo}
+
+\begin{minted}{haskell}
+-- Contexto / Environment de hipótesis
+data Env
+    = EEmpty
+    | EExtend HypId Form Env
+    deriving (Eq)
+\end{minted}
+
+\subsection{Sustitución sin capturas}
+
+\duda{Escribir solamente la definición formal? + la implementación? Solo implementación?}
+
+\subsection{Alpha igualdad}
+
+\subsection{Variables libres}
