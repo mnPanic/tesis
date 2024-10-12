@@ -47,3 +47,11 @@ proof
     have -: reprueba(A, recu(parcial(M))) by falta_recu, falta_reprueba
     hence recursa(A, M) by reprueba_recu_recursa
 end
+
+axiom manu_falta_recu: falta(manu, recu(parcial(tleng)))
+
+theorem manu_recursa_tleng:
+    recursa(manu, tleng)
+proof
+    thus recursa(manu, tleng) by falta_recu_recursa, manu_falta_recu
+end

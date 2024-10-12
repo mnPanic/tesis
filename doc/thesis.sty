@@ -66,6 +66,39 @@
 \newcommand{\ruleI}[1]{I#1}
 \newcommand{\ruleE}[1]{E#1}
 
+\newcommand{\fOr}{\vee}
+\newcommand{\fAnd}{\wedge}
+\newcommand{\fImp}{\to}
+\newcommand{\fNot}{\neg}
+\newcommand{\fFalse}{\bot}
+\newcommand{\fTrue}{\top}
+
+\newcommand{\ruleExistsI}{\ruleI{$\exists$}}
+\newcommand{\ruleExistsE}{\ruleE{$\exists$}}
+
+\newcommand{\ruleForallI}{\ruleI{$\forall$}}
+\newcommand{\ruleForallE}{\ruleE{$\forall$}}
+
+\newcommand{\ruleOrIOne}{\ruleI{$\fOr_1$}}
+\newcommand{\ruleOrITwo}{\ruleI{$\fOr_2$}}
+\newcommand{\ruleOrE}{\ruleE{$\fOr$}}
+
+\newcommand{\ruleAndI}{\ruleI{$\fAnd$}}
+\newcommand{\ruleAndEOne}{\ruleE{$\fAnd_1$}}
+\newcommand{\ruleAndETwo}{\ruleE{$\fAnd_2$}}
+
+\newcommand{\ruleImpI}{\ruleI{$\fImp$}}
+\newcommand{\ruleImpE}{\ruleE{$\fImp$}}
+
+\newcommand{\ruleNotI}{\ruleI{$\fNot$}}
+\newcommand{\ruleNotE}{\ruleE{$\fNot$}}
+
+\newcommand{\ruleTrueI}{\ruleI{$\fTrue$}}
+\newcommand{\ruleFalseE}{\ruleE{$\fFalse$}}
+
+\newcommand{\ruleLEM}{LEM}
+\newcommand{\ruleAx}{Ax}
+
 % Tipado
 %% Contextos
 \newcommand{\ctx}{\Gamma}
@@ -80,15 +113,13 @@
 
 %% Juicios
 \newcommand{\judg}[2]{#1 \vdash #2}
+\newcommand{\judG}{\vdash}
 
 % Misceláneos
 \newcommand{\ubrace}[2]{\aunderbrace[l1r]{#1}_{#2}}
 \newcommand{\obrace}[2]{\aoverbrace[L1R]{#1}^{#2}}
 
 \newcommand{\todo}[1]{\textcolor{red}{(TODO: #1)}}
-
-%ND
-\newcommand{\existsI}{\ruleI{\exists}}
 
 %% Friedman
 \newcommand{\someProof}{\Pi}
