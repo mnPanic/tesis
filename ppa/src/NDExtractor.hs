@@ -26,6 +26,9 @@ import NDSubst (subst, substHyp)
 import PPA (Context, Hypothesis (HAxiom, HTheorem), axioms, findHyp, removeHyp)
 import Text.Printf (printf)
 
+-- Para mas declaratividad en los tipos
+type R = Form
+
 -- Usado solo para tests
 translateContext :: Context -> Form -> Context
 translateContext ctx r = map (\h -> translateHyp h r) ctx
@@ -68,7 +71,7 @@ inlineProofs ctx p = foldr inlineHyp p ctx
     HAxiom{} -> proof
     HTheorem h _ p_f -> substHyp h p_f proof
 
-inlineAxioms :: Context -> Proof -> Form -> Proof
+inlineAxioms :: Context -> Proof -> R -> Proof
 inlineAxioms ctx p r = foldr inlineAxiom p ctx
  where
   inlineAxiom hyp proof = case hyp of
@@ -123,7 +126,11 @@ extractWitness ctxAxioms proof form instanceTerms = do
       -- demostramos que los axiomas originales implican su traducción.
       let proofNJAdaptedAxioms = inlineAxioms ctxAxioms proofNJ r
 
-      -- Queremos demostrar la fórmula con los foralls instanciados
+      -- Queremos demostrar la fórmula con los foralls instanciados, para que
+      -- la fórmula final sea un exists y la demostración normalizada arranque
+      -- con PExistsI.
+      -- Como proofNJ es una dem de la fórmula original, con los foralls, la
+      -- usamos para demostrar solo el exists.
       let f_exists_inst = foldr (\(y, t) f -> subst y t f) f_exists (zip ys instanceTerms)
       let (proofInst, _) =
             foldr
@@ -228,10 +235,9 @@ fromPi02 (vs, f) = foldr FForall f vs
 -- Demuestra ~r A |- ~r A~~ por inducción estructural en A
 --
 -- Como no vale siempre A |- A~~ (ver Peter Selinger), y para los casos de not e
--- imp se usa este lema, no siempre puede valer tampoco.
-rIntro :: Form -> HypId -> Form -> Proof
-rIntro f h_notr_f r = case (f, translateF f f) of
-  -- ~
+-- imp en transIntro se usa este lema, no puede valer siempre tampoco.
+rIntro :: Form -> HypId -> R -> Proof
+rIntro f h_notr_f r = case (f, translateF f r) of
   (FFalse, _) ->
     PImpI
       { hypAntecedent = hypForm r
@@ -249,16 +255,169 @@ rIntro f h_notr_f r = case (f, translateF f f) of
             , proofAntecedent = PAx h_notr_f
             }
       }
+  (FAnd left right, and'@(FAnd left' right')) -> do
+    -- HIs
+    let h_notR_left = hypForm (FImp left r)
+    let notR_left_then_notR_left' = rIntro left h_notR_left r
+
+    let h_notR_right = hypForm (FImp right r)
+    let notR_right_then_notR_right' = rIntro right h_notR_right r
+
+    -- Sub-dem de ~r (a & b) |- ~r ~r (~r a~~ v ~r b~~), igual a la clásica,
+    -- ver NDProofs.proofNotDistOverAnd
+    let fOr = FOr (FImp left' r) (FImp right' r)
+    let proofNotRDistOverAnd =
+          PNamed "proofNotRDistOverAnd" $
+            PImpI
+              { hypAntecedent = hypForm (FImp fOr r)
+              , proofConsequent =
+                  PImpE
+                    { antecedent = fOr
+                    , proofImp = PAx (hypForm (FImp fOr r))
+                    , proofAntecedent =
+                        POrI1
+                          { -- ~r a~~, vamos a usar la HI para llevarlo a ~r a
+                            proofLeft =
+                              cut
+                                (FImp left r)
+                                ( PImpI
+                                    { hypAntecedent = hypForm left
+                                    , -- Ya tenemos left como hyp, ahora damos la
+                                      -- vuelta, de vuelta eliminamos lo mismo, y
+                                      -- vamos a tener right para abs con ~r (a & b)
+                                      proofConsequent =
+                                        PImpE
+                                          { antecedent = fOr
+                                          , proofImp = PAx (hypForm (FImp fOr r))
+                                          , proofAntecedent =
+                                              POrI2
+                                                { -- Idem, ~r b~~ lo llevamos a ~r b
+                                                  proofRight =
+                                                    cut
+                                                      (FImp right r)
+                                                      ( PImpI
+                                                          { hypAntecedent = hypForm right
+                                                          , proofConsequent =
+                                                              PImpE
+                                                                { antecedent = FAnd left right
+                                                                , proofImp = PAx h_notr_f
+                                                                , proofAntecedent =
+                                                                    PAndI
+                                                                      { proofLeft = PAx (hypForm left)
+                                                                      , proofRight = PAx (hypForm right)
+                                                                      }
+                                                                }
+                                                          }
+                                                      )
+                                                      h_notR_right
+                                                      notR_right_then_notR_right'
+                                                }
+                                          }
+                                    }
+                                )
+                                h_notR_left
+                                notR_left_then_notR_left'
+                          }
+                    }
+              }
+
+    -- Dem de ~r (a & b) |- ~r (a & b)~~
+    -- Usamos ~r ~r ~r (a & b)~~, demostrado con tnegr elim, para poder razonar
+    -- por el absurdo
+    let tNegrAnd' = FImp (FImp (FImp and' r) r) r
+    let dNegOr = FImp (FImp fOr r) r
+    cut
+      tNegrAnd'
+      -- Dem de ~r ~r ~r (a & b)~~ usando que ~r (a & b) === ~r a~~ v ~r b~~
+      ( cut
+          dNegOr
+          -- Dem de ~r (a & b) |- ~r ~r (~r a~~ v ~r b~~)
+          proofNotRDistOverAnd
+          (hypForm dNegOr)
+          -- ~r ~r [ ~r a~~ v ~r b~~ ] |- ~r ~r [ ~r (a & b)~~ ]
+          -- Usando DNegRCong (no es contravariante)
+          ( proofDNegRCong
+              fOr
+              (FImp and' r)
+              (hypForm dNegOr)
+              (hypForm fOr)
+              (proofNotRDistOverAndRL left' right' (hypForm fOr) r)
+              r
+          )
+      )
+      (hypForm tNegrAnd')
+      (tNegRElim and' (hypForm tNegrAnd') r)
+
   -- (FNot g, FImp g' _) -> undefined
   -- (FExists x g, FImp _forall _) -> undefined
   -- (FOr left right, FImp or' r) -> undefined
-  -- (FAnd left right, FAnd left' right') -> undefined
   -- (FImp ant cons, FImp ant' cons') -> undefined
   -- (FForall x g, FForall{}) -> undefined
   (_, f') -> error $ printf "rIntro: unexpected form '%s', translated: '%s'" (show f) (show f')
 
+-- Dada una demostración de A' |- A, da una de ~r~r A' |- ~r~r A
+-- A diferencia de la congruencia de un not normal, esta no se invierte porque
+-- es doble.
+proofDNegRCong :: Form -> Form -> HypId -> HypId -> Proof -> R -> Proof
+proofDNegRCong a' a h_dnegr_a' h_a' proofA'ThenA r =
+  PNamed "proofDNegRCong" $
+    PImpI
+      { hypAntecedent = hypForm (FImp a r)
+      , proofConsequent =
+          PImpE
+            { antecedent = FImp a' r
+            , proofImp = PAx h_dnegr_a'
+            , proofAntecedent =
+                PImpI
+                  { hypAntecedent = h_a'
+                  , proofConsequent =
+                      PImpE
+                        { antecedent = a
+                        , proofImp = PAx (hypForm (FImp a r))
+                        , proofAntecedent = proofA'ThenA
+                        }
+                  }
+            }
+      }
+
+-- ~r a v ~r b |- ~r (a & b)
+proofNotRDistOverAndRL :: Form -> Form -> HypId -> R -> Proof
+proofNotRDistOverAndRL a b hyp_or r =
+  PNamed "proofNotRDistOverAndRL" $
+    PImpI
+      { hypAntecedent = hypForm (FAnd a b)
+      , proofConsequent =
+          POrE
+            { left = FImp a r
+            , right = FImp b r
+            , proofOr = PAx hyp_or
+            , hypLeft = hypForm (FImp a r)
+            , proofAssumingLeft =
+                PImpE
+                  { antecedent = a
+                  , proofImp = PAx (hypForm (FImp a r))
+                  , proofAntecedent =
+                      PAndE1
+                        { right = b
+                        , proofAnd = PAx (hypForm (FAnd a b))
+                        }
+                  }
+            , hypRight = hypForm (FImp b r)
+            , proofAssumingRight =
+                PImpE
+                  { antecedent = b
+                  , proofImp = PAx (hypForm (FImp b r))
+                  , proofAntecedent =
+                      PAndE2
+                        { left = a
+                        , proofAnd = PAx (hypForm (FAnd a b))
+                        }
+                  }
+            }
+      }
+
 {- Demuestra A |- A~~ por inducción estructural en A -}
-transIntro :: Form -> HypId -> Form -> Proof
+transIntro :: Form -> HypId -> R -> Proof
 transIntro f h_f r = case (f, translateF f r) of
   (FFalse, _) -> PFalseE (PAx h_f)
   (FTrue, FTrue) -> PTrueI

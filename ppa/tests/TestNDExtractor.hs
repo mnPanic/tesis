@@ -514,15 +514,15 @@ testRIntro =
     test
         [ "false" ~: doTestRIntro FFalse
         , "true" ~: doTestRIntro FTrue
-        , -- ,
-          "pred"
-            ~: doTestRIntro (fPredVar "p" "x")
-            -- , "and" ~: doTestRIntro (FAnd (fPred0 "p") (fPred0 "q"))
-            -- , "imp" ~: doTestRIntro (FImp (fPred0 "p") (fPred0 "q"))
-            -- , "not" ~: doTestRIntro (FNot (fPred0 "p"))
-            -- , "forall" ~: doTestRIntro (FForall "x" (fPred0 "p"))
-            -- , "exists" ~: doTestRIntro (FExists "x" (fPred0 "p"))
-            -- , "or" ~: doTestRIntro (FOr (fPred0 "p") (fPred0 "q"))
+        , "pred" ~: doTestRIntro (fPredVar "p" "x")
+        , "and" ~: doTestRIntro (FAnd (fPred0 "p") (fPred0 "q"))
+        , "and nested"
+            ~: let [p, q, r, s] = map fPred0 ["p", "q", "r", "s"]
+                in doTestRIntro
+                    ( FAnd
+                        (FAnd p q)
+                        (FAnd q (FAnd r s))
+                    )
         ]
 
 doTestRIntro :: Form -> Assertion
@@ -635,6 +635,21 @@ testExtractWitness =
                         let Z
                         take X := v
                         thus p(v, Y, Z) by ax
+                    end
+                |]
+        , "and"
+            ~: assertExtractProgramEquals
+                "t"
+                []
+                (tFun0 "v")
+                [r|
+                    axiom ax_1: p(v)
+                    axiom ax_2: q(v)
+                    theorem t: exists X . p(X) & q(X)
+                    proof
+                        take X := v
+                        thus p(v) by ax_1
+                        thus q(v) by ax_2
                     end
                 |]
         ]
