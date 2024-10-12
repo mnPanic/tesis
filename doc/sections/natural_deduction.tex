@@ -71,28 +71,72 @@ reglas de inferencia para cada operador ($\wedge$, $\vee$, $\exists$, $\dots$)
     \item \textbf{Eliminación}: ¿Cómo uso este operador para demostrar otra fórmula?
 \end{itemize}
 
+\newcommand{\reprueba}{X}
+\newcommand{\recursa}{R}
+\newcommand{\falta}{F}
+
 \begin{ejemplo}
     Demostración de \fullref{nd:ex:exam}. Notamos
     \begin{itemize}
-        \item $X \equiv$ reprueba
-        \item $R \equiv$ recursa
-        \item $F \equiv$ falta
+        \item $\reprueba \equiv$ reprueba
+        \item $\recursa \equiv$ recursa
+        \item $\falta \equiv$ falta
     \end{itemize}
 
     Queremos probar entonces 
     \(
         \Big(
-            (X \rightarrow R) \wedge (F \rightarrow X)
+            (\reprueba \fImp \recursa) \wedge (\falta \fImp \reprueba)
         \Big)
-        \rightarrow
-        (F \rightarrow R)
+        \fImp
+        (\falta \fImp \recursa)
     \)
     \todo{Seguir}
 
-    % \begin{prooftree}
-    %     \UnaryInfC{$\judg}
-    % \end{prooftree}
+    \begin{prooftree}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{$\ctx \judG (\reprueba \fImp \recursa) \wedge (\falta \fImp \reprueba)$}
+        \RL{\ruleAndEOne}
+        \UnaryInfC{$\ctx \judG \reprueba \fImp \recursa$}
+        \AxiomC{\todo{TODO}}
+        \RL{\ruleImpE}
+        \UnaryInfC{$\ctx \judG \reprueba$}
+        \RL{\ruleImpE}
+        \BinaryInfC{\(
+            \ctx =
+            \hypId_1: (\reprueba \fImp \recursa) \wedge (\falta \fImp \reprueba),\
+            \hypId_2: \falta
+            \judG
+            \recursa
+        \)}
+        \RL{\ruleImpI}
+        \UnaryInfC{\(
+            \hypId_1: (\reprueba \fImp \recursa) \wedge (\falta \fImp \reprueba)
+            \judG
+            \falta \fImp \recursa 
+        \)}
+        \RL{\ruleImpI}
+        \UnaryInfC{\(
+            \judG
+            \Big(
+                (\reprueba \fImp \recursa) \wedge (\falta \fImp \reprueba)
+            \Big)
+            \fImp
+            (\falta \fImp \recursa)
+        \)}
+    \end{prooftree}
+
+    \begin{itemize}
+        \item \ruleImpI: \textit{introducimos} la implicación, para demostrarla, asumimos el antecedente y en base a eso demostramos el consecuente.
+            Asumimos $izq$, queremos probar $der$
+        \item \ruleImpI: Asumimos $\falta$, nos queda probar $\recursa$
+        \item La estrategia para probar $\recursa$ es usando la siguiente cadena de implicaciones: $\falta \fImp \reprueba \fImp \recursa$, y sabemos que $\falta$. Como tenemos que probar $\recursa$, arrancamos de atrás para adelante.
+        \item \ruleImpE
+    \end{itemize}
 \end{ejemplo}
+
+Reglas de deducción natural para lógica de primer órden:
 
 \begin{multicols}{2}
     \begin{prooftree}
