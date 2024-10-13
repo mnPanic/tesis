@@ -164,7 +164,7 @@ check env p@(PExistsI t proofSubstA) fE@(FExists x f) =
 -- del de B con Exists x. A
 check env proof@(PExistsE x fA proofExistsxA hypA proofB) fB
     | x `elem` fvE env = CheckError env proof fB (printf "env shouldn't contain fv '%s'" x)
-    | x `elem` fv fB = CheckError env proof fB (printf "form to prove shoudln't contain fv '%s'" x)
+    | x `elem` fv fB = CheckError env proof fB (printf "form to prove shouldn't contain fv '%s'" x)
     | otherwise = case check env proofExistsxA (FExists x fA) of
         err | checkResultIsErr err -> CheckErrorW "proof exists" env proof fB err
         CheckOK -> wrap (check (EExtend hypA fA env) proofB fB) "proof assuming" env proof fB

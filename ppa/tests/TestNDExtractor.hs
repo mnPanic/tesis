@@ -614,7 +614,7 @@ testExtractWitness =
                 [tFun0 "k"]
                 (tFun0 "v")
                 [r|
-                    axiom ax: forall Y . p(v, Y)
+                    axiom ax: forall Y2 . p(v, Y2)
                     theorem t: forall Y. exists X . p(X, Y)
                     proof
                         let Y
@@ -622,20 +622,21 @@ testExtractWitness =
                         thus p(v, Y) by ax
                     end
                 |]
-        , "forall"
+        , "forall 2"
             ~: assertExtractProgramEquals
                 "t"
                 [tFun0 "k", tFun0 "r"]
                 (tFun0 "v")
                 [r|
-                    axiom ax: forall Y . forall Z . p(v, Y, Z)
-                    theorem t: forall Y. forall Z. exists X . p(X, Y, Z)
+                    // TODO: no debería romper con X e Y
+                    axiom ax: forall X2 . forall Y2 . p(v, X2, Y2)
+                    theorem t: forall X. forall Y. exists V . p(V, X, Y)
                     proof
+                        let X
                         let Y
-                        let Z
-                        take X := v
-                        thus p(v, Y, Z) by ax
-                    end
+                        take V := v
+                        thus p(v, X, Y) by ax
+                    end   
                 |]
         , "and"
             ~: assertExtractProgramEquals

@@ -20,7 +20,7 @@ module NDExtractor (
 
 import Certifier (checkContext)
 import ND (Env (EEmpty, EExtend), Form (..), HypId, Proof (..), Term (TVar), VarId, proofName)
-import NDProofs (Result, cut, hypAndForm, hypForm)
+import NDProofs (Result, cut, hypAndForm, hypForm, wrapR)
 import NDReducer (reduce)
 import NDSubst (subst, substHyp)
 import PPA (Context, Hypothesis (HAxiom, HTheorem), axioms, findHyp, removeHyp)
@@ -134,18 +134,20 @@ extractWitness ctxAxioms proof form instanceTerms = do
       let f_exists_inst = foldr (\(y, t) f -> subst y t f) f_exists (zip ys instanceTerms)
       let (proofInst, _) =
             foldr
-              ( \(y, t) (subProof, subForm) ->
+              ( \t (subProof, (x : xs, subForm)) ->
                   ( PForallE
-                      { var = y
-                      , form = subForm
+                      { var = x
+                      , form = fromPi02 (xs, subForm)
                       , termReplace = t
                       , proofForall = subProof
                       }
-                  , FForall y subForm
+                  , (xs, subst x t subForm)
                   )
               )
-              (proofNJAdaptedAxioms, f_exists_inst)
-              (reverse $ zip ys instanceTerms) -- reverse porque va de adentro para afuera
+              (proofNJAdaptedAxioms, formPi02)
+              (reverse instanceTerms)
+      wrapR "check pre-reduce" $ checkContext (ctxAxioms ++ [HTheorem "h" f_exists_inst (PNamed "inst first" proofInst)])
+
       let reducedProof = reduce proofInst
       case reducedProof of
         (PExistsI t _) -> return (reducedProof, f_exists_inst, t)
@@ -163,25 +165,28 @@ translateFriedman proof form@(_, f_exists@(FExists x f)) =
   do
     let r = f_exists
     let (proof', form') = translateP proof (fromPi02 form) r
-    let (ys', f_exists'@(FImp _forall@(FForall _ _) _)) = splitForalls form'
+    let split_form'@(ys', FImp _forall@(FForall _ _) _) = splitForalls form'
+
+    -- TODO: esto seguro está mal tmb
     let (proofExists', _) =
           foldr
-            ( \y (subProof, subForm) ->
+            ( \t (subProof, (y : ys, subForm)) ->
                 ( PForallE
                     { var = y
-                    , form = subForm
-                    , termReplace = TVar y
+                    , form = fromPi02 (ys, subForm)
+                    , termReplace = t
                     , proofForall = subProof
                     }
-                , FForall y subForm
+                , (ys, subst y t subForm)
                 )
             )
-            (proof', f_exists')
-            (reverse ys') -- de adentro para afuera
+            (proof', split_form')
+            (reverse $ map TVar ys')
+
     let proofExists =
           PImpE
             { antecedent = _forall
-            , proofImp = proofExists'
+            , proofImp = PNamed "proofExists inner" proofExists'
             , proofAntecedent =
                 PForallI
                   { newVar = x
