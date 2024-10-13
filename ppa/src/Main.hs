@@ -25,6 +25,7 @@ data Args
         , output :: Maybe Path
         , theorem :: HypId
         , terms :: [String]
+        , skipCheck :: Bool
         }
 
 data Path = Std | File FilePath
@@ -68,7 +69,7 @@ runCheck (ArgsCheck inPath outPath) = do
 
 runExtract :: Args -> IO ()
 runExtract (ArgsCheck{}) = undefined
-runExtract (ArgsExtract inPath outPath theoremId terms) = do
+runExtract (ArgsExtract inPath outPath theoremId terms skipCheck) = do
     rawProgram <- case inPath of
         Std -> getContents
         File f -> readFile f
@@ -86,13 +87,19 @@ runExtract (ArgsExtract inPath outPath theoremId terms) = do
                         Left err -> putStrLn err
                         Right (ctx', t) -> do
                             putStrLn "OK!"
-                            putStr "Checking translated... "
-                            case checkContext ctx' of
-                                Left err -> putStrLn err
-                                Right _ -> do
-                                    putStrLn "OK!"
+                            if skipCheck
+                                then do
+                                    putStrLn "Skipping check"
                                     putStrLn $ printf "Extracted witness: %s" (show t)
                                     writeResult outPath ctx ctx'
+                                else do
+                                    putStr "Checking translated... "
+                                    case checkContext ctx' of
+                                        Left err -> putStrLn err
+                                        Right _ -> do
+                                            putStrLn "OK!"
+                                            putStrLn $ printf "Extracted witness: %s" (show t)
+                                            writeResult outPath ctx ctx'
 
 writeResult :: Maybe Path -> Context -> Context -> IO ()
 writeResult Nothing _ _ = return ()
@@ -133,15 +140,19 @@ parseArgs :: [String] -> Result Args
 parseArgs [] = Left "empty args"
 parseArgs (cmd : args) = case cmd of
     "check" -> parseCheckArgs args
-    "extract" -> parseExtractArgs args
+    "extract" -> parseExtractArgs args False
+    -- Hack
+    "extract-skip" -> parseExtractArgs args True
     c -> Left $ printf "invalid command '%s', do 'check' or 'extract'" c
 
-parseExtractArgs :: [String] -> Result Args
-parseExtractArgs args = case args of
+-- https://hackage.haskell.org/package/cmdargs-0.10.22/docs/System-Console-CmdArgs-Implicit.html#v:modes
+
+parseExtractArgs :: [String] -> Bool -> Result Args
+parseExtractArgs args skip = case args of
     [] -> Left "empty translate args"
-    [t] -> Right ArgsExtract{theorem = t, input = Std, output = Nothing, terms = []}
-    [t, f] -> Right ArgsExtract{theorem = t, input = parsePath f, output = Nothing, terms = []}
-    t : f : o : ts -> Right ArgsExtract{theorem = t, input = parsePath f, output = Just $ parsePath o, terms = ts}
+    [t] -> Right ArgsExtract{theorem = t, input = Std, output = Nothing, terms = [], skipCheck = skip}
+    [t, f] -> Right ArgsExtract{theorem = t, input = parsePath f, output = Nothing, terms = [], skipCheck = skip}
+    t : f : o : ts -> Right ArgsExtract{theorem = t, input = parsePath f, output = Just $ parsePath o, terms = ts, skipCheck = skip}
 
 parseCheckArgs :: [String] -> Result Args
 parseCheckArgs args = case args of
