@@ -1,7 +1,15 @@
 // Parientes
 
-axiom todos_tienen_padre_1: forall P1. exists Q1. padre(P1, Q1)
-axiom todos_tienen_padre_2: forall P1'. exists Q1'. padre(P1', Q1')
+// "Skolemizado a mano"
+axiom padre_es_padre: forall P1. padre(P1, padre_de(P1))
+
+theorem todos_tienen_padre: forall P. exists Q. padre(P, Q)
+proof
+    let P
+    take Q := padre_de(P)
+    thus padre(P, padre_de(P)) by padre_es_padre
+end
+
 axiom def_abuelo:
     forall P2. forall Q2. forall R2.
         (padre(P2, Q2) & padre(Q2, R2)) -> abuelo(P2, R2)
@@ -11,8 +19,8 @@ proof
     // Primero encuentro el padre del padre de A (todos tienen padre)
     // Luego uso la definición para mostrar que es el abuelo
     let A
-    consider B st a_padre_b: padre(A, B) by todos_tienen_padre_1
-    consider C st b_padre_c: padre(B, C) by todos_tienen_padre_2
+    consider B st a_padre_b: padre(A, B) by todos_tienen_padre
+    consider C st b_padre_c: padre(B, C) by todos_tienen_padre
 
     take B := C
 
