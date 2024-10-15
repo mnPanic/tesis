@@ -1,0 +1,8 @@
+axiom ax: forall X. exists Y. p(X, Y)
+
+theorem t: exists Y. p(w, Y)
+proof
+    consider Y' st h: p(w, Y') by ax
+    take Y := Y'
+    thus p(w, Y') by h
+end

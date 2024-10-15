@@ -86,13 +86,13 @@ runExtract (ArgsExtract inPath outPath theoremId terms) = do
                         Left err -> putStrLn err
                         Right (ctx', t) -> do
                             putStrLn "OK!"
+                            writeResult outPath ctx ctx'
                             putStr "Checking translated... "
                             case checkContext ctx' of
                                 Left err -> putStrLn err
                                 Right _ -> do
                                     putStrLn "OK!"
                                     putStrLn $ printf "Extracted witness: %s" (show t)
-                                    writeResult outPath ctx ctx'
 
 writeResult :: Maybe Path -> Context -> Context -> IO ()
 writeResult Nothing _ _ = return ()
@@ -135,6 +135,8 @@ parseArgs (cmd : args) = case cmd of
     "check" -> parseCheckArgs args
     "extract" -> parseExtractArgs args
     c -> Left $ printf "invalid command '%s', do 'check' or 'extract'" c
+
+-- https://hackage.haskell.org/package/cmdargs-0.10.22/docs/System-Console-CmdArgs-Implicit.html#v:modes
 
 parseExtractArgs :: [String] -> Result Args
 parseExtractArgs args = case args of

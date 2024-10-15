@@ -1,8 +1,9 @@
-axiom ax: forall Y . forall Z . p(v, Y, Z)
-theorem t: forall Y. forall Z. exists X . p(X, Y, Z)
+// TODO: no debería romper con X e Y
+axiom ax: forall X2 . forall Y2 . p(v, X2, Y2)
+theorem t: forall X. forall Y. exists V . p(V, X, Y)
 proof
+    let X
     let Y
-    let Z
-    take X := v
-    thus p(v, Y, Z) by ax
+    take V := v
+    thus p(v, X, Y) by ax
 end

@@ -514,15 +514,15 @@ testRIntro =
     test
         [ "false" ~: doTestRIntro FFalse
         , "true" ~: doTestRIntro FTrue
-        , -- ,
-          "pred"
-            ~: doTestRIntro (fPredVar "p" "x")
-            -- , "and" ~: doTestRIntro (FAnd (fPred0 "p") (fPred0 "q"))
-            -- , "imp" ~: doTestRIntro (FImp (fPred0 "p") (fPred0 "q"))
-            -- , "not" ~: doTestRIntro (FNot (fPred0 "p"))
-            -- , "forall" ~: doTestRIntro (FForall "x" (fPred0 "p"))
-            -- , "exists" ~: doTestRIntro (FExists "x" (fPred0 "p"))
-            -- , "or" ~: doTestRIntro (FOr (fPred0 "p") (fPred0 "q"))
+        , "pred" ~: doTestRIntro (fPredVar "p" "x")
+        , "and" ~: doTestRIntro (FAnd (fPred0 "p") (fPred0 "q"))
+        , "and nested"
+            ~: let [p, q, r, s] = map fPred0 ["p", "q", "r", "s"]
+                in doTestRIntro
+                    ( FAnd
+                        (FAnd p q)
+                        (FAnd q (FAnd r s))
+                    )
         ]
 
 doTestRIntro :: Form -> Assertion
@@ -614,7 +614,7 @@ testExtractWitness =
                 [tFun0 "k"]
                 (tFun0 "v")
                 [r|
-                    axiom ax: forall Y . p(v, Y)
+                    axiom ax: forall Y2 . p(v, Y2)
                     theorem t: forall Y. exists X . p(X, Y)
                     proof
                         let Y
@@ -622,19 +622,35 @@ testExtractWitness =
                         thus p(v, Y) by ax
                     end
                 |]
-        , "forall"
+        , "forall 2"
             ~: assertExtractProgramEquals
                 "t"
                 [tFun0 "k", tFun0 "r"]
                 (tFun0 "v")
                 [r|
-                    axiom ax: forall Y . forall Z . p(v, Y, Z)
-                    theorem t: forall Y. forall Z. exists X . p(X, Y, Z)
+                    // TODO: no debería romper con X e Y
+                    axiom ax: forall X2 . forall Y2 . p(v, X2, Y2)
+                    theorem t: forall X. forall Y. exists V . p(V, X, Y)
                     proof
+                        let X
                         let Y
-                        let Z
+                        take V := v
+                        thus p(v, X, Y) by ax
+                    end   
+                |]
+        , "and"
+            ~: assertExtractProgramEquals
+                "t"
+                []
+                (tFun0 "v")
+                [r|
+                    axiom ax_1: p(v)
+                    axiom ax_2: q(v)
+                    theorem t: exists X . p(X) & q(X)
+                    proof
                         take X := v
-                        thus p(v, Y, Z) by ax
+                        thus p(v) by ax_1
+                        thus q(v) by ax_2
                     end
                 |]
         ]

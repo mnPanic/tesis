@@ -263,7 +263,8 @@ formsWithFv env x = filter (elem x . fv) (forms env)
 -- Record syntax: https://en.wikibooks.org/wiki/Haskell/More_on_datatypes
 
 data Proof
-    = PNamed
+    = -- Usado para nombrar sub-demostraciones, especialmente útil para ver auto generadas por PPA
+      PNamed
         { name :: String
         , proof :: Proof
         }
