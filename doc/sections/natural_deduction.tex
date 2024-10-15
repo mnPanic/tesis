@@ -1,35 +1,33 @@
+
 \begin{itemize}
-    \item Ejemplo de demostración en lenguaje natural
-    \item Necesitamos una forma estructural de representar demostraciones
+    \item Ejemplo de demostración en lenguaje natural \checkmark
+    \item Necesitamos una forma estructural de representar demostraciones \checkmark
     \item Proof calculus / proof system enmarcado en Proof theory. Cómo están
-    compuestos en general
-    \item Natural deduction
+    compuestos en general \checkmark
+    \item Natural deduction \checkmark
     \item Reglas de introducción y eliminación
-    \item Formalización del ejemplo
+    \item Formalización del ejemplo \checkmark
     \item Ejemplo con cuantificadores
     \item Cut como meta-teorema (y meta teoremas en general)
-    \item Implementación de data types principales
+    \item Implementación de data types principales \checkmark
     \item Algoritmo de chequeo
     \item Algoritmos adicionales: alpha igualdad, variables libres, sust sin capturas
 \end{itemize}
 
-Vamos a arrancar por las fundaciones: Queremos armar un programa que permita
+Vamos a comenzar por las fundaciones: Queremos armar un programa que permita
 escribir teoremas y demostraciones. ¿Cómo se representa una demostración en la
 computadora? En el área de estudio de \textit{proof theory}, en la cuál las
 demostraciones son tratadas como objetos matemáticos formales, nos encontramos
 con los \textit{proof calculi} o \textit{proof systems}, que son sistemas
 lógicos formales que permiten demostrar sentencias. Pueden ser modelados como un
-tipo abstracto de datos, así siendo representados en la computadora. Por
-ejemplo, veamos la siguiente demostración en el dominio de exámenes en la
-facultad, que vamos a ir iterando a lo largo de la tesis. Por ahora en su
-versión proposicional, sin cuantificadores.
+tipo abstracto de datos, así siendo representados en la computadora.
 
-\begin{itemize}
-    \item Si un alumno reprueba un final, entonces recursa (un criterio un poco duro)
-    \item Si un alumno falta, entonces reprueba
-    \item En base a eso, podemos demostrar que si un alumno falta a un final,
-    entonces recursa.
-\end{itemize}
+Por ejemplo, supongamos que tenemos la siguiente \textit{teoría} de exámenes en
+la facultad, que vamos a ir iterando a lo largo del documento. Por ahora, en su
+versión proposicional. Si un alumno reprueba un final, entonces recursa. Si un
+alumno falta, entonces reprueba. Con estas dos, podríamos demostrar que si un
+alumno falta a un final, entonces recursa. Veamos cómo podría ser una
+demostración en lenguaje natural.
 
 \begin{ejemplo}\label{nd:ex:exam}
     Si ((reprueba entonces recursa) y (falta entonces reprueba)) y falta, entonces recursa.
@@ -44,8 +42,8 @@ versión proposicional, sin cuantificadores.
     \qed
 \end{ejemplo}
 
-¿Cómo podemos escribirla en un \textit{proof system}? En general, van a incluir
-los siguientes componentes
+¿Cómo podemos formalizarla en un \textit{proof system}? En general, van a
+incluir los siguientes componentes
 
 \begin{itemize}
     \item \textbf{Lenguaje formal}: el conjunto $L$ de fórmulas admitidas por
@@ -64,7 +62,8 @@ los siguientes componentes
 
 El sistema que usamos se conoce como \textbf{deducción natural}, introducido por
 Gerhard Gentzen en \cite{gentzen-1935} \todo{Chequear cita}. Tiene dos tipos de
-reglas de inferencia para cada operador ($\wedge$, $\vee$, $\exists$, $\dots$)
+reglas de inferencia para cada operador ($\wedge$, $\vee$, $\exists$, $\dots$),
+que vamos a introducir con un ejemplo.
 
 \begin{itemize}
     \item \textbf{Introducción}: ¿Cómo demuestro este operador?
@@ -75,22 +74,23 @@ reglas de inferencia para cada operador ($\wedge$, $\vee$, $\exists$, $\dots$)
 \newcommand{\recursa}{R}
 \newcommand{\falta}{F}
 
-\begin{ejemplo}
-    Demostración de \fullref{nd:ex:exam}. Notamos
+\begin{ejemplo}\label{nd:ex:exam-nd}
+    Demostración de \fullref{nd:ex:exam} en deducción natural. Como es en su
+    versión proposicional, vamos a modelarlo para un solo alumno y materia. Notamos
     \begin{itemize}
-        \item $\reprueba \equiv$ reprueba
-        \item $\recursa \equiv$ recursa
-        \item $\falta \equiv$ falta
+        \item $\reprueba \equiv$ $reprueba(juan, final(logica))$
+        \item $\recursa \equiv$ $recursa(juan, logica)$
+        \item $\falta \equiv$ $falta(juan, final(logica))$
     \end{itemize}
 
     Queremos probar entonces 
-    \(
+    \[
         \Big(
             (\reprueba \fImp \recursa) \wedge (\falta \fImp \reprueba)
         \Big)
         \fImp
         (\falta \fImp \recursa)
-    \)
+    \]
 
     \todo{Validar poner la hyp arriba de los \ruleAx}
     \begin{figure}[H]
@@ -179,113 +179,84 @@ reglas de inferencia para cada operador ($\wedge$, $\vee$, $\exists$, $\dots$)
 
 \subsection{Reglas de inferencia}
 
-A continuación introducimos todas las reglas de inferencia para deducción
-natural para lógica de primer órden.
+\newcommand{\proofSpacing}{\vspace*{0.2cm}}
 
-\todo{Incluir explicación de cada una?}
+A continuación presentamos todas las reglas de inferencia para deducción
+natural para lógica de primer órden. Primero las más sencillas.
+
 
 \begin{multicols}{2}
-    \begin{prooftree}
-        \AxiomC{$\judg{\ctx}{\bot}$}
-        \RL{\ruleFalseE}
-        \UnaryInfC{$\judg{\ctx}{\form}$}
-    \end{prooftree}
-    \begin{prooftree}
-        \AxiomC{}
-        \RL{\ruleTrueI}
-        \UnaryInfC{$\judg{\ctx}{\top}$}
-    \end{prooftree}
+    \proofTreeFalseE
+    \proofTreeTrueI
 \end{multicols}
 
 \begin{multicols}{2}
-    \begin{prooftree}
-        \AxiomC{}
-        \RL{\ruleLEM}
-        \UnaryInfC{$\judg{\ctx}{\form \vee \neg \form}$}
-    \end{prooftree}
-    \begin{prooftree}
-        \AxiomC{}
-        \RL{\ruleAx}
-        \UnaryInfC{$\judg{\ctx, \hypId:\form}{\hypId:\form}$}
-    \end{prooftree}
+    \proofTreeLEM
+    \proofTreeAx
 \end{multicols}
 
-\vspace*{0.5cm}
+\begin{itemize}
+    \item \ruleFalseE: A partir de $\fFalse$, algo que es falso, vamos a poder deducir cualquier
+    fórmula.
+    \item \ruleTrueI: $\fTrue$ trivialmente vale siempre
+    \item \ruleLEM: El \textit{principio del tercero excluido} que vale en
+    lógica clásica. Incluir este axioma es lo que hace que este sistema sea
+    clásico.
+    \item \ruleAx: Como ya vimos en el \fullref{nd:ex:exam-nd}, lo usamos para
+    deducir fórmulas que ya tenemos como hipótesis.
+\end{itemize}
 
+Reglas de conjunciones y disyunciones:
 
-\begin{prooftree}
-    \AxiomC{$\judg{\ctx}{\form}$}
-    \AxiomC{$\judg{\ctx}{\formTwo}$}
-    \RL{\ruleAndI}
-    \BinaryInfC{$\judg{\ctx}{\form \wedge \formTwo}$}
-\end{prooftree}
+\proofTreeAndI
 
 \begin{multicols}{2}
-    \begin{prooftree}
-        \AxiomC{$\judg{\ctx}{\form \wedge \formTwo}$}
-        \RL{\ruleAndEOne}
-        \UnaryInfC{$\judg{\ctx}{\form}$}
-    \end{prooftree}
-    \begin{prooftree}
-        \AxiomC{$\judg{\ctx}{\form \wedge \formTwo}$}
-        \RL{\ruleAndETwo}
-        \UnaryInfC{$\judg{\ctx}{\formTwo}$}
-    \end{prooftree}
+    \proofTreeAndEOne
+    \proofTreeAndETwo
 \end{multicols}
 
 \begin{multicols}{2}
-    \begin{prooftree}
-        \AxiomC{$\judg{\ctx}{\form}$}
-        \RL{\ruleOrIOne}
-        \UnaryInfC{$\judg{\ctx}{\form \vee \formTwo}$}
-    \end{prooftree}
-    \begin{prooftree}
-        \AxiomC{$\judg{\ctx}{\formTwo}$}
-        \RL{\ruleOrITwo}
-        \UnaryInfC{$\judg{\ctx}{\form \vee \formTwo}$}
-    \end{prooftree}
+    \proofTreeOrIOne
+    \proofTreeOrITwo
 \end{multicols}
 
-\begin{prooftree}
-    \AxiomC{$\judg{\ctx}{\form \vee \formTwo}$}
-    \AxiomC{$\judg{\ctx, \form}{\formThree}$}
-    \AxiomC{$\judg{\ctx, \formTwo}{\formThree}$}
-    \RL{\ruleOrE}
-    \TrinaryInfC{$\judg{\ctx}{\formThree}$}
-\end{prooftree}
+\proofTreeOrE
 
-\ruleOrE nos deja inferir una conclusión a partir de una disyunción dando sub demostraciones que muestran como la conclusión se puede deducir asumiendo cualquiera de los elementos.
+\begin{itemize}
+    \item \ruleAndI: Para demostrar una conjunción, debemos demostrar ambas fórmulas.
+    \item \ruleAndEOne / \ruleAndETwo: A partir de una conjunción podemos
+    deducir cualquiera de las dos fórmulas que la componen, porque ambas valen.
+    Se modela con dos reglas.
+    \item \ruleOrIOne / \ruleOrITwo: Para demostrar una disyunción, alcanza con
+    demostrar una de sus dos fórmulas. Se modela con dos reglas al igual que la
+    eliminación de conjunción.
+    \item \ruleOrE: Nos permite deducir una conclusión a partir de una
+    disyunción dando sub demostraciones que muestran que sin importar cual de
+    las dos valga, asumiéndolas por separado, se puede demostrar.
+\end{itemize}
 
-\begin{prooftree}
-    \AxiomC{$\judg{\ctx, \form}{\formTwo}$}
-    \RL{\ruleImpI}
-    \UnaryInfC{$\judg{\ctx}{\form \to \formTwo}$}
-\end{prooftree}
-
-\begin{prooftree}
-    \AxiomC{$\judg{\ctx}{\form \to \formTwo}$}
-    \AxiomC{$\judg{\ctx}{\form}$}
-    \RL{\ruleImpE \scriptsize (modus ponens)}
-    \BinaryInfC{$\judg{\ctx}{\formTwo}$}
-\end{prooftree}
-
-\vspace{0.5cm}
+Reglas de implicación y negación:
 
 \begin{multicols}{2}
-    \begin{prooftree}
-        \AxiomC{$\judg{\ctx, \form}{\bot}$}
-        \RL{\ruleNotI}
-        \UnaryInfC{$\judg{\ctx}{\neg \form}$}
-    \end{prooftree}
-    
-    \begin{prooftree}
-        \AxiomC{$\judg{\ctx}{\neg \form}$}
-        \AxiomC{$\judg{\ctx}{\form}$}
-        \RL{\ruleNotE}
-        \BinaryInfC{$\judg{\ctx}{\bot}$}
-    \end{prooftree}
-    
+    \proofTreeImpI
+    \proofTreeImpE
 \end{multicols}
+
+\proofSpacing
+
+\begin{multicols}{2}
+    \proofTreeNotI
+    \proofTreeNotE
+\end{multicols}
+
+\begin{itemize}
+    \item \ruleImpI: 
+    \item \ruleImpE: también conocida como \textit{modus ponens}
+    \item \ruleNotI:
+    \item \ruleNotE:
+\end{itemize}
+
+Reglas de cuantificadores:
 
 \todo{Validar las justificaciones coloquiales de acá}
 
@@ -294,17 +265,8 @@ Las reglas de $\forall$ y $\exists$ se pueden ver como extensiones a las de $\we
 Un $\forall$ se puede pensar como una conjunción con un elemento por cada uno dl dominio sobre el cual se cuantifica.
 
 \begin{multicols}{2}
-    \begin{prooftree}
-        \AxiomC{$\judg{\ctx}{\form}$}
-        \AxiomC{$x \notin fv(\ctx)$}
-        \RL{\ruleForallI}
-        \BinaryInfC{$\judg{\ctx}{\forall \var.\form}$}
-    \end{prooftree}
-    \begin{prooftree}
-        \AxiomC{$\judg{\ctx}{\forall \var.\form}$}
-        \RL{\ruleForallE}
-        \UnaryInfC{$\judg{\ctx}{\form \{\var := \term\}}$}
-    \end{prooftree}
+    \proofTreeForallI
+    \proofTreeForallE
 \end{multicols}
 
 \begin{itemize}
@@ -312,20 +274,8 @@ Un $\forall$ se puede pensar como una conjunción con un elemento por cada uno d
     \item \ruleForallI: Para demostrar (introducir) un $\forall x. \form$, quiero ver que sin importar el valor que tome $x$ yo puedo demostrar $\form$. Pero para eso en mi contexto $\Gamma$ no tengo que tenerlo ligado a nada, sino no lo estaría demostrando en general
 \end{itemize}
 
-\begin{prooftree}
-    \AxiomC{$\judg{\ctx}{\form\{\var := \term\}}$}
-    \RL{\ruleExistsI}
-    \UnaryInfC{$\judg{\ctx}{\exists \var. \form}$}
-\end{prooftree}
-
-\begin{prooftree}
-    \AxiomC{$\judg{\ctx}{\exists \var.\form}$}
-    \AxiomC{$\judg{\ctx, \form}{\formTwo}$}
-    \AxiomC{$x \notin fv(\ctx, \formTwo)$}
-    \RL{\ruleExistsE}
-    \TrinaryInfC{$\judg{\ctx}{\formTwo}$}
-\end{prooftree}
-
+\proofTreeExistsI
+\proofTreeExistsE
 
 \begin{itemize}
     \item \ruleExistsI: Para demostrar un $\exists$, alcanza con instanciar la variable en un término $t$ que sea válido.
@@ -336,29 +286,84 @@ Un $\forall$ se puede pensar como una conjunción con un elemento por cada uno d
 
 En síntesis,
 
-
 \begin{figure}[H]
-    \todo{Copiar y pegar todo cuando esté terminado}
+    \begin{multicols}{2}
+        \proofTreeFalseE
+        \proofTreeTrueI
+    \end{multicols}
+    
+    \begin{multicols}{2}
+        \proofTreeLEM
+        \proofTreeAx
+    \end{multicols}
+
+    \proofSpacing
+
+    \proofTreeAndI
+
+    \begin{multicols}{2}
+        \proofTreeAndEOne
+        \proofTreeAndETwo
+    \end{multicols}
+
+    \proofSpacing
+
+    \begin{multicols}{2}
+        \proofTreeOrIOne
+        \proofTreeOrITwo
+    \end{multicols}
+    
+    \proofTreeOrE
+
+    \proofSpacing
+
+    \begin{multicols}{2}
+        \proofTreeImpI
+        \proofTreeImpE
+    \end{multicols}
+    \begin{multicols}{2}
+        \proofTreeNotI
+        \proofTreeNotE
+    \end{multicols}
+
+    \proofSpacing
+
+    \begin{multicols}{2}
+        \proofTreeForallI
+        \proofTreeForallE
+    \end{multicols}
+
+    \proofSpacing
+
+    \proofTreeExistsI
+    \proofTreeExistsE
+
     \caption{Reglas de inferencia para deducción natural de lógica de primer órden}
     \label{nd:inference-rules}
 \end{figure}
 
 \subsection{Meta-teoremas}
 
-Antes mencionamos \textit{modus tollens} como regla de inferencia. Pero como nos
-va a interesar tener un sistema lógico minimal, para simplificar el
-\texttt{Checker} y todo el resto de los módulos que interactúen con él, lo
-podemos demostrar como \textbf{meta-teorema}.
+Antes mencionamos \textit{modus tollens} como regla de inferencia, pero no lo
+listamos anteriormente. Esto es porque nos va a interesar tener un sistema
+lógico minimal: no vamos a agregar como regla de inferencia una que se pueda
+expresar en términos de otras. Nos va a servir para simplificar el resto de PPA,
+dado que en el resto de los módulos vamos a generar demostraciones en deducción
+natural. Estas reglas de inferencia las demostramos como \textbf{meta-teoremas}
 
 \todo{Demo modus tollens}
 
 \todo{Cut como meta teorema}
 
-\section{Implementación}
+\todo{DnegElim como meta teorema}
 
-Data types principales
+\section{Algoritmos}
+
+Vamos a hablar de los algoritmos que se implementaron sobre deducción natural.
+Pero primero presentamos el modelo de fórmulas y demostraciones, que es central a todo el programa.
 
 \begin{figure}[H]
+\begin{multicols}{2}
 \begin{minted}{haskell}
 type VarId = String
 type FunId = String
@@ -381,11 +386,16 @@ data Form
     | FForall VarId Form
     | FExists VarId Form
 \end{minted}
-    \caption{Extracto de modelado de deducción natural. Detalles de
-    implementación irrelevantes fueron omitidos. Ver \texttt{src/ND.hs}}
+\end{multicols}
+\caption{Modelado de fórmulas y términos de LPO}
 \end{figure}
 
-\todo{Mejorar formatting, 2 columnas?}
+Las meta-variables se usan para unificación, que es parte del solver de PPA. Ver
+más en \fullref{ppa:sec:unification}
+
+\begin{figure}[H]
+    
+\begin{multicols}{2}
 \begin{minted}{haskell}
 data Proof =
     | PAx HypId
@@ -460,14 +470,16 @@ data Proof =
         , hyp :: HypId
         , proofAssuming :: Proof
         }
-\end{minted}
-
-Las meta-variables se usan para unificación, que es parte del solver de PPA. Ver
-más en \fullref{ppa:sec:unification}
+\end{minted}        
+\end{multicols}
+\caption{Modelado de reglas de inferencia para demostraciones}
+\end{figure}
 
 El modelado de las reglas de inferencia omite varios detalles que están
 implícitos y serán inferidos por el algoritmo de chequeo. De esa forma las
-demostraciones son más fáciles de escribir y generar.
+demostraciones son más fáciles de escribir y generar. Por ejemplo,
+\texttt{PImpI} no especifica en su modelo cuál es la implicación que se está
+introduciendo, dado que durante el chequeo debería ser la fórmula actual a demostrar
 
 \subsection{Chequeo}
 
