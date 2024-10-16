@@ -11,6 +11,7 @@
 
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{bm}        % bold math
 \usepackage{float}      % [H]
 \usepackage{abraces}    % \aunderbrace y \aoverbrace
 
@@ -132,10 +133,20 @@
 \newcommand{\hypId}{h}
 %% Fórmulas
 \newcommand{\var}{x}
+\newcommand{\varTwo}{y}
+\newcommand{\varThree}{z}
+\newcommand{\fun}{f}
+\newcommand{\funTwo}{g}
 \newcommand{\term}{t}
+\newcommand{\pred}{p}
 \newcommand{\form}{A}
 \newcommand{\formTwo}{B}
 \newcommand{\formThree}{C}
+
+% Funciones
+\newcommand{\fv}[1]{fv(#1)}
+\newcommand{\subst}[2]{\{#1 := #2\}}
+\newcommand{\alphaEq}{\overset{\alpha}{=}}
 
 %% Juicios
 \newcommand{\judg}[2]{#1 \vdash #2}

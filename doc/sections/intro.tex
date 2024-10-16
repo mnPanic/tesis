@@ -35,4 +35,31 @@ Completar con https://en.wikipedia.org/wiki/Theorem
 
 \section{Lógica de primer órden}
 
+\begin{definition}{Términos}
+    Un término puede ser
+    \begin{itemize}
+        \item Una variable $\var$
+        \item Una función $\fun(\term_1, \dots, \term_n)$ donde $\term_1, \dots,
+        \term_n$ son términos
+    \end{itemize}
+\end{definition}
+
+\begin{definition}{Fórmulas}
+    Una fórmula puede ser
+    \begin{itemize}
+        \item Un predicado $\pred(\term_1, \dots, \term_n)$ donde $\term_1, \dots,
+        \term_n$ son términos
+        \item $\fFalse$, $\fTrue$
+        \item Sean $\form, \formTwo$ fórmulas
+        \begin{itemize}
+            \item Una conjunción $\form \fAnd \formTwo$
+            \item Una disyunción $\form \fOr \formTwo$
+            \item Una implicación $\form \fImp \formTwo$
+            \item Una negación $\fNot \form$
+            \item Un cuantificador universal $\forall \var . \form$
+            \item Un cuantificador existencial $\exists \var . \form$
+        \end{itemize}
+    \end{itemize}
+\end{definition}
+
 \todo{Definiciones, repaso, lo necesario}

@@ -50,8 +50,17 @@ end
 
 axiom manu_falta_recu: falta(manu, recu(parcial(tleng)))
 
-theorem manu_recursa_tleng:
-    recursa(manu, tleng)
+theorem existe_faltante_recu_tleng:
+    exists P . falta(P, recu(parcial(tleng)))
 proof
-    thus recursa(manu, tleng) by falta_recu_recursa, manu_falta_recu
+    take P := manu
+    thus falta(manu, recu(parcial(tleng))) by manu_falta_recu
+end
+
+theorem existe_recursante_tleng:
+    exists P. recursa(P, tleng)
+proof
+    consider P' st -:falta(P', recu(parcial(tleng))) by existe_faltante_recu_tleng
+    take P := P'
+    hence recursa(P', tleng) by falta_recu_recursa
 end

@@ -19,7 +19,7 @@
 
 \newcommand{\proofTreeExistsI}{%
 \begin{prooftree}
-    \AxiomC{$\judg{\ctx}{\form\{\var := \term\}}$}
+    \AxiomC{$\judg{\ctx}{\form\subst{\var}{\term}}$}
     \RL{\ruleExistsI}
     \UnaryInfC{$\judg{\ctx}{\exists \var. \form}$}
 \end{prooftree}
@@ -28,7 +28,7 @@
 \begin{prooftree}
     \AxiomC{$\judg{\ctx}{\exists \var.\form}$}
     \AxiomC{$\judg{\ctx, \form}{\formTwo}$}
-    \AxiomC{$x \notin fv(\ctx, \formTwo)$}
+    \AxiomC{$x \notin \fv{\ctx, \formTwo}$}
     \RL{\ruleExistsE}
     \TrinaryInfC{$\judg{\ctx}{\formTwo}$}
 \end{prooftree}
@@ -38,7 +38,7 @@
 \newcommand{\proofTreeForallI}{%
 \begin{prooftree}
     \AxiomC{$\judg{\ctx}{\form}$}
-    \AxiomC{$x \notin fv(\ctx)$}
+    \AxiomC{$x \notin \fv{\ctx}$}
     \RL{\ruleForallI}
     \BinaryInfC{$\judg{\ctx}{\forall \var.\form}$}
 \end{prooftree}
@@ -48,7 +48,7 @@
 \begin{prooftree}
     \AxiomC{$\judg{\ctx}{\forall \var.\form}$}
     \RL{\ruleForallE}
-    \UnaryInfC{$\judg{\ctx}{\form \{\var := \term\}}$}
+    \UnaryInfC{$\judg{\ctx}{\form \subst{\var}{\term}}$}
 \end{prooftree}
 }
 
@@ -105,7 +105,7 @@
 
 \newcommand{\proofTreeImpI}{%
 \begin{prooftree}
-    \AxiomC{$\judg{\ctx, \form}{\formTwo}$}
+    \AxiomC{$\judg{\ctx, \hypId: \form}{\formTwo}$}
     \RL{\ruleImpI}
     \UnaryInfC{$\judg{\ctx}{\form \to \formTwo}$}
 \end{prooftree}
@@ -121,7 +121,7 @@
 
 \newcommand{\proofTreeNotI}{%
 \begin{prooftree}
-    \AxiomC{$\judg{\ctx, \form}{\bot}$}
+    \AxiomC{$\judg{\ctx, \hypId: \form}{\bot}$}
     \RL{\ruleNotI}
     \UnaryInfC{$\judg{\ctx}{\neg \form}$}
 \end{prooftree}

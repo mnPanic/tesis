@@ -36,6 +36,7 @@ subst :: VarId -> Term -> Form -> Form
 subst = subst' Map.empty
 
 -- Sustituye ocurrencias libres de x por t en f
+-- TODO: Probablemente se puede unir la sustitución original en VarSubstitution
 subst' :: VarSubstitution -> VarId -> Term -> Form -> Form
 subst' s x t f = case f of
   FPred l ts -> FPred l (map (substTerm s x t) ts)
@@ -237,6 +238,6 @@ citedHypIds p = case p of
   PFalseE pB -> citedHypIds pB
   PLEM -> Set.empty
   PForallI _ pF -> citedHypIds pF
-  PForallE{proofForall=pF} -> citedHypIds pF
+  PForallE{proofForall = pF} -> citedHypIds pF
   PExistsI _ p1 -> citedHypIds p1
-  PExistsE{proofExists=pE, proofAssuming=pA} -> Set.union (citedHypIds pE) (citedHypIds pA)
+  PExistsE{proofExists = pE, proofAssuming = pA} -> Set.union (citedHypIds pE) (citedHypIds pA)
