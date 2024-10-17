@@ -1,17 +1,17 @@
 
 \begin{itemize}
-    \item Ejemplo de demostración en lenguaje natural \checkmark
-    \item Necesitamos una forma estructural de representar demostraciones \checkmark
+    \item Ejemplo de demostración en lenguaje natural \ok
+    \item Necesitamos una forma estructural de representar demostraciones \ok
     \item Proof calculus / proof system enmarcado en Proof theory. Cómo están
-    compuestos en general \checkmark
-    \item Natural deduction \checkmark
-    \item Reglas de introducción y eliminación
-    \item Formalización del ejemplo \checkmark
+    compuestos en general \ok
+    \item Natural deduction \ok
+    \item Reglas de introducción y eliminación \ok
+    \item Formalización del ejemplo \ok
     \item Ejemplo con cuantificadores
     \item Cut como meta-teorema (y meta teoremas en general)
-    \item Implementación de data types principales \checkmark
-    \item Algoritmo de chequeo
-    \item Algoritmos adicionales: alpha igualdad, variables libres, sust sin capturas
+    \item Implementación de data types principales \ok
+    \item Algoritmo de chequeo 
+    \item Algoritmos adicionales: alpha igualdad, variables libres, sust sin capturas \ok
 \end{itemize}
 
 Vamos a comenzar por las fundaciones: Queremos armar un programa que permita
@@ -693,7 +693,10 @@ Para implementarlo, cada vez que nos encontramos con una captura, vamos a \texti
     \]
 \end{definition}
 
-\duda{Cómo representamos acá las demostraciones? Porque es matemático esto}
-\begin{definition}{Variables libres de una demostración}
+\begin{definition}{Variables libres de una demostración.} Sea $\someProof$ una demostración. $\fv{\someProof}$ son las variables libres de todas las fórmulas que la componen. Por ejemplo, para la siguiente
+
+    \proofTreeAndI
+
+    se tiene $\fv{\someProof} = \fv{\form} \cup \fv{\formTwo}$
     
 \end{definition}
