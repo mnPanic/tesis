@@ -505,16 +505,79 @@ introduciendo, dado que durante el chequeo debería ser la fórmula actual a dem
 
 Si tenemos una hipótesis $\exists \var . \fun(\var)$, sería ideal poder usarla para demostrar a partir de ella una fórmula $\exists \varTwo . \fun(\varTwo)$. Si bien no son exactamente iguales, son \textbf{alpha-equivalentes}: su estructura es la misma, pero tienen nombres diferentes para variables \textit{ligadas} (no libres)
 
-\begin{definition}{Alpha equivalencia}. Se define la relación $\alphaEq$ inductivamente en la estructura de la fórmula
-    \todo{Completar}
+\begin{definition}{Alpha equivalencia}. Se define la relación $\alphaEq$ inductivamente sobre la estructura de la fórmula
+    \begin{itemize}
+        \item Términos
+        \begin{align*}
+            \var \alphaEq \varTwo &\iff \var = \varTwo\\
+            \fun(\term_1, \dots, \term_n)
+            \alphaEq
+            \fun(\termTwo_1, \dots, \termTwo_n)
+            &\iff \fun = \funTwo \wedge
+                \term_1 \alphaEq \termTwo_1 \wedge
+                \dotso \wedge
+                \term_n \alphaEq \termTwo_n
+        \end{align*}
 
+        Caso contrario, no son equivalentes (si usan símbolos de función diferentes o comparamos diferentes estructuras, como funciones con variables o de distinta aridad) \duda{mejor forma de escribir esto?}
+    
+        \item Fórmulas
+        \begin{align*}    
+            \fFalse \alphaEq \fFalse
+                \\
+            \fTrue \alphaEq \fTrue
+                \\
+            \pred(\term_1, \dots, \term_n) \alphaEq \pred(\termTwo_1, \dots, \termTwo_n)
+                &\iff
+                \term_1 \alphaEq \termTwo_1 \wedge
+                \dotso \wedge
+                \term_n \alphaEq \termTwo_n
+                \\
+            (\form \fAnd \formTwo) \alphaEq (\form' \fAnd \formTwo')
+                &\iff
+                \form \alphaEq \form' \wedge \formTwo \alphaEq \formTwo'
+                \\
+            (\form \fOr \formTwo) \alphaEq (\form' \fOr \formTwo')
+                &\iff
+                \form \alphaEq \form' \wedge \formTwo \alphaEq \formTwo'
+                \\
+            (\form \fImp \formTwo) \alphaEq (\form' \fImp \formTwo')
+                &\iff
+                \form \alphaEq \form' \wedge \formTwo \alphaEq \formTwo'
+                \\
+            (\fNot \form) \alphaEq (\fNot \form')
+                &\iff
+                \form \alphaEq \form'
+                \\
+            (\forall \var . \form) \alphaEq (\forall \varTwo . \form')
+                &\iff
+                \form \subst{\var}{\varThree} \alphaEq
+                \form' \subst{\varTwo}{\varThree} \text{ con $\varThree$ fresca}
+                \\
+            (\exists \var . \form) \alphaEq (\exists \varTwo . \form')
+                &\iff
+                \form \subst{\var}{\varThree} \alphaEq
+                \form' \subst{\varTwo}{\varThree} \text{ con $\varThree$ fresca}
+                \\
+        \end{align*}
+
+        Caso contrario, no son equivalentes.
+
+    \end{itemize}
 \end{definition}
 
-Para chequearlo, un algoritmo naïve podría ser uno cuadrático: chequeamos recursivamente la igualdad estructural de ambas fórmulas. Si nos encontramos con un cuantificador con variables con nombres distintos, digamos $\var$ y $\varTwo$, elegimos una nueva variable \textit{fresca} (para evitar capturas) y lo renombramos recursivamente en ambos. Luego continuamos con el algoritmo. Si nos encontramos con dos variables, tienen que ser iguales.
+Para implementarlo, un algoritmo naïve podría ser cuadrático: chequeamos recursivamente la igualdad estructural de ambas fórmulas. Si nos encontramos con un cuantificador con variables con nombres distintos, digamos $\var$ e $\varTwo$, elegimos una nueva variable \textit{fresca} (para evitar capturas) y lo renombramos recursivamente en ambos. Luego continuamos con el algoritmo. Si en la base nos encontramos con dos variables, tienen que ser iguales.
 
-Para hacerlo un poco más eficiente, se implementó un algoritmo lineal en la estructura de la fórmula. Mantenemos dos sustituciones de variables, una para cada fórmula. Si nos encontramos con $\exists \var . \fun(\var)$ y $\exists \varTwo . \fun(\varTwo)$, vamos a elegir una variable fresca igual que antes (por ejemplo $\varThree$), pero en vez de renombrar recursivamente, insertamos en cada sustitución los mapeos $\var \mapsto \varThree$ y $\varTwo \mapsto \varThree$. Luego, cuando estemos comparando dos variables libres, chequeamos que \textit{mapeen} a variables iguales.
+Para hacerlo un poco más eficiente, se implementó un algoritmo lineal en la estructura de la fórmula. Mantenemos dos sustituciones de variables, una para cada fórmula. Si nos encontramos con $\exists \var . \fun(\var)$ y $\exists \varTwo . \fun(\varTwo)$, vamos a elegir una variable fresca igual que antes (por ejemplo $\varThree$), pero en vez de renombrar recursivamente, insertamos en cada sustitución los mapeos $\var \mapsto \varThree$ y $\varTwo \mapsto \varThree$. Luego, cuando estemos comparando dos variables libres, chequeamos que \textit{mapeen} a variables iguales. En este ejemplo son alpha equivalentes, pues
 
-\duda{Escribir pseudocódigo?}
+\begin{align*}
+    (\exists \var . \fun(\var)) \alphaEq (\exists \varTwo . \fun(\varTwo))
+    &\iff \fun(\var) \alphaEq \fun(\varTwo)
+        &&\{\var \mapsto \varThree\}, \{\varTwo \mapsto \varThree\}\\
+    &\iff \var \alphaEq \varTwo
+        &&\{\var \mapsto \varThree\}, \{\varTwo \mapsto \varThree\}\\
+    &\iff \varThree = \varThree.
+\end{align*}
 
 \subsection{Sustitución sin capturas}
 
