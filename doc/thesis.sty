@@ -17,6 +17,8 @@
 
 \usepackage{abraces}    % \aunderbrace y \aoverbrace
 
+\usepackage{listings}
+
 % Colores 
 % https://es.overleaf.com/learn/latex/Using_colors_in_LaTeX
 \usepackage[dvipsnames]{xcolor} % \textcolor
@@ -160,6 +162,32 @@
 %% Juicios
 \newcommand{\judg}[2]{#1 \vdash #2}
 \newcommand{\judG}{\vdash}
+
+%% PPA
+\lstdefinelanguage{PPA}{
+    keywords={theorem, axiom, proof, end, suppose, thus, hence, have, then, by,
+    equivalently, claim, cases, case, take, st, consider, let},
+    morekeywords={true, false, exists, forall, &, |}
+    backgroundcolor=\color{gray!10},
+    basicstyle=\small,
+    sensitive=true,
+    morecomment=[l]{//},
+    morecomment=[s]{/*}{*/},
+    morestring=[b]",
+    extendedchars=true,
+    literate={á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1,
+    numberstyle=\footnotesize,
+    numbers=left,
+}
+
+\newcommand{\cmdLet}{\texttt{let}}
+\newcommand{\cmdSuppose}{\texttt{suppose}}
+\newcommand{\cmdClaim}{\texttt{claim}}
+\newcommand{\cmdHave}{\texttt{have}}
+\newcommand{\cmdBy}{\texttt{by}}
+\newcommand{\cmdThus}{\texttt{thus}}
+\newcommand{\cmdHence}{\texttt{hence}}
+\newcommand{\kwForall}{\texttt{forall}}
 
 %% Friedman
 \newcommand{\someProof}{\Pi}

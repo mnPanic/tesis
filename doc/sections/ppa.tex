@@ -1,9 +1,183 @@
 PPA (\textit{Pani's Proof Assistant}) se construye sobre las fundaciones de
-deducción natural. Es un proof assistant que permite escribir de una forma
-práctica demostraciones de cualquier teoría de lógica clásica de primer órden.
-Veamos un ejemplo
+deducción natural. Es un \textit{proof assistant} que permite escribir de una
+forma práctica demostraciones de cualquier teoría de lógica clásica de primer
+órden. Veamos un ejemplo, representamos el mismo de alumnos del
+\fullref{nd:ex:exam} pero esta vez en primer órden y con un poco más de sofisticación. Iremos parte por parte.
 
-\todo{Ejemplo. Capaz puede ser uno que ya vimos en natural deduction para que sea más fácil la traducción, pero los interesantes tienen foralls}
+
+La primer parte de todo programa en PPA es definir los axiomas de la
+\textit{teoría de primer órden} con la que se está trabajando. Como no se
+chequean tipos, no es necesario definir explícitamente los símbolos de
+predicados y de función. Pero se agregan a modo informativo como un comentario.
+Son fórmulas que son siempre consideradas como válidas. Definimos los siguientes,
+\begin{itemize}
+    \item \texttt{reprueba\_recu\_parcial\_recursa}: Si un alumno reprueba el
+    parcial y el recuperatorio de una materia, la recursa.
+    \item \texttt{reprobo\_rinde}: Si un alumno reprobó un examen, es porque lo
+    rindió.
+    \item \texttt{rinde\_recu\_reprobo\_parcial}: Si un alumno rinde el recu de
+    un parcial, es porque reprobó la primer instancia.
+    \item \texttt{falta\_reprueba}: Si un alumno falta a un exámen, lo reprueba.
+\end{itemize}
+
+\begin{lstlisting}[language=PPA]
+/* Teoría de alumnos y exámenes
+
+Predicados
+    - reprueba(A, P): El alumno A reprueba el parcial P
+    - recursa(A, M): El alumno A recursa la materia M
+
+Funciones
+    - parcial(M): El parcial de una materia
+    - recu(P): El recuperatorio de un parcial
+*/
+
+axiom reprueba_recu_parcial_recursa: forall A. forall M.
+    (reprueba(A, parcial(M)) & reprueba(A, recu(parcial(M))))
+        -> recursa(A, M)
+
+axiom reprobo_rinde: forall A. forall P.
+        reprueba(A, P) -> rinde(A, P)
+
+axiom rinde_recu_reprobo_parcial: forall A. forall P.
+    rinde(A, recu(P)) -> reprueba(A, P)
+
+axiom falta_reprueba: forall A. forall P.
+    falta(A, P) -> reprueba(A, P)
+\end{lstlisting}
+
+En base a eso demostramos dos teoremas. El primero,
+\texttt{reprueba\_recu\_recursa}, nos permite concluir que un alumno recursa
+solo a partir de que reprueba el recuperatorio. Esto es porque a partir de esto,
+con el resto de los axiomas, podemos deducir que también reprobó el parcial: si
+reprueba el recuperatorio es porque lo rindió, y si rindió el recuperatorio, es
+porque reprobó el parcial.
+
+\begin{figure}[H]
+\begin{lstlisting}[language=PPA]
+theorem reprueba_recu_recursa:
+    forall A. forall M.
+        reprueba(A, recu(parcial(M))) -> recursa(A, M)
+proof
+    let A
+    let M
+    suppose reprueba_recu: reprueba(A, recu(parcial(M)))
+
+    claim reprueba_p: reprueba(A, parcial(M))
+    proof
+        have rinde_recu: rinde(A, recu(parcial(M)))
+            by reprueba_recu, reprobo_rinde
+
+        thus reprueba(A, parcial(M))
+            by rinde_recu, rinde_recu_reprobo_parcial
+    end
+
+    hence recursa(A, M)
+        by reprueba_recu,
+            reprueba_p,
+            reprueba_recu_parcial_recursa
+end
+\end{lstlisting}
+\end{figure}
+
+Para demostrar un teorema, tenemos que reducir su \textit{tesis} usando
+\textit{proof steps}. Una demostración es correcta si todos los pasos son
+lógicamente ciertos, y luego de ejecutar todos los pasos, la tesis se reduce por completo.
+
+\begin{itemize}
+    \item \cmdLet{} permite demostrar un \kwForall{}, asignando un nombre
+    a la variable general, y \textit{reduce} la tesis a su fórmula.
+    \item \cmdSuppose{} permite demostrar una implicación. Agrega como
+    hipótesis al contexto el antecedente, permitiendo nombrarlo, y reduce la
+    tesis al consecuente.
+    \item \cmdClaim{} permite agregar una sub-demostración, cuya fórmula se
+    agrega como hipótesis.
+    \item \cmdHave{} agrega una hipótesis sin reducir la tesis.
+    \item \cmdBy{} es el mecanismo principal de demostración. Permite deducir
+    fórmulas a partir de otras. Es completo para lógica proposicional, y
+    heurístico para primer órden. Unifica las variables de los \kwForall{}.
+    \item \cmdThus{} permite reducir parte o la totalidad de la tesis
+    \item \cmdHence{} es igual a thus, pero incluye implícitamente la
+    hipótesis anterior a las justificaciones del \cmdBy{}.
+\end{itemize}
+
+Finalmente, a partir del teorema anterior y el axioma \texttt{falta\_reprueba}
+podemos demostrar que si un alumno falta a un recuperatorio, recursa la materia.
+
+\begin{figure}[H]
+\begin{lstlisting}[language=PPA]
+theorem falta_recu_recursa:
+    forall A. forall M.
+        falta(A, recu(parcial(M))) -> recursa(A, M)
+proof
+    let A'
+    let M'
+
+    suppose falta_recu: falta(A', recu(parcial(M')))
+
+    have reprueba_recu: reprueba(A', recu(parcial(M')))
+        by falta_recu, falta_reprueba
+
+    hence recursa(A', M') by reprueba_recu_recursa
+end
+\end{lstlisting}
+\end{figure}
+
+\begin{figure}[H]
+\begin{lstlisting}[language=PPA]
+axiom reprueba_recu_parcial_recursa: forall A. forall M.
+    (reprueba(A, parcial(M)) & reprueba(A, recu(parcial(M))))
+        -> recursa(A, M)
+
+axiom rinde_recu_reprobo_parcial: forall A. forall P.
+    rinde(A, recu(P)) -> reprueba(A, P)
+
+axiom reprobo_rinde: forall A. forall P.
+    reprueba(A, P) -> rinde(A, P)
+
+axiom falta_reprueba: forall A. forall P.
+    falta(A, P) -> reprueba(A, P)
+
+theorem reprueba_recu_recursa:
+    forall A. forall M.
+        reprueba(A, recu(parcial(M))) -> recursa(A, M)
+proof
+    let A
+    let M
+    suppose reprueba_recu: reprueba(A, recu(parcial(M)))
+
+    claim reprueba_p: reprueba(A, parcial(M))
+    proof
+        have rinde_recu: rinde(A, recu(parcial(M)))
+            by reprueba_recu, reprobo_rinde
+
+        hence reprueba(A, parcial(M))
+            by rinde_recu_reprobo_parcial        
+    end
+
+    hence recursa(A, M)
+        by reprueba_recu,
+            reprueba_p,
+            reprueba_recu_parcial_recursa
+end
+
+theorem falta_recu_recursa:
+    forall A. forall M.
+        falta(A, recu(parcial(M))) -> recursa(A, M)
+proof
+    let A'
+    let M'
+
+    suppose falta_recu: falta(A', recu(parcial(M')))
+
+    have reprueba_recu: reprueba(A', recu(parcial(M')))
+        by falta_recu, falta_reprueba
+
+    hence recursa(A', M') by reprueba_recu_recursa
+end
+\end{lstlisting}
+    \caption{Programa de ejemplo completo en PPA. Demostraciones de alumnos y parciales.}
+\end{figure}
 
 \begin{itemize}
     \item Interfaz de PPA. Acá tienen que quedar claras todas las intuiciones
