@@ -27,6 +27,7 @@ import Debug.Trace (trace)
     and         { Token _ TokenAnd }
     or          { Token _ TokenOr }
     imp         { Token _ TokenImp }
+    iff         { Token _ TokenIff }
     not         { Token _ TokenNot }
     true        { Token _ TokenTrue }
     false       { Token _ TokenFalse }
@@ -60,7 +61,7 @@ import Debug.Trace (trace)
     let                 { Token _ TokenLet }       
 
 %right exists forall dot
-%right imp
+%right imp iff
 %left and or
 %nonassoc not
 %%
@@ -124,6 +125,7 @@ Form    : id TermArgs               { FPred $1 $2 }
         | Form and Form             { FAnd $1 $3 }
         | Form or Form              { FOr $1 $3 }
         | Form imp Form             { FImp $1 $3 }
+        | Form iff Form             { FAnd (FImp $1 $3) (FImp $3 $1) }
         | not Form                  { FNot $2 }
         | exists var dot Form       { FExists $2 $4 }
         | forall var dot Form       { FForall $2 $4 }

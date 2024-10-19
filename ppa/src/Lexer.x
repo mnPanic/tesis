@@ -32,6 +32,7 @@ tokens :-
     true            { literal TokenTrue }
     false           { literal TokenFalse }
     \-\>            { literal TokenImp }
+    \<\-\>          { literal TokenIff }
     \~              { literal TokenNot }
     exists          { literal TokenExists }
     forall          { literal TokenForall }
@@ -94,6 +95,7 @@ data TokenClass
     | TokenTrue
     | TokenFalse
     | TokenImp
+    | TokenIff
     | TokenExists
     | TokenForall
     | TokenDot
@@ -133,6 +135,7 @@ unLex TokenOr = "|"
 unLex TokenTrue = "true"
 unLex TokenFalse = "false"
 unLex TokenImp = "->"
+unLex TokenIff = "<->"
 unLex TokenNot = "~"
 unLex TokenLet = "let"
 unLex TokenExists = "exists"

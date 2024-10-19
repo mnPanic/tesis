@@ -66,8 +66,9 @@ import Test.HUnit (
  )
 
 main :: IO Counts
--- main = do runTestTT testCertifier
-main = runTestWithNames "" testCertifier
+main = do runTestTT testCertifier
+
+-- main = runTestWithNames "" testCertifier
 
 runTestWithNames :: String -> Test -> IO Counts
 runTestWithNames prefix (TestLabel label test) = do
@@ -497,6 +498,12 @@ testCommands =
             proof
                 // Resuelve solo el solver, sin by
                 thus ~(a | b) -> ~a & ~b
+            end
+
+            theorem "taut iff" : ~(a | b) <-> ~a & ~b
+            proof
+                // Resuelve solo el solver, sin by
+                thus ~(a | b) <-> ~a & ~b
             end
 
             // Demo alternativa pero con have + hence
