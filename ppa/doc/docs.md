@@ -112,7 +112,7 @@ Puede usarse de dos formas principales
   end
   ```
 
-- `have <form> by <justification>`: Es como `thus` pero para afirmaciones
+- `have <name>: <form> by <justification>`: Es como `thus` pero para afirmaciones
   *auxiliares* que no son parte de la tesis. No reduce la tesis.
 
   Por ejemplo,

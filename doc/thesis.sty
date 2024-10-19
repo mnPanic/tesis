@@ -19,6 +19,7 @@
 
 \usepackage{listings}
 
+
 % Colores 
 % https://es.overleaf.com/learn/latex/Using_colors_in_LaTeX
 \usepackage[dvipsnames]{xcolor} % \textcolor
@@ -180,14 +181,15 @@
     numbers=left,
 }
 
-\newcommand{\cmdLet}{\texttt{let}}
-\newcommand{\cmdSuppose}{\texttt{suppose}}
-\newcommand{\cmdClaim}{\texttt{claim}}
-\newcommand{\cmdHave}{\texttt{have}}
-\newcommand{\cmdBy}{\texttt{by}}
-\newcommand{\cmdThus}{\texttt{thus}}
-\newcommand{\cmdHence}{\texttt{hence}}
-\newcommand{\kwForall}{\texttt{forall}}
+\lstset{language=PPA}
+
+\newcommand{\cmdLet}{\lstinline{let}}
+\newcommand{\cmdSuppose}{\lstinline{suppose}}
+\newcommand{\cmdClaim}{\lstinline{claim}}
+\newcommand{\cmdHave}{\lstinline{have}}
+\newcommand{\cmdBy}{\lstinline{by}}
+\newcommand{\cmdThus}{\lstinline{thus}}
+\newcommand{\cmdHence}{\lstinline{hence}}
 
 %% Friedman
 \newcommand{\someProof}{\Pi}

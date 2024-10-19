@@ -1,184 +1,3 @@
-PPA (\textit{Pani's Proof Assistant}) se construye sobre las fundaciones de
-deducción natural. Es un \textit{proof assistant} que permite escribir de una
-forma práctica demostraciones de cualquier teoría de lógica clásica de primer
-órden. Veamos un ejemplo, representamos el mismo de alumnos del
-\fullref{nd:ex:exam} pero esta vez en primer órden y con un poco más de sofisticación. Iremos parte por parte.
-
-
-La primer parte de todo programa en PPA es definir los axiomas de la
-\textit{teoría de primer órden} con la que se está trabajando. Como no se
-chequean tipos, no es necesario definir explícitamente los símbolos de
-predicados y de función. Pero se agregan a modo informativo como un comentario.
-Son fórmulas que son siempre consideradas como válidas. Definimos los siguientes,
-\begin{itemize}
-    \item \texttt{reprueba\_recu\_parcial\_recursa}: Si un alumno reprueba el
-    parcial y el recuperatorio de una materia, la recursa.
-    \item \texttt{reprobo\_rinde}: Si un alumno reprobó un examen, es porque lo
-    rindió.
-    \item \texttt{rinde\_recu\_reprobo\_parcial}: Si un alumno rinde el recu de
-    un parcial, es porque reprobó la primer instancia.
-    \item \texttt{falta\_reprueba}: Si un alumno falta a un exámen, lo reprueba.
-\end{itemize}
-
-\begin{lstlisting}[language=PPA]
-/* Teoría de alumnos y exámenes
-
-Predicados
-    - reprueba(A, P): El alumno A reprueba el parcial P
-    - recursa(A, M): El alumno A recursa la materia M
-
-Funciones
-    - parcial(M): El parcial de una materia
-    - recu(P): El recuperatorio de un parcial
-*/
-
-axiom reprueba_recu_parcial_recursa: forall A. forall M.
-    (reprueba(A, parcial(M)) & reprueba(A, recu(parcial(M))))
-        -> recursa(A, M)
-
-axiom reprobo_rinde: forall A. forall P.
-        reprueba(A, P) -> rinde(A, P)
-
-axiom rinde_recu_reprobo_parcial: forall A. forall P.
-    rinde(A, recu(P)) -> reprueba(A, P)
-
-axiom falta_reprueba: forall A. forall P.
-    falta(A, P) -> reprueba(A, P)
-\end{lstlisting}
-
-En base a eso demostramos dos teoremas. El primero,
-\texttt{reprueba\_recu\_recursa}, nos permite concluir que un alumno recursa
-solo a partir de que reprueba el recuperatorio. Esto es porque a partir de esto,
-con el resto de los axiomas, podemos deducir que también reprobó el parcial: si
-reprueba el recuperatorio es porque lo rindió, y si rindió el recuperatorio, es
-porque reprobó el parcial.
-
-\begin{figure}[H]
-\begin{lstlisting}[language=PPA]
-theorem reprueba_recu_recursa:
-    forall A. forall M.
-        reprueba(A, recu(parcial(M))) -> recursa(A, M)
-proof
-    let A
-    let M
-    suppose reprueba_recu: reprueba(A, recu(parcial(M)))
-
-    claim reprueba_p: reprueba(A, parcial(M))
-    proof
-        have rinde_recu: rinde(A, recu(parcial(M)))
-            by reprueba_recu, reprobo_rinde
-
-        thus reprueba(A, parcial(M))
-            by rinde_recu, rinde_recu_reprobo_parcial
-    end
-
-    hence recursa(A, M)
-        by reprueba_recu,
-            reprueba_p,
-            reprueba_recu_parcial_recursa
-end
-\end{lstlisting}
-\end{figure}
-
-Para demostrar un teorema, tenemos que reducir su \textit{tesis} usando
-\textit{proof steps}. Una demostración es correcta si todos los pasos son
-lógicamente ciertos, y luego de ejecutar todos los pasos, la tesis se reduce por completo.
-
-\begin{itemize}
-    \item \cmdLet{} permite demostrar un \kwForall{}, asignando un nombre
-    a la variable general, y \textit{reduce} la tesis a su fórmula.
-    \item \cmdSuppose{} permite demostrar una implicación. Agrega como
-    hipótesis al contexto el antecedente, permitiendo nombrarlo, y reduce la
-    tesis al consecuente.
-    \item \cmdClaim{} permite agregar una sub-demostración, cuya fórmula se
-    agrega como hipótesis.
-    \item \cmdHave{} agrega una hipótesis sin reducir la tesis.
-    \item \cmdBy{} es el mecanismo principal de demostración. Permite deducir
-    fórmulas a partir de otras. Es completo para lógica proposicional, y
-    heurístico para primer órden. Unifica las variables de los \kwForall{}.
-    \item \cmdThus{} permite reducir parte o la totalidad de la tesis
-    \item \cmdHence{} es igual a thus, pero incluye implícitamente la
-    hipótesis anterior a las justificaciones del \cmdBy{}.
-\end{itemize}
-
-Finalmente, a partir del teorema anterior y el axioma \texttt{falta\_reprueba}
-podemos demostrar que si un alumno falta a un recuperatorio, recursa la materia.
-
-\begin{figure}[H]
-\begin{lstlisting}[language=PPA]
-theorem falta_recu_recursa:
-    forall A. forall M.
-        falta(A, recu(parcial(M))) -> recursa(A, M)
-proof
-    let A'
-    let M'
-
-    suppose falta_recu: falta(A', recu(parcial(M')))
-
-    have reprueba_recu: reprueba(A', recu(parcial(M')))
-        by falta_recu, falta_reprueba
-
-    hence recursa(A', M') by reprueba_recu_recursa
-end
-\end{lstlisting}
-\end{figure}
-
-\begin{figure}[H]
-\begin{lstlisting}[language=PPA]
-axiom reprueba_recu_parcial_recursa: forall A. forall M.
-    (reprueba(A, parcial(M)) & reprueba(A, recu(parcial(M))))
-        -> recursa(A, M)
-
-axiom rinde_recu_reprobo_parcial: forall A. forall P.
-    rinde(A, recu(P)) -> reprueba(A, P)
-
-axiom reprobo_rinde: forall A. forall P.
-    reprueba(A, P) -> rinde(A, P)
-
-axiom falta_reprueba: forall A. forall P.
-    falta(A, P) -> reprueba(A, P)
-
-theorem reprueba_recu_recursa:
-    forall A. forall M.
-        reprueba(A, recu(parcial(M))) -> recursa(A, M)
-proof
-    let A
-    let M
-    suppose reprueba_recu: reprueba(A, recu(parcial(M)))
-
-    claim reprueba_p: reprueba(A, parcial(M))
-    proof
-        have rinde_recu: rinde(A, recu(parcial(M)))
-            by reprueba_recu, reprobo_rinde
-
-        hence reprueba(A, parcial(M))
-            by rinde_recu_reprobo_parcial        
-    end
-
-    hence recursa(A, M)
-        by reprueba_recu,
-            reprueba_p,
-            reprueba_recu_parcial_recursa
-end
-
-theorem falta_recu_recursa:
-    forall A. forall M.
-        falta(A, recu(parcial(M))) -> recursa(A, M)
-proof
-    let A'
-    let M'
-
-    suppose falta_recu: falta(A', recu(parcial(M')))
-
-    have reprueba_recu: reprueba(A', recu(parcial(M')))
-        by falta_recu, falta_reprueba
-
-    hence recursa(A', M') by reprueba_recu_recursa
-end
-\end{lstlisting}
-    \caption{Programa de ejemplo completo en PPA. Demostraciones de alumnos y parciales.}
-\end{figure}
-
 \begin{itemize}
     \item Interfaz de PPA. Acá tienen que quedar claras todas las intuiciones
     desde el punto de vista de un usuario. Mencionar que es un buen momento para
@@ -213,7 +32,227 @@ end
     \end{itemize}
 \end{itemize}
 
+PPA (\textit{Pani's Proof Assistant}) se construye sobre las fundaciones de
+deducción natural. Es un \textit{proof assistant} que permite escribir de una
+forma práctica demostraciones de cualquier teoría de lógica clásica de primer
+órden. Para introducir el lenguaje veamos un ejemplo, luego se detalla la
+interfaz y finalmente veremos los detalles de implementación. Representamos el
+mismo de alumnos del \fullref{nd:ex:exam} pero esta vez en primer órden y con un
+poco más de sofisticación.
+
+\begin{figure}[H]
+    \lstinputlisting[firstline=12,lastline=61,language=PPA]{listings/alumnos.ppa}
+    \caption{Programa de ejemplo completo en PPA. Demostraciones de alumnos y parciales.}
+    \label{ppa:prog:alumnos}
+\end{figure}
+
+
+La primer parte de todo programa en PPA es definir los axiomas de la
+\textit{teoría de primer órden} con la que se está trabajando. Como no se
+chequean tipos, no es necesario definir explícitamente los símbolos de
+predicados y de función. Pero se agregan a modo informativo como un comentario.
+Son fórmulas que son siempre consideradas como válidas. Definimos los siguientes,
+\begin{itemize}
+    \item \lstinline{reprueba_recu_parcial_recursa}: Si un alumno reprueba el
+    parcial y el recuperatorio de una materia, la recursa.
+    \item \lstinline{reprobo_rinde}: Si un alumno reprobó un examen, es porque lo
+    rindió.
+    \item \lstinline{rinde_recu_reprobo_parcial}: Si un alumno rinde el recu de
+    un parcial, es porque reprobó la primer instancia.
+    \item \lstinline{falta_reprueba}: Si un alumno falta a un exámen, lo reprueba.
+\end{itemize}
+
+\lstinputlisting[firstline=1,lastline=23]{listings/alumnos.ppa}
+
+En base a eso demostramos dos teoremas. El primero,
+\lstinline{reprueba_recu_recursa}, nos permite concluir que un alumno recursa
+solo a partir de que reprueba el recuperatorio. Esto es porque a partir de esto,
+con el resto de los axiomas, podemos deducir que también reprobó el parcial: si
+reprueba el recuperatorio es porque lo rindió, y si rindió el recuperatorio, es
+porque reprobó el parcial.
+
+\begin{figure}[H]
+    \lstinputlisting[firstline=25,lastline=46]{listings/alumnos.ppa}
+\end{figure}
+
+Para demostrar un teorema, tenemos que agotar su \textit{tesis} reduciéndola
+sucesivamente con \textit{proof steps}. Una demostración es correcta si todos
+los pasos son lógicamente ciertos, y luego de ejecutar todos los pasos, la tesis
+se reduce por completo.
+
+\begin{itemize}
+    \item \cmdLet{} permite demostrar un \lstinline{forall}, asignando un nombre
+    a la variable general, y \textit{reduce} la tesis a su fórmula.
+    \item \cmdSuppose{} permite demostrar una implicación. Agrega como
+    hipótesis al contexto el antecedente, permitiendo nombrarlo, y reduce la
+    tesis al consecuente.
+    \item \cmdClaim{} permite agregar una sub-demostración, cuya fórmula se
+    agrega como hipótesis.
+    \item \cmdHave{} agrega una hipótesis sin reducir la tesis.
+    \item \cmdBy{} es el mecanismo principal de demostración. Permite deducir
+    fórmulas a partir de otras. Es completo para lógica proposicional, y
+    heurístico para primer órden. Unifica las variables de los \lstinline{forall}.
+    \item \cmdThus{} permite reducir parte o la totalidad de la tesis
+    \item \cmdHence{} es igual a thus, pero incluye implícitamente la
+    hipótesis anterior a las justificaciones del \cmdBy{}.
+\end{itemize}
+
+Finalmente, a partir del teorema anterior y el axioma \lstinline{falta_reprueba}
+podemos demostrar que si un alumno falta a un recuperatorio, recursa la materia.
+
+\begin{figure}[H]
+    \lstinputlisting[firstline=48,lastline=61]{listings/alumnos.ppa}
+\end{figure}
+
+Al ejecutarlo con \texttt{ppa}, se \textit{certifica} la demostración, generando
+un certificado de deducción natural, y luego se chequea que sea correcto. Si se
+escribió una demostración que no es lógicamente válida, el certificador reporta
+el error. No debería fallar nunca el chequeo sobre el certificado.
+
 \section{Interfaz}
+
+PPA es un lenguaje de programación que permite escribir demostraciones de
+cualquier teoría de lógica de primer órden. Está inspirado en el
+\textit{mathematical vernacular} introducido por Freek Wiedijk en
+\cite{freek-mv}. En esta sección nos concentramos en la interfaz de usuario, sin
+entrar en detalle en cómo está implementada. Será explicado más adelante.
+
+Un programa de PPA consiste en una lista de \textbf{declaraciones}: axiomas y
+teoremas, que se leen en órden el inicio hasta el final.
+
+\begin{itemize}
+    \item Los axiomas se asumen válidos, se usan para modelar la \textit{teoría
+    de primer órden} sobre la cual hacer demostraciones
+
+    \begin{lstlisting}
+axiom <name> : <form>
+    \end{lstlisting}
+
+    \item Los teoremas deben ser demostrados, y se pueden citar todas las
+    hipótesis previas, que consideran ciertas.
+
+    \begin{lstlisting}
+theorem <name> : <form>
+proof
+    <steps>
+end
+    \end{lstlisting}
+\end{itemize}
+
+Los identificadores se dividen en tres tipos:
+
+\begin{itemize}
+    \item \textbf{Variables} (\texttt{<var>})
+    
+    \verb/(\_|[A-Z])[a-zA-Z0-9\_\-]*(\')*/
+
+    \item \textbf{Identificadores} (\texttt{<id>})
+
+    \verb/[a-zA-Z0-9\_\-\?!#\$\%\*\+\<\>\=\?\@\^]+(\')*/
+
+    \item \textbf{Nombres} (\texttt{<name>}): Pueden ser identificadores, o
+    \textit{strings} arbitrarios encerrados por comillas dobles (\texttt{"..."})
+
+    \verb/\"[^\"]*\"/
+\end{itemize}
+
+Se pueden dejar comentarios de una sola línea (\texttt{//}) o multilínea
+(\texttt{/* ... */})
+
+\subsection{Fórmulas}
+
+Las fórmulas están compuestas por,
+
+\begin{itemize}
+    \item \textbf{Términos}
+    \begin{itemize}
+        \item \textbf{Variables}: \texttt{<var>}. Ejemplos: \lstinline{_x},
+        \lstinline{X}, \lstinline{X'''}, \lstinline{Alumno}.
+        \item \textbf{Funciones}: \texttt{<id>(<term>, ..., <term>)}. Los
+        argumentos son opcionales, pudiendo tener funciones 0-arias
+        (constantes). Ejemplos:  \lstinline{c}, \lstinline{f(_x, c, X)}.
+    \end{itemize}
+    \item \textbf{Predicados}: \texttt{<id>(<term>, ..., <term>)}. Los
+    argumentos son opcionales, pudiendo tener predicados 0-arios (variables
+    proposicionales). Ejemplos: \lstinline{p(c, f(w), X)}, \lstinline{A},
+    \lstinline{<(n, m)}
+    \item \textbf{Conectivos binarios}.
+    \begin{itemize}
+        \item \texttt{<form> \ \& <form>} (conjunción)
+        \item \texttt{<form> \ $\mid$ <form>} (disyunción)
+        \item \texttt{<form> \ ->\ <form>} (implicación)
+    \end{itemize}
+    \item \textbf{Negación} \texttt{$\sim$ <form>}
+    \item \textbf{Cuantificadores}
+    \begin{itemize}
+        \item \texttt{exists <var> . <form>}
+        \item \texttt{forall <var> . <form>}
+    \end{itemize}
+    \item \texttt{true}, \texttt{false}
+    \item \textbf{Paréntesis}: \texttt{( <form>\ )}
+\end{itemize}
+
+
+\subsection{Demostraciones}
+
+Las demostraciones consisten en una lista de \textit{proof steps} o comandos que
+pueden reducir sucesivamente la \textit{tesis} (fórmula a demostrar) hasta
+agotarla por completo. Mapean aproximadamente a reglas de inferencia de
+deducción natural.
+
+\subsubsection{by}
+
+El mecanismo principal de demostración directa o \textit{modus ponens} es el
+\lstinline{by}, que afirma que un hecho es consecuencia de una lista de
+hipótesis (``justificación''). Esto permite eliminar universales e implicaciones. Por detrás hay un
+solver, que es completo para lógica proposicional pero heurístico para primer
+órden (elimina todos los foralls de a lo sumo una hipótesis, no intenta con más
+de una). Exploramos las limitaciones en \todo{ref}.
+
+En general, \texttt{... by <justification>} se interpreta como que \texttt{...}
+es una consecuencia lógica de las fórmulas que corresponden a las hipótesis de
+\texttt{<justification>}, que deben estar declaradas anteriormente. Ya sea por
+axiomas o teoremas, u otros comandos que agreguen hipótesis (como
+\lstinline{suppose}). Puede usarse de dos formas
+principales, \lstinline{thus} y \lstinline{have}
+
+\begin{itemize}
+    \item \texttt{thus <form>\ by <justification>}.
+    
+    Si \texttt{<form>} es \textit{parte} de la tesis (ver
+    \fullref{ppa:sec:and-intro}), y es consecuencia lógica de las
+    justificaciones, lo demuestra automáticamente y lo descarga de la tesis.
+
+    Por ejemplo, para eliminación de implicaciones
+
+    \lstinputlisting{listings/by-imp.ppa}
+
+    Y para eliminación de cuantificadores universales
+
+    \lstinputlisting{listings/by-forall.ppa}
+
+    \item \texttt{have <form>\ by <justification>}.
+    
+    Igual a \lstinline{thus}, pero permite introducir afirmaciones
+    \textit{auxiliares} que no son parte de la tesis, sin reducirla, y las
+    agrega a las hipótesis para usar luego. Por ejemplo, la demostración
+    anterior la hicimos en un solo paso con el \lstinline{thus}, pero podríamos
+    haberla hecho en más de uno con una afirmación auxiliar intermedia.
+
+    \lstinputlisting{listings/by-imp-have.ppa}
+\end{itemize}
+
+Ambas tienen su contraparte con \textit{azúcar sintáctico} que agrega
+automáticamente la hipótesis anterior a la justificación, a la que también se
+puede referir con \texttt{-}.
+
+
+En todos, el \lstinline{by} es opcional. En caso de no especificarlo, debe ser
+una tautología.
+
+\subsubsection{Descarga de conjunciones}\label{ppa:sec:and-intro}
+
+\todo{..}
 
 \section{Compilador}
 
