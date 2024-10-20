@@ -282,9 +282,9 @@ a cada conjunción se le llama **cláusula**
   Ejemplo:
 
   ```text
-  theorem "ejemplo" : ¬(a | b)
+  theorem "ejemplo" : ~(a | b)
   proof
-    equivalently (¬a & ¬b)
+    equivalently (~a & ~b)
     ...
   end
   ```
@@ -294,13 +294,13 @@ a cada conjunción se le llama **cláusula**
   Ejemplo:
 
   ```text
-  theorem "ejemplo" : ¬(a | b)
+  theorem "ejemplo" : ~(a | b)
   proof
-    claim "c" : (¬a & ¬b)
+    claim "c" : (~a & ~b)
     proof
       ...
     end
-    thus ¬(a | b) by "c"
+    thus ~(a | b) by "c"
   end
   ```
 

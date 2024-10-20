@@ -244,9 +244,25 @@ principales, \lstinline{thus} y \lstinline{have}
 
 Ambas tienen su contraparte con \textit{azúcar sintáctico} que agrega
 automáticamente la hipótesis anterior a la justificación, a la que también se
-puede referir con \texttt{-}. Por ejemplo, 
+puede referir con \texttt{-}.
 
-\lstinputlisting{listings/by-imp-then.ppa}
+\begin{table}[H]
+    \centering
+\begin{tabular}{l|l|l}
+Comando             & Alternativo             & ¿Reduce la tesis? \\
+\hline
+\lstinline|thus|    & \lstinline|hence|       & Si               \\
+\lstinline|have|    & \lstinline|then|        & No              
+\end{tabular}
+\end{table}
+
+Por ejemplo, 
+\begin{multicols}{2}
+    \lstinputlisting[firstline=1, lastline=9]{listings/by-imp-then.ppa}
+    \vfill\null
+    \columnbreak
+    \lstinputlisting[firstline=11, lastline=23]{listings/by-imp-then.ppa}
+\end{multicols}
 
 
 En todos, el \lstinline{by} es opcional. En caso de no especificarlo, debe ser
@@ -254,12 +270,61 @@ una tautología.
 
 \lstinputlisting{listings/by-taut.ppa}
 
-\todo{Tablita.}
+\subsubsection{Comandos y reglas de inferencia}
 
+Para muchos comandos, tienen una correspondencia casi directa con las reglas de
+inferencia
+\begin{table}[H]
+    \centering
+    \begin{tabular}{l|l}
+    Regla & Comando \\
+    \hline
+    \ruleAndI  & \lstinline|thus|   \\
+    \ruleAndEOne  & then   
+    \end{tabular}
+\end{table}
 
 \subsubsection{Descarga de conjunciones}\label{ppa:sec:and-intro}
 
-\todo{..}
+Si la tesis es una conjunción, se puede probar solo una parte de ella y se
+reduce al resto.
+
+\lstinputlisting[caption=Descarga de conjunción simple]{listings/discharge-simple.ppa}
+
+Esto puede ser prácticamente en cualquier órden.
+
+\begin{figure}
+    \centering
+    \caption{Descarga de conjunción compleja}
+\begin{tabular}{c}
+\lstinputlisting{listings/discharge-complex.ppa}
+\end{tabular}
+\end{figure}
+
+
+\subsubsection{Otros comandos}
+
+\begin{itemize}
+    \item \lstinline{equivalently}: Permite reducir la tesis a una fórmula
+    equivalente. Útil para usar descarga de conjunciones.
+    
+    \lstinputlisting{listings/equivalently.ppa}
+
+    \item \lstinline{claim}: Permite demostrar una afirmación auxiliar. Útil
+    para ordenar las demostraciones sin tener que definir otro teorema. Ejemplo
+    en \fullref{ppa:prog:alumnos}
+
+    \begin{lstlisting}
+theorem t: <form>
+proof
+    claim <name>: <form>
+    proof
+        <proof>
+    end
+end
+    \end{lstlisting}
+\end{itemize}
+
 
 \section{Compilador}
 

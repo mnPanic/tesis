@@ -1,0 +1,9 @@
+axiom a1: ~a
+axiom a2: ~b
+
+theorem "ejemplo" : ~(a | b)
+proof
+    equivalently ~a & ~b
+    thus ~a by a1
+    thus ~b by a2
+end
