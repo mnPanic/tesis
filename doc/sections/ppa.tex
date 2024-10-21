@@ -72,7 +72,7 @@ reprueba el recuperatorio es porque lo rindió, y si rindió el recuperatorio, e
 porque reprobó el parcial.
 
 \begin{figure}[H]
-    \lstinputlisting[firstline=25,lastline=46]{listings/alumnos.ppa}
+    \lstinputlisting[firstnumber=last,firstline=25,lastline=46]{listings/alumnos.ppa}
 \end{figure}
 
 Para demostrar un teorema, tenemos que agotar su \textit{tesis} reduciéndola
@@ -101,7 +101,7 @@ Finalmente, a partir del teorema anterior y el axioma \lstinline{falta_reprueba}
 podemos demostrar que si un alumno falta a un recuperatorio, recursa la materia.
 
 \begin{figure}[H]
-    \lstinputlisting[firstline=48,lastline=61]{listings/alumnos.ppa}
+    \lstinputlisting[firstnumber=last,firstline=48,lastline=61]{listings/alumnos.ppa}
 \end{figure}
 
 Al ejecutarlo con \texttt{ppa}, se \textit{certifica} la demostración, generando
@@ -200,6 +200,12 @@ pueden reducir sucesivamente la \textit{tesis} (fórmula a demostrar) hasta
 agotarla por completo. Mapean aproximadamente a reglas de inferencia de
 deducción natural.
 
+\subsubsection{Contexto}
+
+Las demostraciones llevan asociado un \textit{contexto} con todas las hipótesis
+que fueron asumidas (como los axiomas), o demostradas: tanto teoremas anteriores
+como sub-teoremas y otros comandos que agregan hipótesis a él.
+
 \subsubsection{by}
 
 El mecanismo principal de demostración directa o \textit{modus ponens} es el
@@ -211,10 +217,10 @@ de una). Exploramos las limitaciones en \todo{ref}.
 
 En general, \texttt{... by <justification>} se interpreta como que \texttt{...}
 es una consecuencia lógica de las fórmulas que corresponden a las hipótesis de
-\texttt{<justification>}, que deben estar declaradas anteriormente. Ya sea por
-axiomas o teoremas, u otros comandos que agreguen hipótesis (como
-\lstinline{suppose}). Puede usarse de dos formas
-principales, \lstinline{thus} y \lstinline{have}
+\texttt{<justification>}, que deben estar declaradas anteriormente y ser parte
+del contexto. Ya sea por axiomas o teoremas, u otros comandos que agreguen
+hipótesis (como \lstinline{suppose}). Puede usarse de dos formas principales,
+\lstinline{thus} y \lstinline{have}
 
 \begin{itemize}
     \item \texttt{thus <form>\ by <justification>}.
@@ -258,10 +264,17 @@ Comando             & Alternativo             & ¿Reduce la tesis? \\
 
 Por ejemplo, 
 \begin{multicols}{2}
-    \lstinputlisting[firstline=1, lastline=9]{listings/by-imp-then.ppa}
+    \lstinputlisting[
+        firstline=1,
+        lastline=9,
+    ]{listings/by-imp-then.ppa}
     \vfill\null
     \columnbreak
-    \lstinputlisting[firstline=11, lastline=23]{listings/by-imp-then.ppa}
+    \lstinputlisting[
+        firstline=11,
+        lastline=23,
+        firstnumber=last
+    ]{listings/by-imp-then.ppa}
 \end{multicols}
 
 
@@ -346,9 +359,35 @@ end
     incluso si la hipótesis fuera \lstinline{~((~a | ~b) & (~c | ~a))}, pues es
     equivalente a \lstinline{(a & b) | (c & a)}
 
-    \item\label{ppa:cmd:take} \lstinline{take} (\ruleExistsI) \todo{completar}
-    \item\label{ppa:cmd:consider} \lstinline{consider} (\ruleExistsE) \todo{completar}
-    \item \lstinline{let} (\ruleForallI) \todo{completar}
+    \item \lstinline{take} (\ruleExistsI)
+    
+    Introduce un existencial instanciando su variable y reemplazándola por un
+    término. Si la tesis es \lstinline{exists X . p(X)}, luego de
+    \lstinline{take X := a}, se reduce a \lstinline{p(a)}.
+
+    \item \lstinline{consider} (\ruleExistsE)
+    
+    Permite razonar sobre una variable que cumpla con un existencial. Si se
+    puede justificar \lstinline{exists X. p(X)}, permite razonar sobre
+    \lstinline{X}.
+
+    El comando \lstinline{consider X st h: p by ...} agrega \lstinline{p} como
+    hipótesis al contexto para el resto de la demostración. El \lstinline{by}
+    debe justificar \lstinline{exists X. p(X)}.
+
+    Valida que \lstinline{X} no esté libre en la tesis o el contexto.
+
+    También es posible usar una variable y fórmula $\alpha$-equivalente, por
+    ejemplo si podemos justificar \lstinline{exists X. p(X)}, podemos usarlo
+    para \lstinline{consider Y st h: p(Y) by ...}
+
+    \item \lstinline{let} (\ruleForallI)
+    
+    Permite demostrar un cuantificador universal. Si se tiene
+    \lstinline{forall X. p(X)}, luego de \lstinline{let X} la tesis se reduce a
+    \lstinline{p(X)} con un \lstinline{X} genérico. Puede ser el mismo nombre de
+    variable o uno diferente.
+
 \end{itemize}
 
 \subsubsection{Descarga de conjunciones}\label{ppa:sec:and-intro}
@@ -356,16 +395,22 @@ end
 Si la tesis es una conjunción, se puede probar solo una parte de ella y se
 reduce al resto.
 
-\lstinputlisting[caption=Descarga de conjunción simple]{listings/discharge-simple.ppa}
+\begin{figure}[H]
+    \centering
+    \caption{Descarga de conjunción simple}
+    \begin{tabular}{c}
+        \lstinputlisting{listings/discharge-simple.ppa}
+    \end{tabular}
+\end{figure}
 
 Esto puede ser prácticamente en cualquier órden.
 
-\begin{figure}
+\begin{figure}[H]
     \centering
     \caption{Descarga de conjunción compleja}
-\begin{tabular}{c}
-\lstinputlisting{listings/discharge-complex.ppa}
-\end{tabular}
+    \begin{tabular}{c}
+    \lstinputlisting{listings/discharge-complex.ppa}
+    \end{tabular}
 \end{figure}
 
 
