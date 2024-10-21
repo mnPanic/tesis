@@ -204,7 +204,7 @@ deducción natural.
 
 El mecanismo principal de demostración directa o \textit{modus ponens} es el
 \lstinline{by}, que afirma que un hecho es consecuencia de una lista de
-hipótesis (``justificación''). Esto permite eliminar universales e implicaciones. Por detrás hay un
+hipótesis (su ``justificación''). Esto permite eliminar universales e implicaciones. Por detrás hay un
 solver, que es completo para lógica proposicional pero heurístico para primer
 órden (elimina todos los foralls de a lo sumo una hipótesis, no intenta con más
 de una). Exploramos las limitaciones en \todo{ref}.
@@ -272,17 +272,84 @@ una tautología.
 
 \subsubsection{Comandos y reglas de inferencia}
 
-Para muchos comandos, tienen una correspondencia casi directa con las reglas de
-inferencia
+
+Muchas reglas de inferencia de deducción natural (\ref{nd:inference-rules})
+tienen una correspondencia directa con comandos. Como se puede ver en \fullref{ppa:tab:inference-rules-to-commands}, la mayor
+parte del trabajo engorroso y bajo nivel de escribir demostraciones en deducción
+natural se lleva a un más alto nivel con el uso del \lstinline{by}.
 \begin{table}[H]
     \centering
-    \begin{tabular}{l|l}
+    \begin{tabular}{c|c}
     Regla & Comando \\
     \hline
-    \ruleAndI  & \lstinline|thus|   \\
-    \ruleAndEOne  & then   
+    \ruleExistsI    &   \lstinline|take| \\
+    \ruleExistsE    &   \lstinline|consider| \\
+    \ruleForallI    &   \lstinline|let| \\
+    \ruleForallE    &   \lstinline|by| \\
+    \ruleOrIOne     &   \lstinline|by| \\
+    \ruleOrITwo     &   \lstinline|by| \\
+    \ruleOrE        &   \lstinline|cases| \\
+    \ruleAndI       &   \lstinline|by| \\
+    \ruleAndEOne    &   \lstinline|by| \\
+    \ruleAndETwo    &   \lstinline|by| \\
+    \ruleImpI       &   \lstinline|suppose| \\
+    \ruleImpE       &   \lstinline|by| \\
+    \ruleNotI       &   \lstinline|suppose| \\
+    \ruleNotE       &   \lstinline|by| \\
+    \ruleTrueI      &   \lstinline|by| \\
+    \ruleFalseE     &   \lstinline|by| \\
+    \ruleLEM        &   \lstinline|by| \\
+    \ruleAx         &   \lstinline|by|
     \end{tabular}
+    \caption{Reglas de inferencia y comandos}
+    \label{ppa:tab:inference-rules-to-commands}
 \end{table}
+
+
+\begin{itemize}
+    \item \lstinline{suppose} (\ruleImpI / \ruleNotI)
+    
+    Si la tesis es una implicación $\form \fImp \formTwo$, agrega el antecedente
+    $\form$ como hipótesis con el nombre dado y reduce la tesis al consecuente
+    $\formTwo$. Viendo la negación como una implicación $\fNot \form \equiv
+    \form \fImp \fFalse$, se puede usar para razonar por el absurdo, tomando
+    $\formTwo = \fFalse$.
+
+    \begin{multicols}{2}
+        \lstinputlisting[firstline=1, lastline=7]{listings/suppose.ppa}
+        \vfill\null
+        \columnbreak
+        \lstinputlisting[firstline=9, lastline=15]{listings/suppose.ppa}    
+    \end{multicols}
+    \item \lstinline{cases} (\ruleOrE)
+    
+    Permite razonar por casos. Para cada uno se debe demostrar la tesis en su
+    totalidad por separado.
+
+    \lstinputlisting[firstline=1, lastline=11]{listings/cases.ppa}
+
+    No es necesario que los casos sean exactamente iguales a como están
+    presentados en la hipótesis, solo debe valer que la disyunción de ellos sea
+    consecuencia de ella. Es decir, para poder usar
+
+    \begin{lstlisting}[numbers=none]
+cases by h1, ..., hn
+    case c1
+    ...
+    case cm
+end
+    \end{lstlisting}
+
+    Tiene que valer \lstinline{c1 | ... | cm by h1, ..., hn}.
+    
+    Por lo que en el ejemplo anterior, podríamos haber usado el mismo case
+    incluso si la hipótesis fuera \lstinline{~((~a | ~b) & (~c | ~a))}, pues es
+    equivalente a \lstinline{(a & b) | (c & a)}
+
+    \item\label{ppa:cmd:take} \lstinline{take} (\ruleExistsI) \todo{completar}
+    \item\label{ppa:cmd:consider} \lstinline{consider} (\ruleExistsE) \todo{completar}
+    \item \lstinline{let} (\ruleForallI) \todo{completar}
+\end{itemize}
 
 \subsubsection{Descarga de conjunciones}\label{ppa:sec:and-intro}
 
@@ -314,7 +381,7 @@ Esto puede ser prácticamente en cualquier órden.
     para ordenar las demostraciones sin tener que definir otro teorema. Ejemplo
     en \fullref{ppa:prog:alumnos}
 
-    \begin{lstlisting}
+    \begin{lstlisting}[numbers=none]
 theorem t: <form>
 proof
     claim <name>: <form>

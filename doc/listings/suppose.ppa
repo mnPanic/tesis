@@ -1,0 +1,25 @@
+theorem "suppose":
+    a -> (a -> b) -> b
+proof
+    suppose h1: a
+    suppose h2: a -> b
+    thus b by h1, h2
+end 
+
+theorem "not intro":
+    ~b & (a -> b) -> ~a
+proof
+    suppose h: ~b & (a -> b)
+    suppose a: a
+    hence false by h, a
+end
+
+theorem trueI: true
+proof
+    thus true
+end
+
+theorem falseE: false -> a
+proof
+    thus false -> a
+end
