@@ -72,29 +72,30 @@ Se puede usar para demostrar A por contradicción, asumiendo ~A
 -}
 doubleNegElim :: Form -> Proof
 doubleNegElim formA =
-    PImpI
-        hNotNotA
-        ( -- Uso LEM de A v ~A
-          POrE
-            formA
-            (FNot formA)
-            PLEM
-            -- Dem de A asumiendo A
-            hA
-            (PAx hA)
-            -- Dem de A asumiendo ~ A
-            hNotA
-            ( -- ~A y ~~A generan una contradicción
-              PFalseE
-                ( PNotE
-                    (FNot formA) -- Uso ~~A
-                    -- Dem de ~~A
-                    (PAx hNotNotA)
-                    -- Dem de ~A
-                    (PAx hNotA)
+    PNamed "doubleNegElim" $
+        PImpI
+            hNotNotA
+            ( -- Uso LEM de A v ~A
+              POrE
+                formA
+                (FNot formA)
+                PLEM
+                -- Dem de A asumiendo A
+                hA
+                (PAx hA)
+                -- Dem de A asumiendo ~ A
+                hNotA
+                ( -- ~A y ~~A generan una contradicción
+                  PFalseE
+                    ( PNotE
+                        (FNot formA) -- Uso ~~A
+                        -- Dem de ~~A
+                        (PAx hNotNotA)
+                        -- Dem de ~A
+                        (PAx hNotA)
+                    )
                 )
             )
-        )
   where
     hA = hypForm formA
     hNotA = hypForm $ FNot formA

@@ -19,7 +19,8 @@ module ND (
     fvTerm,
     proofName,
     fvE,
-    formsWithFv,
+    filterNotInFV,
+    hypsE,
     fvP,
     propVar,
     predVar,
@@ -254,11 +255,18 @@ forms :: Env -> [Form]
 forms EEmpty = []
 forms (EExtend _ f e') = f : forms e'
 
+hypsE :: Env -> [HypId]
+hypsE EEmpty = []
+hypsE (EExtend h _ e') = h : hypsE e'
+
 fvE :: Env -> Set.Set VarId
 fvE e = foldr (Set.union . fv) Set.empty (forms e)
 
-formsWithFv :: Env -> VarId -> [Form]
-formsWithFv env x = filter (elem x . fv) (forms env)
+filterNotInFV :: VarId -> Env -> Env
+filterNotInFV x (EExtend h f e)
+    | x `elem` fv f = filterNotInFV x e
+    | otherwise = EExtend h f (filterNotInFV x e)
+filterNotInFV _ EEmpty = EEmpty
 
 -- Record syntax: https://en.wikibooks.org/wiki/Haskell/More_on_datatypes
 

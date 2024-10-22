@@ -11,6 +11,7 @@ import ND (
     dneg,
     fPred0,
     fPred1,
+    fPredVar,
     fromList,
     fv,
     fvE,
@@ -536,10 +537,10 @@ testCheckExamples =
         , "A(x) => Forall x. A(x)"
             ~: rootCause (check EEmpty p21 f21)
             ~?= CheckError
-                (EExtend "h A(x)" (FPred "A" [TVar "x"]) EEmpty)
-                (PForallI "x" (PAx "h A(x)"))
-                (FForall "x" (FPred "A" [TVar "x"]))
-                "env shouldn't contain fv 'x', forms: [A(x)]"
+                EEmpty
+                (PAx "h A(x)")
+                (FPred "A" [TVar "x"])
+                "hyp h A(x) not in env"
         , -- DeMorgan de Exists y Forall
           "V x. A(x) => ~E x. ~A(x)" ~: assertCheckTranslatedReducedOK EEmpty p23Ida f23Ida
         , "~E x. ~A(x) => V x. A(x)" ~: assertCheckTranslatedReducedOK EEmpty p23Vuelta f23Vuelta
@@ -910,22 +911,21 @@ testSubstHyp =
             ~?= PAx "b"
         , "capture"
             ~: substHyp
-                    "h"
-                    ( PAndE1
-                        { right = propVar "a"
-                        , proofAnd = PAx "q"
-                        }
-                    )
-                    ( PImpI
-                        { hypAntecedent = "q" -- son qs diferentes
-                        , proofConsequent =
-                            PAndI
-                                { proofLeft = PAx "h"
-                                , proofRight = PAx "q"
-                                }
-                        }
-                    )
-               
+                "h"
+                ( PAndE1
+                    { right = propVar "a"
+                    , proofAnd = PAx "q"
+                    }
+                )
+                ( PImpI
+                    { hypAntecedent = "q" -- son qs diferentes
+                    , proofConsequent =
+                        PAndI
+                            { proofLeft = PAx "h"
+                            , proofRight = PAx "q"
+                            }
+                    }
+                )
             ~?= ( PImpI
                     { hypAntecedent = "q0"
                     , proofConsequent =

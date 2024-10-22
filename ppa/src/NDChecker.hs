@@ -11,15 +11,17 @@ import ND (
     Form (..),
     Proof (..),
     Term (..),
-    formsWithFv,
+    filterNotInFV,
     fv,
     fvE,
     get,
+    hypsE,
     proofName,
  )
 
 import NDSubst (subst)
 
+import Data.List
 import Text.Printf (printf)
 
 data CheckResult
@@ -43,11 +45,11 @@ instance Show CheckResult where
             (show form)
     show (CheckErrorW msg env proof form res) =
         printf
-            "Checking \nproof: %s\n%s\n|- %s\n\n(%s) %s:\n%s"
+            "Checking %s\nproof: %s\n%s\n|- %s\n\n%s:\n%s"
+            (proofName proof)
             (show proof)
             (show env)
             (show form)
-            (proofName proof)
             msg
             (showInTree res)
     show (CheckErrorN name res) =
@@ -66,10 +68,10 @@ showInTree (CheckError env proof form msg) =
         (show form)
 showInTree (CheckErrorW msg env proof form res) =
     printf
-        "Checking\n%s\n|- %s\n\n(%s) %s:\n%s"
+        "Checking %s \n%s\n|- %s\n\n%s:\n%s"
+        (proofName proof)
         (show env)
         (show form)
-        (proofName proof)
         msg
         (showInTree res)
 showInTree (CheckErrorN name res) =
@@ -165,16 +167,27 @@ check env p@(PExistsI t proofSubstA) fE@(FExists x f) =
 check env proof@(PExistsE x fA proofExistsxA hypA proofB) fB
     | x `elem` fvE env = CheckError env proof fB (printf "env shouldn't contain fv '%s'" x)
     | x `elem` fv fB = CheckError env proof fB (printf "form to prove shouldn't contain fv '%s'" x)
-    | otherwise = case check env proofExistsxA (FExists x fA) of
-        err | checkResultIsErr err -> CheckErrorW "proof exists" env proof fB err
-        CheckOK -> wrap (check (EExtend hypA fA env) proofB fB) "proof assuming" env proof fB
+    | otherwise =
+        let
+            env' = filterNotInFV x env
+            droppedHyps = hypsE env \\ hypsE env'
+            droppedMsg = if null droppedHyps then "" else printf " (dropping %s)" (show droppedHyps)
+         in
+            case check env proofExistsxA (FExists x fA) of
+                err | checkResultIsErr err -> CheckErrorW ("proof exists" ++ droppedMsg) env proof fB err
+                CheckOK -> wrap (check (EExtend hypA fA env) proofB fB) ("proof assuming" ++ droppedMsg) env proof fB
 -- dem de Forall x. A
 check env proof@(PForallI x' proofA) form@(FForall x fA)
-    | x' `elem` fvE env = CheckError env proof form (printf "env shouldn't contain fv '%s', forms: %s" x' (show $ formsWithFv env x))
     | x' `elem` fv form = CheckError env proof form (printf "new var (%s) shouldn't be in fv of forall form %s" x' (show form))
     | otherwise =
         let fA' = subst x (TVar x') fA
-         in wrap (check env proofA fA') "proof form" env proof form
+            -- Como el env no puede tener libre a x', en vez de devolver un
+            -- error acá lo filtramos. Así en todo caso falla con los axiomas.
+            -- Esto es más permisivo y simplifica la generación de demostraciones.
+            env' = filterNotInFV x' env
+            droppedHyps = hypsE env \\ hypsE env'
+            msg = if null droppedHyps then "" else printf " (dropping %s)" (show droppedHyps)
+         in wrap (check env' proofA fA') ("proof form" ++ msg) env' proof form
 -- dem de A{x:=t} usando Forall x. A
 check env proof@(PForallE x fA proofForallxA t) fAxt =
     if subst x t fA /= fAxt

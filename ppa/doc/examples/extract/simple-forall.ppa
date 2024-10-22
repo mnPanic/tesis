@@ -1,5 +1,6 @@
 // TODO: no debería romper con X e Y
-axiom ax: forall X2 . forall Y2 . p(v, X2, Y2)
+//axiom ax: forall X2 . forall Y2 . p(v, X2, Y2)
+axiom ax: forall X . forall Y . p(v, X, Y)
 theorem t: forall X. forall Y. exists V . p(V, X, Y)
 proof
     let X
