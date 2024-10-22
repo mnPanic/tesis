@@ -1,0 +1,7 @@
+axiom ax: forall Y . p(k, Y)
+theorem t: forall Y . exists X . p(X, Y)
+proof
+    let Y
+    take X := k
+    thus p(k, Y) by ax
+end

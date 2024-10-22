@@ -397,9 +397,9 @@ certifyBy ctx f js = do
         PImpE
             { antecedent = antecedent
             , -- Dem de (f1 ... fn) => f por el absurdo
-              proofImp = proofAntecedentImpF
+              proofImp = PNamed "by: proof justification implies form" proofAntecedentImpF
             , -- Dem de f1 ^ ... ^ fn
-              proofAntecedent = proofAndIList (map getProof jsHyps)
+              proofAntecedent = PNamed "by: proof justification" $ proofAndIList (map getProof jsHyps)
             }
 
 findJustification :: Context -> Justification -> Result [Hypothesis]
@@ -442,12 +442,12 @@ solve thesis = do
                     , -- Demostración de bottom (contradicción) asumiendo que no vale
                       -- la tesis. Primero convertimos a DNF y luego demostramos que
                       -- la version en DNF es refutable.
-                      proofBot =
+                      proofBot = PNamed "solver: cut proof dnf contradiction" $ 
                         cut
                             fDNFNotThesis
                             dnfProof
                             hDNFNotThesis
-                            contradictionProof
+                            (PNamed "solver: contradiction" contradictionProof)
                     }
             }
 

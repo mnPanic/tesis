@@ -151,11 +151,17 @@ en p' se use esa hyp. Hay que renombrar la que se agrega por otra que no se
 use en p' ni en la demo subsiguiente.
 -}
 substHyp :: HypId -> Proof -> Proof -> Proof
-substHyp h p' = substHyp' Map.empty h p' hypsP
+substHyp h p' = substHyp' Map.empty h p' hypsPRep
  where
-  hypsP = citedHypIds p'
+  hypsPRep = citedHypIds p'
 
-substHyp' :: HypSubstitution -> HypId -> Proof -> Set.Set HypId -> Proof -> Proof
+substHyp' ::
+  HypSubstitution ->
+  HypId ->
+  Proof ->
+  Set.Set HypId ->
+  Proof ->
+  Proof
 substHyp' s hRep pRep hypsPRep p = case p of
   PNamed name p1 -> PNamed name (rec p1)
   PAx h'
