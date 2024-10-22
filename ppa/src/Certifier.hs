@@ -132,7 +132,7 @@ certifyTheorem ctx (DTheorem h f p) = do
         wrapR
             (printf "theorem '%s'" h)
             (certifyProof ctx f p)
-    return (HTheorem h f ndProof)
+    return (HTheorem h f (PNamed h ndProof))
 
 certifyProof :: Context -> Form -> TProof -> Result Proof
 -- certifyProof ctx f ps | trace (printf "certifyProof %s %s %s" (show ctx) (show f) (show ps)) False = undefined
@@ -397,9 +397,9 @@ certifyBy ctx f js = do
         PImpE
             { antecedent = antecedent
             , -- Dem de (f1 ... fn) => f por el absurdo
-              proofImp = proofAntecedentImpF
+              proofImp = PNamed "by: proof justification implies form" proofAntecedentImpF
             , -- Dem de f1 ^ ... ^ fn
-              proofAntecedent = proofAndIList (map getProof jsHyps)
+              proofAntecedent = PNamed "by: proof justification" $ proofAndIList (map getProof jsHyps)
             }
 
 findJustification :: Context -> Justification -> Result [Hypothesis]
@@ -442,12 +442,12 @@ solve thesis = do
                     , -- Demostración de bottom (contradicción) asumiendo que no vale
                       -- la tesis. Primero convertimos a DNF y luego demostramos que
                       -- la version en DNF es refutable.
-                      proofBot =
+                      proofBot = PNamed "solver: cut proof dnf contradiction" $ 
                         cut
                             fDNFNotThesis
                             dnfProof
                             hDNFNotThesis
-                            contradictionProof
+                            (PNamed "solver: contradiction" contradictionProof)
                     }
             }
 
@@ -969,7 +969,6 @@ findSubstToSolveContradiction clL clR (FForall x g) metavar = do
                         err2
             Right (s, ms) -> Right (s, Map.insert x metavar ms)
 findSubstToSolveContradiction _ _ _ _ = Left "no more foralls"
-
 
 {- solveContradictionUnifying encuentra la sustitución que hace a la fórmula
 refutable (en caso de que exista).

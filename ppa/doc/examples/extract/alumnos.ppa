@@ -1,0 +1,69 @@
+// A: Alumno
+// M: Materia
+// parcial(M): Parcial de la materia
+// recu(p): Recuperatorio del parcial p
+
+// IDeas: agregar final, criterio de aprobar cursada (existe examen que no haya aprobado)
+
+axiom reprueba_recu_parcial_recursa: forall A. forall M.
+    (reprueba(A, parcial(M)) & reprueba(A, recu(parcial(M)))) -> recursa(A, M)
+
+axiom rinde_recu_reprobo_parcial: forall A. forall P.
+    rinde(A, recu(P)) -> reprueba(A, P)
+
+axiom reprobo_rinde: forall A. forall P.
+    reprueba(A, P) -> rinde(A, P)
+
+axiom falta_reprueba: forall A. forall P.
+    falta(A, P) -> reprueba(A, P)
+
+theorem reprueba_recu_recursa:
+    forall A. forall M.
+        reprueba(A, recu(parcial(M))) -> recursa(A, M)
+proof
+    let A
+    let M
+    suppose reprueba_recu: reprueba(A, recu(parcial(M)))
+
+    claim reprueba_p: reprueba(A, parcial(M))
+    proof
+        have rinde_recu: rinde(A, recu(parcial(M))) by reprueba_recu, reprobo_rinde
+        hence reprueba(A, parcial(M)) by rinde_recu_reprobo_parcial        
+    end
+
+    hence recursa(A, M) by reprueba_recu, reprueba_p, reprueba_recu_parcial_recursa
+end
+
+// TODO: Esto falla porque A está libre en el contexto del teorema anterior al chequear, agregarlo al checker para que las cambie?
+theorem falta_recu_recursa:
+    forall A. forall M.
+        falta(A, recu(parcial(M))) -> recursa(A, M)
+proof
+    let A
+    let M
+
+    suppose falta_recu: falta(A, recu(parcial(M)))
+
+    // No se puede en un paso porque elimina un forall a lo sumo
+    // thus recursa(A, M) by falta_recu, falta_reprueba, reprueba_recu_recursa
+
+    have -: reprueba(A, recu(parcial(M))) by falta_recu, falta_reprueba
+    hence recursa(A, M) by reprueba_recu_recursa
+end
+
+axiom manu_falta_recu: falta(manu, recu(parcial(tleng)))
+
+theorem existe_faltante_recu_tleng:
+    exists P . falta(P, recu(parcial(tleng)))
+proof
+    take P := manu
+    thus falta(manu, recu(parcial(tleng))) by manu_falta_recu
+end
+
+theorem existe_recursante_tleng:
+    exists P. recursa(P, tleng)
+proof
+    consider P' st -:falta(P', recu(parcial(tleng))) by existe_faltante_recu_tleng
+    take P := P'
+    hence recursa(P', tleng) by falta_recu_recursa
+end

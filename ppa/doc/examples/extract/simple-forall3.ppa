@@ -1,0 +1,6 @@
+axiom ax: forall X . p(v, X)
+theorem t: exists V . p(V, k)
+proof
+    take V := v
+    thus p(v, k) by ax
+end

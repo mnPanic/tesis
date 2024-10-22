@@ -1,0 +1,23 @@
+// TODO: no debería romper con X e Y
+//axiom ax: forall X2 . p(v, X2)
+axiom ax: forall X . p(v, X)
+theorem t: forall X. exists V . p(V, X)
+proof
+    let X
+    take V := v
+    thus p(v, X) by ax
+end
+
+theorem t2: forall X. exists V . p(V, X)
+proof
+    let Y
+    take V := v
+    thus p(v, Y) by ax
+end
+
+theorem t3: forall X. exists V . p(V, X)
+proof
+    let Y
+    take V := v
+    thus p(v, Y) by ax
+end

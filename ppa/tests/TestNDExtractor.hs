@@ -6,11 +6,14 @@ import Text.RawString.QQ
 
 import Certifier (certify, checkContext)
 import Data.Either (fromRight, isRight)
+import Data.Text.IO (putStrLn)
+import GHC.Prelude (print)
 import ND (Env (EEmpty, EExtend), Form (..), HypId, Proof (..), Term (..), fPred0, fPred1, fPredVar, tFun0, tFun1)
 import NDChecker (CheckResult (CheckOK), check)
-import NDExtractor (dNegRElim, extractWitnessCtx, fromPi02, rElim, rIntro, toPi02, transIntro, translateF, translateFriedman, translateP)
+import NDExtractor (dNegRElim, extractWitnessCtx, fromPi02, inlineAxioms, rElim, rIntro, toPi02, transIntro, translateF, translateFriedman, translateP)
 import NDProofs (Result)
 import NDReducer (reduce)
+import PPA (Hypothesis (HAxiom))
 import Parser (parseProgram')
 import Test.HUnit (
     Assertion,
@@ -546,7 +549,7 @@ testTranslateFriedman =
             let pk = fPred1 "p" (tFun0 "k")
             let env = EExtend "ax" (FImp (FImp pk f) f) EEmpty
             f_pi <- assertRight "pi02" $ toPi02 f
-            CheckOK @=? check env (translateFriedman p f_pi) f
+            CheckOK @=? check env (fst $ translateFriedman p f_pi) f
         , "forall redundant" ~: do
             let f_exists = FExists "x" (fPred1 "p" (TVar "x"))
             let f = FForall "y" f_exists
@@ -563,12 +566,11 @@ testTranslateFriedman =
             let env = EExtend "ax" (FImp (FImp pk f_exists) f_exists) EEmpty
 
             f_pi <- assertRight "pi02" $ toPi02 f
-            CheckOK @=? check env (translateFriedman p f_pi) f
+            CheckOK @=? check env (fst $ translateFriedman p f_pi) f
         , "forall" ~: do
             let f_exists = FExists "x" (FPred "p" [TVar "x", TVar "y"])
-            let _r = f_exists
-            let f = FForall "y" f_exists
 
+            let f = FForall "y" f_exists
             let ax = FForall "y" (FPred "p" [tFun0 "k", TVar "y"])
             let p =
                     PForallI
@@ -585,11 +587,15 @@ testTranslateFriedman =
                                         }
                                 }
                         }
-            let ax' = translateF ax _r
-            let env = EExtend "ax" ax' EEmpty
 
             f_pi <- assertRight "pi02" $ toPi02 f
-            CheckOK @=? check env (translateFriedman p f_pi) f
+            let (proof, _r) = translateFriedman p f_pi
+
+            -- Si pongo el axioma traducido, va a tener libre a y0 y lo vuela
+            let proof' = inlineAxioms [HAxiom "ax" ax] proof _r
+
+            let env = EExtend "ax" ax EEmpty
+            CheckOK @=? check env proof' f
         ]
 
 testExtractWitness :: Test
@@ -614,7 +620,7 @@ testExtractWitness =
                 [tFun0 "k"]
                 (tFun0 "v")
                 [r|
-                    axiom ax: forall Y2 . p(v, Y2)
+                    axiom ax: forall Y . p(v, Y)
                     theorem t: forall Y. exists X . p(X, Y)
                     proof
                         let Y
@@ -628,14 +634,28 @@ testExtractWitness =
                 [tFun0 "k", tFun0 "r"]
                 (tFun0 "v")
                 [r|
-                    // TODO: no debería romper con X e Y
-                    axiom ax: forall X2 . forall Y2 . p(v, X2, Y2)
+                    axiom ax: forall X . forall Y . p(v, X, Y)
                     theorem t: forall X. forall Y. exists V . p(V, X, Y)
                     proof
                         let X
                         let Y
                         take V := v
                         thus p(v, X, Y) by ax
+                    end   
+                |]
+        , "forall 2 with rename"
+            ~: assertExtractProgramEquals
+                "t"
+                [tFun0 "k", tFun0 "r"]
+                (tFun0 "v")
+                [r|
+                    axiom ax: forall X . forall Y . p(v, X, Y)
+                    theorem t: forall X. forall Y. exists V . p(V, X, Y)
+                    proof
+                        let X'
+                        let Y'
+                        take V := v
+                        thus p(v, X', Y') by ax
                     end   
                 |]
         , "and"
