@@ -1,3 +1,8 @@
+\newcommand{\reprueba}{X}
+\newcommand{\recursa}{R}
+\newcommand{\falta}{F}
+
+\newcommand{\proofSpacing}{\vspace*{0.2cm}}
 
 \begin{itemize}
     \item Ejemplo de demostración en lenguaje natural \ok
@@ -70,9 +75,72 @@ que vamos a introducir con un ejemplo.
     \item \textbf{Eliminación}: ¿Cómo uso este operador para demostrar otra fórmula?
 \end{itemize}
 
-\newcommand{\reprueba}{X}
-\newcommand{\recursa}{R}
-\newcommand{\falta}{F}
+Definiciones preliminares:
+
+\todo{Agregar estas definiciones}
+\begin{itemize}
+    \item Relación $\judG$
+    \item Contexto $\Gamma$
+    \item FVs de un contexto
+    \item Sustitución sin capturas
+\end{itemize}
+
+
+\begin{figure}[H]
+    \begin{multicols}{2}
+        \proofTreeFalseE
+        \proofTreeTrueI
+    \end{multicols}
+    
+    \begin{multicols}{2}
+        \proofTreeLEM
+        \proofTreeAx
+    \end{multicols}
+
+    \proofSpacing
+
+    \proofTreeAndI
+
+    \begin{multicols}{2}
+        \proofTreeAndEOne
+        \proofTreeAndETwo
+    \end{multicols}
+
+    \proofSpacing
+
+    \begin{multicols}{2}
+        \proofTreeOrIOne
+        \proofTreeOrITwo
+    \end{multicols}
+    
+    \proofTreeOrE
+
+    \proofSpacing
+
+    \begin{multicols}{2}
+        \proofTreeImpI
+        \proofTreeImpE
+    \end{multicols}
+    \begin{multicols}{2}
+        \proofTreeNotI
+        \proofTreeNotE
+    \end{multicols}
+
+    \proofSpacing
+
+    \begin{multicols}{2}
+        \proofTreeForallI
+        \proofTreeForallE
+    \end{multicols}
+
+    \proofSpacing
+
+    \proofTreeExistsI
+    \proofTreeExistsE
+
+    \caption{Reglas de inferencia para deducción natural de lógica de primer órden}
+    \label{nd:inference-rules}
+\end{figure}
 
 \begin{ejemplo}\label{nd:ex:exam-nd}
     Demostración de \fullref{nd:ex:exam} en deducción natural. Como es en su
@@ -92,21 +160,20 @@ que vamos a introducir con un ejemplo.
         (\falta \fImp \recursa)
     \]
 
-    \todo{Validar poner la hyp arriba de los \ruleAx}
     \begin{figure}[H]
         \begin{prooftree}
-            \AxiomC{$\hypId_1$}
+            \AxiomC{}
             \RL{\ruleAx}
             \UnaryInfC{$\ctx \judG (\reprueba \fImp \recursa) \wedge (\falta \fImp \reprueba)$}
             \RL{\ruleAndEOne}
             \UnaryInfC{$\ctx \judG \reprueba \fImp \recursa$}
     
-            \AxiomC{$\hypId_1$}
+            \AxiomC{}
             \RL{\ruleAx}
             \UnaryInfC{$\ctx \judG (\reprueba \fImp \recursa) \wedge (\falta \fImp \reprueba)$}
             \RL{\ruleAndETwo}
             \UnaryInfC{$\ctx \judG \falta \fImp \reprueba$}
-            \AxiomC{$\hypId_2$}
+            \AxiomC{}
             \RL{\ruleAx}
             \UnaryInfC{$\ctx \judG \falta$}
             \RL{\ruleImpE}
@@ -179,20 +246,9 @@ que vamos a introducir con un ejemplo.
 
 \subsection{Reglas de inferencia}
 
-\newcommand{\proofSpacing}{\vspace*{0.2cm}}
-
-A continuación presentamos todas las reglas de inferencia para deducción
-natural para lógica de primer órden. Primero algunas definiciones preliminares.
-
-\todo{Agregar estas definiciones}
-\begin{itemize}
-    \item Relación $\judG$
-    \item Contexto $\Gamma$
-    \item FVs de un contexto
-\end{itemize}
+A continuación se explican brevemente las reglas de inferencia listadas en \fullref{nd:inference-rules}.
 
 \subsubsection{Reglas base}
-
 
 \begin{multicols}{2}
     \proofTreeFalseE
@@ -298,65 +354,13 @@ una disyunción.
     \item \ruleExistsE: Para usar un $\exists$ para demostrar, es parecido a \ruleE{$\vee$}. Como tenemos que ver que vale para cualquier $\var$, podemos concluir $\formTwo$ tomando como hipótesis $\form$ con $\var$ sin instanciar. 
 \end{itemize}
 
-\todo{Ejemplo con cuantificadores}
+\begin{ejemplo}\label{nd:ex:exam-nd-quantifiers}
+    \todo{Ejemplo con cuantificadores, el mismo de alumnos pero con foralls}
+\end{ejemplo}
 
-\subsubsection{Resumen de reglas de inferencia}
+\subsection{Hipótesis nombradas}
 
-\begin{figure}[H]
-    \begin{multicols}{2}
-        \proofTreeFalseE
-        \proofTreeTrueI
-    \end{multicols}
-    
-    \begin{multicols}{2}
-        \proofTreeLEM
-        \proofTreeAx
-    \end{multicols}
-
-    \proofSpacing
-
-    \proofTreeAndI
-
-    \begin{multicols}{2}
-        \proofTreeAndEOne
-        \proofTreeAndETwo
-    \end{multicols}
-
-    \proofSpacing
-
-    \begin{multicols}{2}
-        \proofTreeOrIOne
-        \proofTreeOrITwo
-    \end{multicols}
-    
-    \proofTreeOrE
-
-    \proofSpacing
-
-    \begin{multicols}{2}
-        \proofTreeImpI
-        \proofTreeImpE
-    \end{multicols}
-    \begin{multicols}{2}
-        \proofTreeNotI
-        \proofTreeNotE
-    \end{multicols}
-
-    \proofSpacing
-
-    \begin{multicols}{2}
-        \proofTreeForallI
-        \proofTreeForallE
-    \end{multicols}
-
-    \proofSpacing
-
-    \proofTreeExistsI
-    \proofTreeExistsE
-
-    \caption{Reglas de inferencia para deducción natural de lógica de primer órden}
-    \label{nd:inference-rules}
-\end{figure}
+\todo{presentamos contextos como conjuntos y reglas de hypids sin etiquetar, pero en realidad deberían estar etiquetadas en rigor.}
 
 \subsection{Meta-teoremas}
 
