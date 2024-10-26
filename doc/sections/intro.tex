@@ -1,0 +1,66 @@
+\section{Teoremas}
+
+In mathematics and formal logic, a theorem is a statement that has been proven, or can be proven.[a][2][3] The proof of a theorem is a logical argument that uses the inference rules of a deductive system to establish that the theorem is a logical consequence of the axioms and previously proved theorems.
+
+In mainstream mathematics, the axioms and the inference rules are commonly left implicit, and, in this case, they are almost always those of Zermelo–Fraenkel set theory with the axiom of choice (ZFC), or of a less powerful theory, such as Peano arithmetic.[b] Generally, an assertion that is explicitly called a theorem is a proved result that is not an immediate consequence of other known theorems. Moreover, many authors qualify as theorems only the most important results, and use the terms lemma, proposition and corollary for less important theorems.
+
+Completar con https://en.wikipedia.org/wiki/Theorem
+
+\section{Asistentes de demostraciones}
+
+\begin{itemize}
+    \item Son programs que asisten al usuario a la hora de escribir una
+    demostracion. Permiten representarlas en un programa.
+    \item Aplicaciones: formalización de teoremas, verificación formal de
+    programas, etc.
+    \item Ejemplos: Coq, isabelle (isar), Mizar
+    \item Reseña histórica de Mizar
+    \item Ventajas: colaboración a gran escala (confianza en el checker),
+    chequear el output de los LLMs
+\end{itemize}
+
+\subsection{Mizar}
+
+\todo{Mizar}
+
+\section{Arquitectura de PPA}
+
+\begin{itemize}
+    \item Por qué certificados (criterio de De Brujin)
+    \item Certificados están en deducción natural. Sistema lógico que permite
+    construir demostraciones mediante reglas de inferencia.
+    \item PPA es un lenguaje que genera demostraciones "de bajo nivel" ND.
+    \item razón de ser: Más práctico que demos de bajo nivel
+    \item Implementado en Haskell
+\end{itemize}
+
+\section{Lógica de primer órden}
+
+\begin{definition}{Términos}
+    Un término puede ser
+    \begin{itemize}
+        \item Una variable $\var$
+        \item Una función $\fun(\term_1, \dots, \term_n)$ donde $\term_1, \dots,
+        \term_n$ son términos
+    \end{itemize}
+\end{definition}
+
+\begin{definition}{Fórmulas}
+    Una fórmula puede ser
+    \begin{itemize}
+        \item Un predicado $\pred(\term_1, \dots, \term_n)$ donde $\term_1, \dots,
+        \term_n$ son términos
+        \item $\fFalse$, $\fTrue$
+        \item Sean $\form, \formTwo$ fórmulas
+        \begin{itemize}
+            \item Una conjunción $\form \fAnd \formTwo$
+            \item Una disyunción $\form \fOr \formTwo$
+            \item Una implicación $\form \fImp \formTwo$
+            \item Una negación $\fNot \form$
+            \item Un cuantificador universal $\forall \var . \form$
+            \item Un cuantificador existencial $\exists \var . \form$
+        \end{itemize}
+    \end{itemize}
+\end{definition}
+
+\todo{Definiciones, repaso, lo necesario}

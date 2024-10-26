@@ -1,0 +1,243 @@
+Puntos a abordar
+
+\begin{itemize}
+    \item Motivación, limitaciones de lógica clásica. Demostración sqrt 2
+    \item Lógica intuicionista
+    \item Como necesitamos reducir en ND, necesitamos la demo en ND. Escribirla
+    en este caso.
+    \item También queremos para $\piZeroTwo$, mostrar la extensión en ND.
+    \item En realidad no nos sirve $\transDNeg{\Gamma}$, queremos dejarlo como
+    está y demostrar que los axiomas demuestran sus traducciones. Pero no vale
+    siempre (buscar c.ej), caracterizar cuando.
+    \item Sumarizar cómo queda, vincular con reducción. Mostrar ejemplos en PPA
+    que funcionan y ejemplos que no.
+    \item Extensión a demostraciones. Mostrar algunos ejemplos interesantes (y
+    los que usen los lemas dNegRElim y rElim)
+    \item Lemas para demostraciones: dNegRElim, rElim, tNegRElim
+    \item Reducción (buena explicación
+    \url{https://plato.stanford.edu/entries/natural-deduction/}). En realidad se
+    conoce como \textbf{normalization}.
+    \begin{itemize}
+        \item Similitud con reducción en cálculo lambda.
+        \item Ejemplos de LP y todo LPO
+        \item substHyp, substVar en proofs
+        \item Argumentos de que es correcto y completo?
+        \item Small step vs big step
+    \end{itemize}
+\end{itemize}
+
+Queremos, dado un teorema, \textit{extraer testigos de un existencial}. Por
+ejemplo, si tenemos una demostración de $\exists x . p(x)$ la extracción nos
+debería instanciar $x$ en un término $t$ tal que $p(t)$. Imaginemos que tenemos
+el siguiente programa de PPA
+
+\begin{verbatim}
+    axiom ax: p(v)
+    theorem thm: exists X . p(X)
+    proof
+        take X := v
+        thus p(v) by ax
+    end
+\end{verbatim}
+
+¿Cómo hacemos para extraer La demostración generada por el certificador es \textbf{clásica}. La forma más
+fácil de extraer un testigo de una demostración es normalizarla y obtener el
+testigo de su forma normal. Pero esto no se puede hacer en general para lógica
+clásica, porque las demostraciones en general no son \textbf{constructivas}.
+
+En la lógica clásica vale el \textit{principio del tercero excluido}, comúnmente
+conocido por sus siglas en inglés, LEM (\textit{law of excluded middle}).
+
+\begin{prop}{LEM} Para toda fórmula $\form$, es verdadera ella o su negación
+    \[ \form \vee \neg \form \]
+\end{prop}
+
+Las demostraciones que usan este principio suelen dejar aspectos sin
+concretizar, como muestra el siguiente ejemplo bien conocido:
+
+\begin{theorem}\label{thm:irrat}
+    Existen dos números irracionales, $a, b$ tales que $a^b$ es irracional
+\end{theorem}
+\begin{proof}
+    Considerar el número $\sqrt{2}^{\sqrt{2}}$. Por LEM, es o bien racional o
+    irracional.
+    \begin{itemize}
+        \item Supongamos que es racional. Como sabemos que $\sqrt{2}$ es
+        irracional, podemos tomar $a=b=\sqrt{2}$.
+        \item Supongamos que es irracional. Tomamos $a = \sqrt{2}^{\sqrt{2}}, b
+        = \sqrt{2}$. Ambos son irracionales, y tenemos
+
+        \[
+            a^b
+            = \left( \sqrt{2}^{\sqrt{2}} \right)^{\sqrt{2}}
+            = \sqrt{2}^{\sqrt{2} \cdot \sqrt{2}}
+            = \sqrt{2}^{2}
+            = 2,
+        \]
+
+        que es racional.
+    \end{itemize}
+\end{proof}
+
+Como se puede ver, la prueba no nos da forma de saber cuales son $a$ y $b$. Es
+por eso que en general, tener una demostración de un teorema que afirma la
+existencia de un objeto que cumpla cierta propiedad, no necesariamente nos da
+una forma de encontrar tal objeto. Entonces tampoco vamos a poder extraer un
+testigo.
+
+En el caso de \fullref{thm:irrat}, lo demostramos de una forma no constructiva pero
+existen formas constructivas de hacerlo \todo{citar}. Pero hay casos en donde
+no. Por ejemplo, si consideramos la fórmula
+
+\[
+    \exists x ((x = 1 \wedge C) \vee (x = 0 \wedge \neg C))
+\]
+
+y pensamos en $C$ como algo indecidible, por ejemplo \texttt{HALT}, trivialmente
+podemos demostrarlo de forma no constructiva (LEM con $C \vee \neg C$) pero no
+de forma constructiva.
+
+\section{Lógica intuicionista}
+
+Para solucionar estos problemas existe la lógica \textbf{intuicionista}, que se
+puede definir como la lógica clásica sin LEM. Al no contar con ese principio,
+las demostraciones son constructiva. Esto permite por un lado para tener
+interpretaciones computacionales (como la \textit{BHK}) y además que exista la
+noción de \textit{forma normal} de uan demostración. Existen métodos bien
+conocidos para reducir prueba hacia su
+forma normal con un proceso análogo a una reducción de cálculo $\lambda$. Luego
+en la forma normal se esperaría que toda demostración de un $\exists$ sea
+mediante \ruleExistsI, explicitando el testigo.
+
+Al no tener LEM, tampoco valen principios equivalentes, como la eliminación de
+la doble negación \todo{hablar un poco más de esto}
+
+\section{Traducción de Friedman}
+
+\subsection{Traducción de doble negación}
+
+Queremos extraer testigos de las demostraciones generadas por el certificador de
+PPA, pero son en lógica clásica. Sabemos que podemos hacerlo para lógica
+intuicionista. ¿Cómo conciliamos ambos mundos?
+
+Existen muchos métodos que permiten embeber la lógica clásica en la
+intuicionista \todo{citar}. Un mecanismo general es la traducción de
+\textbf{doble negación}, que intuitivamente consiste en agregar una doble
+negación recursivamente a toda la fórmula. Por ejemplo
+
+\newcommand{\gN}[1]{#1^{\text{N}}}
+
+\begin{definition}{(Traducción \textit{Gödel-Gentzen})} Dada una fórmula $\form$ se asocia con otra $\gN{\form}$. La
+    traducción se define inductivamente en la estructura de la fórmula de la
+    siguiente forma
+
+    \begin{align*}
+        \gN{\bot} &= \bot\\
+        \gN{\form} &= \neg\neg \form \quad \text{con $\form \neq \bot$ atómica}\\
+        \gN{(\form \wedge \formTwo)} &= \gN{\form} \wedge \gN{\formTwo}\\
+        \gN{(\form \vee \formTwo)} &= \neg(\neg\gN{\form} \wedge \neg\gN{\formTwo})\\
+        \gN{(\form \rightarrow \formTwo)} &= \gN{\form} \rightarrow \gN{\formTwo}\\
+        \gN{(\forall \var . \form)} &= \forall \var . \gN{\form}\\
+        \gN{(\exists \var . \form)} &= \neg \forall \var . \neg \gN{\form}
+    \end{align*}
+\end{definition}
+
+\begin{theorem}
+    Si tenemos $\judgC \form$, luego $\judgI \gN{\form}$
+\end{theorem}
+
+Esto significa que dada una demostración en lógica clásica, podemos obtener una
+en lógica intuicionista de su traducción. Pero esto no es exactamente lo que
+queremos, porque por ejemplo
+
+\[
+    \gN{(\exists x. p(x))} = \neg \forall x . \neg\neg\neg p(x)
+\]
+
+Que al no ser una demostración de un $\exists$, al reducirla no necesariamente
+obtendremos un testigo.
+
+\subsection{El truco de Friedman}
+
+La idea de Friedman \cite{miquel-friedman} es generalizar la traducción
+Gödel-Gentzen reemplazando la negación intuicionista $\neg \form \equiv A
+\rightarrow \bot$ por una relativa $\negR \form \equiv \form \rightarrow R$ que
+está parametrizada por una fórmula arbitraria $R$. Esto nos va a permitir, con
+una elección particular de $R$,
+traducir una demostración clásica de una fórmula $\sigmaZeroOne$ (e incluso
+$\piZeroTwo$) a una intuicionista, y usarla para demostrar \textbf{la fórmula
+original}. Finalmente podremos reducirla y hacer la extracción de forma usual.
+
+\begin{definition}{(Traducción de doble negación relativizada)}
+    \begin{align*}
+        \transDNeg{\bot} &= \bot\\
+        \transDNeg{\form} &= \negR\negR \form \quad \text{con $\form \neq \bot$ atómica}\\
+        \transDNeg{(\form \wedge \formTwo)} &= \transDNeg{\form} \wedge \transDNeg{\formTwo}\\
+        \transDNeg{(\form \vee \formTwo)} &= \negR(\negR\transDNeg{\form} \wedge \negR\transDNeg{\formTwo})\\
+        \transDNeg{(\form \rightarrow \formTwo)} &= \transDNeg{\form} \rightarrow \transDNeg{\formTwo}\\
+        \transDNeg{(\forall x . \form)} &= \forall x . \transDNeg{\form}\\
+        \transDNeg{(\exists x . \form)} &= \negR \forall x . \negR \transDNeg{\form}
+    \end{align*}
+\end{definition}
+
+\begin{theorem}
+    Si $\ctx \judgC \form$, luego $\transDNeg{\ctx} \judgI \transDNeg{\form}$
+
+    Veremos esta extensión de la traducción a contextos y demostraciones más adelante.
+\end{theorem}
+
+Veamos cómo podemos usarla para, dada una demostración clásica de $\exists \var
+\form$ obtener una intuicionista.
+
+\begin{prop}
+    Sea $\someProof$ una demostración clásica de $\exists \var . \form$, y
+    $\form$ una fórmula atómica.
+    Si tenemos
+    \[
+        \ctx \judgC \exists \var . \form,
+    \]
+    luego
+    \[
+        \transDNeg{\ctx} \judgI \exists \var . \form.
+    \]
+\end{prop}
+\begin{proof}
+
+Aplicando la traducción, tenemos que
+
+\begin{prooftree}
+    \AxiomC{$\someProof$}
+    \UnaryInfC{$\ctx \judgC \exists \var . \form$}
+\end{prooftree}
+
+se traduce a
+
+\begin{prooftree}
+    \AxiomC{$\transDNeg{\someProof}$}
+    \UnaryInfC{$\transDNeg{\ctx} \judgI \negR \forall \var . \negR \negR \negR \form$}
+\end{prooftree}
+
+luego, tomando $R$ como la fórmula que queremos probar, $\exists \var . \form$
+
+\begin{align*}
+    \transDNeg{\someProof} \vartriangleright\ & \transDNeg{\ctx} \judgI \negR \forall \var . \negR \negR \negR \form\\
+    \iff & \transDNeg{\ctx} \judgI \negR \forall \var . \negR \form
+    &&(\fullref{lemma:tnegr-elim})\\
+    =\ &\transDNeg{\ctx} \judgI (\forall \var . (\form \rightarrow R)) \rightarrow R\\
+    =\ &\transDNeg{\ctx} \judgI (\forall \var . (\form \rightarrow \exists \var . \form)) \rightarrow \exists \var . \form && (R = \exists \var \form)\\
+    \Rightarrow\ &\transDNeg{\ctx} \judgI \exists \var . \form && (\fullref{obs:forall-exists})
+\end{align*}
+\end{proof}
+
+\begin{lemma}\label{lemma:tnegr-elim}
+    $\negR\negR\negR \form \iff \negR \form$
+\end{lemma}
+\begin{proof}
+    \todo{En deducción natural}
+\end{proof}
+
+\begin{obs}\label{obs:forall-exists}
+    $\judgI \forall \var (\form \rightarrow \exists \var \form)$
+\end{obs}
+
+\todo{IDem pero en ND, y también para $\forall$}

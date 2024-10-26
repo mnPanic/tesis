@@ -1,0 +1,5 @@
+theorem "distributiva de negación sobre disyunción":
+    ~(a | b) <-> ~a & ~b
+proof
+    thus ~(a | b) <-> ~a & ~b
+end

@@ -1,0 +1,152 @@
+
+%% Demostraciones
+
+\newcommand{\proofTreeFalseE}{%
+    \begin{prooftree}
+        \AxiomC{$\judg{\ctx}{\fFalse}$}
+        \RL{\ruleFalseE}
+        \UnaryInfC{$\judg{\ctx}{\form}$}
+    \end{prooftree}
+}
+
+\newcommand{\proofTreeTrueI}{%
+    \begin{prooftree}
+        \AxiomC{}
+        \RL{\ruleTrueI}
+        \UnaryInfC{$\judg{\ctx}{\fTrue}$}
+    \end{prooftree}
+}
+
+\newcommand{\proofTreeExistsI}{%
+\begin{prooftree}
+    \AxiomC{$\judg{\ctx}{\form\subst{\var}{\term}}$}
+    \RL{\ruleExistsI}
+    \UnaryInfC{$\judg{\ctx}{\exists \var. \form}$}
+\end{prooftree}
+}
+\newcommand{\proofTreeExistsE}{%
+\begin{prooftree}
+    \AxiomC{$\judg{\ctx}{\exists \var.\form}$}
+    \AxiomC{$\judg{\ctx, \form}{\formTwo}$}
+    \AxiomC{$x \notin \fv{\ctx, \formTwo}$}
+    \RL{\ruleExistsE}
+    \TrinaryInfC{$\judg{\ctx}{\formTwo}$}
+\end{prooftree}
+
+}
+
+\newcommand{\proofTreeForallI}{%
+\begin{prooftree}
+    \AxiomC{$\judg{\ctx}{\form}$}
+    \AxiomC{$x \notin \fv{\ctx}$}
+    \RL{\ruleForallI}
+    \BinaryInfC{$\judg{\ctx}{\forall \var.\form}$}
+\end{prooftree}
+
+}
+\newcommand{\proofTreeForallE}{%
+\begin{prooftree}
+    \AxiomC{$\judg{\ctx}{\forall \var.\form}$}
+    \RL{\ruleForallE}
+    \UnaryInfC{$\judg{\ctx}{\form \subst{\var}{\term}}$}
+\end{prooftree}
+}
+
+\newcommand{\proofTreeOrIOne}{%
+\begin{prooftree}
+    \AxiomC{$\judg{\ctx}{\form}$}
+    \RL{\ruleOrIOne}
+    \UnaryInfC{$\judg{\ctx}{\form \vee \formTwo}$}
+\end{prooftree}
+}
+
+\newcommand{\proofTreeOrITwo}{%
+\begin{prooftree}
+    \AxiomC{$\judg{\ctx}{\formTwo}$}
+    \RL{\ruleOrITwo}
+    \UnaryInfC{$\judg{\ctx}{\form \vee \formTwo}$}
+\end{prooftree}
+}
+
+\newcommand{\proofTreeOrE}{%
+\begin{prooftree}
+    \AxiomC{$\judg{\ctx}{\form \vee \formTwo}$}
+    \AxiomC{$\judg{\ctx, \form}{\formThree}$}
+    \AxiomC{$\judg{\ctx, \formTwo}{\formThree}$}
+    \RL{\ruleOrE}
+    \TrinaryInfC{$\judg{\ctx}{\formThree}$}
+\end{prooftree}
+}
+
+\newcommand{\proofTreeAndI}{%
+\begin{prooftree}
+    \AxiomC{$\judg{\ctx}{\form}$}
+    \AxiomC{$\judg{\ctx}{\formTwo}$}
+    \RL{\ruleAndI}
+    \BinaryInfC{$\judg{\ctx}{\form \wedge \formTwo}$}
+\end{prooftree}
+}
+
+\newcommand{\proofTreeAndEOne}{%
+\begin{prooftree}
+    \AxiomC{$\judg{\ctx}{\form \wedge \formTwo}$}
+    \RL{\ruleAndEOne}
+    \UnaryInfC{$\judg{\ctx}{\form}$}
+\end{prooftree}
+}
+
+\newcommand{\proofTreeAndETwo}{%
+\begin{prooftree}
+    \AxiomC{$\judg{\ctx}{\form \wedge \formTwo}$}
+    \RL{\ruleAndETwo}
+    \UnaryInfC{$\judg{\ctx}{\formTwo}$}
+\end{prooftree}
+}
+
+\newcommand{\proofTreeImpI}{%
+\begin{prooftree}
+    \AxiomC{$\judg{\ctx, \hypId: \form}{\formTwo}$}
+    \RL{\ruleImpI}
+    \UnaryInfC{$\judg{\ctx}{\form \to \formTwo}$}
+\end{prooftree}
+}
+\newcommand{\proofTreeImpE}{%
+\begin{prooftree}
+    \AxiomC{$\judg{\ctx}{\form \to \formTwo}$}
+    \AxiomC{$\judg{\ctx}{\form}$}
+    \RL{\ruleImpE}
+    \BinaryInfC{$\judg{\ctx}{\formTwo}$}
+\end{prooftree}
+}
+
+\newcommand{\proofTreeNotI}{%
+\begin{prooftree}
+    \AxiomC{$\judg{\ctx, \hypId: \form}{\bot}$}
+    \RL{\ruleNotI}
+    \UnaryInfC{$\judg{\ctx}{\neg \form}$}
+\end{prooftree}
+}
+\newcommand{\proofTreeNotE}{%
+\begin{prooftree}
+    \AxiomC{$\judg{\ctx}{\neg \form}$}
+    \AxiomC{$\judg{\ctx}{\form}$}
+    \RL{\ruleNotE}
+    \BinaryInfC{$\judg{\ctx}{\bot}$}
+\end{prooftree}
+}
+
+\newcommand{\proofTreeLEM}{%
+\begin{prooftree}
+    \AxiomC{}
+    \RL{\ruleLEM}
+    \UnaryInfC{$\judg{\ctx}{\form \vee \neg \form}$}
+\end{prooftree}
+}
+
+\newcommand{\proofTreeAx}{%
+\begin{prooftree}
+    \AxiomC{}
+    \RL{\ruleAx}
+    \UnaryInfC{$\judg{\ctx, \hypId:\form}{\hypId:\form}$}
+\end{prooftree}
+}

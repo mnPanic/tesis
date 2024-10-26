@@ -1,0 +1,23 @@
+theorem "cases":
+    (a & b) | (c & a) -> a
+proof
+    suppose h: (a & b) | (c & a)
+    cases by h
+        case a & b
+            hence a
+        case right: a & c
+            thus a by right
+    end
+end
+
+theorem "cases prop":
+    ~((~a | ~b) & (~c | ~a)) -> a
+proof
+    suppose h: ~((~a | ~b) & (~c | ~a))
+    cases by h
+        case a & b
+            hence a
+        case right: a & c
+            thus a by right
+    end
+end

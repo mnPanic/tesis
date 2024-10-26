@@ -1,0 +1,10 @@
+theorem "and discharge" : a -> b -> (a & b)
+proof
+    suppose "a" : a
+    suppose "b" : b
+    // La tesis es a & b
+    hence b by "b"
+
+    // La tesis es a
+    thus a by "a"
+end
