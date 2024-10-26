@@ -2,33 +2,44 @@
 \newcommand{\recursa}{R}
 \newcommand{\falta}{F}
 
+\newcommand{\predReprueba}{\textrm{reprueba}}
+\newcommand{\predRecursa}{\textrm{recursa}}
+\newcommand{\predFalta}{\textrm{falta}}
+\newcommand{\funFinal}{\textrm{final}}
+
+\newcommand{\vAlu}{a}
+\newcommand{\vMat}{m}
+\newcommand{\vEx}{e}
+
 \newcommand{\proofSpacing}{\vspace*{0.2cm}}
 
-\begin{itemize}
-    \item Ejemplo de demostración en lenguaje natural \ok
-    \item Necesitamos una forma estructural de representar demostraciones \ok
-    \item Proof calculus / proof system enmarcado en Proof theory. Cómo están
-    compuestos en general \ok
-    \item Natural deduction \ok
-    \item Reglas de introducción y eliminación \ok
-    \item Formalización del ejemplo \ok
-    \item Ejemplo con cuantificadores
-    \item Cut como meta-teorema (y meta teoremas en general)
-    \item Implementación de data types principales \ok
-    \item Algoritmo de chequeo 
-    \item Algoritmos adicionales: alpha igualdad, variables libres, sust sin capturas \ok
-\end{itemize}
+% \begin{itemize}
+%     \item Ejemplo de demostración en lenguaje natural \ok
+%     \item Necesitamos una forma estructural de representar demostraciones \ok
+%     \item Proof calculus / proof system enmarcado en Proof theory. Cómo están
+%     compuestos en general \ok
+%     \item Natural deduction \ok
+%     \item Reglas de introducción y eliminación \ok
+%     \item Formalización del ejemplo \ok
+%     \item Ejemplo con cuantificadores \ok
+%     \item Cut como meta-teorema (y meta teoremas en general) \ok
+%     \item Implementación de data types principales \ok
+%     \item Algoritmo de chequeo \ok
+%     \item Algoritmos adicionales: alpha igualdad, variables libres, sust sin capturas \ok
+% \end{itemize}
 
 Vamos a comenzar por las fundaciones: Queremos armar un programa que permita
 escribir teoremas y demostraciones. ¿Cómo se representa una demostración en la
-computadora? En el área de estudio de \textit{proof theory}, en la cuál las
+computadora? Es necesaria una representación precisa y rigurosa.
+
+En el área de estudio de \textit{proof theory}, en la cuál las
 demostraciones son tratadas como objetos matemáticos formales, nos encontramos
 con los \textit{proof calculi} o \textit{proof systems}, que son sistemas
 lógicos formales que permiten demostrar sentencias. Pueden ser modelados como un
 tipo abstracto de datos, así siendo representados en la computadora.
 
 Por ejemplo, supongamos que tenemos la siguiente \textit{teoría} de exámenes en
-la facultad, que vamos a ir iterando a lo largo del documento. Por ahora, en su
+la facultad, que vamos a ir iterando a lo largo de la tesis. Por ahora, en su
 versión proposicional. Si un alumno reprueba un final, entonces recursa. Si un
 alumno falta, entonces reprueba. Con estas dos, podríamos demostrar que si un
 alumno falta a un final, entonces recursa. Veamos cómo podría ser una
@@ -40,51 +51,71 @@ demostración en lenguaje natural.
     Demostración:
 \begin{itemize}
     \item Asumo que falta. Quiero ver que recursa.
-    \item Sabemos que si falta, entonces reprueba.
+    \item Sabemos que si falta, entonces reprueba. Reprobó.
     \item Sabemos que si reprueba, entonces recursa.
-    \item $\therefore$ recursa.
+    \item $\therefore$ recursó.
 \end{itemize}
     \qed
 \end{ejemplo}
 
-¿Cómo podemos formalizarla en un \textit{proof system}? En general, van a
-incluir los siguientes componentes
+¿Cómo podría ser formalizada en un \textit{proof system}?
+
+\section{El sistema de deducción natural}
+
+
+Los \textit{proof systems} en general están compuestos por
 
 \begin{itemize}
     \item \textbf{Lenguaje formal}: el conjunto $L$ de fórmulas admitidas por
     el sistema. En nuestro caso, lógica de primer órden.
     \item \textbf{Reglas de inferencia}: lista de reglas que se usan para probar
     teoremas de axiomas y otros teoremas. Por ejemplo, \textit{modus ponens} (si
-    es cierto $\form \rightarrow \formTwo$ y $\form$, se puede concluir $\formTwo$) o
-    \textit{modus tollens} (si es cierto $\form \rightarrow \formTwo$ y $\neg
-    \formTwo$, se puede concluir $\neg\form$)
+    es cierto $\form \fImp \formTwo$ y $\form$, se puede concluir $\formTwo$) o
+    \textit{modus tollens} (si es cierto $\form \fImp \formTwo$ y $\fNot
+    \formTwo$, se puede concluir $\fNot\form$)
     \item \textbf{Axiomas}: fórmulas de $L$ que se asumen válidas. Todos los
     teoremas se derivan de axiomas. Por ejemplo, como estamos en lógica clásica,
-    vale el axioma \textit{LEM} (Law of Excluded Middle): $\form \vee \neg \form$
+    vale el axioma \textit{LEM} (Law of Excluded Middle): $\form \vee \fNot \form$
 \end{itemize}
 
-\section{Deducción natural}
-
-El sistema que usamos se conoce como \textbf{deducción natural}, introducido por
-Gerhard Gentzen en \cite{gentzen-1935} \todo{Chequear cita}. Tiene dos tipos de
-reglas de inferencia para cada operador ($\wedge$, $\vee$, $\exists$, $\dots$),
-que vamos a introducir con un ejemplo.
+El sistema particular que usamos se conoce como \textbf{deducción natural},
+introducido por Gerhard Gentzen en \cite{gentzen-1935} \todo{Chequear cita}.
+Tiene dos tipos de \textit{reglas de inferencia} para cada operador ($\wedge$,
+$\vee$, $\exists$, $\dots$), que nos permiten razonar
 
 \begin{itemize}
     \item \textbf{Introducción}: ¿Cómo demuestro este operador?
     \item \textbf{Eliminación}: ¿Cómo uso este operador para demostrar otra fórmula?
 \end{itemize}
 
-Definiciones preliminares:
+Introducimos algunas definiciones preliminares, luego vemos las reglas de inferencia, un ejemplo de una demostración, y finalmente explicamos cada regla.
 
-\todo{Agregar estas definiciones}
-\begin{itemize}
-    \item Relación $\judG$
-    \item Contexto $\Gamma$
-    \item FVs de un contexto
-    \item Sustitución sin capturas
-\end{itemize}
+\begin{definition}{Contexto de demostración.}
+    \begin{itemize}
+        \item Definimos los \textbf{contextos de demostración} $\ctx$ como un conjunto de fórmulas, compuesto por las hipótesis que se asumen a lo largo de una demostración.
+        \item Para algunas reglas es necesario conocer las variables libres de un contexto, que se definen de la forma usual:
+        
+        \[
+            \fv{\ctx} = \bigcup_{\form \in \ctx} \fv{\form}
+        \]
+    \end{itemize}
+\end{definition}
 
+\begin{definition}{Relación $\judG$.}
+    Las reglas de inferencia de la \namedref{nd:inference-rules} definen la siguiente relación, que intuitivamente puede ser interpretada como ``$\form$ es una consecuencia de las suposiciones de $\ctx$''
+
+    \[ \ctx \judG \form \]
+\end{definition}
+
+\begin{definition}{Sustitución.}
+    Notamos la \textbf{sustitución sin capturas} de todas las ocurrencias libres de la variable $\var$ por el término $\term$ en la fórmula $\form$ como
+
+    \[
+        \form \subst{\var}{\term}
+    \]
+
+    Se explora en más detalle en la \fullref{nd:sec:subst}
+\end{definition}
 
 \begin{figure}[H]
     \begin{multicols}{2}
@@ -146,9 +177,9 @@ Definiciones preliminares:
     Demostración de \fullref{nd:ex:exam} en deducción natural. Como es en su
     versión proposicional, vamos a modelarlo para un solo alumno y materia. Notamos
     \begin{itemize}
-        \item $\reprueba \equiv$ $reprueba(juan, final(logica))$
-        \item $\recursa \equiv$ $recursa(juan, logica)$
-        \item $\falta \equiv$ $falta(juan, final(logica))$
+        \item $\reprueba \equiv \predReprueba(juan, \funFinal(logica))$
+        \item $\recursa \equiv \predRecursa(juan, logica)$
+        \item $\falta \equiv \predFalta(juan, \funFinal(logica))$
     \end{itemize}
 
     Queremos probar entonces 
@@ -181,14 +212,14 @@ Definiciones preliminares:
             \RL{\ruleImpE}
             \BinaryInfC{\(
                 \ctx =
-                \hypId_1: (\reprueba \fImp \recursa) \wedge (\falta \fImp \reprueba),\
-                \hypId_2: \falta
+                (\reprueba \fImp \recursa) \wedge (\falta \fImp \reprueba),\
+                \falta
                 \judG
                 \recursa
             \)}
             \RL{\ruleImpI}
             \UnaryInfC{\(
-                \hypId_1: (\reprueba \fImp \recursa) \wedge (\falta \fImp \reprueba)
+                (\reprueba \fImp \recursa) \wedge (\falta \fImp \reprueba)
                 \judG
                 \falta \fImp \recursa 
             \)}
@@ -213,14 +244,13 @@ Definiciones preliminares:
         \label{nd:fig:proof-exam-nd}
     \end{figure}
 
-    Paso por paso,
+    Las demostraciones en deducción natural son un árbol, en el que cada juicio está justificado por una regla de inferencia, que puede tener sub-árboles de demostración. La raíz es la fórmula a demostrar. Paso por paso,
 
     \begin{itemize}
         \item \ruleImpI: \textit{introducimos} la implicación. Para demostrarla,
         asumimos el antecedente y en base a eso demostramos el consecuente. Es
         decir asumimos $(\reprueba \fImp \recursa) \wedge (\falta \fImp
         \reprueba)$, y en base a eso queremos deducir $\falta \fImp \recursa$.
-        Las \textit{hipótesis} están etiquetadas, en este caso $\hypId_1$.
         \item \ruleImpI: Asumimos $\falta$, nos queda probar $\recursa$.
         Renombramos el \textit{contexto} de hipótesis como $\ctx$.
         \item La estrategia para probar $\recursa$ es usando la siguiente cadena
@@ -232,23 +262,22 @@ Definiciones preliminares:
         inferencia tiene dos partes, probar la implicación ($\reprueba \fImp
         \recursa$), y probar el antecedente ($\reprueba$).
         \begin{itemize}
-            \item Para probar la implicación, tenemos que usar la hipótesis
-            $\hypId_1$, \textit{eliminando} la conjunción y especificando cuál
+            \item Para probar la implicación, tenemos que usar la hipótesis \textit{eliminando} la conjunción y especificando cuál
             de las dos cláusulas estamos usando.
             \item Para probar el antecedente $\reprueba$, es un proceso análogo
             pero usando la otra implicación y el hecho de que vale $\falta$ por hipótesis.
         \end{itemize}
-        \item Las raíces del árbol, los casos base, suelen ser aplicaciones de
+        \item Las hojas del árbol, los casos base, suelen ser aplicaciones de
         la regla de inferencia \ruleAx, que permite deducir fórmulas citando
         hipótesis del contexto.
     \end{itemize}
 \end{ejemplo}
 
-\subsection{Reglas de inferencia}
+\section{Reglas de inferencia}
 
-A continuación se explican brevemente las reglas de inferencia listadas en \fullref{nd:inference-rules}.
+A continuación se explican brevemente las reglas de inferencia listadas en \namedref{nd:inference-rules}.
 
-\subsubsection{Reglas base}
+\subsection{Reglas base}
 
 \begin{multicols}{2}
     \proofTreeFalseE
@@ -271,7 +300,7 @@ A continuación se explican brevemente las reglas de inferencia listadas en \ful
     deducir fórmulas que ya tenemos como hipótesis.
 \end{itemize}
 
-\subsubsection{Reglas de conjunciones y disyunciones}
+\subsection{Reglas de conjunciones y disyunciones}
 
 \proofTreeAndI
 
@@ -300,7 +329,7 @@ A continuación se explican brevemente las reglas de inferencia listadas en \ful
     las dos valga, asumiéndolas por separado, se puede demostrar.
 \end{itemize}
 
-\subsubsection{Reglas de implicación y negación}
+\subsection{Reglas de implicación y negación}
 
 \begin{multicols}{2}
     \proofTreeImpI
@@ -326,14 +355,11 @@ A continuación se explican brevemente las reglas de inferencia listadas en \ful
     fórmula y su negación.
 \end{itemize}
 
-\subsubsection{Reglas de cuantificadores}
-
-\duda{Validar las justificaciones coloquiales de acá}
+\subsection{Reglas de cuantificadores}
 
 Las reglas de $\forall$ y $\exists$ se pueden ver como extensiones a las de
 $\wedge$ y $\vee$. Un $\forall$ se puede pensar como una conjunción con un
-elemento por cada uno del dominio sobre el cual se cuantifica, y un $\exists$
-una disyunción.
+elemento por cada uno del dominio sobre el cual se cuantifica, y análogamente un $\exists$ como una disyunción.
 
 \begin{multicols}{2}
     \proofTreeForallI
@@ -354,225 +380,280 @@ una disyunción.
     \item \ruleExistsE: Para usar un $\exists$ para demostrar, es parecido a \ruleE{$\vee$}. Como tenemos que ver que vale para cualquier $\var$, podemos concluir $\formTwo$ tomando como hipótesis $\form$ con $\var$ sin instanciar. 
 \end{itemize}
 
-\begin{ejemplo}\label{nd:ex:exam-nd-quantifiers}
-    \todo{Ejemplo con cuantificadores, el mismo de alumnos pero con foralls}
+\begin{ejemplo}
+    Para ejemplificar el uso de las reglas de cuantificadores, extendemos el \namedref{nd:ex:exam-nd} a primer órden. Usamos
+
+    \begin{itemize}
+        \item $\vAlu$ representa un alumno, $\vMat$ una materia y $\vEx$ un examen.
+        \item $\reprueba(\vAlu, \vEx) \equiv \predReprueba(\vAlu, \vEx)$
+        \item $\recursa(\vAlu, \vMat) \equiv \predRecursa(\vAlu, \vMat)$
+        \item $\falta(\vAlu, \vEx) \equiv \predFalta(\vAlu, \vEx)$
+    \end{itemize}
+
+    Vamos a tomar los siguientes como \textit{axiomas}, que van a formar parte del contexto inicial de la demostración. Es lo mismo que haremos en PPA para modelar teorías de primer órden.
+
+    \begin{itemize}
+        \item Si un alumno reprueba el final de una materia, entonces recursa
+        \[
+            \forall \vAlu .\ \forall \vMat .\
+                (\reprueba(\vAlu, \funFinal(\vMat)) \fImp
+                \recursa(\vAlu, \vMat))
+        \]
+        \item Si un alumno falta a un examen, lo reprueba
+        \[
+            \forall \vAlu .\ \forall \vEx .\
+                (\falta(\vAlu, \vEx) \fImp \reprueba(\vAlu, \vEx))
+        \]
+    \end{itemize}
+
+    Definimos
+
+    \[
+        \ctx_0 = \{
+            \forall \vAlu .\ \forall \vMat .\
+                \reprueba(\vAlu, \funFinal(\vMat)) \fImp
+                \recursa(\vAlu, \vMat),
+            \forall \vAlu .\ \forall \vEx .\
+                \falta(\vAlu, \vEx) \fImp \reprueba(\vAlu, \vEx)
+        \}
+    \]
+
+    Luego, queremos probar
+    \(
+        \ctx_0 \judG
+            \forall \vAlu .\ \forall \vMat .\
+                \falta(\vAlu, \funFinal(\vMat)) \fImp
+                \recursa(\vAlu, \vMat)
+    \)
+    
+    \begin{figure}
+        \begin{prooftree}
+            \AxiomC{}
+            \RL{\ruleAx{}}
+            \UnaryInfC{\(
+                \ctx_1 \judG
+                    \forall \vAlu \forall \vMat .\ \reprueba(\vAlu, \funFinal(\vMat)) \fImp \recursa(\vAlu, \vMat)
+            \)}
+            \RL{\ruleForallE{}}
+            \UnaryInfC{\(
+                \ctx_1 \judG
+                    \forall \vMat .\ \reprueba(\vAlu, \funFinal(\vMat)) \fImp \recursa(\vAlu, \vMat)
+            \)}
+            \RL{\ruleForallE{}}
+            \UnaryInfC{\(
+                \ctx_1 \judG
+                    \reprueba(\vAlu, \funFinal(\vMat)) \fImp \recursa(\vAlu, \vMat)
+            \)}
+    
+            \AxiomC{$\someProof$}
+            \noLine
+            \UnaryInfC{\(
+                \ctx_1 \judG \reprueba(\vAlu, \funFinal(\vMat))
+            \)}
+            \RL{\ruleImpE{}}
+            \BinaryInfC{\(
+                \ctx_1 = \ctx_0, \falta(\vAlu, \funFinal(\vMat)) \judG \recursa(\vAlu, \vMat)
+            \)}
+            \RL{\ruleImpI{}}
+            \UnaryInfC{\(\ctx_0 \judG \falta(\vAlu, \funFinal(\vMat)) \fImp
+                \recursa(\vAlu, \vMat)\)}
+            \RL{\ruleForallI{}}
+            \UnaryInfC{\(
+                \ctx_0 \judG \forall \vMat .\
+                \falta(\vAlu, \funFinal(\vMat)) \fImp
+                \recursa(\vAlu, \vMat)
+            \)}
+            \RL{\ruleForallI{}}
+            \UnaryInfC{\(
+            \ctx_0 \judG
+            \forall \vAlu .\ \forall \vMat .\
+                \falta(\vAlu, \funFinal(\vMat)) \fImp
+                \recursa(\vAlu, \vMat)
+            \)}
+        \end{prooftree}
+
+        Con
+
+        \begin{prooftree}
+            \AxiomC{}
+            \RL{\ruleAx}
+            \UnaryInfC{\(
+                \ctx_1 \judG
+                    \forall \vAlu .\ \forall \vEx .\
+                        \falta(\vAlu, \vEx) \fImp \reprueba(\vAlu, \vEx)
+            \)}
+            \RL{\ruleForallE{}}
+            \UnaryInfC{\(
+                \ctx_1 \judG
+                    \forall \vEx .\
+                        \falta(\vAlu, \vEx) \fImp \reprueba(\vAlu, \vEx)
+            \)}
+            \RL{\ruleForallE{}}
+            \UnaryInfC{\(
+                \ctx_1 \judG
+                    \falta(\vAlu, \funFinal(\vMat)) \fImp \reprueba(\vAlu, \funFinal(\vMat))
+            \)}
+            \AxiomC{}
+            \RL{\ruleAx{}}
+            \UnaryInfC{\(
+                \ctx_1 \judG \falta(\vAlu, \funFinal(\vMat))
+            \)}
+            \RL{\ruleImpE{}}
+            \LL{$\someProof=$}
+            \BinaryInfC{\(
+                \ctx_1 \judG \reprueba(\vAlu, \funFinal(\vMat))
+            \)}
+        \end{prooftree}
+        \caption{Demostración con cuantificadores en deducción natural}
+    \end{figure}
 \end{ejemplo}
 
-\subsection{Hipótesis nombradas}
+\subsection{Ajustes para generación de demostraciones}
 
-\todo{presentamos contextos como conjuntos y reglas de hypids sin etiquetar, pero en realidad deberían estar etiquetadas en rigor.}
+\subsubsection{Hipótesis etiquetadas}
 
-\subsection{Meta-teoremas}
+En las secciones anteriores presentamos a los contextos $\ctx$ como \textit{conjuntos} de fórmulas. Pero en realidad, para mayor claridad en las demostraciones, vamos a querer que las hipótesis estén \textbf{etiquetadas}. Para permitirlo, las diferencias son las siguientes.
 
-Antes mencionamos \textit{modus tollens} como regla de inferencia, pero no lo
-listamos anteriormente. Esto es porque nos va a interesar tener un sistema
+\begin{itemize}
+    \item Los contextos $\ctx$ son conjuntos de pares $\hypId : \form$ de etiquetas y fórmulas.
+    \item Las reglas que hacen uso de hipótesis, lo hacen nombrándolas.
+    
+
+    \begin{multicols}{3}
+        \begin{prooftree}
+            \AxiomC{$\bm{\hypId} : \form \in \ctx$}
+            \RL{\ruleAx}
+            \UnaryInfC{$\judg{\ctx}{\form}$}
+        \end{prooftree}
+    
+        \begin{prooftree}
+            \AxiomC{$\judg{\ctx, \bm{\hypId}: \form}{\formTwo}$}
+            \RL{\ruleImpI}
+            \UnaryInfC{$\judg{\ctx}{\form \to \formTwo}$}
+        \end{prooftree}
+    
+        \begin{prooftree}
+            \AxiomC{$\judg{\ctx, \bm{\hypId}: \form}{\bot}$}
+            \RL{\ruleNotI}
+            \UnaryInfC{$\judg{\ctx}{\fNot \form}$}
+        \end{prooftree}    
+    \end{multicols}
+\end{itemize}
+
+\duda{No veo por qué con esta presentación sería necesario tener a los nombres de las reglas con las etiquetas, por ej. \ruleImpI$_{\hypId}$}
+
+\subsubsection{Variables libres en contexto}
+
+Las reglas \ruleForallI{} y \ruleExistsE{} requieren que la variable del cuantificador no esté libre en el contexto. Esto representó un problema en la generación de demostraciones. Por ejemplo cuando se citan otros teoremas y se insertan sus demostraciones, si usan las mismas variables, lo cual es usual, llevaban a conflictos. Para evitar esos problemas, lo cambiamos por algo más permisivo pero que mantiene validez: en lugar de fallar, remueve del contexto todas las hipótesis que contengan libre esa variable en la sub-demostración.
+
+\newcommand{\ctxClean}{\bm{\hat{\ctx}}}
+
+\begin{prooftree}
+    \AxiomC{$\judg{\ctxClean}{\form}$}
+    \AxiomC{$x \notin \fv{\ctx}$}
+    \RL{\ruleForallI}
+    \BinaryInfC{$\judg{\ctx}{\forall \var.\form}$}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{$\judg{\ctxClean}{\exists \var.\form}$}
+    \AxiomC{$\judg{\ctxClean, \form}{\formTwo}$}
+    \AxiomC{$x \notin \fv{\formTwo}$}
+    \RL{\ruleExistsE}
+    \TrinaryInfC{$\judg{\ctx}{\formTwo}$}
+\end{prooftree}
+
+donde
+
+\[
+    \ctxClean = \{ \form \in \ctx \mid \var \notin \fv{\form} \}
+\]
+
+\subsection{Reglas admisibles}
+
+Antes mencionamos \textit{modus tollens} como regla de inferencia, pero no aparece en la \namedref{nd:inference-rules}. Esto es porque nos va a interesar tener un sistema
 lógico minimal: no vamos a agregar reglas de inferencia que se puedan deducir a
-partir de otras. Nos va a servir para simplificar el resto de PPA, dado que
-vamos a generar demostraciones en deducción natural. Estas reglas de inferencia
-las demostramos como \textbf{meta-teoremas}
+partir de otras, es decir, \textit{reglas admisibles}. Nos va a servir para
+simplificar el resto de PPA, dado que vamos a generar demostraciones en
+deducción natural y operar sobre ellas. Mientras más sencillas sean las partes con las que se componen, mejor. Las reglas admisibles las podemos demostrar para cualquier fórmula, así luego podemos usarlas como \textit{macros}.
 
-\todo{Demo modus tollens}
+\begin{ejemplo}{\textit{Modus tollens}}
+    
+    \begin{prooftree}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{\(\ctx \judG (\form \fImp \formTwo) \fAnd \fNot \formTwo\)}
+        \RL{\ruleAndETwo}
+        \UnaryInfC{\(
+            \ctx \judG \fNot \formTwo
+        \)}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{\(\ctx \judG (\form \fImp \formTwo) \fAnd \fNot \formTwo\)}
+        \RL{\ruleAndEOne}
+        \UnaryInfC{$\ctx \judG \form \fImp \formTwo$}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{$\ctx \judG \form$}
+        \RL{\ruleImpE}
+        \BinaryInfC{\(
+            \ctx \judG \formTwo
+        \)}
+        \RL{\ruleNotE{}}
+        \BinaryInfC{\(
+            \ctx = (\form \fImp \formTwo) \fAnd \fNot \formTwo, \form
+            \judG
+            \fFalse
+        \)}
+        \RL{\ruleNotI{}}
+        \UnaryInfC{\(
+            (\form \fImp \formTwo) \fAnd \fNot \formTwo
+            \judG
+            \fNot \form
+        \)}
+        \RL{\ruleImpI{}}
+        \UnaryInfC{\(\judG
+            (\form \fImp \formTwo \fAnd \fNot \formTwo)
+            \fImp \fNot\form
+        \)}
+    \end{prooftree}
+\end{ejemplo}
 
-\todo{Cut como meta teorema}
-
-\todo{DnegElim como meta teorema, y cómo permite razonar por el absurdo}
+\nota{cut y dnegElim las voy a contar en la sección del certifier, que es donde se usan.}
 
 \section{Algoritmos}
 
-Vamos a hablar de los algoritmos que se implementaron sobre deducción natural.
-Pero primero presentamos el modelo de fórmulas y demostraciones, que es central a todo el programa.
-
-\begin{figure}[H]
-\begin{multicols}{2}
-\begin{minted}{haskell}
-type VarId = String
-type FunId = String
-type PredId = String
-type HypId = String
-
-data Term
-    = TVar VarId
-    | TMetavar Metavar
-    | TFun FunId [Term]
-
-data Form
-    = FPred PredId [Term]
-    | FAnd Form Form
-    | FOr Form Form
-    | FImp Form Form
-    | FNot Form
-    | FTrue
-    | FFalse
-    | FForall VarId Form
-    | FExists VarId Form
-\end{minted}
-\end{multicols}
-\caption{Modelado de fórmulas y términos de LPO}
-\end{figure}
-
-Las meta-variables se usan para unificación, que es parte del solver de PPA. Ver
-más en \fullref{ppa:sec:unification}
-
-\begin{figure}[H]
-    
-\begin{multicols}{2}
-\begin{minted}{haskell}
-data Proof =
-    | PAx HypId
-    | PAndI
-        { proofLeft :: Proof
-        , proofRight :: Proof
-        }
-    | PAndE1
-        { right :: Form
-        , proofAnd :: Proof
-        }
-    | PAndE2
-        { left :: Form
-        , proofAnd :: Proof
-        }
-    | POrI1
-        { proofLeft :: Proof
-        }
-    | POrI2
-        { proofRight :: Proof
-        }
-    | POrE
-        { left :: Form
-        , right :: Form
-        , proofOr :: Proof
-        , hypLeft :: HypId
-        , proofAssumingLeft :: Proof
-        , hypRight :: HypId
-        , proofAssumingRight :: Proof
-        }
-    | PImpI
-        { hypAntecedent :: HypId
-        , proofConsequent :: Proof
-        }
-    | PImpE
-        { antecedent :: Form
-        , proofImp :: Proof
-        , proofAntecedent :: Proof
-        }
-    | PNotI
-        { hyp :: HypId
-        , proofBot :: Proof
-        }
-    | PNotE
-        { form :: Form
-        , proofNotForm :: Proof
-        , proofForm :: Proof
-        }
-    | PTrueI
-    | PFalseE
-        { proofBot :: Proof
-        }
-    | PLEM
-    | PForallI
-        { newVar :: VarId
-        , proofForm :: Proof
-        }
-    | PForallE
-        { var :: VarId
-        , form :: Form
-        , proofForall :: Proof
-        , termReplace :: Term
-        }
-    | PExistsI
-        { inst :: Term
-        , proofFormWithInst :: Proof
-        }
-    | PExistsE
-        { var :: VarId
-        , form :: Form
-        , proofExists :: Proof
-        , hyp :: HypId
-        , proofAssuming :: Proof
-        }
-\end{minted}        
-\end{multicols}
-\caption{Modelado de reglas de inferencia para demostraciones}
-\end{figure}
-
-El modelado de las reglas de inferencia omite varios detalles que están
-implícitos y serán inferidos por el algoritmo de chequeo. De esa forma las
-demostraciones son más fáciles de escribir y generar. Por ejemplo,
-\texttt{PImpI} no especifica en su modelo cuál es la implicación que se está
-introduciendo, dado que durante el chequeo debería ser la fórmula actual a demostrar
+A continuación describimos los algoritmos que son necesarios para la implementación de deducción natural. El chequeo de las demostraciones, alpha equivalencia de fórmulas, sustitución sin capturas, y variables libres
 
 \subsection{Chequeo}
 
-\todo{Completar sección. Cómo representamos el algoritmo matemáticamente?}
+El algoritmo de chequeo de una demostración en deducción natural consiste en recorrer recursivamente el árbol de demostración, chequeando que todas las inferencias sean válidas. Que se usan para demostrar la fórmula que corresponde (no un \ruleAndI{} para un $\fOr$) y que cumplen con las condiciones impuestas.
+
+\duda{Acá falta algo. Tal vez un ejemplo de una demo errónea?}
 
 \subsection{Alpha equivalencia}
 
 Si tenemos una hipótesis $\exists \var . \fun(\var)$, sería ideal poder usarla para demostrar a partir de ella una fórmula $\exists \varTwo . \fun(\varTwo)$. Si bien no son exactamente iguales, son \textbf{alpha-equivalentes}: su estructura es la misma, pero tienen nombres diferentes para variables \textit{ligadas} (no libres)
 
-\begin{definition}{Alpha equivalencia}. Se define la relación $\alphaEq$ inductivamente sobre la estructura de la fórmula
-    \begin{itemize}
-        \item Términos
-        \begin{align*}
-            \var \alphaEq \varTwo &\iff \var = \varTwo\\
-            \fun(\term_1, \dots, \term_n)
-            \alphaEq
-            \fun(\termTwo_1, \dots, \termTwo_n)
-            &\iff \fun = \funTwo \wedge
-                \term_1 \alphaEq \termTwo_1 \wedge
-                \dotso \wedge
-                \term_n \alphaEq \termTwo_n
-        \end{align*}
+\begin{definition}{Alpha equivalencia}. Se define la relación $\alphaEq$ como la que permite renombrar variables ligadas evitando capturas. Es la congruencia más chica que cumple con
+\begin{align*}
+    (\forall \var . \form) \alphaEq (\forall \varTwo . \form')
+        &\iff
+        \form \subst{\var}{\varThree} \alphaEq
+        \form' \subst{\varTwo}{\varThree} \text{ con $\varThree$ fresca}
+        \\
+    (\exists \var . \form) \alphaEq (\exists \varTwo . \form')
+        &\iff
+        \form \subst{\var}{\varThree} \alphaEq
+        \form' \subst{\varTwo}{\varThree} \text{ con $\varThree$ fresca}
+        \\
+\end{align*}
 
-        Caso contrario, no son equivalentes (si usan símbolos de función diferentes o comparamos diferentes estructuras, como funciones con variables o de distinta aridad) \duda{mejor forma de escribir esto?}
-    
-        \item Fórmulas
-        \begin{align*}    
-            \fFalse \alphaEq \fFalse
-                \\
-            \fTrue \alphaEq \fTrue
-                \\
-            \pred(\term_1, \dots, \term_n) \alphaEq \pred(\termTwo_1, \dots, \termTwo_n)
-                &\iff
-                \term_1 \alphaEq \termTwo_1 \wedge
-                \dotso \wedge
-                \term_n \alphaEq \termTwo_n
-                \\
-            (\form \fAnd \formTwo) \alphaEq (\form' \fAnd \formTwo')
-                &\iff
-                \form \alphaEq \form' \wedge \formTwo \alphaEq \formTwo'
-                \\
-            (\form \fOr \formTwo) \alphaEq (\form' \fOr \formTwo')
-                &\iff
-                \form \alphaEq \form' \wedge \formTwo \alphaEq \formTwo'
-                \\
-            (\form \fImp \formTwo) \alphaEq (\form' \fImp \formTwo')
-                &\iff
-                \form \alphaEq \form' \wedge \formTwo \alphaEq \formTwo'
-                \\
-            (\fNot \form) \alphaEq (\fNot \form')
-                &\iff
-                \form \alphaEq \form'
-                \\
-            (\forall \var . \form) \alphaEq (\forall \varTwo . \form')
-                &\iff
-                \form \subst{\var}{\varThree} \alphaEq
-                \form' \subst{\varTwo}{\varThree} \text{ con $\varThree$ fresca}
-                \\
-            (\exists \var . \form) \alphaEq (\exists \varTwo . \form')
-                &\iff
-                \form \subst{\var}{\varThree} \alphaEq
-                \form' \subst{\varTwo}{\varThree} \text{ con $\varThree$ fresca}
-                \\
-        \end{align*}
-
-        Caso contrario, no son equivalentes.
-
-    \end{itemize}
 \end{definition}
 
 Para implementarlo, un algoritmo naïve podría ser cuadrático: chequeamos recursivamente la igualdad estructural de ambas fórmulas. Si nos encontramos con un cuantificador con variables con nombres distintos, digamos $\var$ e $\varTwo$, elegimos una nueva variable \textit{fresca} (para evitar capturas) y lo renombramos recursivamente en ambos. Luego continuamos con el algoritmo. Si en la base nos encontramos con dos variables, tienen que ser iguales.
 
-Para hacerlo un poco más eficiente, se implementó un algoritmo lineal en la estructura de la fórmula. Mantenemos dos sustituciones de variables, una para cada fórmula. Si nos encontramos con $\exists \var . \fun(\var)$ y $\exists \varTwo . \fun(\varTwo)$, vamos a elegir una variable fresca igual que antes (por ejemplo $\varThree$), pero en vez de renombrar recursivamente, insertamos en cada sustitución los mapeos $\var \mapsto \varThree$ y $\varTwo \mapsto \varThree$. Luego, cuando estemos comparando dos variables libres, chequeamos que \textit{mapeen} a variables iguales. En este ejemplo son alpha equivalentes, pues
+Para hacerlo un poco más eficiente, se implementó un algoritmo lineal en la estructura de la fórmula. Mantenemos dos sustituciones de variables, una para cada fórmula. Si nos encontramos con $\exists \var . \fun(\var)$ y $\exists \varTwo . \fun(\varTwo)$, vamos a elegir una variable fresca igual que antes (por ejemplo $\varThree$), pero en vez de renombrar recursivamente, que lo hace cuadrático, insertamos en cada sustitución los renombres $\var \mapsto \varThree$ y $\varTwo \mapsto \varThree$. Luego, cuando estemos comparando dos variables libres, chequeamos que \textit{sus renombres} sean iguales. En este ejemplo son alpha equivalentes, pues
 
 \begin{align*}
     (\exists \var . \fun(\var)) \alphaEq (\exists \varTwo . \fun(\varTwo))
@@ -583,7 +664,7 @@ Para hacerlo un poco más eficiente, se implementó un algoritmo lineal en la es
     &\iff \varThree = \varThree.
 \end{align*}
 
-\subsection{Sustitución sin capturas}
+\subsection{Sustitución sin capturas}\label{nd:sec:subst}
 
 Notamos la sustitución de todas las ocurrencias libres de la variable $\var$ por un término $\term$ en una fórmula $\form$ como
 \(
@@ -599,7 +680,7 @@ Pero queremos evitar \textbf{captura de variables}. Por ejemplo, en
     \forall \varTwo . \pred(\var)\subst{\var}{\varTwo},
 \]
 
-si sustituimos  estaríamos involuntariamente ``capturando'' a $\varTwo$. Si hiciéramos que falle, tener que escribir las demostraciones con estos cuidados puede ser muy frágil y propenso a errores, por lo que es deseable que se resuelva \textit{automáticamente}: cuando nos encontramos con una captura, sustituimos la variable ligada de forma que no ocurra.
+si sustituimos sin más, estaríamos involuntariamente ``capturando'' a $\varTwo$. Si hiciéramos que falle, tener que escribir las demostraciones con estos cuidados puede ser muy frágil y propenso a errores, por lo que es deseable que se resuelva \textit{automáticamente}: cuando nos encontramos con una captura, sustituimos la variable ligada de forma que no ocurra.
 
 \[
     \forall \varTwo . \pred(\var)\subst{\var}{\varTwo} =
@@ -665,7 +746,8 @@ Para implementarlo, cada vez que nos encontramos con una captura, vamos a \texti
 
 \subsection{Variables libres}
 
-\duda{Mover a la sección de LPO? esto es well-known}
+\duda{Mover a la sección de LPO en la introducción? esto es well-known}
+
 \begin{definition}{Variables libres de fórmulas y términos}. Se definen inductivamente en su estructura de la siguiente forma.
 
     \begin{itemize}
@@ -689,12 +771,6 @@ Para implementarlo, cada vez que nos encontramos con una captura, vamos a \texti
         \end{align*}
 
     \end{itemize}
-\end{definition}
-
-\begin{definition}{Variables libres de un contexto}
-    \[
-        \fv{\ctx} = \bigcup_{\form \in \ctx} \fv{\form}
-    \]
 \end{definition}
 
 \begin{definition}{Variables libres de una demostración.} Sea $\someProof$ una demostración. $\fv{\someProof}$ son las variables libres de todas las fórmulas que la componen. Por ejemplo, para la siguiente

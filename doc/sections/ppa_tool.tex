@@ -1,0 +1,120 @@
+\begin{figure}[H]
+\begin{multicols}{2}
+\begin{minted}{haskell}
+type VarId = String
+type FunId = String
+type PredId = String
+type HypId = String
+
+data Term
+    = TVar VarId
+    | TMetavar Metavar
+    | TFun FunId [Term]
+
+data Form
+    = FPred PredId [Term]
+    | FAnd Form Form
+    | FOr Form Form
+    | FImp Form Form
+    | FNot Form
+    | FTrue
+    | FFalse
+    | FForall VarId Form
+    | FExists VarId Form
+\end{minted}
+\end{multicols}
+\caption{Modelado de fórmulas y términos de LPO}
+\end{figure}
+
+
+Las meta-variables se usan para unificación, que es parte del solver de PPA. Ver
+más en \fullref{ppa:sec:unification}
+
+\begin{figure}[H]
+    
+\begin{multicols}{2}
+\begin{minted}{haskell}
+data Proof =
+    | PAx HypId
+    | PAndI
+        { proofLeft :: Proof
+        , proofRight :: Proof
+        }
+    | PAndE1
+        { right :: Form
+        , proofAnd :: Proof
+        }
+    | PAndE2
+        { left :: Form
+        , proofAnd :: Proof
+        }
+    | POrI1
+        { proofLeft :: Proof
+        }
+    | POrI2
+        { proofRight :: Proof
+        }
+    | POrE
+        { left :: Form
+        , right :: Form
+        , proofOr :: Proof
+        , hypLeft :: HypId
+        , proofAssumingLeft :: Proof
+        , hypRight :: HypId
+        , proofAssumingRight :: Proof
+        }
+    | PImpI
+        { hypAntecedent :: HypId
+        , proofConsequent :: Proof
+        }
+    | PImpE
+        { antecedent :: Form
+        , proofImp :: Proof
+        , proofAntecedent :: Proof
+        }
+    | PNotI
+        { hyp :: HypId
+        , proofBot :: Proof
+        }
+    | PNotE
+        { form :: Form
+        , proofNotForm :: Proof
+        , proofForm :: Proof
+        }
+    | PTrueI
+    | PFalseE
+        { proofBot :: Proof
+        }
+    | PLEM
+    | PForallI
+        { newVar :: VarId
+        , proofForm :: Proof
+        }
+    | PForallE
+        { var :: VarId
+        , form :: Form
+        , proofForall :: Proof
+        , termReplace :: Term
+        }
+    | PExistsI
+        { inst :: Term
+        , proofFormWithInst :: Proof
+        }
+    | PExistsE
+        { var :: VarId
+        , form :: Form
+        , proofExists :: Proof
+        , hyp :: HypId
+        , proofAssuming :: Proof
+        }
+\end{minted}        
+\end{multicols}
+\caption{Modelado de reglas de inferencia para demostraciones}
+\end{figure}
+
+
+El modelado de las reglas de inferencia omite varios detalles que están
+implícitos y serán inferidos por el algoritmo de chequeo. De esa forma las
+demostraciones son más fáciles de escribir y generar. Por ejemplo,
+\texttt{PImpI} no especifica en su modelo cuál es la implicación que se está
+introduciendo, dado que durante el chequeo debería ser la fórmula actual a demostrar

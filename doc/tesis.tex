@@ -4,21 +4,19 @@
 \usepackage{sections/nd_rules}
 
 % Para solo agregar algunas secciones
-%\includeonly{sections/friedman} 
+\includeonly{sections/natural_deduction} 
 
 \begin{document}
 %%%% CARATULA
 
 \def\autor{Manuel Panichelli}
 \def\tituloTesis{
-    PPA \vspace{.2cm} \\
-    Un asistente de demostraciones tipo\\
-    Mizar para lógica clásica de primer orden,\\
-    con extracción de testigos basada\vspace{.1cm}\\
-    en la traducción de Friedman
+PPA - Un asistente de demostración para lógica de primer orden con extracción de
+testigos usando la traducción de Friedman
 }
-\def\runtitulo{PPA: Un asistente de demostraciones tipo Mizar para lógica clásica de primer orden con extracción de testigos basada en la traducción de Friedman}
-\def\runtitle{PPA: a Mizar-like proof-assistant for classical first-order logic with witness extraction based on Friedman's translation}
+\def\runtitulo{PPA - Un asistente de demostración para lógica de primer orden
+con extracción de testigos usando la traducción de Friedman}
+\def\runtitle{PPA - a proof-assistant for first-order logic with witness extraction using Friedman's translation}
 \def\director{Pablo Barenbaum}
 \def\lugar{Buenos Aires, 2024}
 
@@ -50,13 +48,17 @@
 
 \include{sections/natural_deduction}
 
-\chapter{PPA}
+\chapter{PPA el lenguaje}
 
 \include{sections/ppa}
 
 \chapter{Extracción de testigos de existenciales}
 
 \include{sections/friedman}
+
+\chapter{La herramienta \texttt{ppa}}
+
+\include{sections/ppa_tool}
 
 \chapter{Conclusiones}
 

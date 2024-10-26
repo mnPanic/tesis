@@ -19,6 +19,9 @@
 
 \usepackage{listings}
 
+% https://tex.stackexchange.com/questions/159988/sidewaysfigure-and-landscape
+% \usepackage{pdflscape}
+
 
 % Colores 
 % https://es.overleaf.com/learn/latex/Using_colors_in_LaTeX
@@ -35,6 +38,7 @@
 % https://tex.stackexchange.com/questions/121865/nameref-how-to-display-section-name-and-its-number
 \newcommand*{\ejemploautorefname}{Ejemplo}
 \newcommand*{\fullref}[1]{\hyperref[{#1}]{\autoref*{#1} \nameref*{#1}}}
+\newcommand*{\namedref}[1]{\hyperref[{#1}]{\autoref*{#1}}}
 
 
 % https://tex.stackexchange.com/questions/32701/side-by-side-equations-with-equation-numbers-for-each
@@ -78,6 +82,12 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%% COMANDOS %%%%%%%%%%%%%%%%%%%%%
 
+% https://tex.stackexchange.com/questions/73275/rotated-ltimes-symbol
+\newcommand{\btimes}{\mathbin{\rotatebox[origin=c]{90}{\ltimes}}}
+%\newcommand{\invertedForall}{\mathbin{\rotatebox{origin=c}{180}{$\forall$}}}
+\newcommand{\iforall}{\rotatebox{180}{$\forall$}}
+\newcommand{\ppa}{PP\iforall{}}
+
 % Misceláneos
 \newcommand{\ubrace}[2]{\aunderbrace[l1r]{#1}_{#2}}
 \newcommand{\obrace}[2]{\aoverbrace[L1R]{#1}^{#2}}
@@ -85,6 +95,7 @@
 % "Comunicacionales", para que el director (Pablo) o yo lea en el futuro
 \newcommand{\todo}[1]{\textcolor{BrickRed}{(TODO: #1)}}
 \newcommand{\duda}[1]{\textcolor{Plum}{(DUDA: #1)}}
+\newcommand{\nota}[1]{\textcolor{BlueViolet}{(NOTA: #1)}}
 \newcommand{\ok}{\textcolor{Green}{\checkmark}}
 
 % Diffs, para que el director pueda ver bien distinguidos los cambios que voy haciendo

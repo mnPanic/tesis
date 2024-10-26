@@ -105,7 +105,7 @@
 
 \newcommand{\proofTreeImpI}{%
 \begin{prooftree}
-    \AxiomC{$\judg{\ctx, \hypId: \form}{\formTwo}$}
+    \AxiomC{$\judg{\ctx, \form}{\formTwo}$}
     \RL{\ruleImpI}
     \UnaryInfC{$\judg{\ctx}{\form \to \formTwo}$}
 \end{prooftree}
@@ -121,7 +121,7 @@
 
 \newcommand{\proofTreeNotI}{%
 \begin{prooftree}
-    \AxiomC{$\judg{\ctx, \hypId: \form}{\bot}$}
+    \AxiomC{$\judg{\ctx, \form}{\bot}$}
     \RL{\ruleNotI}
     \UnaryInfC{$\judg{\ctx}{\neg \form}$}
 \end{prooftree}
@@ -147,6 +147,6 @@
 \begin{prooftree}
     \AxiomC{}
     \RL{\ruleAx}
-    \UnaryInfC{$\judg{\ctx, \hypId:\form}{\hypId:\form}$}
+    \UnaryInfC{$\judg{\ctx, \form}{\form}$}
 \end{prooftree}
 }
