@@ -132,7 +132,7 @@ certifyTheorem ctx (DTheorem h f p) = do
         wrapR
             (printf "theorem '%s'" h)
             (certifyProof ctx f p)
-    return (HTheorem h f ndProof)
+    return (HTheorem h f (PNamed h ndProof))
 
 certifyProof :: Context -> Form -> TProof -> Result Proof
 -- certifyProof ctx f ps | trace (printf "certifyProof %s %s %s" (show ctx) (show f) (show ps)) False = undefined
@@ -969,7 +969,6 @@ findSubstToSolveContradiction clL clR (FForall x g) metavar = do
                         err2
             Right (s, ms) -> Right (s, Map.insert x metavar ms)
 findSubstToSolveContradiction _ _ _ _ = Left "no more foralls"
-
 
 {- solveContradictionUnifying encuentra la sustitución que hace a la fórmula
 refutable (en caso de que exista).

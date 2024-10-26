@@ -3,6 +3,8 @@
 // parcial(M): Parcial de la materia
 // recu(p): Recuperatorio del parcial p
 
+// IDeas: agregar final, criterio de aprobar cursada (existe examen que no haya aprobado)
+
 axiom reprueba_recu_parcial_recursa: forall A. forall M.
     (reprueba(A, parcial(M)) & reprueba(A, recu(parcial(M)))) -> recursa(A, M)
 
@@ -32,20 +34,37 @@ proof
     hence recursa(A, M) by reprueba_recu, reprueba_p, reprueba_recu_parcial_recursa
 end
 
+// TODO: Esto falla porque A está libre en el contexto del teorema anterior al chequear, agregarlo al checker para que las cambie?
+//theorem falta_recu_recursa:
+//    forall A. forall M.
+//        falta(A, recu(parcial(M))) -> recursa(A, M)
+//proof
+//    let A
+//    let M
+//
+//    suppose falta_recu: falta(A, recu(parcial(M)))
+//
+//    // No se puede en un paso porque elimina un forall a lo sumo
+//    // thus recursa(A, M) by falta_recu, falta_reprueba, reprueba_recu_recursa
+//
+//    have -: reprueba(A, recu(parcial(M))) by falta_recu, falta_reprueba
+//    hence recursa(A, M) by reprueba_recu_recursa
+//end
+
 theorem falta_recu_recursa:
     forall A. forall M.
         falta(A, recu(parcial(M))) -> recursa(A, M)
 proof
-    let A
-    let M
+    let A'
+    let M'
 
-    suppose falta_recu: falta(A, recu(parcial(M)))
+    suppose falta_recu: falta(A', recu(parcial(M')))
 
     // No se puede en un paso porque elimina un forall a lo sumo
     // thus recursa(A, M) by falta_recu, falta_reprueba, reprueba_recu_recursa
 
-    have -: reprueba(A, recu(parcial(M))) by falta_recu, falta_reprueba
-    hence recursa(A, M) by reprueba_recu_recursa
+    have -: reprueba(A', recu(parcial(M'))) by falta_recu, falta_reprueba
+    hence recursa(A', M') by reprueba_recu_recursa
 end
 
 axiom manu_falta_recu: falta(manu, recu(parcial(tleng)))

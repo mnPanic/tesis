@@ -11,7 +11,7 @@ import ND (
     Form (..),
     Proof (..),
     Term (..),
-    formsWithFv,
+    filterFV,
     fv,
     fvE,
     get,
@@ -170,7 +170,7 @@ check env proof@(PExistsE x fA proofExistsxA hypA proofB) fB
         CheckOK -> wrap (check (EExtend hypA fA env) proofB fB) "proof assuming" env proof fB
 -- dem de Forall x. A
 check env proof@(PForallI x' proofA) form@(FForall x fA)
-    | x' `elem` fvE env = CheckError env proof form (printf "env shouldn't contain fv '%s', forms: %s" x' (show $ formsWithFv env x))
+    | x' `elem` fvE env = CheckError env proof form (printf "env shouldn't contain fv '%s', forms: %s" x' (show $ filterFV x env))
     | x' `elem` fv form = CheckError env proof form (printf "new var (%s) shouldn't be in fv of forall form %s" x' (show form))
     | otherwise =
         let fA' = subst x (TVar x') fA
