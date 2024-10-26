@@ -20,19 +20,25 @@ demostraciones son tratadas como objetos matemáticos formales, nos encontramos
 con los \textit{proof calculi} o \textit{proof systems}, que son sistemas
 lógicos que permiten demostrar sentencias.
 
-Por ejemplo, la siguiente demostración
+Por ejemplo, la siguiente demostración en el dominio de exámenes en la facultad,
+que vamos a ir iterando a lo largo de la tesis.
 
-si un alumno reprueba el parcial y el recuperatorio, recursa
-
+\begin{itemize}
+    \item Si un alumno reprueba un final, entonces recursa (un criterio un poco duro)
+    \item Si un alumno falta, entonces reprueba
+    \item En base a eso, podemos demostrar que si un alumno falta a un final,
+    entonces recursa.
+\end{itemize}
 
 \begin{ejemplo}
-    Si ((llueve entonces el patio se moja) y ), y llueve, entonces el patio se moja.
+    Si ((reprueba entonces recursa) y (falta entonces reprueba)) y falta, entonces recursa.
 
     Demostración:
 \begin{itemize}
-    \item Asumo que si llueve, el patio se moja.
-    \item Asumo que llueve.
-    \item Como si llueve el patio se moja, entonces el patio se moja.
+    \item Asumo que falta. Quiero ver que recursa.
+    \item Sabemos que si falta, entonces reprueba.
+    \item Sabemos que si reprueba, entonces recursa.
+    \item $\therefore$ recursa.
 \end{itemize}
     \qed
 \end{ejemplo}
