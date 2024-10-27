@@ -1,0 +1,8 @@
+axiom ax1: p -> q
+theorem t: (q -> r) -> p -> r
+proof
+    suppose h1: (q -> r)
+    suppose h2: p
+    then tq: q by ax1
+    hence r by h1
+end

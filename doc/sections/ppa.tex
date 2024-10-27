@@ -28,7 +28,7 @@
 El lenguaje PPA (\textit{Pani's Proof Assistant}) se construye sobre las
 fundaciones de deducción natural. Es un asistente de demostración que permite
 escribir de una forma práctica demostraciones de cualquier teoría de lógica
-clásica de primer órden. En este capítulo nos vamos a centrar en el lenguaje, la
+clásica de primer orden. En este capítulo nos vamos a centrar en el lenguaje, la
 interfaz del programa \texttt{ppa}. Los detalles teóricos de cómo está
 implementado son contados en el \namedref{chap:ppa-certifier}, y los detalles de
 implementación y su instalación en el \namedref{chap:ppa-tool}. Para
@@ -37,13 +37,13 @@ introducirlo veamos un ejemplo: representamos el mismo de alumnos del
 sofisticación.
 
 \begin{figure}[H]
-    \lstinputlisting[firstline=12,lastline=61,language=PPA]{listings/alumnos.ppa}
+    \lstinputlisting[firstline=12,lastline=61,language=PPA]{listings/interfaz/alumnos.ppa}
     \caption{Programa de ejemplo completo en PPA. Demostraciones de alumnos y parciales.}
     \label{ppa:prog:alumnos}
 \end{figure}
 
 La primer parte de todo programa en PPA es definir los axiomas de la
-\textit{teoría de primer órden} con la que se está trabajando. Como no se
+\textit{teoría de primer orden} con la que se está trabajando. Como no se
 chequean tipos, no es necesario definir explícitamente los símbolos de
 predicados y de función. Pero se agregan a modo informativo como un comentario.
 Son fórmulas que son siempre consideradas como válidas. Definimos los siguientes,
@@ -57,7 +57,7 @@ Son fórmulas que son siempre consideradas como válidas. Definimos los siguient
     \item \lstinline{falta_reprueba}: Si un alumno falta a un exámen, lo reprueba.
 \end{itemize}
 
-\lstinputlisting[firstline=1,lastline=23]{listings/alumnos.ppa}
+\lstinputlisting[firstline=1,lastline=23]{listings/interfaz/alumnos.ppa}
 
 En base a eso demostramos dos teoremas. El primero,
 \lstinline{reprueba_recu_recursa}, nos permite concluir que un alumno recursa
@@ -67,7 +67,7 @@ reprueba el recuperatorio es porque lo rindió, y si rindió el recuperatorio, e
 porque reprobó el parcial.
 
 \begin{figure}[H]
-    \lstinputlisting[firstnumber=last,firstline=25,lastline=46]{listings/alumnos.ppa}
+    \lstinputlisting[firstnumber=last,firstline=25,lastline=46]{listings/interfaz/alumnos.ppa}
 \end{figure}
 
 Para demostrar un teorema, tenemos que agotar su \textit{tesis} reduciéndola
@@ -86,7 +86,7 @@ se reduce por completo.
     \item \cmdHave{} agrega una hipótesis sin reducir la tesis.
     \item \cmdBy{} es el mecanismo principal de demostración. Permite deducir
     fórmulas a partir de otras. Es completo para lógica proposicional, y
-    heurístico para primer órden. Unifica las variables de los \lstinline{forall}.
+    heurístico para primer orden. Unifica las variables de los \lstinline{forall}.
     \item \cmdThus{} permite reducir parte o la totalidad de la tesis
     \item \cmdHence{} es igual a thus, pero incluye implícitamente la
     hipótesis anterior a las justificaciones del \cmdBy{}.
@@ -96,7 +96,7 @@ Finalmente, a partir del teorema anterior y el axioma \lstinline{falta_reprueba}
 podemos demostrar que si un alumno falta a un recuperatorio, recursa la materia.
 
 \begin{figure}[H]
-    \lstinputlisting[firstnumber=last,firstline=48,lastline=61]{listings/alumnos.ppa}
+    \lstinputlisting[firstnumber=last,firstline=48,lastline=61]{listings/interfaz/alumnos.ppa}
 \end{figure}
 
 Al ejecutarlo con \texttt{ppa}, se \textit{certifica} la demostración, generando
@@ -107,17 +107,17 @@ el error. No debería fallar nunca el chequeo sobre el certificado.
 \section{Interfaz}
 
 PPA es un lenguaje que permite escribir demostraciones de cualquier teoría de
-lógica de primer órden. Está inspirado en el \textit{mathematical vernacular}
+lógica de primer orden. Está inspirado en el \textit{mathematical vernacular}
 introducido por Freek Wiedijk en \cite{freek-mv}. En esta sección nos
 concentramos en la interfaz de usuario, sin entrar en detalle en cómo está
 implementada.
 
 Un programa de PPA consiste en una lista de \textbf{declaraciones}: axiomas y
-teoremas, que se leen en órden el inicio hasta el final.
+teoremas, que se leen en orden el inicio hasta el final.
 
 \begin{itemize}
     \item Los axiomas se asumen válidos, se usan para modelar la \textit{teoría
-    de primer órden} sobre la cual hacer demostraciones
+    de primer orden} sobre la cual hacer demostraciones
 
     \begin{lstlisting}
 axiom <name> : <form>
@@ -211,7 +211,7 @@ El mecanismo principal de demostración directa o \textit{modus ponens} es el
 \lstinline{by}, que afirma que un hecho es consecuencia de una lista de
 hipótesis (su ``justificación''). Esto permite eliminar universales e implicaciones. Por detrás hay un
 solver completo para lógica proposicional pero heurístico para primer
-órden (elimina todos los foralls de a lo sumo una hipótesis, no intenta con más
+orden (elimina todos los foralls de a lo sumo una hipótesis, no intenta con más
 de una). Exploramos las limitaciones en \todo{ref}.
 
 En general, \texttt{... by <justification>} se interpreta como que \texttt{...}
@@ -230,11 +230,11 @@ hipótesis (como \lstinline{suppose}). Puede usarse de dos formas principales,
 
     Por ejemplo, para eliminación de implicaciones
 
-    \lstinputlisting{listings/by-imp.ppa}
+    \lstinputlisting{listings/interfaz/by-imp.ppa}
 
     Y para eliminación de cuantificadores universales
 
-    \lstinputlisting{listings/by-forall.ppa}
+    \lstinputlisting{listings/interfaz/by-forall.ppa}
 
     \item \texttt{have <form>\ by <justification>}.
     
@@ -244,7 +244,7 @@ hipótesis (como \lstinline{suppose}). Puede usarse de dos formas principales,
     anterior la hicimos en un solo paso con el \lstinline{thus}, pero podríamos
     haberla hecho en más de uno con una afirmación auxiliar intermedia.
 
-    \lstinputlisting{listings/by-imp-have.ppa}
+    \lstinputlisting{listings/interfaz/by-imp-have.ppa}
 \end{itemize}
 
 Ambas tienen su contraparte con \textit{azúcar sintáctico} que agrega
@@ -266,21 +266,21 @@ Por ejemplo,
     \lstinputlisting[
         firstline=1,
         lastline=9,
-    ]{listings/by-imp-then.ppa}
+    ]{listings/interfaz/by-imp-then.ppa}
     \vfill\null
     \columnbreak
     \lstinputlisting[
         firstline=11,
         lastline=23,
         firstnumber=last
-    ]{listings/by-imp-then.ppa}
+    ]{listings/interfaz/by-imp-then.ppa}
 \end{multicols}
 
 
 En todos, el \lstinline{by} es opcional. En caso de no especificarlo, debe ser
 una tautología.
 
-\lstinputlisting{listings/by-taut.ppa}
+\lstinputlisting{listings/interfaz/by-taut.ppa}
 
 \subsection{Comandos y reglas de inferencia}
 
@@ -328,17 +328,17 @@ natural se lleva a un más alto nivel con el uso del \lstinline{by}.
     $\formTwo = \fFalse$.
 
     \begin{multicols}{2}
-        \lstinputlisting[firstline=1, lastline=7]{listings/suppose.ppa}
+        \lstinputlisting[firstline=1, lastline=7]{listings/interfaz/suppose.ppa}
         \vfill\null
         \columnbreak
-        \lstinputlisting[firstline=9, lastline=15]{listings/suppose.ppa}    
+        \lstinputlisting[firstline=9, lastline=15]{listings/interfaz/suppose.ppa}    
     \end{multicols}
     \item \lstinline{cases} (\ruleOrE)
     
     Permite razonar por casos. Para cada uno se debe demostrar la tesis en su
     totalidad por separado.
 
-    \lstinputlisting[firstline=1, lastline=11]{listings/cases.ppa}
+    \lstinputlisting[firstline=1, lastline=11]{listings/interfaz/cases.ppa}
 
     No es necesario que los casos sean exactamente iguales a como están
     presentados en la hipótesis, solo debe valer que la disyunción de ellos sea
@@ -398,17 +398,17 @@ reduce al resto.
     \centering
     \caption{Descarga de conjunción simple}
     \begin{tabular}{c}
-        \lstinputlisting{listings/discharge-simple.ppa}
+        \lstinputlisting{listings/interfaz/discharge-simple.ppa}
     \end{tabular}
 \end{figure}
 
-Esto puede ser prácticamente en cualquier órden.
+Esto puede ser prácticamente en cualquier orden.
 
 \begin{figure}[H]
     \centering
     \caption{Descarga de conjunción compleja}
     \begin{tabular}{c}
-    \lstinputlisting{listings/discharge-complex.ppa}
+    \lstinputlisting{listings/interfaz/discharge-complex.ppa}
     \end{tabular}
 \end{figure}
 
@@ -419,7 +419,7 @@ Esto puede ser prácticamente en cualquier órden.
     \item \lstinline{equivalently}: Permite reducir la tesis a una fórmula
     equivalente. Útil para usar descarga de conjunciones.
     
-    \lstinputlisting{listings/equivalently.ppa}
+    \lstinputlisting{listings/interfaz/equivalently.ppa}
 
     \item \lstinline{claim}: Permite demostrar una afirmación auxiliar. Útil
     para ordenar las demostraciones sin tener que definir otro teorema. Ejemplo

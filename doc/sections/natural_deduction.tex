@@ -62,12 +62,11 @@ demostración en lenguaje natural.
 
 \section{El sistema de deducción natural}
 
-
 Los \textit{proof systems} en general están compuestos por
 
 \begin{itemize}
     \item \textbf{Lenguaje formal}: el conjunto $L$ de fórmulas admitidas por
-    el sistema. En nuestro caso, lógica de primer órden.
+    el sistema. En nuestro caso, lógica de primer orden.
     \item \textbf{Reglas de inferencia}: lista de reglas que se usan para probar
     teoremas de axiomas y otros teoremas. Por ejemplo, \textit{modus ponens} (si
     es cierto $\form \fImp \formTwo$ y $\form$, se puede concluir $\formTwo$) o
@@ -116,6 +115,8 @@ Introducimos algunas definiciones preliminares, luego vemos las reglas de infere
 
     Se explora en más detalle en la \fullref{nd:sec:subst}
 \end{definition}
+
+\subsection{Reglas de inferencia}
 
 \begin{figure}[H]
     \begin{multicols}{2}
@@ -169,9 +170,11 @@ Introducimos algunas definiciones preliminares, luego vemos las reglas de infere
     \proofTreeExistsI
     \proofTreeExistsE
 
-    \caption{Reglas de inferencia para deducción natural de lógica de primer órden}
+    \caption{Reglas de inferencia para deducción natural de lógica de primer orden}
     \label{nd:inference-rules}
 \end{figure}
+
+\subsection{Ejemplo introductorio}
 
 \begin{ejemplo}\label{nd:ex:exam-nd}
     Demostración de \fullref{nd:ex:exam} en deducción natural. Como es en su
@@ -273,7 +276,7 @@ Introducimos algunas definiciones preliminares, luego vemos las reglas de infere
     \end{itemize}
 \end{ejemplo}
 
-\section{Reglas de inferencia}
+\section{Intuición detrás de las reglas}
 
 A continuación se explican brevemente las reglas de inferencia listadas en \namedref{nd:inference-rules}.
 
@@ -382,7 +385,7 @@ elemento por cada uno del dominio sobre el cual se cuantifica, y análogamente u
 
 \begin{ejemplo}
     \label{nd:ex:exam-nd-lpo}
-    Para ejemplificar el uso de las reglas de cuantificadores, extendemos el \namedref{nd:ex:exam-nd} a primer órden. Usamos
+    Para ejemplificar el uso de las reglas de cuantificadores, extendemos el \namedref{nd:ex:exam-nd} a primer orden. Usamos
 
     \begin{itemize}
         \item $\vAlu$ representa un alumno, $\vMat$ una materia y $\vEx$ un examen.
@@ -391,7 +394,7 @@ elemento por cada uno del dominio sobre el cual se cuantifica, y análogamente u
         \item $\falta(\vAlu, \vEx) \equiv \predFalta(\vAlu, \vEx)$
     \end{itemize}
 
-    Vamos a tomar los siguientes como \textit{axiomas}, que van a formar parte del contexto inicial de la demostración. Es lo mismo que haremos en PPA para modelar teorías de primer órden.
+    Vamos a tomar los siguientes como \textit{axiomas}, que van a formar parte del contexto inicial de la demostración. Es lo mismo que haremos en PPA para modelar teorías de primer orden.
 
     \begin{itemize}
         \item Si un alumno reprueba el final de una materia, entonces recursa
@@ -509,9 +512,9 @@ elemento por cada uno del dominio sobre el cual se cuantifica, y análogamente u
     \end{figure}
 \end{ejemplo}
 
-\subsection{Ajustes para generación de demostraciones}
+\section{Ajustes para generación de demostraciones}
 
-\subsubsection{Hipótesis etiquetadas}
+\subsection{Hipótesis etiquetadas}
 
 En las secciones anteriores presentamos a los contextos $\ctx$ como \textit{conjuntos} de fórmulas. Pero en realidad, para mayor claridad en las demostraciones, vamos a querer que las hipótesis estén \textbf{etiquetadas}. Para permitirlo, las diferencias son las siguientes.
 
@@ -519,6 +522,7 @@ En las secciones anteriores presentamos a los contextos $\ctx$ como \textit{conj
     \item Los contextos $\ctx$ son conjuntos de pares $\hypId : \form$ de etiquetas y fórmulas.
     \item Las reglas que hacen uso de hipótesis, lo hacen nombrándolas.
     
+    \todo{\ruleExistsE}
 
     \begin{multicols}{3}
         \begin{prooftree}
@@ -543,7 +547,7 @@ En las secciones anteriores presentamos a los contextos $\ctx$ como \textit{conj
 
 \duda{No veo por qué con esta presentación sería necesario tener a los nombres de las reglas con las etiquetas, por ej. \ruleImpI$_{\hypId}$}
 
-\subsubsection{Variables libres en contexto}
+\subsection{Variables libres en contexto}
 
 Las reglas \ruleForallI{} y \ruleExistsE{} requieren que la variable del cuantificador no esté libre en el contexto. Esto representó un problema en la generación de demostraciones. Por ejemplo cuando se citan otros teoremas y se insertan sus demostraciones, si usan las mismas variables, lo cual es usual, llevaban a conflictos. Para evitar esos problemas, lo cambiamos por algo más permisivo pero que mantiene validez: en lugar de fallar, remueve del contexto todas las hipótesis que contengan libre esa variable en la sub-demostración.
 
@@ -570,7 +574,7 @@ donde
     \ctxClean = \{ \form \in \ctx \mid \var \notin \fv{\form} \}
 \]
 
-\subsection{Reglas admisibles}
+\section{Reglas admisibles}
 
 Antes mencionamos \textit{modus tollens} como regla de inferencia, pero no aparece en la \namedref{nd:inference-rules}. Esto es porque nos va a interesar tener un sistema
 lógico minimal: no vamos a agregar reglas de inferencia que se puedan deducir a
@@ -626,11 +630,21 @@ deducción natural y operar sobre ellas. Mientras más sencillas sean las partes
 
 A continuación describimos los algoritmos que son necesarios para la implementación de deducción natural. El chequeo de las demostraciones, alpha equivalencia de fórmulas, sustitución sin capturas, y variables libres
 
-\subsection{Chequeo}
+\subsection{Chequeador}
+\label{nd:sec:checker}
+\diffNew{Sección reescrita!}
 
-El algoritmo de chequeo de una demostración en deducción natural consiste en recorrer recursivamente el árbol de demostración, chequeando que todas las inferencias sean válidas. Que se usan para demostrar la fórmula que corresponde (no un \ruleAndI{} para un $\fOr$) y que cumplen con las condiciones impuestas.
+El algoritmo de chequeo de una demostración en deducción natural consiste en recorrer recursivamente el árbol de demostración, chequeando que todas las inferencias sean válidas y manteniendo un contexto $\ctx$ en el camino.
+Se chequea Que se usan para demostrar la fórmula que corresponde (no un \ruleAndI{} para un $\fOr$) y que cumplen con las condiciones impuestas.
 
-\duda{Acá falta algo. Tal vez un ejemplo de una demo errónea?}
+El módulo que se encarga de implementarlo es el \modChecker, su función principal es
+
+\begin{minted}{haskell}
+    check :: Env -> Proof -> Form
+\end{minted}
+
+
+donde \mintinline{haskell}{Env} es el contexto $\ctx$, \mintinline{haskell}{Proof} es el término de demostración en deducción natural y \mintinline{haskell}{Form} es la fórmula que demuestra.
 
 \subsection{Alpha equivalencia}
 

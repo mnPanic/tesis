@@ -322,7 +322,7 @@ proof
 end
 ```
 
-Y también puede ser de forma más compleja, parcialmente y en cualquier órden
+Y también puede ser de forma más compleja, parcialmente y en cualquier orden
 
 ```text
 axiom "a": a
