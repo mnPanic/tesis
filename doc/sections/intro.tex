@@ -1,3 +1,12 @@
+
+
+En este trabajo implementamos una asistente de demostración ``PPA''
+(\textit{Pani's proof assistant}) inspirado en Mizar.
+
+PPA se puede referir a varias cosas: el lenguaje para escribir demostraciones,
+la herramienta (junto con su extracción de testigos).
+
+
 \section{Teoremas}
 
 In mathematics and formal logic, a theorem is a statement that has been proven, or can be proven.[a][2][3] The proof of a theorem is a logical argument that uses the inference rules of a deductive system to establish that the theorem is a logical consequence of the axioms and previously proved theorems.
@@ -10,7 +19,7 @@ Completar con https://en.wikipedia.org/wiki/Theorem
 
 \begin{itemize}
     \item Son programs que asisten al usuario a la hora de escribir una
-    demostracion. Permiten representarlas en un programa.
+    demostración. Permiten representarlas en un programa.
     \item Aplicaciones: formalización de teoremas, verificación formal de
     programas, etc.
     \item Ejemplos: Coq, isabelle (isar), Mizar
@@ -18,10 +27,6 @@ Completar con https://en.wikipedia.org/wiki/Theorem
     \item Ventajas: colaboración a gran escala (confianza en el checker),
     chequear el output de los LLMs
 \end{itemize}
-
-\subsection{Mizar}
-
-\todo{Mizar}
 
 \section{Arquitectura de PPA}
 
@@ -33,6 +38,8 @@ Completar con https://en.wikipedia.org/wiki/Theorem
     \item razón de ser: Más práctico que demos de bajo nivel
     \item Implementado en Haskell
 \end{itemize}
+
+Principalmente hace dos cosas: certificar y extraer testigos.
 
 \section{Lógica de primer órden}
 

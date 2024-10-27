@@ -1,19 +1,12 @@
 \begin{itemize}
     \item Interfaz de PPA. Acá tienen que quedar claras todas las intuiciones
     desde el punto de vista de un usuario. Mencionar que es un buen momento para
-    que vayan y prueben el programa (comando \texttt{check} nada más)
+    que vayan y prueben el programa (comando \texttt{check} nada más) \ok
     \begin{itemize}
         \item Programas, teoremas, demostraciones como listas de pasos que
-        reducen la tesis hasta agotarla.
-        \item Comandos 1 por 1. Similar al README que ya existe pero más facha
-        \item Ejemplos de demostraciones. Considerar incluir la de grupos
-    \end{itemize}
-    \item Compiladores
-    \begin{itemize}
-        \item Primer de compiladores en general y sus frontends
-        \item Parser generators en general. LR/LALR
-        \item Happy. Alex.
-        \item Sintaxis EBNF. Incluir el archivo Alex/happy? Es cortito
+        reducen la tesis hasta agotarla. \ok
+        \item Comandos 1 por 1. Similar al README que ya existe pero más facha \ok
+        \item Ejemplos de demostraciones. \ok
     \end{itemize}
     \item Certificador: componente de PPA que "certifica" las demostraciones,
     generando un certificado en deducción natural. Implicó escribir muchos
@@ -32,20 +25,22 @@
     \end{itemize}
 \end{itemize}
 
-PPA (\textit{Pani's Proof Assistant}) se construye sobre las fundaciones de
-deducción natural. Es un \textit{proof assistant} que permite escribir de una
-forma práctica demostraciones de cualquier teoría de lógica clásica de primer
-órden. Para introducir el lenguaje veamos un ejemplo, luego se detalla la
-interfaz y finalmente veremos los detalles de implementación. Representamos el
-mismo de alumnos del \fullref{nd:ex:exam} pero esta vez en primer órden y con un
-poco más de sofisticación.
+El lenguaje PPA (\textit{Pani's Proof Assistant}) se construye sobre las
+fundaciones de deducción natural. Es un asistente de demostración que permite
+escribir de una forma práctica demostraciones de cualquier teoría de lógica
+clásica de primer órden. En este capítulo nos vamos a centrar en el lenguaje, la
+interfaz del programa \texttt{ppa}. Los detalles teóricos de cómo está
+implementado son contados en el \namedref{chap:ppa-certifier}, y los detalles de
+implementación y su instalación en el \namedref{chap:ppa-tool}. Para
+introducirlo veamos un ejemplo: representamos el mismo de alumnos del
+\namedref{nd:ex:exam-nd-lpo} pero con un poco más de
+sofisticación.
 
 \begin{figure}[H]
     \lstinputlisting[firstline=12,lastline=61,language=PPA]{listings/alumnos.ppa}
     \caption{Programa de ejemplo completo en PPA. Demostraciones de alumnos y parciales.}
     \label{ppa:prog:alumnos}
 \end{figure}
-
 
 La primer parte de todo programa en PPA es definir los axiomas de la
 \textit{teoría de primer órden} con la que se está trabajando. Como no se
@@ -111,11 +106,11 @@ el error. No debería fallar nunca el chequeo sobre el certificado.
 
 \section{Interfaz}
 
-PPA es un lenguaje de programación que permite escribir demostraciones de
-cualquier teoría de lógica de primer órden. Está inspirado en el
-\textit{mathematical vernacular} introducido por Freek Wiedijk en
-\cite{freek-mv}. En esta sección nos concentramos en la interfaz de usuario, sin
-entrar en detalle en cómo está implementada. Será explicado más adelante.
+PPA es un lenguaje que permite escribir demostraciones de cualquier teoría de
+lógica de primer órden. Está inspirado en el \textit{mathematical vernacular}
+introducido por Freek Wiedijk en \cite{freek-mv}. En esta sección nos
+concentramos en la interfaz de usuario, sin entrar en detalle en cómo está
+implementada.
 
 Un programa de PPA consiste en una lista de \textbf{declaraciones}: axiomas y
 teoremas, que se leen en órden el inicio hasta el final.
@@ -139,6 +134,8 @@ end
     \end{lstlisting}
 \end{itemize}
 
+\subsection{Identificadores}
+
 Los identificadores se dividen en tres tipos:
 
 \begin{itemize}
@@ -155,6 +152,8 @@ Los identificadores se dividen en tres tipos:
 
     \verb/\"[^\"]*\"/
 \end{itemize}
+
+\subsection{Comentarios}
 
 Se pueden dejar comentarios de una sola línea (\texttt{//}) o multilínea
 (\texttt{/* ... */})
@@ -193,25 +192,25 @@ Las fórmulas están compuestas por,
 \end{itemize}
 
 
-\subsection{Demostraciones}
+\section{Demostraciones}
 
 Las demostraciones consisten en una lista de \textit{proof steps} o comandos que
 pueden reducir sucesivamente la \textit{tesis} (fórmula a demostrar) hasta
-agotarla por completo. Mapean aproximadamente a reglas de inferencia de
+agotarla por completo. Corresponden aproximadamente a reglas de inferencia de
 deducción natural.
 
-\subsubsection{Contexto}
+\subsection{Contexto}
 
 Las demostraciones llevan asociado un \textit{contexto} con todas las hipótesis
 que fueron asumidas (como los axiomas), o demostradas: tanto teoremas anteriores
 como sub-teoremas y otros comandos que agregan hipótesis a él.
 
-\subsubsection{by}
+\subsection{by - mecanismo principal de demostración}
 
 El mecanismo principal de demostración directa o \textit{modus ponens} es el
 \lstinline{by}, que afirma que un hecho es consecuencia de una lista de
 hipótesis (su ``justificación''). Esto permite eliminar universales e implicaciones. Por detrás hay un
-solver, que es completo para lógica proposicional pero heurístico para primer
+solver completo para lógica proposicional pero heurístico para primer
 órden (elimina todos los foralls de a lo sumo una hipótesis, no intenta con más
 de una). Exploramos las limitaciones en \todo{ref}.
 
@@ -283,7 +282,7 @@ una tautología.
 
 \lstinputlisting{listings/by-taut.ppa}
 
-\subsubsection{Comandos y reglas de inferencia}
+\subsection{Comandos y reglas de inferencia}
 
 
 Muchas reglas de inferencia de deducción natural (\ref{nd:inference-rules})
@@ -390,7 +389,7 @@ end
 
 \end{itemize}
 
-\subsubsection{Descarga de conjunciones}\label{ppa:sec:and-intro}
+\subsection{Descarga de conjunciones}\label{ppa:sec:and-intro}
 
 Si la tesis es una conjunción, se puede probar solo una parte de ella y se
 reduce al resto.
@@ -414,7 +413,7 @@ Esto puede ser prácticamente en cualquier órden.
 \end{figure}
 
 
-\subsubsection{Otros comandos}
+\subsection{Otros comandos}
 
 \begin{itemize}
     \item \lstinline{equivalently}: Permite reducir la tesis a una fórmula
@@ -436,16 +435,3 @@ proof
 end
     \end{lstlisting}
 \end{itemize}
-
-
-\section{Compilador}
-
-\section{Certificador}
-
-
-\todo{Cut como meta teorema}
-
-\todo{DnegElim como meta teorema, y cómo permite razonar por el absurdo}
-
-\subsection{Unificación}
-\label{ppa:sec:unification}

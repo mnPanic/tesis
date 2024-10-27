@@ -381,6 +381,7 @@ elemento por cada uno del dominio sobre el cual se cuantifica, y análogamente u
 \end{itemize}
 
 \begin{ejemplo}
+    \label{nd:ex:exam-nd-lpo}
     Para ejemplificar el uso de las reglas de cuantificadores, extendemos el \namedref{nd:ex:exam-nd} a primer órden. Usamos
 
     \begin{itemize}
@@ -758,7 +759,7 @@ Para implementarlo, cada vez que nos encontramos con una captura, vamos a \texti
         \end{align*}
     
         \item Fórmulas
-        \begin{align*}    
+        \begin{align*}
             \fv{\fFalse} &=\emptyset\\
             \fv{\fTrue} &=\emptyset \\
             \fv{\pred(\term_1, \dots, \term_n)} &= \bigcup_{i \in 1\dots n} \fv{t_i} \\

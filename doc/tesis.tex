@@ -4,7 +4,7 @@
 \usepackage{sections/nd_rules}
 
 % Para solo agregar algunas secciones
-\includeonly{sections/natural_deduction} 
+%\includeonly{sections/ppa}
 
 \begin{document}
 %%%% CARATULA
@@ -45,18 +45,26 @@ con extracción de testigos usando la traducción de Friedman}
 \include{sections/intro}
 
 \chapter{Deducción natural}
+\label{chap:nd}
 
 \include{sections/natural_deduction}
 
-\chapter{PPA el lenguaje}
+\chapter{El lenguaje PPA}
 
 \include{sections/ppa}
 
+\chapter{El certificador de PPA}
+\label{chap:ppa-certifier}
+
+\include{sections/ppa_certifier}
+
 \chapter{Extracción de testigos de existenciales}
+\label{chap:witness-extraction}
 
 \include{sections/friedman}
 
 \chapter{La herramienta \texttt{ppa}}
+\label{chap:ppa-tool}
 
 \include{sections/ppa_tool}
 
