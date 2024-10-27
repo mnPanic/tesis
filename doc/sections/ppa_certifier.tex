@@ -1,3 +1,19 @@
+Certificador: componente de PPA que "certifica" las demostraciones,
+    generando un certificado en deducción natural. Implicó escribir muchos
+    meta-teoremas.
+    \begin{itemize}
+        \item Formalización de muchos teoremas y axiomas: contextos (vale en el prefijo)
+        \item Proof y proof steps, simplificación de la interfaz y mapeo de
+        comandos a steps
+        \item Implementación de cada comando
+        \item By y solver para resolver varios. DNF. Extensión con foralls
+        consecutivos. Demostración / justificación de que es correcto y completo
+        para LP, pero heurístico para LPO (mostrar un caso en el que no funcione)
+        \item Descarga de conjunciones
+        \item Uso de dneg elim como razonamiento por el absurdo para demostrar
+        deMorgan y equivalencias.
+    \end{itemize}
+
 En la sección pasada vimos cómo se puede usar PPA para demostrar teoremas. Pero,
 ¿cómo funciona por detrás? ¿Como asegura la validez lógica de las
 demostraciones escritas por el usuario?
@@ -79,31 +95,95 @@ demostración en deducción natural.
     \caption{Contexto local}
 \end{figure}
 
-\section{Implementación de By}
+\section{Funcionamiento del by}
 
-El \lstinline{by} es el mecanismo principal de demostración en PPA. Genera
-automáticamente una demostración de que una fórmula es consecuencia de una lista
-de hipótesis. Supongamos que queremos demostrar \lstinline{thus A by h1, ..., hn} y que en el contexto tenemos que las hipótesis $h_i$
-corresponden a fórmulas $\formTwo_i$, con $i \in \{1, ..., n\}$. La estrategia es la siguiente
+El \lstinline{by} es el mecanismo principal de demostración en PPA, y el corazón del \modCertifier. Genera
+\textbf{automáticamente} una demostración de que una fórmula es consecuencia lógica de
+una lista de hipótesis.
+
+Sea $A$ una fórmula. Supongamos que queremos demostrar \lstinline{thus A by h1, ..., hn} y que en el contexto tenemos que las hipótesis $h_i$ corresponden a
+fórmulas $\formTwo_i$, con $i \in \{1, ..., n\}, n \in \setNaturals$. Primero
+veamos la idea general de la estrategia y luego profundizamos en cada paso.
 
 \begin{itemize}
-    \item Queremos generar una demostración para la implicación
+    \item Queremos demostrar la implicación
     \[
-        \formTwo_1 \fAnd \formTwo_2 \fAnd \formTwo_3 \fImp \form
+        \formTwo_1 \fAnd \dots \fAnd \formTwo_n \fImp \form
     \]
-    \item Demostramos por el absurdo: a partir de la negación encontramos una contradicción
+    \item Razonamos por el absurdo: asumiendo la negación encontramos una contradicción
+    \begin{align*}
+        \fNot (\formTwo_1 \fAnd \dots \fAnd \formTwo_n \fImp \form)
+        &\equiv \fNot (\fNot (\formTwo_1 \fAnd \dots \fAnd \formTwo_n) \fOr \form)\\
+        &\equiv \formTwo_1 \fAnd \dots \fAnd \formTwo_n \fAnd \fNot \form
+    \end{align*}
+    \item Convertimos la fórmula a forma normal disyuntiva (DNF), disyunciones
+    de conjunciones de literales. Un literal será un predicado, una negación de
+    un literal o una fórmula con cuantificadores.
     \[
-        \formTwo_1 \fAnd \formTwo_2 \fAnd \formTwo_3 \fImp \form
+        (\formLit^1_{1} \fAnd \dots \fAnd \formLit^1_{n_1})
+        \fOr \dots \fOr
+        (\formLit^m_{1} \fAnd \dots \fAnd \formLit^m_{n_m})
     \]
+
+    donde $m \in \setNaturals$ es el número de cláusulas, $n_1, \dots, n_m \in \setNaturals$ es la cantidad de la cantidad de fórmulas de cada cláusula y $\formLit^i_j$ es la $j$-ésima fórmula de la $i$-ésima cláusula.
+    \item Buscamos una contradicción refutando cada cláusula (conjunción de literales) individualmente.
+    Una cláusula $\formLit_1 \fAnd \dots \fAnd \formLit_n$ será refutable si
+    \begin{itemize}
+        \item Contiene $\fFalse$
+        \item Contiene dos fórmulas opuestas ($\formLit, \fNot \formLit$)
+        \item Eliminando existenciales consecutivos y re-convirtiendo a DNF, se
+        consigue una refutación ($\fNot \pred(k), \forall \var .\ \pred(x)$)
+    \end{itemize}
 \end{itemize}
+
+La complejidad del mecanismo no reside solo en tener que realizar todos estos pasos. El desafío principal fue \textbf{generar la demostración en deducción natural}.
+
+\begin{ejemplo}{Ejemplo sin cuantificadores}
+    Veamos un ejemplo proposicional.
+    \todo{ejemplo}
+\end{ejemplo}
+
+\begin{ejemplo}{Ejemplo con cuantificadores}
+    Veamos un ejemplo con cuantificadores.
+\end{ejemplo}
 
 \subsection{Razonamiento por el absurdo}
 
 \todo{DnegElim como regla admisible, y cómo permite razonar por el absurdo}
 
+\subsection{DNF}
+
+\todo{DNF}
+
+\subsection{Contradicciones}
+
+\todo{contradicciones}
+
+\subsection{Eliminación de universales}
+
 \subsection{Juntando demostraciones}
 
 \todo{Cut como regla admisible}
+
+\subsection{Poder expresivo}
+
+\duda{Está bien decir poder expresivo?}
+
+El solver implementado es \textbf{completo para lógica proposicional}, pero heurístico para lógica de primer orden. Esto es aceptable, puesto que la satisfacibilidad de lógica de primer orden es indecidible \todo{Cita?}, y además el objetivo del trabajo no fue dar el mejor solver, sino dar alguno.
+
+\todo{Citar Hilbert 1950}
+\begin{theorem}{El solver es completo para lógica proposicional.}
+    \todo{Demo}
+\end{theorem}
+
+\subsubsection{Limitaciones}
+
+No puede demostrar por ej.
+
+\todo{ejemplo elim 2 foralls}
+
+\todo{otro ejemplo más burdamente complejo que requiera sat sovler}
+
 
 \subsection{Unificación}
 \label{ppa:sec:unification}
@@ -114,6 +194,12 @@ Como se puede apreciar en \fullref{ppa:tab:inference-rules-to-commands}, la
 mayoría de los comandos se corresponden directamente con reglas de inferencia,
 por lo que su traducción es más sencilla.
 
+\todo{trad}
+
+\section{Descarga de conjunciones}
+
 \section{Comandos adicionales}
+
+\todo{add}
 
 
