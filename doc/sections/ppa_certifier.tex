@@ -169,8 +169,17 @@ vamos a usar la \textbf{eliminación de la doble negación}. Es un principio de
 razonamiento clásico que es equivalente a LEM.
 
 
-\begin{theorem}{Eliminiación de la doble negación}
+\begin{theorem}{Eliminación de la doble negación}
     Sea $\form$ una fórmula cualquiera. Vale \[\fNot \fNot \form \judG \form\]
+
+    Y lo notamos como regla admisible
+
+    \begin{prooftree}
+        \AxiomC{}
+        \RL{\ruleDnegE}
+        \doubleLine
+        \UnaryInfC{$\fNot \fNot \form \judG \form$}
+    \end{prooftree}
 \end{theorem}
 \begin{proof}
     En deducción natural,
@@ -214,50 +223,108 @@ permite hacerlo.
     \AxiomC{$\ctx, \formTwo \judG \form$}
     \AxiomC{$\ctx \judG \formTwo$}
     \RL{\ruleCut}
+    \doubleLine
     \BinaryInfC{$\ctx \judG \form$}
 \end{prooftree}
 \end{theorem}
 
 \begin{proof}
-    En deducción natural. Sean $\someProof_{\formTwo \fImp \form}$ una demostración de $\formTwo
-    \judG \form$ y $\someProof_\formTwo$ una demostración de $\formTwo$. La
-    regla \ruleCut{} se puede ver como un \textit{macro} que por atrás genera
-    la siguiente demostración,
+    La regla \ruleCut{} se puede ver como un \textit{macro} que por atrás genera
+    la siguiente demostración
     
     \begin{prooftree}
-        \AxiomC{}
+        \AxiomC{$\ctx, \formTwo \judG \form$}
         \RL{\ruleImpI}
         \UnaryInfC{$\ctx \judG \formTwo \fImp \form$}
-        \AxiomC{$\someProof_\formTwo$}
-        \doubleLine
-        \UnaryInfC{$\ctx \judG \formTwo$}
+        \AxiomC{$\ctx \judG \formTwo$}
         \RL{\ruleImpE}
         \BinaryInfC{$\ctx \judG \form$}
     \end{prooftree}
 \end{proof}
 
+\begin{ejemplo}
+Cut nos permite continuar la demostración por otra fórmula a partir de la cual
+podamos demostrar la original. Sean $\someProof_{\formTwo \fImp \form}$ una
+demostración de $\formTwo \judG \form$ y $\someProof_\formTwo$ una demostración
+de $\formTwo$ (la continuación). Podemos usar cut de la siguiente manera.
 
-¿Y por qué nos permite razonar por el absurdo?
+\begin{prooftree}
+    \AxiomC{$\someProof_{\formTwo \fImp \form}$}
+    \noLine
+    \UnaryInfC{$\ctx, \formTwo \judG \form$}
+    \AxiomC{$\someProof_\formTwo$}
+    \noLine
+    \UnaryInfC{$\ctx \judG \formTwo$}
+    \RL{\ruleCut}
+    \doubleLine
+    \BinaryInfC{$\ctx \judG \form$}
+\end{prooftree}
+
+Que es generado como
+
+\begin{prooftree}
+    \AxiomC{$\someProof_{\formTwo \fImp \form}$}
+    \noLine
+    \UnaryInfC{$\ctx, \formTwo \judG \form$}
+    \RL{\ruleImpI}
+    \UnaryInfC{$\ctx \judG \formTwo \fImp \form$}
+    \AxiomC{$\someProof_\formTwo$}
+    \noLine
+    \UnaryInfC{$\ctx \judG \formTwo$}
+    \RL{\ruleImpE}
+    \BinaryInfC{$\ctx \judG \form$}
+\end{prooftree}
+\end{ejemplo}
+
+\begin{prop}{(Razonamiento por el absurdo)} Imaginemos que queremos demostrar
+$\form$ por el absurdo. Podemos juntar con cut con la eliminación de la doble
+negación, pasando a demostrar $\fNot \fNot \form$, que al introducirla, debemos
+demostrar el secuente $\ctx, \fNot \form \judG \fFalse$. Es decir, asumiendo que
+no es cierta la fórmula, deducimos una contradicción, que es justo lo que
+estábamos buscando.
+
+\begin{prooftree}
+    \AxiomC{}
+    \RL{\ruleDnegE}
+    \doubleLine
+    \UnaryInfC{$\ctx, \fNot \fNot \form \judG \form$}
+    \AxiomC{$\vdots$}
+    \noLine
+    \UnaryInfC{$\ctx, \fNot \form \judG \fFalse$}
+    \RL{\ruleNotI}
+    \UnaryInfC{$\ctx \judG \fNot\fNot \form$}
+    \RL{\ruleCut}
+    \doubleLine
+    \BinaryInfC{$\ctx \judG \form$}
+\end{prooftree}
+\end{prop}
 
 \begin{obs}
-    La formulamos como $\fNot \fNot \form \judG \form$ y la usamos con
+    A \ruleDnegE{} La formulamos como $\fNot \fNot \form \judG \form$ y la usamos con
     \textbf{cut}, pero otra alternativa equivalente, levemente más tediosa para
     generar demostraciones, hubiera sido demostrarla como $\fNot \fNot \form
-    \fImp \form$ y ``pegarla'' con \ruleImpE{} directamente.
+    \fImp \form$ y usarla con \ruleImpE{} directamente.
 \end{obs}
 
 
-\todo{DnegElim como regla admisible, y cómo permite razonar por el absurdo}
-
 \subsection{DNF}
 
-\todo{DNF}
+\begin{itemize}
+    \item Definición de DNF
+    \item Sistema de reescritura. Justificación de por qué termina
+    \item Implementación del sistema de reescritura -> small step, congruencias,
+    pegado con cut.
+\end{itemize}
 
 \subsection{Contradicciones}
 
 \todo{contradicciones}
 
 \subsection{Eliminación de universales}
+
+
+\subsection{Unificación}
+\label{ppa:sec:unification}
 
 \subsection{Juntando demostraciones}
 
@@ -281,22 +348,6 @@ No puede demostrar por ej.
 \todo{ejemplo elim 2 foralls}
 
 \todo{otro ejemplo más burdamente complejo que requiera sat sovler}
-
-
-\subsection{Unificación}
-\label{ppa:sec:unification}
-
-\subsection{Ejemplos completos}
-
-\begin{ejemplo}{Ejemplo sin cuantificadores}
-    Veamos un ejemplo proposicional.
-    \todo{ejemplo sin demo}
-\end{ejemplo}
-
-\begin{ejemplo}{Ejemplo con cuantificadores}
-    Veamos un ejemplo con cuantificadores.
-    \todo{Ejemplo sin demo}
-\end{ejemplo}
 
 
 \section{Comandos correspondientes a reglas de inferencia}
