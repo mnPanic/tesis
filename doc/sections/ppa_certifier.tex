@@ -47,10 +47,10 @@ errores siempre se chequean con el \modChecker{} de DN.
 
 \section{Certificador}
 
-El \modCertifier en realidad no genera una sola demostración de deducción
+El \modCertifier{} en realidad no genera una sola demostración de deducción
 natural, sino que al poder haber más de un teorema en un archivo PPA, este
 genera un \textbf{contexto} compuesto por una lista ordenada de
-\textbf{hipótesis}. Hay dos tipos de hipótesis
+\textbf{hipótesis}. Hay dos tipos
 
 \begin{itemize}
     \item Teoremas: Son fórmulas con demostraciones asociadas.
@@ -75,7 +75,9 @@ demostración será válida en el \textit{prefijo estricto del contexto} que la
 contiene. Es decir, a la hora de chequearla, se deben asumir como ciertas todas
 las hipótesis que fueron definidas previamente.
 
-Cada demostración de un teorema tendrá además un \textit{contexto local}. Las
+Pero no solo los axiomas y teoremas declarados en el programa se agregan al
+contexto. Cada demostración de un teorema tendrá además un \textit{contexto
+local} que extiende al anterior, solo en el marco de su demostración. Las
 afirmaciones auxiliares que no afectan la tesis (\lstinline{have},
 \lstinline{claim}, \lstinline{consider}, etc.) se agregan como teoremas. Por lo
 tanto, cuando se citen, se pegan sus demostraciones. Por otro lado, algunos
@@ -125,7 +127,9 @@ veamos la idea general de la estrategia y luego profundizamos en cada paso.
         (\formLit^m_{1} \fAnd \dots \fAnd \formLit^m_{n_m})
     \]
 
-    donde $m \in \setNaturals$ es el número de cláusulas, $n_1, \dots, n_m \in \setNaturals$ es la cantidad de la cantidad de fórmulas de cada cláusula y $\formLit^i_j$ es la $j$-ésima fórmula de la $i$-ésima cláusula.
+    donde $m \in \setNaturals$ es el número de cláusulas, $n_1, \dots, n_m \in
+    \setNaturals$ es la cantidad de la cantidad de fórmulas de cada cláusula y
+    $\formLit^i_j$ es la $j$-ésima fórmula de la $i$-ésima cláusula.
     \item Buscamos una contradicción refutando cada cláusula (conjunción de literales) individualmente.
     Una cláusula $\formLit_1 \fAnd \dots \fAnd \formLit_n$ será refutable si
     \begin{itemize}
@@ -136,18 +140,112 @@ veamos la idea general de la estrategia y luego profundizamos en cada paso.
     \end{itemize}
 \end{itemize}
 
-La complejidad del mecanismo no reside solo en tener que realizar todos estos pasos. El desafío principal fue \textbf{generar la demostración en deducción natural}.
+La complejidad del mecanismo no reside solo en tener que realizar todos estos
+pasos. El desafío principal fue \textbf{generar la demostración en deducción
+natural}. Veamos algunos ejemplos sin generar demostraciones.
 
 \begin{ejemplo}{Ejemplo sin cuantificadores}
     Veamos un ejemplo proposicional.
-    \todo{ejemplo}
+    \todo{ejemplo sin demo}
 \end{ejemplo}
 
 \begin{ejemplo}{Ejemplo con cuantificadores}
     Veamos un ejemplo con cuantificadores.
+    \todo{Ejemplo sin demo}
 \end{ejemplo}
 
 \subsection{Razonamiento por el absurdo}
+\label{ppa-cert:sec:abs-reasoning}
+
+Queremos asumir que no vale la fórmula original, es decir $\fNot (\formTwo_1
+\fAnd \dots \fAnd \formTwo_n \fImp \form)$, y llegar a una contradicción. Pero
+en la demostración que estamos generando de deducción natural, tenemos que
+demostrar $(\formTwo_1 \fAnd \dots \fAnd \formTwo_n \fImp \form)$. ¿Cómo se
+puede razonar por el absurdo?
+
+De la misma forma que en la \namedref{nd:sec:admissible-rules} se introduce
+\textit{modus tollens} como una regla admisible, para razonar por el absurdo
+vamos a usar la \textbf{eliminación de la doble negación}. Es un principio de
+razonamiento clásico que es equivalente a LEM.
+
+
+\begin{theorem}{Eliminiación de la doble negación}
+    Sea $\form$ una fórmula cualquiera. Vale \[\fNot \fNot \form \judG \form\]
+\end{theorem}
+\begin{proof}
+    En deducción natural,
+
+    \begin{prooftree}
+        \def\defaultHypSeparation{\hskip .1in} % default .2in
+        \AxiomC{}
+        \LL{\ruleLEM}
+        \UnaryInfC{$\fNot \fNot \form \judG \form \fOr \fNot \form$}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{\(
+            \fNot \fNot \form, \form \judG \form
+        \)}
+        \AxiomC{}
+        \LL{\ruleAx}
+        \UnaryInfC{\(
+            \fNot \fNot \form, \fNot\form \judG \fNot \fNot \form
+        \)}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{\(
+            \fNot \fNot \form, \fNot\form \judG \fNot \form
+        \)}
+        \RL{\ruleNotE}
+        \BinaryInfC{\(
+            \fNot \fNot \form, \fNot \form \judG \form
+        \)}
+        \RL{\ruleOrE}
+        \TrinaryInfC{$\fNot \fNot \form \judG \form$}
+    \end{prooftree}
+\end{proof}
+
+¿Cómo lo usamos? Introducimos otra regla admisible: \textbf{cut}, que nos
+permite ``pegar'' demostraciones entre sí. Si estamos queriendo demostrar
+$\form$, y queremos reducirlo a $\formTwo$ que podemos probar, esta regla nos
+permite hacerlo.
+
+\begin{theorem}{Cut}. La siguiente regla de inferencia es admisible
+\begin{prooftree}
+    \AxiomC{$\ctx, \formTwo \judG \form$}
+    \AxiomC{$\ctx \judG \formTwo$}
+    \RL{\ruleCut}
+    \BinaryInfC{$\ctx \judG \form$}
+\end{prooftree}
+\end{theorem}
+
+\begin{proof}
+    En deducción natural. Sean $\someProof_{\formTwo \fImp \form}$ una demostración de $\formTwo
+    \judG \form$ y $\someProof_\formTwo$ una demostración de $\formTwo$. La
+    regla \ruleCut{} se puede ver como un \textit{macro} que por atrás genera
+    la siguiente demostración,
+    
+    \begin{prooftree}
+        \AxiomC{}
+        \RL{\ruleImpI}
+        \UnaryInfC{$\ctx \judG \formTwo \fImp \form$}
+        \AxiomC{$\someProof_\formTwo$}
+        \doubleLine
+        \UnaryInfC{$\ctx \judG \formTwo$}
+        \RL{\ruleImpE}
+        \BinaryInfC{$\ctx \judG \form$}
+    \end{prooftree}
+\end{proof}
+
+
+¿Y por qué nos permite razonar por el absurdo?
+
+\begin{obs}
+    La formulamos como $\fNot \fNot \form \judG \form$ y la usamos con
+    \textbf{cut}, pero otra alternativa equivalente, levemente más tediosa para
+    generar demostraciones, hubiera sido demostrarla como $\fNot \fNot \form
+    \fImp \form$ y ``pegarla'' con \ruleImpE{} directamente.
+\end{obs}
+
 
 \todo{DnegElim como regla admisible, y cómo permite razonar por el absurdo}
 
@@ -187,6 +285,19 @@ No puede demostrar por ej.
 
 \subsection{Unificación}
 \label{ppa:sec:unification}
+
+\subsection{Ejemplos completos}
+
+\begin{ejemplo}{Ejemplo sin cuantificadores}
+    Veamos un ejemplo proposicional.
+    \todo{ejemplo sin demo}
+\end{ejemplo}
+
+\begin{ejemplo}{Ejemplo con cuantificadores}
+    Veamos un ejemplo con cuantificadores.
+    \todo{Ejemplo sin demo}
+\end{ejemplo}
+
 
 \section{Comandos correspondientes a reglas de inferencia}
 
