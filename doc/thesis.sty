@@ -151,9 +151,11 @@
 \newcommand{\ruleLEM}{LEM}
 \newcommand{\ruleAx}{Ax}
 
+% Reglas admisibles
+\newcommand{\admissibleRuleLine}{\doubleLine}
 \newcommand{\ruleCut}{cut}
-
 \newcommand{\ruleDnegE}{\ruleE{$\fNot\fNot$}}
+\newcommand{\ruleAndEProj}[1]{\ruleE{$\fAnd_{#1}$}}
 
 %% Contextos
 \newcommand{\ctx}{\Gamma}
@@ -178,7 +180,11 @@
 \newcommand{\formTwo}{B}
 \newcommand{\formThree}{C}
 
+\newcommand{\anyForm}{\alpha}
+
 \newcommand{\formLit}{a}
+
+\newcommand{\clause}{C}
 
 % Funciones
 \newcommand{\fv}[1]{fv(#1)}

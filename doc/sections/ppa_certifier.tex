@@ -107,6 +107,8 @@ Sea $A$ una fórmula. Supongamos que queremos demostrar \lstinline{thus A by h1,
 fórmulas $\formTwo_i$, con $i \in \{1, ..., n\}, n \in \setNaturals$. Primero
 veamos la idea general de la estrategia y luego profundizamos en cada paso.
 
+Los pasos para certificar un \lstinline{by} son,
+
 \begin{itemize}
     \item Queremos demostrar la implicación
     \[
@@ -118,9 +120,8 @@ veamos la idea general de la estrategia y luego profundizamos en cada paso.
         &\equiv \fNot (\fNot (\formTwo_1 \fAnd \dots \fAnd \formTwo_n) \fOr \form)\\
         &\equiv \formTwo_1 \fAnd \dots \fAnd \formTwo_n \fAnd \fNot \form
     \end{align*}
-    \item Convertimos la fórmula a forma normal disyuntiva (DNF), disyunciones
-    de conjunciones de literales. Un literal será un predicado, una negación de
-    un literal o una fórmula con cuantificadores.
+    \item Convertimos la fórmula a forma normal disyuntiva (DNF), disyunción de
+    conjunciones de literales.
     \[
         (\formLit^1_{1} \fAnd \dots \fAnd \formLit^1_{n_1})
         \fOr \dots \fOr
@@ -142,17 +143,52 @@ veamos la idea general de la estrategia y luego profundizamos en cada paso.
 
 La complejidad del mecanismo no reside solo en tener que realizar todos estos
 pasos. El desafío principal fue \textbf{generar la demostración en deducción
-natural}. Veamos algunos ejemplos sin generar demostraciones.
+natural}. Veamos un ejemplo sin generar la demostración, sin cuantificadores.
 
-\begin{ejemplo}{Ejemplo sin cuantificadores}
-    Veamos un ejemplo proposicional.
-    \todo{ejemplo sin demo}
+\begin{ejemplo}{Ejemplo sin cuantificadores.}
+    Tenemos el siguiente programa
+
+    \begin{figure}[H]
+        \centering
+        \begin{tabular}{c}
+            \lstinputlisting{listings/certifier/by-modus-ponens.ppa}
+        \end{tabular}
+    \end{figure}
+
+    Para certificar \lstinline{thus b by ax1, ax2} hay que generar una
+    demostración para la implicación $\big((a \fImp b) \wedge a \big)\fImp b$.
+
+    \begin{enumerate}
+        \item Negamos la fórmula 
+        \[ \fNot [ \big( (a \to b) \fAnd a \big) \to b ] \]
+
+        \item La convertimos a DNF
+        \begin{align*}
+            &\fNot [ \big( (a \to b) \fAnd a \big) \to b ] \\
+            &\equiv \fNot [ \fNot \big( (a \to b) \fAnd a \big) \fOr b ]
+                && (x \to y \equiv \fNot x \fOr y)\\
+            &\equiv \fNot \fNot \big( (a \to b) \fAnd a \big) \fAnd \fNot b
+                && (\fNot(x \fOr y) \equiv \fNot x \fAnd \fNot y)\\
+            &\equiv \big( (a \to b) \fAnd a \big) \fAnd \fNot b
+                && (\fNot\fNot x \equiv x)\\
+            &\equiv (\fNot a \fOr b) \fAnd a \fAnd \fNot b
+                 && (x \to y \equiv \fNot x \fOr y)\\
+            &\equiv (\fNot a \fOr b) \fAnd a \fAnd \fNot b
+                && ((x \fOr y) \fAnd z \equiv (x \fAnd z) \fOr (y \fAnd z))\\
+            &\equiv
+                (\fNot a \fAnd a \fAnd \fNot b)
+                \vee
+                (b \fAnd a \fAnd \fNot b)
+        \end{align*}
+
+        \item Buscamos una contradicción refutando cada cláusula
+        \begin{itemize}
+            \item $(\fNot a \fAnd a \fAnd \fNot b)$ tenemos $\fNot a$ y $a$.
+            \item $(b \fAnd a \fAnd \fNot b)$ tenemos $b$ y $\fNot b$.
+        \end{itemize}
+    \end{enumerate}
 \end{ejemplo}
 
-\begin{ejemplo}{Ejemplo con cuantificadores}
-    Veamos un ejemplo con cuantificadores.
-    \todo{Ejemplo sin demo}
-\end{ejemplo}
 
 \subsection{Razonamiento por el absurdo}
 \label{ppa-cert:sec:abs-reasoning}
@@ -170,14 +206,12 @@ razonamiento clásico que es equivalente a LEM.
 
 
 \begin{theorem}{Eliminación de la doble negación}
-    Sea $\form$ una fórmula cualquiera. Vale \[\fNot \fNot \form \judG \form\]
-
-    Y lo notamos como regla admisible
+    Sea $\form$ una fórmula cualquiera. Vale $\fNot \fNot \form \judG \form$, y lo notamos como regla admisible
 
     \begin{prooftree}
         \AxiomC{}
         \RL{\ruleDnegE}
-        \doubleLine
+        \admissibleRuleLine
         \UnaryInfC{$\fNot \fNot \form \judG \form$}
     \end{prooftree}
 \end{theorem}
@@ -223,7 +257,7 @@ permite hacerlo.
     \AxiomC{$\ctx, \formTwo \judG \form$}
     \AxiomC{$\ctx \judG \formTwo$}
     \RL{\ruleCut}
-    \doubleLine
+    \admissibleRuleLine
     \BinaryInfC{$\ctx \judG \form$}
 \end{prooftree}
 \end{theorem}
@@ -256,7 +290,7 @@ de $\formTwo$ (la continuación). Podemos usar cut de la siguiente manera.
     \noLine
     \UnaryInfC{$\ctx \judG \formTwo$}
     \RL{\ruleCut}
-    \doubleLine
+    \admissibleRuleLine
     \BinaryInfC{$\ctx \judG \form$}
 \end{prooftree}
 
@@ -276,7 +310,7 @@ Que es generado como
 \end{prooftree}
 \end{ejemplo}
 
-\begin{prop}{(Razonamiento por el absurdo)} Imaginemos que queremos demostrar
+\begin{lemma}{(Razonamiento por el absurdo)} Imaginemos que queremos demostrar
 $\form$ por el absurdo. Podemos juntar con cut con la eliminación de la doble
 negación, pasando a demostrar $\fNot \fNot \form$, que al introducirla, debemos
 demostrar el secuente $\ctx, \fNot \form \judG \fFalse$. Es decir, asumiendo que
@@ -286,7 +320,7 @@ estábamos buscando.
 \begin{prooftree}
     \AxiomC{}
     \RL{\ruleDnegE}
-    \doubleLine
+    \admissibleRuleLine
     \UnaryInfC{$\ctx, \fNot \fNot \form \judG \form$}
     \AxiomC{$\vdots$}
     \noLine
@@ -294,10 +328,10 @@ estábamos buscando.
     \RL{\ruleNotI}
     \UnaryInfC{$\ctx \judG \fNot\fNot \form$}
     \RL{\ruleCut}
-    \doubleLine
+    \admissibleRuleLine
     \BinaryInfC{$\ctx \judG \form$}
 \end{prooftree}
-\end{prop}
+\end{lemma}
 
 \begin{obs}
     A \ruleDnegE{} La formulamos como $\fNot \fNot \form \judG \form$ y la usamos con
@@ -306,8 +340,32 @@ estábamos buscando.
     \fImp \form$ y usarla con \ruleImpE{} directamente.
 \end{obs}
 
-
 \subsection{DNF}
+
+Tenemos que generar una demostración de que la negación de la fórmula genera una
+contradicción, pero lo queremos hacer a partir de la fórmula en DNF.
+
+\begin{definition}{DNF.}
+    Una fórmula está en \textbf{forma normal disyuntiva} o DNF
+    (\textit{disjunctive normal form}) si es una disyunción de conjunciones de
+    literales.  Llamamos \textbf{cláusulas} a las conjunciones que la
+    componen. Un literal será un predicado, una negación de un predicado o una
+    fórmula cualquiera que comienza con un cuantificador. Ejemplos:
+    
+    \begin{itemize}
+        \item $\form \fAnd \formTwo$ está en DNF
+        \item $(\form \fAnd \formThree) \fOr (\form \fAnd \formTwo)$ también
+        \item $(\form \fImp \formTwo) \fOr (\form \fAnd \formTwo)$ no lo está
+        \item $\big(\forall \var . (\form \fImp \formTwo)\big) \fOr (\form \fAnd \formTwo)$ si.
+    \end{itemize}
+\end{definition}
+
+\begin{theorem}{(Conversión a DNF)}
+
+    Para toda fórmula $\form$, existe $\form_{dnf}$ su equivalente en DNF.
+    Podemos demostrar $\form \judG \form_{dnf}$
+    \todo{SeGUIR}
+\end{theorem}
 
 \begin{itemize}
     \item Definición de DNF
@@ -318,9 +376,112 @@ estábamos buscando.
 
 \subsection{Contradicciones}
 
-\todo{contradicciones}
+Tenemos la fórmula traducida a DNF. Debemos demostrar una contradicción a partir
+de ella. Si tenemos las cláusulas $\clause_1 \fOr \clause_2$, podemos demostrar
+$\clause_1 \fOr \clause_2 \judG \fFalse$ usando \ruleOrE{} y a partir de cada
+una, llegando a una contradicción. Esto se generaliza a N cláusulas haciendo
+\ruleOrE{} anidados. Por eso decimos que hay que \textit{``refutar cada
+cláusula''}. El método tiene tres formas de refutar cláusulas
 
-\subsection{Eliminación de universales}
+\begin{itemize}
+    \item Contienen fórmulas opuestas: $\form \fAnd \fNot \form$ (con
+    \ruleNotE{})
+    \item Contienen $\fFalse$
+    \item Eliminando cuantificadores universales consecutivos (próxima sección)
+\end{itemize}
+
+Para los primeros dos, es necesario demostrar a partir de la cláusula una
+fórmula. Pero como pueden tener una cantidad arbitraria, según cómo esté
+asociado el $\fAnd$, una demostración a mano de
+\(
+    \form_1 \fAnd \dots \fAnd \form_i \fAnd \dots \fAnd \form_n \judG \form_i,
+\)
+puede ser muy engorrosa de hacer cada vez. Como las reglas son binarias, hay que
+usar \ruleAndEOne{} y \ruleAndETwo{} anidados. Para simplificarlo demostramos
+otra regla admisible, la proyección de un elemento \ruleAndEProj{\anyForm}.
+
+\begin{theorem}{Regla admisible \ruleAndEProj{\anyForm}.}
+    \begin{prooftree}
+        \AxiomC{$\ctx \judG \anyForm_1 \fAnd \dots \fAnd \anyForm_i \fAnd \dots \fAnd \anyForm_n$}
+        \AxiomC{$n \in \setNaturals$}
+        \admissibleRuleLine
+        \RL{\ruleAndEProj{\anyForm_{i}}}
+        \BinaryInfC{$\ctx \judG \anyForm_i$}
+    \end{prooftree}
+\end{theorem}
+\begin{proof}
+    La demostración es trivial. Basta con caminar recursivamente el $\fAnd$ y
+    usar \ruleAndEOne{} si el camino para encontrar a $\anyForm_i$ sigue por la
+    izquierda y \ruleAndETwo{} si sigue por la derecha.
+\end{proof}
+
+Veamos un ejemplo de las primeras dos formas de refutar cláusulas. Los
+cuantificadores universales los veremos en la siguiente sección.
+
+\begin{ejemplo}{Contradicción}
+\begin{prooftree}
+    \AxiomC{}
+    \LL{\ruleAx}
+    \UnaryInfC{\(
+        \ctx \judG (\fNot a \fAnd a \fAnd \fNot b)\vee (b \fAnd a \fAnd \fFalse)
+    \)}
+    \AxiomC{$\someProof_L$}
+    \noLine
+    \UnaryInfC{\(
+        \ctx, \fNot a \fAnd a \fAnd \fNot b \judG \fFalse
+    \)}
+    \AxiomC{}
+    \RL{\ruleAx}
+    \UnaryInfC{$\ctx_1 \judG b \fAnd a \fAnd \fFalse$}
+    \RL{\ruleAndEProj{\fFalse}}
+    \admissibleRuleLine
+    \UnaryInfC{\(
+        \ctx, b \fAnd a \fAnd \fFalse \judG \fFalse
+    \)}
+    \RL{\ruleOrE}
+    \TrinaryInfC{\(
+        \ctx = (\fNot a \fAnd a \fAnd \fNot b)
+        \vee
+        (b \fAnd a \fAnd \fFalse)
+        \judG
+        \fFalse
+    \)}
+\end{prooftree}
+
+donde
+
+\begin{prooftree}
+    \AxiomC{}
+    \RL{\ruleAx}
+    \UnaryInfC{$\ctx_1 \judG \fNot a \fAnd a \fAnd \fNot b$}
+    \RL{\ruleAndEProj{\fNot a}}
+    \admissibleRuleLine
+    \UnaryInfC{$\ctx_1 \judG \fNot a$}
+    \AxiomC{}
+    \RL{\ruleAx}
+    \UnaryInfC{$\ctx_1 \judG \fNot a \fAnd a \fAnd \fNot b$}
+    \RL{\ruleAndEProj{a}}
+    \admissibleRuleLine
+    \UnaryInfC{$\ctx_1 \judG a$}
+    \RL{\ruleNotE}
+    \BinaryInfC{\(
+        \ctx_1 = \ctx, b \fAnd a \fAnd \fFalse \judG \fFalse
+    \)}
+\end{prooftree}
+\end{ejemplo}
+
+\duda{No se si me convence la notación \ruleAndEProj{\alpha}, después de todo es
+una proyección y se suele notar con $\Pi$, pero ese símbolo lo estamos usando
+para representar demostraciones (ej. $\someProof_L$).}
+
+
+\subsection{Eliminación de cuantificadores universales}
+
+
+\begin{ejemplo}{Ejemplo con cuantificadores}
+    Veamos un ejemplo con cuantificadores.
+    \todo{Ejemplo sin demo}
+\end{ejemplo}
 
 
 \subsection{Unificación}

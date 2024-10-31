@@ -1,0 +1,6 @@
+axiom ax1: forall X . p(X) -> q(X)
+axiom ax2: p(a)
+theorem t: q(a)
+proof
+    thus q(a) by ax1, ax2
+end

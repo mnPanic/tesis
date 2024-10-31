@@ -1,0 +1,6 @@
+axiom ax1: a -> b
+axiom ax2: a
+theorem t: b
+proof
+    thus b by ax1, ax2
+end
