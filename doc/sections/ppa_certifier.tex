@@ -626,14 +626,31 @@ una proyección y se suele notar con $\Pi$, pero ese símbolo lo estamos usando
 para representar demostraciones (ej. $\someProof_L$).}
 
 \subsection{Eliminación de cuantificadores universales}
+\label{ppa:sec:by:forall-elim}
 
 Hasta ahora logramos razonar por el absurdo, convertir la fórmula a DNF, y
 encontrar una contradicción siempre que no haya que eliminar cuantificadores
 universales. Pero es usual que en una teoría de primer orden, los axiomas
 contengan cuantificadores universales y sea necesario eliminarlos para poder
-demostrar un \lstinline{by}. Veamos un ejemplo.
+demostrar un \lstinline{by}. Al eliminarlos, vamos a reemplazar las ocurrencias
+de su variable por \textit{meta-variables}: aquellas que pueden ser unificadas.
+    
+\begin{definition}[Unificación]
+    Sean $\form$, $\formTwo$ dos fórmulas. Decimos que \textit{unifican} y lo
+    notamos $\form \unify \formTwo$ si existe una sustitución de
+    meta-variables tal que $\form = \formTwo$. Veamos algunos ejemplos. Sean $\metavar{u}, \metavar{v}$ meta-variables.
 
-\begin{ejemplo}[Ejemplo con cuantificadores]
+    \begin{itemize}
+    \item $p(\metavar{u}) \unify p(a)$ con $\subst{\metavar{u}}{a}$
+        \item $p(\metavar{u}) \not\unify q(a)$
+        \item $p(\metavar{u}) \fAnd q(b) \unify p(a) \fAnd q(\metavar{v})$
+        con $\substTwo{\metavar{u}}{a}{\metavar{v}}{b}$
+        \item $p(\metavar{u}) \fImp q(b) \not\unify p(a) \fAnd q(\metavar{v})$
+    \end{itemize}
+    
+\end{definition}
+
+\begin{ejemplo}[Ejemplo de by con cuantificadores]
     Tenemos el siguiente programa
 
     \begin{figure}[H]
@@ -645,7 +662,7 @@ demostrar un \lstinline{by}. Veamos un ejemplo.
 
     Para certificar \lstinline{thus q(a) by ax1, ax2} hay que generar una
     demostración para la implicación \(
-        \bigg(\Big(\forall x. (p(x) \fImp q(x))\Big) \wedge p(a) \bigg)
+        \bigg(\Big(\forall x. (p(x) \fImp q(x))\Big) \fAnd p(a) \bigg)
         \fImp q(a)
     \).
 
@@ -653,72 +670,138 @@ demostrar un \lstinline{by}. Veamos un ejemplo.
         \item Negamos la fórmula 
         \[
             \fNot \left[
-            \bigg(\Big(\forall x. (p(x) \fImp q(x))\Big) \wedge p(a) \bigg)
+            \bigg(\Big(\forall x. (p(x) \fImp q(x))\Big) \fAnd p(a) \bigg)
             \fImp q(a)
         \right]
         \]
 
         \item La convertimos a DNF
         \begin{align*}
-            &\fNot [ \big( (a \to b) \fAnd a \big) \to b ] \\
-            &\equiv \fNot [ \fNot \big( (a \to b) \fAnd a \big) \fOr b ]
+            &\fNot \left[
+                \bigg(\Big(\forall x. (p(x) \fImp q(x))\Big) \fAnd p(a) \bigg)
+                \fImp q(a)
+            \right] \\
+            &\equiv \fNot \left[
+                \fNot \bigg(\Big(\forall x. (p(x) \fImp q(x))\Big) \fAnd p(a) \bigg)
+                \fOr q(a)
+            \right] 
                 && (x \to y \equiv \fNot x \fOr y)\\
-            &\equiv \fNot \fNot \big( (a \to b) \fAnd a \big) \fAnd \fNot b
-                && (\fNot(x \fOr y) \equiv \fNot x \fAnd \fNot y)\\
-            &\equiv \big( (a \to b) \fAnd a \big) \fAnd \fNot b
-                && (\fNot\fNot x \equiv x)\\
-            &\equiv (\fNot a \fOr b) \fAnd a \fAnd \fNot b
-                 && (x \to y \equiv \fNot x \fOr y)\\
-            &\equiv (\fNot a \fOr b) \fAnd a \fAnd \fNot b
-                && ((x \fOr y) \fAnd z \equiv (x \fAnd z) \fOr (y \fAnd z))\\
             &\equiv
-                (\fNot a \fAnd a \fAnd \fNot b)
-                \vee
-                (b \fAnd a \fAnd \fNot b)
+                \fNot \fNot \bigg(\Big(\forall x. (p(x) \fImp q(x))\Big) \fAnd p(a) \bigg)
+                \fAnd \fNot q(a)
+                && (\fNot(x \fOr y) \equiv \fNot x \fAnd \fNot y)\\
+            &\equiv \Big(\forall x. (p(x) \fImp q(x))\Big) \fAnd p(a)
+            \fAnd \fNot q(a)
+                && (\fNot\fNot x \equiv x)
         \end{align*}
 
-        \item Buscamos una contradicción refutando cada cláusula
+        Como a los ojos de DNF un $\forall$ es opaco, a pesar de que dentro
+        tenga una implicación, la fórmula ya está en forma normal.
+
+        \item Buscamos una contradicción refutando cada cláusula. No hay forma
+        encontrando literales opuestos o $\fFalse$, por ej. para la cláusula
+        $p(a)$
+        \item Probamos eliminando $\forall x. (p(x) \fImp q(x))$. Reemplazamos
+        $x$ por una meta-variable fresca $\metavar{u}$.
+        \[
+            (p(\metavar{u}) \fImp q(\metavar{u})) \fAnd p(a) \fAnd \fNot q(a)
+        \]
+        ¡No está en DNF! Hay que volver a convertir.
+        \item Convertimos a DNF
+        \begin{align*}
+            &(p(\metavar{u}) \fImp q(\metavar{u})) \fAnd p(a) \fAnd \fNot q(a)\\
+            &\equiv (\fNot p(\metavar{u}) \fOr q(\metavar{u})) \fAnd p(a) \fAnd \fNot q(a)
+            &&(x \to y \equiv \fNot x \fOr y)\\
+            &\equiv ( (\fNot p(\metavar{u}) \fAnd p(a)) \fOr (q(\metavar{u}) \fAnd p(a))) \fAnd \fNot q(a)
+            &&((x \fOr y) \fAnd z \equiv (x \fAnd z) \fOr (x \fAnd z))\\
+            &\equiv (\fNot p(\metavar{u}) \fAnd p(a) \fAnd \fNot q(a)) \fOr (q(\metavar{u}) \fAnd p(a)\fAnd \fNot q(a))
+            &&((x \fOr y) \fAnd z \equiv (x \fAnd z) \fOr (x \fAnd z))
+        \end{align*}
+        \item Buscamos una contradicción refutando cada cláusula. Esta vez, no
+        podemos volver a eliminar un forall (por motivos de eficiencia) y los
+        literales opuestos tienen que \textit{unificar} en lugar de ser iguales.
+        Las sustituciones tienen que ser compatible entre todas las cláusulas
+        (no pueden asignar valores diferentes a la misma meta-variable)
         \begin{itemize}
-            \item $(\fNot a \fAnd a \fAnd \fNot b)$ tenemos $\fNot a$ y $a$.
-            \item $(b \fAnd a \fAnd \fNot b)$ tenemos $b$ y $\fNot b$.
+            \item $\fNot p(\metavar{u}) \fAnd p(a) \fAnd \fNot q(a)$ tenemos $p(\metavar{u}) \unify p(a)$ con $\subst{\metavar{u}}{a}$
+            \item $q(\metavar{u}) \fAnd p(a) \fAnd \fNot q(a)$ tenemos $q(\metavar{u}) \unify q(a)$ con $\subst{\metavar{u}}{a}$
         \end{itemize}
     \end{enumerate}
 \end{ejemplo}
 
+\subsubsection{Algoritmo}
 
+En general, si se tiene una cláusula 
+\(
+    \anyForm_0 \fAnd \dots \fAnd \anyForm_n
+\), intentamos para cada $\anyForm_i$ que comience con $\forall$ eliminar los necesarios reemplazando sus variable por meta-variables frescas. Por ejemplo,  si se tiene
+\[
+    (\forall x. \forall y . p(x) \fOr q(y)) \fAnd \fNot p(a) \fAnd \fNot q(b)
+\]
 
-\subsection{Unificación}
-\label{ppa:sec:unification}
+se reemplazarían tanto $x$ como $y$ por meta-variables frescas $u_0$ y $u_1$, quedando así $(p(u_0) \fOr q(u_1)) \fAnd \fNot p(a) \fAnd \fNot q(b)$ que se podrá refutar. En cambio, en
+\[
+    (\forall x. \forall y . p(x) \fAnd q(y)) \fAnd \fNot (\forall z. p(a) \fAnd q(z))
+\]
 
-\subsection{Juntando demostraciones}
+alcanza con eliminar $\forall x$ y el otro no debe ser eliminado. Y la unificación será capaz de tener en cuenta la alpha equivalencia, así puede unificar $\forall y . p(u_0) \fAnd q(y) \unify \forall z. p(a) \fAnd q(z)$.
 
-\todo{Cut como regla admisible}
+Por otro lado, se eliminan los $\forall$ consecutivos de una sola fórmula de la cláusula. Por ejemplo, en la siguiente o bien eliminamos $\forall x . p(x)$ o $\forall y . q(y)$ pero no ambos.
+\[
+    (\forall x . p(x)) \fAnd (\forall y . q(y)) \fAnd \fNot p(a) \fAnd \fNot q(b)
+\]
 
 \subsection{Poder expresivo}
 
 \duda{Está bien decir poder expresivo?}
 
-El solver implementado es \textbf{completo para lógica proposicional}, pero heurístico para lógica de primer orden. Esto es aceptable, puesto que la satisfacibilidad de lógica de primer orden es indecidible \todo{Cita?}, y además el objetivo del trabajo no fue dar el mejor solver, sino dar alguno.
+El solver implementado es \textbf{completo para lógica proposicional}, pero heurístico para lógica de primer orden. Esto es aceptable, puesto que la satisfacibilidad de lógica de primer orden es indecidible \todo{Cita?}, y además el objetivo del trabajo no fue dar el mejor solver, sino dar alguno para el cual se pueda certificar.
 
 \todo{Citar Hilbert 1950}
-\begin{theorem}[El solver es completo para lógica proposicional]
-    \todo{Demo}
+\begin{theorem}
+    El solver es \textbf{completo} para lógica proposicional.
 \end{theorem}
+\begin{proof}
+Lo hacemos semánticamente. Sea $\anyForm$ una fórmula proposicional cualquiera, supongamos que es válida ($\judG \anyForm$). Queremos argumentar que el solver va a poder generar una demostración para ello. Esto es cierto $\iff \fNot \anyForm$ es insatisfactible.
 
-\subsubsection{Limitaciones}
+Siempre vamos a poder convertir $\fNot \anyForm$ a DNF, por lo que tenemos
+\[
+    (\formLit_1 \fAnd \dots \fAnd \formLit_n)
+    \fOr \dots \fOr
+    (\formLitTwo_1 \fAnd \dots \fAnd \formLitTwo_m).
+\]
 
-No puede demostrar por ej.
+para que sea insatisfactible, por definición sobre $\fOr$ todas las
+cláusulas tienen que serlo (alcanza con satisfacer una). Para que una claúsula
+sea insatisfactible, no tiene que haber una valuación que la haga verdadera. Si
+existe, los valores para los literales $p_i$ están unívocamente determinados,
+tienen que ser 1 si es positivo y 0 si es negativo. Con una valuación tal,
+solamente no sería verdadero si la misma variable aparece dos veces, una vez
+negada y la otra sin negar (o si aparece false). Esto es exactamente lo que busca el solver, por lo que siempre va a poder encontrarla.
+\duda{Está suficientemente bien escrito esto? Supongo que no. En la intro hay que agregar las definiciones de la semántica de LPO.}
+\end{proof}
 
-\todo{ejemplo elim 2 foralls}
+\begin{theorem}
+    El solver es \textbf{incompleto} para lógica de primer orden.
+\end{theorem}
+\begin{proof}
+El siguiente es un contra ejemplo, que falla porque para funcionar debería eliminar ambos $\forall$ pero elimina a lo sumo los de una fórmula.
+\begin{lstlisting}
+axiom ax1: forall X . p(X) -> q(X)
+axiom ax2: forall X . p(X)
+theorem t: q(a)
+proof
+    thus q(a) by ax1, ax2
+end
+\end{lstlisting}
 
-\todo{otro ejemplo más burdamente complejo que requiera sat sovler}
-
+Pero esto no es lo único que le falta, también se podría dar uno un poco más burdo que requiera un \textit{SAT solver} completo.
+\end{proof}
 
 \section{Comandos correspondientes a reglas de inferencia}
 
-Como se puede apreciar en \fullref{ppa:tab:inference-rules-to-commands}, la
-mayoría de los comandos se corresponden directamente con reglas de inferencia,
-por lo que su traducción es más sencilla.
+Como se puede ver en \fullref{ppa:tab:inference-rules-to-commands}, el resto de los comandos se corresponden directamente con reglas de inferencia,
+por lo que su traducción es directa.
 
 \todo{trad}
 

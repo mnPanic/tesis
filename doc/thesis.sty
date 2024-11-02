@@ -192,6 +192,7 @@
 % Funciones
 \newcommand{\fv}[1]{fv(#1)}
 \newcommand{\subst}[2]{\{#1 := #2\}}
+\newcommand{\substTwo}[4]{\{#1 := #2, #3 := #4\}}
 \newcommand{\alphaEq}{\overset{\alpha}{=}}
 
 %% Juicios
@@ -199,8 +200,10 @@
 \newcommand{\judG}{\vdash}
 \newcommand{\judgEquiv}{\dashv\vdash}
 
-%% DNF
+% by
 \newcommand{\dnf}[1]{#1_{\textrm{DNF}}}
+\newcommand{\unify}{\doteq}
+\newcommand{\metavar}[1]{\textrm{#1}}
 
 %% PPA
 % https://tex.stackexchange.com/questions/33039/using-ttfamily-with-bfseries-or-how-to-enable-bold-in-fixed-width-font
