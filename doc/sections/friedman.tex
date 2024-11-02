@@ -51,7 +51,7 @@ clásica, porque las demostraciones en general no son \textbf{constructivas}.
 En la lógica clásica vale el \textit{principio del tercero excluido}, comúnmente
 conocido por sus siglas en inglés, LEM (\textit{law of excluded middle}).
 
-\begin{prop}{LEM} Para toda fórmula $\form$, es verdadera ella o su negación
+\begin{prop}[LEM] Para toda fórmula $\form$, es verdadera ella o su negación
     \[ \form \vee \neg \form \]
 \end{prop}
 
@@ -130,7 +130,7 @@ negación recursivamente a toda la fórmula. Por ejemplo
 
 \newcommand{\gN}[1]{#1^{\text{N}}}
 
-\begin{definition}{(Traducción \textit{Gödel-Gentzen})} Dada una fórmula $\form$ se asocia con otra $\gN{\form}$. La
+\begin{definition}[Traducción \textit{Gödel-Gentzen}] Dada una fórmula $\form$ se asocia con otra $\gN{\form}$. La
     traducción se define inductivamente en la estructura de la fórmula de la
     siguiente forma
 
@@ -171,7 +171,7 @@ traducir una demostración clásica de una fórmula $\sigmaZeroOne$ (e incluso
 $\piZeroTwo$) a una intuicionista, y usarla para demostrar \textbf{la fórmula
 original}. Finalmente podremos reducirla y hacer la extracción de forma usual.
 
-\begin{definition}{(Traducción de doble negación relativizada)}
+\begin{definition}[Traducción de doble negación relativizada]
     \begin{align*}
         \transDNeg{\bot} &= \bot\\
         \transDNeg{\form} &= \negR\negR \form \quad \text{con $\form \neq \bot$ atómica}\\

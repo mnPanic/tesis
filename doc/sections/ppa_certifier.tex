@@ -31,7 +31,7 @@ podría fácilmente escribir un chequeador, o usar uno confiable. Por eso genera
 demostraciones en deducción natural, haciendo que cumpla con el \textbf{criterio
 de de Bruijn}
 
-\begin{definition}{Criterio de de Bruijn \cite{freek-bruijn}.} Un asistente de
+\begin{definition}[Criterio de de Bruijn \cite{freek-bruijn}] Un asistente de
     demostración que satisface que sus demostraciones puedan ser chequeadas por
     un programa independiente, pequeño y confiable se dice que cumple con el
     criterio de de Bruijn.
@@ -110,18 +110,19 @@ veamos la idea general de la estrategia y luego profundizamos en cada paso.
 Los pasos para certificar un \lstinline{by} son,
 
 \begin{itemize}
-    \item Queremos demostrar la implicación
+    \item Queremos demostrar la implicación de las hipótesis a la fórmula. La
+    llamamos \textbf{tesis}.
     \[
         \formTwo_1 \fAnd \dots \fAnd \formTwo_n \fImp \form
     \]
-    \item Razonamos por el absurdo: asumiendo la negación encontramos una contradicción
+    \item Razonamos por el absurdo: asumiendo la negación de la tesis encontramos una contradicción
     \begin{align*}
         \fNot (\formTwo_1 \fAnd \dots \fAnd \formTwo_n \fImp \form)
         &\equiv \fNot (\fNot (\formTwo_1 \fAnd \dots \fAnd \formTwo_n) \fOr \form)\\
         &\equiv \formTwo_1 \fAnd \dots \fAnd \formTwo_n \fAnd \fNot \form
     \end{align*}
-    \item Convertimos la fórmula a forma normal disyuntiva (DNF), disyunción de
-    conjunciones de literales.
+    \item Convertimos la negación de la tesis a forma normal disyuntiva (DNF),
+    una disyunción de conjunciones de literales (``cláusulas'').
     \[
         (\formLit^1_{1} \fAnd \dots \fAnd \formLit^1_{n_1})
         \fOr \dots \fOr
@@ -129,10 +130,11 @@ Los pasos para certificar un \lstinline{by} son,
     \]
 
     donde $m \in \setNaturals$ es el número de cláusulas, $n_1, \dots, n_m \in
-    \setNaturals$ es la cantidad de la cantidad de fórmulas de cada cláusula y
-    $\formLit^i_j$ es la $j$-ésima fórmula de la $i$-ésima cláusula.
-    \item Buscamos una contradicción refutando cada cláusula (conjunción de literales) individualmente.
+    \setNaturals$ es la cantidad de fórmulas de cada cláusula y $\formLit^i_j$
+    es la $j$-ésima fórmula de la $i$-ésima cláusula.
+    \item Buscamos una contradicción refutando cada cláusula individualmente.
     Una cláusula $\formLit_1 \fAnd \dots \fAnd \formLit_n$ será refutable si
+    cumple una de las siguientes condiciones.
     \begin{itemize}
         \item Contiene $\fFalse$
         \item Contiene dos fórmulas opuestas ($\formLit, \fNot \formLit$)
@@ -142,10 +144,11 @@ Los pasos para certificar un \lstinline{by} son,
 \end{itemize}
 
 La complejidad del mecanismo no reside solo en tener que realizar todos estos
-pasos. El desafío principal fue \textbf{generar la demostración en deducción
-natural}. Veamos un ejemplo sin generar la demostración, sin cuantificadores.
+pasos, sino que el desafío principal fue \textbf{generar la demostración en
+deducción natural}. Veamos un ejemplo sin generar la demostración, sin
+eliminación de existenciales.
 
-\begin{ejemplo}{Ejemplo sin cuantificadores.}
+\begin{ejemplo}[Ejemplo sin cuantificadores]
     Tenemos el siguiente programa
 
     \begin{figure}[H]
@@ -205,7 +208,7 @@ vamos a usar la \textbf{eliminación de la doble negación}. Es un principio de
 razonamiento clásico que es equivalente a LEM.
 
 
-\begin{theorem}{Eliminación de la doble negación}
+\begin{theorem}[Eliminación de la doble negación]
     Sea $\form$ una fórmula cualquiera. Vale $\fNot \fNot \form \judG \form$, y lo notamos como regla admisible
 
     \begin{prooftree}
@@ -249,10 +252,10 @@ razonamiento clásico que es equivalente a LEM.
 
 ¿Cómo lo usamos? Introducimos otra regla admisible: \textbf{cut}, que nos
 permite ``pegar'' demostraciones entre sí. Si estamos queriendo demostrar
-$\form$, y queremos reducirlo a $\formTwo$ que podemos probar, esta regla nos
-permite hacerlo.
+$\form$, y queremos reducir el problema a $\formTwo$ que sí podemos probar, esta
+regla nos permite hacerlo.
 
-\begin{theorem}{Cut}. La siguiente regla de inferencia es admisible
+\begin{theorem}[Cut] La siguiente regla de inferencia es admisible
 \begin{prooftree}
     \AxiomC{$\ctx, \formTwo \judG \form$}
     \AxiomC{$\ctx \judG \formTwo$}
@@ -310,12 +313,12 @@ Que es generado como
 \end{prooftree}
 \end{ejemplo}
 
-\begin{lemma}{(Razonamiento por el absurdo)} Imaginemos que queremos demostrar
+\begin{lemma}[Razonamiento por el absurdo] Imaginemos que queremos demostrar
 $\form$ por el absurdo. Podemos juntar con cut con la eliminación de la doble
-negación, pasando a demostrar $\fNot \fNot \form$, que al introducirla, debemos
-demostrar el secuente $\ctx, \fNot \form \judG \fFalse$. Es decir, asumiendo que
-no es cierta la fórmula, deducimos una contradicción, que es justo lo que
-estábamos buscando.
+negación, pasando a demostrar $\fNot \fNot \form$, que para introducirla,
+debemos demostrar $\ctx, \fNot \form \judG \fFalse$. Es decir, asumiendo que no
+es cierta la fórmula, deducimos una contradicción. Justo lo que estábamos
+buscando para razonar por el absurdo.
 
 \begin{prooftree}
     \AxiomC{}
@@ -342,10 +345,10 @@ estábamos buscando.
 
 \subsection{DNF}
 
-Tenemos que generar una demostración de que la negación de la fórmula genera una
-contradicción, pero lo queremos hacer a partir de la fórmula en DNF.
+Tenemos que generar una demostración de que la negación de la tesis genera una
+contradicción, pero lo queremos hacer a partir de la tesis en DNF.
 
-\begin{definition}{DNF.}
+\begin{definition}[DNF]
     Una fórmula está en \textbf{forma normal disyuntiva} o DNF
     (\textit{disjunctive normal form}) si es una disyunción de conjunciones de
     literales.  Llamamos \textbf{cláusulas} a las conjunciones que la
@@ -360,10 +363,8 @@ contradicción, pero lo queremos hacer a partir de la fórmula en DNF.
     \end{itemize}
 \end{definition}
 
-\begin{theorem}{(Conversión a DNF)}
-
-    Para toda fórmula $\form$, existe $\form_{dnf}$ su equivalente en DNF.
-    Podemos demostrar $\form \judG \form_{dnf}$
+\begin{theorem}[Conversión a DNF] Para toda fórmula $\form$, existe $\dnf{\form}$ su equivalente en DNF.
+    Podemos demostrar $\form \judG \dnf{\form}$
     \todo{SeGUIR}
 \end{theorem}
 
@@ -400,7 +401,11 @@ puede ser muy engorrosa de hacer cada vez. Como las reglas son binarias, hay que
 usar \ruleAndEOne{} y \ruleAndETwo{} anidados. Para simplificarlo demostramos
 otra regla admisible, la proyección de un elemento \ruleAndEProj{\anyForm}.
 
-\begin{theorem}{Regla admisible \ruleAndEProj{\anyForm}.}
+\begin{theorem}[Regla admisible \ruleAndEProj{\anyForm}]
+    Sea $\anyForm$ alguna fórmula de la conjunción $\anyForm_1 \fAnd \dots \fAnd
+    \anyForm_i$. Notamos por \ruleAndEProj{\anyForm} a la proyección \textit{de
+    la fórmula}, sin importar en qué posición de la conjunción está.
+
     \begin{prooftree}
         \AxiomC{$\ctx \judG \anyForm_1 \fAnd \dots \fAnd \anyForm_i \fAnd \dots \fAnd \anyForm_n$}
         \AxiomC{$n \in \setNaturals$}
@@ -410,15 +415,16 @@ otra regla admisible, la proyección de un elemento \ruleAndEProj{\anyForm}.
     \end{prooftree}
 \end{theorem}
 \begin{proof}
-    La demostración es trivial. Basta con caminar recursivamente el $\fAnd$ y
-    usar \ruleAndEOne{} si el camino para encontrar a $\anyForm_i$ sigue por la
-    izquierda y \ruleAndETwo{} si sigue por la derecha.
+    Para generar la demostración correspondiente usando \ruleAndEOne{} y
+    \ruleAndETwo{}, basta con identificar el camino hacia $\anyForm_i$, y luego
+    caminar recursivamente el $\fAnd$ usando \ruleAndEOne{} el camino sigue por
+    la izquierda y \ruleAndETwo{} si sigue por la derecha.
 \end{proof}
 
-Veamos un ejemplo de las primeras dos formas de refutar cláusulas. Los
-cuantificadores universales los veremos en la siguiente sección.
 
-\begin{ejemplo}{Contradicción}
+\begin{ejemplo}[Contradicción]
+    Veamos un ejemplo de las primeras dos formas de refutar cláusulas. Los
+    cuantificadores universales los veremos en la siguiente sección.
 \begin{prooftree}
     \AxiomC{}
     \LL{\ruleAx}
@@ -478,7 +484,7 @@ para representar demostraciones (ej. $\someProof_L$).}
 \subsection{Eliminación de cuantificadores universales}
 
 
-\begin{ejemplo}{Ejemplo con cuantificadores}
+\begin{ejemplo}[Ejemplo con cuantificadores]
     Veamos un ejemplo con cuantificadores.
     \todo{Ejemplo sin demo}
 \end{ejemplo}
@@ -498,7 +504,7 @@ para representar demostraciones (ej. $\someProof_L$).}
 El solver implementado es \textbf{completo para lógica proposicional}, pero heurístico para lógica de primer orden. Esto es aceptable, puesto que la satisfacibilidad de lógica de primer orden es indecidible \todo{Cita?}, y además el objetivo del trabajo no fue dar el mejor solver, sino dar alguno.
 
 \todo{Citar Hilbert 1950}
-\begin{theorem}{El solver es completo para lógica proposicional.}
+\begin{theorem}[El solver es completo para lógica proposicional]
     \todo{Demo}
 \end{theorem}
 

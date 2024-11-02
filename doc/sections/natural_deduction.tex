@@ -89,7 +89,7 @@ $\vee$, $\exists$, $\dots$), que nos permiten razonar
 
 Introducimos algunas definiciones preliminares, luego vemos las reglas de inferencia, un ejemplo de una demostración, y finalmente explicamos cada regla.
 
-\begin{definition}{Contexto de demostración.}
+\begin{definition}[Contexto de demostración]
     \begin{itemize}
         \item Definimos los \textbf{contextos de demostración} $\ctx$ como un conjunto de fórmulas, compuesto por las hipótesis que se asumen a lo largo de una demostración.
         \item Para algunas reglas es necesario conocer las variables libres de un contexto, que se definen de la forma usual:
@@ -100,13 +100,13 @@ Introducimos algunas definiciones preliminares, luego vemos las reglas de infere
     \end{itemize}
 \end{definition}
 
-\begin{definition}{Relación $\judG$.}
+\begin{definition}[Relación $\judG$]
     Las reglas de inferencia de la \namedref{nd:inference-rules} definen la siguiente relación, que intuitivamente puede ser interpretada como ``$\form$ es una consecuencia de las suposiciones de $\ctx$''
 
     \[ \ctx \judG \form \]
 \end{definition}
 
-\begin{definition}{Sustitución.}
+\begin{definition}[Sustitución]
     Notamos la \textbf{sustitución sin capturas} de todas las ocurrencias libres de la variable $\var$ por el término $\term$ en la fórmula $\form$ como
 
     \[
@@ -582,7 +582,7 @@ partir de otras, es decir, \textit{reglas admisibles}. Nos va a servir para
 simplificar el resto de PPA, dado que vamos a generar demostraciones en
 deducción natural y operar sobre ellas. Mientras más sencillas sean las partes con las que se componen, mejor. Las reglas admisibles las podemos demostrar para cualquier fórmula, así luego podemos usarlas como \textit{macros}.
 
-\begin{ejemplo}{\textit{Modus tollens}}
+\begin{ejemplo}[\textit{Modus tollens}]
     
     \begin{prooftree}
         \AxiomC{}
@@ -650,7 +650,7 @@ donde \mintinline{haskell}{Env} es el contexto $\ctx$, \mintinline{haskell}{Proo
 
 Si tenemos una hipótesis $\exists \var . \fun(\var)$, sería ideal poder usarla para demostrar a partir de ella una fórmula $\exists \varTwo . \fun(\varTwo)$. Si bien no son exactamente iguales, son \textbf{alpha-equivalentes}: su estructura es la misma, pero tienen nombres diferentes para variables \textit{ligadas} (no libres)
 
-\begin{definition}{Alpha equivalencia}. Se define la relación $\alphaEq$ como la que permite renombrar variables ligadas evitando capturas. Es la congruencia más chica que cumple con
+\begin{definition}[Alpha equivalencia] Se define la relación $\alphaEq$ como la que permite renombrar variables ligadas evitando capturas. Es la congruencia más chica que cumple con
 \begin{align*}
     (\forall \var . \form) \alphaEq (\forall \varTwo . \form')
         &\iff
@@ -704,7 +704,7 @@ si sustituimos sin más, estaríamos involuntariamente ``capturando'' a $\varTwo
 
 donde $\varThree$ es una variable \textit{fresca}.
 
-\begin{definition}{Sustitución sin capturas}. Se define inductivamente en la estructura la fórmula. Sean $\varTwo$ una variable y $\term$ un término cualquiera.
+\begin{definition}[Sustitución sin capturas] Se define inductivamente en la estructura la fórmula. Sean $\varTwo$ una variable y $\term$ un término cualquiera.
     \begin{itemize}
         \item Términos
         \begin{align*}
@@ -763,7 +763,7 @@ Para implementarlo, cada vez que nos encontramos con una captura, vamos a \texti
 
 \duda{Mover a la sección de LPO en la introducción? esto es well-known}
 
-\begin{definition}{Variables libres de fórmulas y términos}. Se definen inductivamente en su estructura de la siguiente forma.
+\begin{definition}[Variables libres de fórmulas y términos] Se definen inductivamente en su estructura de la siguiente forma.
 
     \begin{itemize}
         \item Términos
@@ -788,7 +788,7 @@ Para implementarlo, cada vez que nos encontramos con una captura, vamos a \texti
     \end{itemize}
 \end{definition}
 
-\begin{definition}{Variables libres de una demostración.} Sea $\someProof$ una demostración. $\fv{\someProof}$ son las variables libres de todas las fórmulas que la componen. Por ejemplo, para la siguiente
+\begin{definition}[Variables libres de una demostración] Sea $\someProof$ una demostración. $\fv{\someProof}$ son las variables libres de todas las fórmulas que la componen. Por ejemplo, para la siguiente
 
     \proofTreeAndI
 
