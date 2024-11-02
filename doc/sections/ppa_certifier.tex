@@ -1,18 +1,18 @@
-Certificador: componente de PPA que "certifica" las demostraciones,
-    generando un certificado en deducción natural. Implicó escribir muchos
-    meta-teoremas.
-    \begin{itemize}
-        \item Formalización de muchos teoremas y axiomas: contextos (vale en el prefijo)
-        \item Proof y proof steps, simplificación de la interfaz y mapeo de
-        comandos a steps
-        \item Implementación de cada comando
-        \item By y solver para resolver varios. DNF. Extensión con foralls
-        consecutivos. Demostración / justificación de que es correcto y completo
-        para LP, pero heurístico para LPO (mostrar un caso en el que no funcione)
-        \item Descarga de conjunciones
-        \item Uso de dneg elim como razonamiento por el absurdo para demostrar
-        deMorgan y equivalencias.
-    \end{itemize}
+% Certificador: componente de PPA que "certifica" las demostraciones,
+%     generando un certificado en deducción natural. Implicó escribir muchos
+%     meta-teoremas.
+%     \begin{itemize}
+%         \item Formalización de muchos teoremas y axiomas: contextos (vale en el prefijo)
+%         \item Proof y proof steps, simplificación de la interfaz y mapeo de
+%         comandos a steps
+%         \item Implementación de cada comando
+%         \item By y solver para resolver varios. DNF. Extensión con foralls
+%         consecutivos. Demostración / justificación de que es correcto y completo
+%         para LP, pero heurístico para LPO (mostrar un caso en el que no funcione)
+%         \item Descarga de conjunciones
+%         \item Uso de dneg elim como razonamiento por el absurdo para demostrar
+%         deMorgan y equivalencias.
+%     \end{itemize}
 
 En la sección pasada vimos cómo se puede usar PPA para demostrar teoremas. Pero,
 ¿cómo funciona por detrás? ¿Como asegura la validez lógica de las
@@ -798,17 +798,150 @@ end
 Pero esto no es lo único que le falta, también se podría dar uno un poco más burdo que requiera un \textit{SAT solver} completo.
 \end{proof}
 
+\subsection{Azúcar sintáctico}
+
+Antes mencionamos que se puede usar \lstinline{hence} en lugar de \lstinline{thus} referenciando automáticamente a la hipótesis anterior, y análogamente lo mismo para \lstinline{have} y \lstinline{then}. Esto se implementa desde el \textit{parser}, todo se compila como los comandos base, y se agrega la hipótesis anterior (\lstinline{-}) cuando es necesario.
+
+\section{Descarga de conjunciones}
+
+¿Cómo podemos certificar el siguiente programa?
+
+\lstinputlisting{listings/interfaz/discharge-complex.ppa}
+
+Veamos en particular el primer comando de la demostración. La tesis es una conjunción que está asociada de una forma particular, y se quiere demostrar $a \fAnd e$ que es parte de la tesis. Pero sería mucho más fácil generar la demostración si se demostrara partes contiguas de la conjunción. Veamos cómo lo solventamos.
+
+\begin{enumerate}
+    \item Se convierte la conjunción y lo que se demuestra en conjuntos
+    \begin{align*}
+        (a \fAnd b) \fAnd ((c \fAnd d) \fAnd e)
+        &\rightsquigarrow
+        \{a, b, c, d, e\}\\
+        (a \fAnd e) &\rightsquigarrow \{a, e\}
+    \end{align*}
+    \item Si está contenido, se separa lo demostrado y el resto
+    \[
+        \{a, b, c, d, e\} \rightsquigarrow \{b, c, d\} \{a, e\}
+    \]
+    \item Se construye una \textit{nueva tesis} reordenando la fórmula de forma tal que sea sencillo hacer \ruleAndI{} (poniendo a la izquierda lo demostrado aislado de lo demás)
+    \[
+        (a \fAnd e) \fAnd (b \fAnd c \fAnd d)
+    \]
+
+    De esa forma, al usar la regla
+
+    \proofTreeAndI
+
+    la demostración de $a \fAnd e$ se hace de la forma usual con by, y se reduce la tesis a $b \fAnd c \fAnd d$ continuando la certificación por ahí, y insertando la demostración resultante en $\ctx \judG \formTwo$.
+
+    \item Para demostrar que la tesis vieja es demostrada por la nueva de forma ordenada, se usa el mismo solver que el by, que como es completo para proposicional, también puede resolver equivalencias por asociatividad y re-orden.
+\end{enumerate}
+
+Finalmente, queda certificado como
+
+\begin{prooftree}
+    \AxiomC{}
+    \LL{solver}
+    \admissibleRuleLine
+    % \UnaryInfC{\shortstack{
+    %     $\ctx \judG (a \fAnd e) \fAnd (b \fAnd c \fAnd d)$
+    %     \\
+    %     \quad$\fImp (a \fAnd b) \fAnd ((c \fAnd d) \fAnd e)$
+    % }}
+    \UnaryInfC{\(\begin{aligned}
+        \ctx &\judG (a \fAnd e) \fAnd (b \fAnd c \fAnd d)
+        \\
+        &\fImp (a \fAnd b) \fAnd ((c \fAnd d) \fAnd e)
+    \end{aligned}\)
+    }
+    \AxiomC{}
+    \RL{by}
+    \admissibleRuleLine
+    \UnaryInfC{$\ctx \judG a \fAnd e$}
+    \AxiomC{\vdots}
+    \noLine
+    \UnaryInfC{$\ctx \judG b \fAnd c \fAnd d$}
+    \RL{\ruleAndI}
+    \BinaryInfC{$\ctx \judG (a \fAnd e) \fAnd (b \fAnd c \fAnd d)$}
+    \RL{\ruleImpE}
+    \BinaryInfC{$\ctx \judG (a \fAnd b) \fAnd ((c \fAnd d) \fAnd e)$}
+\end{prooftree}
+
 \section{Comandos correspondientes a reglas de inferencia}
 
 Como se puede ver en \fullref{ppa:tab:inference-rules-to-commands}, el resto de los comandos se corresponden directamente con reglas de inferencia,
 por lo que su traducción es directa.
 
-\todo{trad}
+\begin{itemize}
+    \item \lstinline{take} (\ruleExistsI)
 
-\section{Descarga de conjunciones}
+    Si la tesis es \lstinline{exists X . a}, el comando \lstinline{take X := t}
+    la reduce a \lstinline{a} con $x$ reemplazado por $t$ y la certifica como
+    
+    \proofTreeExistsI
+
+    insertando la demostración certificada del resto en en $\ctx \judG \form \subst{\var}{\term}$
+
+    \item \lstinline{consider} (\ruleExistsE)
+    
+    El comando \lstinline{consider X st h: a by h1, ... hn} se certifica como
+    
+    \proofTreeExistsE
+
+    \begin{itemize}
+        \item $\ctx \judG \exists \var . \form$ se demuestra mediante el by.
+        \item Se agrega la hipótesis \lstinline{h: a} al contexto como axioma, se continúa la certificación y se inserta la demostración resultante en $\ctx, \form \judG \formTwo$.
+    \end{itemize}
+
+    \item \lstinline{let} (\ruleForallI)
+    
+    Si la tesis es \lstinline{forall X. a}, el comando \lstinline{let X} reduce la tesis a \lstinline{a} y continúa la certificación, insertando el resultado en la demostración de $\ctx \judG \form$
+
+    \proofTreeForallI
+
+    \item \lstinline{cases} (\ruleOrE)
+    
+    El comando
+    \begin{lstlisting}[numbers=none]
+        cases by h1, ..., hn
+            case c1
+            ...
+            case cm
+        end
+    \end{lstlisting}
+
+    se certifica como varios \ruleOrE{} anidados, en donde el primer $\fOr$ se certifica mediante by. Cada rama certifica la sub-demostración agregando la hipótesis del caso al contexto como axioma.
+
+    \proofTreeOrE
+
+    \item \lstinline{suppose} (\ruleImpI, \ruleNotI)
+    
+    Si la tesis es \lstinline{a -> b}, el comando \lstinline{suppose h: a} reduce la tesis a \lstinline{b} y agrega al contexto la hipótesis \lstinline{h: a} como axioma. La certifica como
+
+    \proofTreeImpI
+
+    insertando el resto de la demostración certificada en su sub-demostración.
+
+    Si la tesis es \lstinline{~a}, es análogo pero interpretándolo como \lstinline{a -> false}.
+
+\end{itemize}
 
 \section{Comandos adicionales}
 
-\todo{add}
+\begin{itemize}
+    \item \lstinline{equivalently}
+    
+    Si la tesis es $a$, el comando \lstinline{equivalently a'} usa el mismo solver que el by para demostrar $a' \fImp a$ y reduce la tesis a $a'$.
 
+    \item \lstinline{claim}
+    
+    La certificación del comando
+    \begin{lstlisting}[numbers=none]
+        claim h: f
+        proof
+            ...
+        end
+    \end{lstlisting}
+    
+    No es más que hacer la certificación de la sub-demostración, y agregar la hipótesis \lstinline{h: f} como teorema al contexto.
 
+\end{itemize}

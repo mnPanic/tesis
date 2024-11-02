@@ -1,29 +1,29 @@
-\begin{itemize}
-    \item Interfaz de PPA. Acá tienen que quedar claras todas las intuiciones
-    desde el punto de vista de un usuario. Mencionar que es un buen momento para
-    que vayan y prueben el programa (comando \texttt{check} nada más) \ok
-    \begin{itemize}
-        \item Programas, teoremas, demostraciones como listas de pasos que
-        reducen la tesis hasta agotarla. \ok
-        \item Comandos 1 por 1. Similar al README que ya existe pero más facha \ok
-        \item Ejemplos de demostraciones. \ok
-    \end{itemize}
-    \item Certificador: componente de PPA que "certifica" las demostraciones,
-    generando un certificado en deducción natural. Implicó escribir muchos
-    meta-teoremas.
-    \begin{itemize}
-        \item Formalización de muchos teoremas y axiomas: contextos (vale en el prefijo)
-        \item Proof y proof steps, simplificación de la interfaz y mapeo de
-        comandos a steps
-        \item Implementación de cada comando
-        \item By y solver para resolver varios. DNF. Extensión con foralls
-        consecutivos. Demostración / justificación de que es correcto y completo
-        para LP, pero heurístico para LPO (mostrar un caso en el que no funcione)
-        \item Descarga de conjunciones
-        \item Uso de dneg elim como razonamiento por el absurdo para demostrar
-        deMorgan y equivalencias.
-    \end{itemize}
-\end{itemize}
+% \begin{itemize}
+%     \item Interfaz de PPA. Acá tienen que quedar claras todas las intuiciones
+%     desde el punto de vista de un usuario. Mencionar que es un buen momento para
+%     que vayan y prueben el programa (comando \texttt{check} nada más) \ok
+%     \begin{itemize}
+%         \item Programas, teoremas, demostraciones como listas de pasos que
+%         reducen la tesis hasta agotarla. \ok
+%         \item Comandos 1 por 1. Similar al README que ya existe pero más facha \ok
+%         \item Ejemplos de demostraciones. \ok
+%     \end{itemize}
+%     \item Certificador: componente de PPA que "certifica" las demostraciones,
+%     generando un certificado en deducción natural. Implicó escribir muchos
+%     meta-teoremas.
+%     \begin{itemize}
+%         \item Formalización de muchos teoremas y axiomas: contextos (vale en el prefijo)
+%         \item Proof y proof steps, simplificación de la interfaz y mapeo de
+%         comandos a steps
+%         \item Implementación de cada comando
+%         \item By y solver para resolver varios. DNF. Extensión con foralls
+%         consecutivos. Demostración / justificación de que es correcto y completo
+%         para LP, pero heurístico para LPO (mostrar un caso en el que no funcione)
+%         \item Descarga de conjunciones
+%         \item Uso de dneg elim como razonamiento por el absurdo para demostrar
+%         deMorgan y equivalencias.
+%     \end{itemize}
+% \end{itemize}
 
 El lenguaje PPA (\textit{Pani's Proof Assistant}) se construye sobre las
 fundaciones de deducción natural. Es un asistente de demostración que permite
