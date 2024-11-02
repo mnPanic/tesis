@@ -442,12 +442,13 @@ solve thesis = do
                     , -- Demostración de bottom (contradicción) asumiendo que no vale
                       -- la tesis. Primero convertimos a DNF y luego demostramos que
                       -- la version en DNF es refutable.
-                      proofBot = PNamed "solver: cut proof dnf contradiction" $ 
-                        cut
-                            fDNFNotThesis
-                            dnfProof
-                            hDNFNotThesis
-                            (PNamed "solver: contradiction" contradictionProof)
+                      proofBot =
+                        PNamed "solver: cut proof dnf contradiction" $
+                            cut
+                                fDNFNotThesis
+                                dnfProof
+                                hDNFNotThesis
+                                (PNamed "solver: contradiction" contradictionProof)
                     }
             }
 
@@ -582,6 +583,7 @@ dnfStep (hNot, FNot (FAnd x y)) =
     fOr = FOr (FNot x) (FNot y)
     hOr = hypForm fOr
     (pNotDistOverAndLR, pNotDistOverAndRL) = proofNotDistOverAnd x y hNot hOr
+-- ~(x v y) -|- ~x ^ ~y
 dnfStep (hNotOr, FNot (FOr x y)) =
     Just
         ( (hAnd, fAnd)

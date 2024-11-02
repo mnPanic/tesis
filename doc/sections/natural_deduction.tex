@@ -100,10 +100,16 @@ Introducimos algunas definiciones preliminares, luego vemos las reglas de infere
     \end{itemize}
 \end{definition}
 
-\begin{definition}[Relación $\judG$]
+\begin{definition}[Relación \diffNew{de consecuencia}]
     Las reglas de inferencia de la \namedref{nd:inference-rules} definen la siguiente relación, que intuitivamente puede ser interpretada como ``$\form$ es una consecuencia de las suposiciones de $\ctx$''
 
     \[ \ctx \judG \form \]
+
+    \diffNew{En una cantidad finita de pasos podemos, a partir de las fórmulas de $\ctx$,
+    los axiomas y las reglas de inferencia, llegar a $\form$. Decimos que
+    $\form$ es \textit{derivable} a partir de $\ctx$. Cuando el contexto es
+    omitido, $\judG \form$ es una abreviación de $\emptyset \judG \form$. Se
+    puede derivar del contexto vacío, es universalmente cierta.}
 \end{definition}
 
 \begin{definition}[Sustitución]
@@ -352,8 +358,7 @@ A continuación se explican brevemente las reglas de inferencia listadas en \nam
     \item \ruleImpE: también conocida como \textit{modus ponens}. A partir de
     una implicación, si podemos demostrar su antecedente, entonces vale su consecuente.
     \item \ruleNotI: Para demostrar una negación, lo hacemos por el absurdo:
-    asumimos que vale la fórmula y llegamos a una contradicción. Esta regla
-    también se suele llamar \textit{reducción al absurdo} o RAA.
+    asumimos que vale la fórmula y llegamos a una contradicción.
     \item \ruleNotE: Podemos concluir un absurdo demostrando que vale una
     fórmula y su negación.
 \end{itemize}

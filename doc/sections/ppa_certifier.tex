@@ -166,6 +166,7 @@ eliminación de existenciales.
         \[ \fNot [ \big( (a \to b) \fAnd a \big) \to b ] \]
 
         \item La convertimos a DNF
+        \todo{Cambiar x e y}
         \begin{align*}
             &\fNot [ \big( (a \to b) \fAnd a \big) \to b ] \\
             &\equiv \fNot [ \fNot \big( (a \to b) \fAnd a \big) \fOr b ]
@@ -356,33 +357,177 @@ contradicción, pero lo queremos hacer a partir de la tesis en DNF.
     fórmula cualquiera que comienza con un cuantificador. Ejemplos:
     
     \begin{itemize}
-        \item $\form \fAnd \formTwo$ está en DNF
-        \item $(\form \fAnd \formThree) \fOr (\form \fAnd \formTwo)$ también
-        \item $(\form \fImp \formTwo) \fOr (\form \fAnd \formTwo)$ no lo está
-        \item $\big(\forall \var . (\form \fImp \formTwo)\big) \fOr (\form \fAnd \formTwo)$ si.
+        \item $\formLit \fAnd \formLitTwo$ está en DNF
+        \item $(\formLit \fAnd \formLitThree) \fOr (\formLit \fAnd \formLitTwo)$ también
+        \item $(\formLit \fImp \formLitTwo) \fOr (\formLit \fAnd \formLitTwo)$ no lo está
+        \item $\big(\forall \var . (\formLit \fImp \formLitTwo)\big) \fOr (\formLit \fAnd \formLitTwo)$ si.
     \end{itemize}
 \end{definition}
 
-\begin{theorem}[Conversión a DNF] Para toda fórmula $\form$, existe $\dnf{\form}$ su equivalente en DNF.
-    Podemos demostrar $\form \judG \dnf{\form}$
-    \todo{SeGUIR}
+\begin{theorem}[Conversión a DNF] Para toda fórmula $\form$, existe
+    $\dnf{\form}$ su equivalente en DNF. Y vale $\form \judG \dnf{\form}$.
 \end{theorem}
 
-\begin{itemize}
-    \item Definición de DNF
-    \item Sistema de reescritura. Justificación de por qué termina
-    \item Implementación del sistema de reescritura -> small step, congruencias,
-    pegado con cut.
-\end{itemize}
+\begin{obs}
+    Continuamos la demostración por la refutación de la fórmula en DNF mediante
+el uso de cut.
+
+\begin{prooftree}
+    \AxiomC{\vdots}
+    \noLine
+    \UnaryInfC{$\ctx, \form \judG \dnf{\form}$}
+    \AxiomC{\vdots}
+    \noLine
+    \UnaryInfC{$\ctx, \form, \dnf{\form} \judG \fFalse$}
+    \RL{\ruleCut}
+    \admissibleRuleLine
+    \BinaryInfC{$\ctx, \form \judG \fFalse$}
+\end{prooftree}
+\end{obs}
+
+
+Para convertir una fórmula cualquiera a DNF, vamos a implementar una traducción
+\textit{small-step} implementando el siguiente sistema de reescritura.
+
+\begin{figure}[H]
+    \begin{align*}
+        \fNot\fNot \formLit &\rightsquigarrow
+            \formLit
+            &&\text{eliminación de $\fNot\fNot$}\\
+        \fNot \fFalse &\rightsquigarrow
+            \fTrue\\
+        \fNot \fTrue &\rightsquigarrow
+            \fFalse\\
+        \formLit \fImp \formLitTwo &\rightsquigarrow
+            \fNot \formLit \fOr \formLitTwo
+            &&\text{definición de implicación}\\
+        \fNot(\formLit \fOr \formLitTwo) &\rightsquigarrow
+            \fNot \formLit \fAnd \fNot \formLitTwo
+            &&\text{distributiva de $\fNot$ sobre $\fAnd$}\\
+        \fNot(\formLit \fAnd \formLitTwo) &\rightsquigarrow
+            \fNot \formLit \fOr \fNot \formLitTwo
+            &&\text{distributiva de $\fNot$ sobre $\fOr$}\\
+        (\formLit \fOr \formLitTwo) \fAnd \formLitThree &\rightsquigarrow
+            (\formLit \fAnd \formLitThree) \fOr (\formLitTwo \fAnd \formLitThree)
+            &&\text{distributiva de $\fAnd$ sobre $\fOr$ (der)}\\
+        \formLitThree \fAnd (\formLit \fOr \formLitTwo) &\rightsquigarrow
+            (\formLitThree \fAnd \formLit) \fOr (\formLitThree \fAnd \formLitTwo)
+            &&\text{distributiva de $\fAnd$ sobre $\fOr$ (izq)}\\
+        \formLit \fOr (\formLitTwo \fOr \formLitThree) &\rightsquigarrow
+            (\formLit \fOr \formLitTwo) \fOr \formLitThree
+            &&\text{asociatividad de $\fOr$}\\
+        \formLit \fAnd (\formLitTwo \fAnd \formLitThree) &\rightsquigarrow
+            (\formLit \fAnd \formLitTwo) \fAnd \formLitThree
+            &&\text{asociatividad de $\fAnd$}
+    \end{align*}    
+    \caption{Sistema de reescritura para conversión a DNF de forma sintáctica}
+\end{figure}
+
+Para su implementación, no podemos hacerlo meramente de forma sintáctica, sino
+que tenemos \textit{generar una demostración} para cada equivalencia. Además,
+hay casos en donde tenemos que reemplazar una sub-fórmula por una equivalente.
+En ese caso usamos la \textit{congruencia} de los operadores, que también
+tuvimos que demostrar. Por ejemplo en
+\[
+    \formLit \fOr \bm{\fNot (\formLitTwo \fOr \formLitThree)}
+    \equiv
+    \formLit \fOr \bm{(\fNot \formLitTwo \fAnd \fNot \formLitThree)}
+\]
+donde reescribimos $\fNot
+(\formLitTwo \fOr
+\formLitThree) \equiv (\fNot \formLitTwo \fAnd \fNot \formLitThree)$ manteniendo el
+resto.
+
+\begin{figure}[H]
+    \begin{align*}
+        \form \judG \form'
+            &\Rightarrow \form \fAnd \formTwo \judG \form' \fAnd \formTwo\\
+        \form \judG \form'
+            &\Rightarrow \form \fOr \formTwo \judG \form' \fOr \formTwo\\
+        \form' \judG \form
+            &\Rightarrow \fNot \form \judG \fNot \form'
+    \end{align*}
+    \caption{Congruencias}
+\end{figure}
+
+No hay regla de congruencia para $\fImp$ pues se convierte en un $\fOr$. Es
+sumamente importante observar que $\fNot$ es \textit{contravariante}, para
+demostrar $\fNot \form \judG \fNot \form'$ no necesitamos tener una demostración
+de $\form \judG \form'$, sino de $\form' \judG \form$. Esto quiere decir que
+para todas las equivalencias, incluso las congruencias, no nos alcanza con
+demostrarlas en un solo sentido (por ej. $\fNot(\formLit \fOr \formLitTwo) \judG
+\fNot \formLit \fAnd \fNot \formLitTwo$) sino que vamos a necesitar ambos, la
+ida y la vuelta:
+\(
+    \fNot(\formLit \fOr \formLitTwo)
+        \judG \fNot \formLit \fAnd \fNot \formLitTwo
+\) y \(
+    \fNot \formLit \fAnd \fNot \formLitTwo \judG \fNot(\formLit \fOr \formLitTwo)
+\). lo notamos como \[
+    \fNot(\formLit \fOr \formLitTwo)
+        \judgEquiv \fNot \formLit \fAnd \fNot \formLitTwo
+\]
+
+\subsubsection{Algoritmo}
+
+Finalmente, el algoritmo para generar la demostración de la conversión de una
+fórmula en DNF se implementa de forma \textit{small-step}. Es la clausura de
+hacer un ``paso'' de la conversión a DNF, que puede o bien ser un paso de
+reescritura, o uno de congruencia reescribiendo una sub-fórmula. En cada uno se
+usa una de las siguientes demostraciones.
+
+\begin{figure}[H]
+    \begin{align*}
+        \intertext{Pasos base}
+        \fNot\fNot \formLit &\judgEquiv
+            \formLit
+            \\
+        \fNot \fFalse &\judgEquiv
+            \fTrue\\
+        \fNot \fTrue &\judgEquiv
+            \fFalse\\
+        \formLit \fImp \formLitTwo &\judgEquiv
+            \fNot \formLit \fOr \formLitTwo
+            \\
+        \fNot(\formLit \fOr \formLitTwo) &\judgEquiv
+            \fNot \formLit \fAnd \fNot \formLitTwo
+            \\
+        \fNot(\formLit \fAnd \formLitTwo) &\judgEquiv
+            \fNot \formLit \fOr \fNot \formLitTwo
+            \\
+        (\formLit \fOr \formLitTwo) \fAnd \formLitThree &\judgEquiv
+            (\formLit \fAnd \formLitThree) \fOr (\formLitTwo \fAnd \formLitThree)
+            \\
+        \formLitThree \fAnd (\formLit \fOr \formLitTwo) &\judgEquiv
+            (\formLitThree \fAnd \formLit) \fOr (\formLitThree \fAnd \formLitTwo)
+            \\
+        \formLit \fOr (\formLitTwo \fOr \formLitThree) &\judgEquiv
+            (\formLit \fOr \formLitTwo) \fOr \formLitThree
+            \\
+        \formLit \fAnd (\formLitTwo \fAnd \formLitThree) &\judgEquiv
+            (\formLit \fAnd \formLitTwo) \fAnd \formLitThree\\
+        \intertext{Pasos recursivos de congruencia (con $\form \judgEquiv \form'$)}
+        \form \fAnd \formTwo &\judgEquiv \form' \fAnd \formTwo\\
+        \form \fOr \formTwo &\judgEquiv \form' \fOr \formTwo\\
+        \fNot \form &\judgEquiv \fNot \form'
+    \end{align*}
+    \caption{Pasos de conversión a DNF}
+\end{figure}
+
+
+En total son 26 demostraciones. Nos ahorramos los detalles porque son bien
+conocidas (por ej. DeMorgan).
+
+\duda{Demostración de que termina? De que es correcto? Al menos una cita para que sea más confiable el sistema de reescritura? O se asume como bien conocido?}
 
 \subsection{Contradicciones}
 
 Tenemos la fórmula traducida a DNF. Debemos demostrar una contradicción a partir
 de ella. Si tenemos las cláusulas $\clause_1 \fOr \clause_2$, podemos demostrar
 $\clause_1 \fOr \clause_2 \judG \fFalse$ usando \ruleOrE{} y a partir de cada
-una, llegando a una contradicción. Esto se generaliza a N cláusulas haciendo
-\ruleOrE{} anidados. Por eso decimos que hay que \textit{``refutar cada
-cláusula''}. El método tiene tres formas de refutar cláusulas
+una, llegando a una contradicción. Esto se generaliza a N cláusulas mediante el
+uso \ruleOrE{} anidados. Por esto decimos que hay que \textit{``refutar cada
+cláusula''}. El método tiene tres formas de refutarlas
 
 \begin{itemize}
     \item Contienen fórmulas opuestas: $\form \fAnd \fNot \form$ (con
@@ -397,7 +542,7 @@ asociado el $\fAnd$, una demostración a mano de
 \(
     \form_1 \fAnd \dots \fAnd \form_i \fAnd \dots \fAnd \form_n \judG \form_i,
 \)
-puede ser muy engorrosa de hacer cada vez. Como las reglas son binarias, hay que
+puede ser muy engorrosa. Como las reglas son binarias, hay que
 usar \ruleAndEOne{} y \ruleAndETwo{} anidados. Para simplificarlo demostramos
 otra regla admisible, la proyección de un elemento \ruleAndEProj{\anyForm}.
 
@@ -417,10 +562,9 @@ otra regla admisible, la proyección de un elemento \ruleAndEProj{\anyForm}.
 \begin{proof}
     Para generar la demostración correspondiente usando \ruleAndEOne{} y
     \ruleAndETwo{}, basta con identificar el camino hacia $\anyForm_i$, y luego
-    caminar recursivamente el $\fAnd$ usando \ruleAndEOne{} el camino sigue por
-    la izquierda y \ruleAndETwo{} si sigue por la derecha.
+    caminar recursivamente el $\fAnd$ usando \ruleAndEOne{} si el camino
+    continúa por la izquierda y \ruleAndETwo{} si sigue por la derecha.
 \end{proof}
-
 
 \begin{ejemplo}[Contradicción]
     Veamos un ejemplo de las primeras dos formas de refutar cláusulas. Los
@@ -470,6 +614,7 @@ donde
     \admissibleRuleLine
     \UnaryInfC{$\ctx_1 \judG a$}
     \RL{\ruleNotE}
+    \LL{$\someProof_L=$}
     \BinaryInfC{\(
         \ctx_1 = \ctx, b \fAnd a \fAnd \fFalse \judG \fFalse
     \)}
@@ -480,14 +625,66 @@ donde
 una proyección y se suele notar con $\Pi$, pero ese símbolo lo estamos usando
 para representar demostraciones (ej. $\someProof_L$).}
 
-
 \subsection{Eliminación de cuantificadores universales}
 
+Hasta ahora logramos razonar por el absurdo, convertir la fórmula a DNF, y
+encontrar una contradicción siempre que no haya que eliminar cuantificadores
+universales. Pero es usual que en una teoría de primer orden, los axiomas
+contengan cuantificadores universales y sea necesario eliminarlos para poder
+demostrar un \lstinline{by}. Veamos un ejemplo.
 
 \begin{ejemplo}[Ejemplo con cuantificadores]
-    Veamos un ejemplo con cuantificadores.
-    \todo{Ejemplo sin demo}
+    Tenemos el siguiente programa
+
+    \begin{figure}[H]
+        \centering
+        \begin{tabular}{c}
+            \lstinputlisting{listings/certifier/by-modus-ponens-quant.ppa}
+        \end{tabular}
+    \end{figure}
+
+    Para certificar \lstinline{thus q(a) by ax1, ax2} hay que generar una
+    demostración para la implicación \(
+        \bigg(\Big(\forall x. (p(x) \fImp q(x))\Big) \wedge p(a) \bigg)
+        \fImp q(a)
+    \).
+
+    \begin{enumerate}
+        \item Negamos la fórmula 
+        \[
+            \fNot \left[
+            \bigg(\Big(\forall x. (p(x) \fImp q(x))\Big) \wedge p(a) \bigg)
+            \fImp q(a)
+        \right]
+        \]
+
+        \item La convertimos a DNF
+        \begin{align*}
+            &\fNot [ \big( (a \to b) \fAnd a \big) \to b ] \\
+            &\equiv \fNot [ \fNot \big( (a \to b) \fAnd a \big) \fOr b ]
+                && (x \to y \equiv \fNot x \fOr y)\\
+            &\equiv \fNot \fNot \big( (a \to b) \fAnd a \big) \fAnd \fNot b
+                && (\fNot(x \fOr y) \equiv \fNot x \fAnd \fNot y)\\
+            &\equiv \big( (a \to b) \fAnd a \big) \fAnd \fNot b
+                && (\fNot\fNot x \equiv x)\\
+            &\equiv (\fNot a \fOr b) \fAnd a \fAnd \fNot b
+                 && (x \to y \equiv \fNot x \fOr y)\\
+            &\equiv (\fNot a \fOr b) \fAnd a \fAnd \fNot b
+                && ((x \fOr y) \fAnd z \equiv (x \fAnd z) \fOr (y \fAnd z))\\
+            &\equiv
+                (\fNot a \fAnd a \fAnd \fNot b)
+                \vee
+                (b \fAnd a \fAnd \fNot b)
+        \end{align*}
+
+        \item Buscamos una contradicción refutando cada cláusula
+        \begin{itemize}
+            \item $(\fNot a \fAnd a \fAnd \fNot b)$ tenemos $\fNot a$ y $a$.
+            \item $(b \fAnd a \fAnd \fNot b)$ tenemos $b$ y $\fNot b$.
+        \end{itemize}
+    \end{enumerate}
 \end{ejemplo}
+
 
 
 \subsection{Unificación}
