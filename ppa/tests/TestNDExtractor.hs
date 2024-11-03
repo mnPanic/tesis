@@ -681,7 +681,7 @@ assertExtractProgramEquals theorem terms expectedTerm rawProgram = do
     ctx <- assertRight "certify" $ certify prog
     assertEqual "check failed" (Right ()) (checkContext ctx)
 
-    (ctx_translated, obtainedTerm) <-
+    (ctx_translated, obtainedTerm, _) <-
         assertRight "extract failed" $
             extractWitnessCtx ctx theorem terms
 

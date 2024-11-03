@@ -45,7 +45,7 @@ translateHyp hyp r = case hyp of
 Para mantener los axiomas originales, reemplazo ax: f las ocurrencias de ax por
 una dem de f~~ a partir de f
 -}
-extractWitnessCtx :: Context -> HypId -> [Term] -> Result (Context, Term)
+extractWitnessCtx :: Context -> HypId -> [Term] -> Result (Context, Term, Form)
 extractWitnessCtx ctx theoremId terms = do
   h_theorem <- findHyp ctx theoremId
   case h_theorem of
@@ -55,11 +55,13 @@ extractWitnessCtx ctx theoremId terms = do
       let pInlined = inlineProofs ctxRest p
       wrapR "check inlined" $ checkContext (axioms ctx ++ [HTheorem h f pInlined])
 
-      (pInlinedTranslated, f', t) <- extractWitness (axioms ctx) pInlined f terms
+      (pInlinedTranslated, f_exists, t) <- extractWitness (axioms ctx) pInlined f terms
+      let (FExists x f') = f_exists
 
-      let ctxResult = axioms ctx ++ [HTheorem h f' pInlinedTranslated]
+      let ctxResult = axioms ctx ++ [HTheorem h f_exists pInlinedTranslated]
 
-      return (ctxResult, t)
+      let f_witnessed = subst x t f'
+      return (ctxResult, t, f_witnessed)
 
 -- Inlinea todos los proofs del context en el proof
 inlineProofs :: Context -> Proof -> Proof

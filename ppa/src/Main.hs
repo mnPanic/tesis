@@ -84,7 +84,7 @@ runExtract (ArgsExtract inPath outPath theoremId terms) = do
                     putStr "Translating... "
                     case extractWitnessCtx ctx theoremId parsedTerms of
                         Left err -> putStrLn err
-                        Right (ctx', t) -> do
+                        Right (ctx', t, f) -> do
                             putStrLn "OK!"
                             writeResult outPath ctx ctx'
                             putStr "Checking translated... "
@@ -93,6 +93,7 @@ runExtract (ArgsExtract inPath outPath theoremId terms) = do
                                 Right _ -> do
                                     putStrLn "OK!"
                                     putStrLn $ printf "Extracted witness: %s" (show t)
+                                    putStrLn $ printf "of formula: %s" (show f)
 
 writeResult :: Maybe Path -> Context -> Context -> IO ()
 writeResult Nothing _ _ = return ()
