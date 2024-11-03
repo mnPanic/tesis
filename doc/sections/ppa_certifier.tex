@@ -14,9 +14,9 @@
 %         deMorgan y equivalencias.
 %     \end{itemize}
 
-En la sección pasada vimos cómo se puede usar PPA para demostrar teoremas. Pero,
-¿cómo funciona por detrás? ¿Como asegura la validez lógica de las
-demostraciones escritas por el usuario?
+En la sección anterior vimos cómo usar PPA para demostrar teoremas. Pero, ¿cómo
+funciona por detrás? ¿Como asegura la validez lógica de las demostraciones
+escritas por el usuario?
 
 \section{Certificados}
 
@@ -26,7 +26,7 @@ no es trivial. Si se escribe una demostración, para confiar en que es correcta
 hay que confiar en la implementación de PPA.
 
 Pero si PPA genera una demostración de bajo nivel, que usa las reglas de un
-sistema lógico simple como deducción natural, entonces cualquiera que desconfíe
+sistema lógico simple y conocido, entonces cualquiera que desconfíe
 podría fácilmente escribir un chequeador, o usar uno confiable. Por eso genera
 demostraciones en deducción natural, haciendo que cumpla con el \textbf{criterio
 de de Bruijn}
@@ -99,22 +99,22 @@ demostración en deducción natural.
 
 \section{Funcionamiento del by}
 
-El \lstinline{by} es el mecanismo principal de demostración en PPA, y el corazón del \modCertifier. Genera
-\textbf{automáticamente} una demostración de que una fórmula es consecuencia lógica de
-una lista de hipótesis.
+El \lstinline{by} es el mecanismo principal de demostración en PPA, y el corazón
+del \modCertifier. Muchas funcionalidades están implementadas a su alrededor.
+Genera \textbf{automáticamente} una demostración de que una fórmula es
+consecuencia lógica de una lista de hipótesis. Es un \textit{solver heurístico} para lógica de primer orden.
 
 Sea $A$ una fórmula. Supongamos que queremos demostrar \lstinline{thus A by h1, ..., hn} y que en el contexto tenemos que las hipótesis $h_i$ corresponden a
 fórmulas $\formTwo_i$, con $i \in \{1, ..., n\}, n \in \setNaturals$. Primero
 veamos la idea general de la estrategia y luego profundizamos en cada paso.
 
-Los pasos para certificar un \lstinline{by} son,
-
+Los pasos para certificar un \lstinline{by} conceptualmente son los siguientes. Luego vemos su implementación.
 \begin{itemize}
-    \item Queremos demostrar la implicación de las hipótesis a la fórmula. La
-    llamamos \textbf{tesis}.
+    \item Queremos demostrar la implicación de las hipótesis a la fórmula.
     \[
         \formTwo_1 \fAnd \dots \fAnd \formTwo_n \fImp \form
     \]
+    A esta fórmula la llamamos \textbf{tesis}.
     \item Razonamos por el absurdo: asumiendo la negación de la tesis encontramos una contradicción
     \begin{align*}
         \fNot (\formTwo_1 \fAnd \dots \fAnd \formTwo_n \fImp \form)
@@ -132,6 +132,12 @@ Los pasos para certificar un \lstinline{by} son,
     donde $m \in \setNaturals$ es el número de cláusulas, $n_1, \dots, n_m \in
     \setNaturals$ es la cantidad de fórmulas de cada cláusula y $\formLit^i_j$
     es la $j$-ésima fórmula de la $i$-ésima cláusula.
+
+    \duda{Me parece que me compliqué de más con esta notación. Estaría OK dejarlo como \(
+        (\formLit_1 \fAnd \dots \fAnd \formLit_n)
+        \fOr \dots \fOr
+        (\formLitTwo_1 \fAnd \dots \fAnd \formLitTwo_m)
+    \)?}
     \item Buscamos una contradicción refutando cada cláusula individualmente.
     Una cláusula $\formLit_1 \fAnd \dots \fAnd \formLit_n$ será refutable si
     cumple una de las siguientes condiciones.

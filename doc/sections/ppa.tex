@@ -31,19 +31,20 @@ escribir de una forma práctica demostraciones de cualquier teoría de lógica
 clásica de primer orden. En este capítulo nos vamos a centrar en el lenguaje, la
 interfaz del programa \texttt{ppa}, vista desde el punto de vista de un usuario
 que quiere escribir demostraciones. Los detalles teóricos de cómo está
-implementado son contados en el \namedref{chap:ppa-certifier}, y los de
+implementado son abordados en el \namedref{chap:ppa-certifier}, y los de
 implementación y su instalación en el \namedref{chap:ppa-tool}. Para
-introducirlo veamos un ejemplo: representamos el mismo de alumnos del
-\namedref{nd:ex:exam-nd-lpo} pero con un poco más de sofisticación.
+introducirlo veamos un ejemplo: en la \namedref{ppa:prog:alumnos} representamos
+el mismo de alumnos del \namedref{nd:ex:exam-nd-lpo} pero con un poco más de
+sofisticación.
 
-\begin{figure}[H]
+\begin{figure}
     \lstinputlisting[firstline=12,lastline=61,language=PPA]{listings/interfaz/alumnos.ppa}
     \caption{Programa de ejemplo completo en PPA. Demostraciones de alumnos y parciales.}
     \label{ppa:prog:alumnos}
 \end{figure}
 
-Diseccionemos parte por parte. La primera de todo programa en PPA es definir los
-axiomas de la \textit{teoría de primer orden} con la que se está trabajando.
+Diseccionemos parte por parte. La primera de todo programa en PPA es definir
+los axiomas de la \textit{teoría de primer orden} con la que se está trabajando.
 Como no se chequean tipos, no es necesario definir explícitamente los símbolos
 de predicados y de función. Pero se pueden agregar a modo informativo como un
 comentario. Consisten en fórmulas que son siempre consideradas como válidas.
