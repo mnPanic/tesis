@@ -1,0 +1,9 @@
+axiom ax1: a -> b
+axiom ax2: b -> c
+
+theorem t1: a -> c
+proof
+    suppose a: a
+    have b: b by a, ax1
+    thus c by b, ax2
+end

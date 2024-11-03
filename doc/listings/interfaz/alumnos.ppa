@@ -1,0 +1,61 @@
+/* Teoría de alumnos y exámenes
+
+Predicados
+    - reprueba(A, P): El alumno A reprueba el parcial P
+    - recursa(A, M): El alumno A recursa la materia M
+
+Funciones
+    - parcial(M): El parcial de una materia
+    - recu(P): El recuperatorio de un parcial
+*/
+
+axiom reprueba_recu_parcial_recursa: forall A. forall M.
+    (reprueba(A, parcial(M)) & reprueba(A, recu(parcial(M))))
+        -> recursa(A, M)
+
+axiom rinde_recu_reprobo_parcial: forall A. forall P.
+    rinde(A, recu(P)) -> reprueba(A, P)
+
+axiom reprobo_rinde: forall A. forall P.
+    reprueba(A, P) -> rinde(A, P)
+
+axiom falta_reprueba: forall A. forall P.
+    falta(A, P) -> reprueba(A, P)
+
+theorem reprueba_recu_recursa:
+    forall A. forall M.
+        reprueba(A, recu(parcial(M))) -> recursa(A, M)
+proof
+    let A
+    let M
+    suppose reprueba_recu: reprueba(A, recu(parcial(M)))
+
+    claim reprueba_p: reprueba(A, parcial(M))
+    proof
+        have rinde_recu: rinde(A, recu(parcial(M)))
+            by reprueba_recu, reprobo_rinde
+
+        hence reprueba(A, parcial(M))
+            by rinde_recu_reprobo_parcial        
+    end
+
+    hence recursa(A, M)
+        by reprueba_recu,
+            reprueba_p,
+            reprueba_recu_parcial_recursa
+end
+
+theorem falta_recu_recursa:
+    forall A. forall M.
+        falta(A, recu(parcial(M))) -> recursa(A, M)
+proof
+    let A
+    let M
+
+    suppose falta_recu: falta(A, recu(parcial(M)))
+
+    have reprueba_recu: reprueba(A, recu(parcial(M)))
+        by falta_recu, falta_reprueba
+
+    hence recursa(A, M) by reprueba_recu_recursa
+end

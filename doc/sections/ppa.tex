@@ -1,0 +1,446 @@
+% \begin{itemize}
+%     \item Interfaz de PPA. Acá tienen que quedar claras todas las intuiciones
+%     desde el punto de vista de un usuario. Mencionar que es un buen momento para
+%     que vayan y prueben el programa (comando \texttt{check} nada más) \ok
+%     \begin{itemize}
+%         \item Programas, teoremas, demostraciones como listas de pasos que
+%         reducen la tesis hasta agotarla. \ok
+%         \item Comandos 1 por 1. Similar al README que ya existe pero más facha \ok
+%         \item Ejemplos de demostraciones. \ok
+%     \end{itemize}
+%     \item Certificador: componente de PPA que "certifica" las demostraciones,
+%     generando un certificado en deducción natural. Implicó escribir muchos
+%     meta-teoremas.
+%     \begin{itemize}
+%         \item Formalización de muchos teoremas y axiomas: contextos (vale en el prefijo)
+%         \item Proof y proof steps, simplificación de la interfaz y mapeo de
+%         comandos a steps
+%         \item Implementación de cada comando
+%         \item By y solver para resolver varios. DNF. Extensión con foralls
+%         consecutivos. Demostración / justificación de que es correcto y completo
+%         para LP, pero heurístico para LPO (mostrar un caso en el que no funcione)
+%         \item Descarga de conjunciones
+%         \item Uso de dneg elim como razonamiento por el absurdo para demostrar
+%         deMorgan y equivalencias.
+%     \end{itemize}
+% \end{itemize}
+
+El lenguaje PPA (\textit{Pani's Proof Assistant}) se construye sobre las
+fundaciones de deducción natural. Es un asistente de demostración que permite
+escribir de una forma práctica demostraciones de cualquier teoría de lógica
+clásica de primer orden. En este capítulo nos vamos a centrar en el lenguaje, la
+interfaz del programa \texttt{ppa}, vista desde el punto de vista de un usuario
+que busca escribir demostraciones. Los detalles teóricos de cómo está
+implementado son abordados en el \namedref{chap:ppa-certifier}, y los de
+implementación y su instalación en el \namedref{chap:ppa-tool}. Para
+introducirlo veamos un ejemplo: en la \namedref{ppa:prog:alumnos} representamos
+el mismo de alumnos del \namedref{nd:ex:exam-nd-lpo} pero con un poco más de
+sofisticación.
+
+\begin{figure}
+    \lstinputlisting[firstline=12,lastline=61,language=PPA,name=Alumnos]{listings/interfaz/alumnos.ppa}
+    \caption{Programa de ejemplo completo en PPA. Demostraciones de alumnos y parciales.}
+    \label{ppa:prog:alumnos}
+\end{figure}
+
+Diseccionemos parte por parte. La primera de todo programa en PPA es definir
+los axiomas de la \textit{teoría de primer orden} con la que se está trabajando.
+Como no se chequean tipos, no es necesario definir explícitamente los símbolos
+de predicados y de función. Pero se pueden agregar a modo informativo como un
+comentario. Consisten en fórmulas que son siempre consideradas como válidas.
+Definimos,
+\begin{itemize}
+    \item \lstinline{axiom reprueba_recu_parcial_recursa}: si un alumno reprueba el
+    parcial y el recuperatorio de una materia, la recursa.
+    \item \lstinline{axiom reprobo_rinde}: si un alumno reprobó un examen, es porque lo
+    rindió.
+    \item \lstinline{axiom rinde_recu_reprobo_parcial}: si un alumno rinde el recu de
+    un parcial, es porque reprobó la primer instancia.
+    \item \lstinline{axiom falta_reprueba}: si un alumno falta a un exámen, lo reprueba.
+\end{itemize}
+\lstset{firstnumber=last}
+\lstinputlisting[firstline=1,lastline=23,name=Alumnos]{listings/interfaz/alumnos.ppa}
+
+En base a eso demostramos dos teoremas. El primero,
+\lstinline{theorem reprueba_recu_recursa}, nos permite concluir que un alumno recursa
+solo a partir de que reprueba el recuperatorio. Esto es porque a partir de esto,
+con el resto de los axiomas, podemos deducir que también reprobó el parcial: si
+reprueba el recuperatorio es porque lo rindió, y si rindió el recuperatorio, es
+porque reprobó el parcial.
+
+\begin{figure}[H]
+    \lstinputlisting[firstnumber=last,firstline=25,lastline=46,name=Alumnos]{listings/interfaz/alumnos.ppa}
+\end{figure}
+
+Para demostrar un teorema, tenemos que agotar su \textit{tesis} reduciéndola
+sucesivamente con \textit{proof steps}. Una demostración es correcta si todos
+los pasos son lógicamente correctos, y luego de ejecutarlos todos, la tesis se
+reduce por completo.
+
+\begin{itemize}
+    \item \cmdLet{} permite demostrar un \lstinline{forall}, asignando un nombre
+    a la variable general, y \textit{reduce} la tesis a su fórmula.
+    \item \cmdSuppose{} permite demostrar una implicación. Agrega como
+    hipótesis al contexto el antecedente, permitiendo nombrarlo, y reduce la
+    tesis al consecuente.
+    \item \cmdClaim{} permite agregar una sub-demostración, cuya fórmula se
+    agrega como hipótesis.
+    \item \cmdHave{} agrega una hipótesis auxiliar, sin reducir la tesis.
+    \item \cmdBy{} es el mecanismo principal de demostración. Permite deducir
+    fórmulas a partir de otras. Es completo para lógica proposicional, y
+    heurístico para primer orden. Unifica las variables de los \lstinline{forall}.
+    \item \cmdThus{} permite reducir parte o la totalidad de la tesis.
+    \item \cmdHence{} es igual a thus, pero incluye implícitamente la
+    hipótesis anterior a las justificaciones del \cmdBy{}.
+\end{itemize}
+
+Finalmente, a partir del teorema anterior y \lstinline{axiom falta_reprueba}
+podemos demostrar que si un alumno falta a un recuperatorio, recursa la materia.
+
+\begin{figure}[H]
+    \lstinputlisting[firstnumber=last,firstline=48,lastline=61,name=Alumnos]{listings/interfaz/alumnos.ppa}
+\end{figure}
+
+\lstset{firstnumber=1}
+
+Al ejecutarlo con \texttt{ppa}, se \textit{certifica} la demostración, generando
+un certificado de deducción natural, y luego se chequea que sea correcto. Si se
+escribió una demostración que no es lógicamente válida, el certificador reporta
+el error. No debería fallar nunca el chequeo sobre el certificado.
+
+\section{Interfaz}
+
+PPA es un lenguaje que permite escribir demostraciones de cualquier teoría de
+lógica de primer orden. Está inspirado en el \textit{mathematical vernacular}
+introducido por Freek Wiedijk \cite{freek-mv}. En esta sección nos
+concentramos en la interfaz de usuario, sin entrar en detalle en cómo está
+implementada.
+
+Un programa de PPA consiste en una lista de \textbf{declaraciones}: axiomas y
+teoremas, que se leen en orden el inicio hasta el final.
+
+\begin{itemize}
+    \item Los axiomas se asumen válidos, se usan para modelar la \textit{teoría
+    de primer orden} sobre la cual hacer demostraciones
+
+    \begin{lstlisting}[numbers=none]
+axiom <name> : <form>
+    \end{lstlisting}
+
+    \item Los teoremas deben ser demostrados, y se pueden citar todas las
+    hipótesis previas, que consideran ciertas.
+
+    \begin{lstlisting}[numbers=none]
+theorem <name> : <form>
+proof
+    <steps>
+end
+    \end{lstlisting}
+\end{itemize}
+
+\subsection{Identificadores}
+
+Los identificadores se dividen en tres tipos:
+
+\begin{itemize}
+    \item \textbf{Variables} (\lstinline{<var>}). Son descritas por la siguiente
+    expresión regular
+    \begin{center}
+        \verb/(\_|[A-Z])[a-zA-Z0-9\_\-]*(\')*/
+    \end{center}
+    \item \textbf{Identificadores} (\lstinline{<id>}). Son descritos por la
+    siguiente expresión regular
+    \begin{center}
+        \verb/[a-zA-Z0-9\_\-\?!#\$\%\*\+\<\>\=\?\@\^]+(\')*/
+    \end{center}
+    \item \textbf{Nombres} (\lstinline{<name>}): pueden ser identificadores, o
+    \textit{strings} arbitrarios encerrados por comillas dobles
+    (\texttt{"..."}), que son descritos por la siguiente expresión regular
+    \begin{center}
+        \verb/\"[^\"]*\"/
+    \end{center}
+\end{itemize}
+
+\subsection{Comentarios}
+
+Se pueden escribir comentarios de una sola línea (\lstinline{// ...}) o multilínea
+(\lstinline{/*  ... */})
+
+\subsection{Fórmulas}
+
+Las fórmulas están compuestas por,
+
+\begin{itemize}
+    \item \textbf{Términos}
+    \begin{itemize}
+        \item \textbf{Variables}: \lstinline{<var>}. Ejemplos: \lstinline{_x},
+        \lstinline{X}, \lstinline{X'''}, \lstinline{Alumno}.
+        \item \textbf{Funciones}: \lstinline{<id>(<term>, ..., <term>)}. Los
+        argumentos son opcionales, pudiendo tener funciones 0-arias
+        (constantes). Ejemplos:  \lstinline{c}, \lstinline{f(_x, c, X)}.
+    \end{itemize}
+    \item \textbf{Predicados}: \lstinline{<id>(<term>, ..., <term>)}. Los
+    argumentos son opcionales, pudiendo tener predicados 0-arios (variables
+    proposicionales). Ejemplos: \lstinline{p(c, f(w), X)}, \lstinline{A},
+    \lstinline{<(n, m)}
+    \item \textbf{Conectivos binarios}.
+    \begin{itemize}
+        \item \lstinline{<form> & <form>} (conjunción)
+        \item \lstinline{<form> | <form>} (disyunción)
+        \item \lstinline{<form> -> <form>} (implicación)
+    \end{itemize}
+    \item \textbf{Negación} \lstinline{~<form>}
+    \item \textbf{Cuantificadores}
+    \begin{itemize}
+        \item \lstinline{exists <var> . <form>}
+        \item \lstinline{forall <var> . <form>}
+    \end{itemize}
+    \item \lstinline{true}, \lstinline{false}
+    \item \textbf{Paréntesis}: \lstinline{(<form>)}
+\end{itemize}
+
+
+\section{Demostraciones}
+
+Las demostraciones consisten en una lista de \textit{proof steps} o comandos que
+pueden reducir sucesivamente la \textit{tesis} (fórmula a demostrar) hasta
+agotarla por completo. Corresponden aproximadamente a reglas de inferencia de
+deducción natural.
+
+\subsection{Contexto}
+
+Las demostraciones llevan asociado un \textit{contexto} con todas las hipótesis
+que fueron asumidas (como los axiomas), o demostradas: tanto teoremas anteriores
+como sub-teoremas y otros comandos que agregan hipótesis a él.
+
+\subsection{by - el mecanismo principal de demostración}
+
+El mecanismo principal de demostración directa o \textit{modus ponens} es el
+\lstinline{by}, que afirma que un hecho es consecuencia de una lista de
+hipótesis (su ``justificación''). Esto permite eliminar universales e implicaciones. Por detrás hay un
+solver completo para lógica proposicional pero heurístico para primer
+orden (elimina todos los foralls de a lo sumo una hipótesis, no intenta con más
+de una). Exploramos las limitaciones en \fullref{ppa-cert:sec:expressiveness}.
+
+En general, \lstinline{[...] by <justification>} se interpreta como que \lstinline{[...]}
+es una consecuencia lógica de las fórmulas que corresponden a las hipótesis de
+\lstinline{<justification>}, que deben estar declaradas anteriormente y ser parte
+del contexto. Ya sea por axiomas o teoremas, u otros comandos que agreguen
+hipótesis (como \lstinline{suppose}). Puede usarse de dos formas principales,
+\lstinline{thus} y \lstinline{have}
+
+\begin{itemize}
+    \item \lstinline{thus <form> by <justification>}.
+    
+    Si \lstinline{<form>} es \textit{parte} de la tesis (ver
+    \fullref{ppa:sec:and-intro}), y es consecuencia lógica de las
+    justificaciones, lo demuestra automáticamente y lo descarga de la tesis.
+
+    Por ejemplo, para eliminación de implicaciones
+
+    \lstinputlisting{listings/interfaz/by-imp.ppa}
+
+    Y para eliminación de cuantificadores universales
+
+    \lstinputlisting{listings/interfaz/by-forall.ppa}
+
+    \item \lstinline{have <form> by <justification>}.
+    
+    Igual a \lstinline{thus}, pero permite introducir afirmaciones
+    \textit{auxiliares} que no son parte de la tesis, sin reducirla, y las
+    agrega a las hipótesis para usar luego. Por ejemplo, la demostración
+    anterior la hicimos en un solo paso con el \lstinline{thus}, pero podríamos
+    haberla hecho en más de uno con una afirmación auxiliar intermedia.
+
+    \lstinputlisting{listings/interfaz/by-imp-have.ppa}
+\end{itemize}
+
+Ambas tienen su contraparte con \textit{azúcar sintáctico} que agrega
+automáticamente la hipótesis anterior a la justificación, a la que también se
+puede referir con guión medio (\lstinline{-}).
+
+\begin{table}[H]
+    \centering
+\begin{tabular}{l|l|l}
+Comando             & Alternativo             & ¿Reduce la tesis? \\
+\hline
+\lstinline|thus|    & \lstinline|hence|       & Si               \\
+\lstinline|have|    & \lstinline|then|        & No              
+\end{tabular}
+\end{table}
+
+Por ejemplo, 
+\begin{multicols}{2}
+    \lstinputlisting[
+        firstline=1,
+        lastline=9,
+    ]{listings/interfaz/by-imp-then.ppa}
+    \vfill\null
+    \columnbreak
+    \lstinputlisting[
+        firstline=11,
+        lastline=23,
+        firstnumber=last
+    ]{listings/interfaz/by-imp-then.ppa}
+\end{multicols}
+
+
+En todos, el \lstinline{by} es opcional. En caso de no especificarlo, debe ser
+una tautología.
+
+\lstinputlisting{listings/interfaz/by-taut.ppa}
+
+\subsection{Comandos y reglas de inferencia}
+
+
+Muchas reglas de inferencia de deducción natural (\ref{nd:inference-rules})
+tienen una correspondencia directa con comandos. Como se puede ver en
+\fullref{ppa:tab:inference-rules-to-commands}, la mayor parte del trabajo
+manual, detallista y de bajo nivel de escribir demostraciones en deducción
+natural resuelve automáticamente con el uso \lstinline{by}.
+\begin{table}[H]
+    \centering
+    \begin{tabular}{c|c}
+    Regla & Comando \\
+    \hline
+    \ruleExistsI    &   \lstinline|take| \\
+    \ruleExistsE    &   \lstinline|consider| \\
+    \ruleForallI    &   \lstinline|let| \\
+    \ruleForallE    &   \lstinline|by| \\
+    \ruleOrIOne     &   \lstinline|by| \\
+    \ruleOrITwo     &   \lstinline|by| \\
+    \ruleOrE        &   \lstinline|cases| \\
+    \ruleAndI       &   \lstinline|by| \\
+    \ruleAndEOne    &   \lstinline|by| \\
+    \ruleAndETwo    &   \lstinline|by| \\
+    \ruleImpI       &   \lstinline|suppose| \\
+    \ruleImpE       &   \lstinline|by| \\
+    \ruleNotI       &   \lstinline|suppose| \\
+    \ruleNotE       &   \lstinline|by| \\
+    \ruleTrueI      &   \lstinline|by| \\
+    \ruleFalseE     &   \lstinline|by| \\
+    \ruleLEM        &   \lstinline|by| \\
+    \ruleAx         &   \lstinline|by|
+    \end{tabular}
+    \caption{Reglas de inferencia y comandos}
+    \label{ppa:tab:inference-rules-to-commands}
+\end{table}
+
+
+\begin{itemize}
+    \item \lstinline{suppose} (\ruleImpI / \ruleNotI)
+    
+    Si la tesis es una implicación $\form \fImp \formTwo$, agrega el antecedente
+    $\form$ como hipótesis con el nombre dado y reduce la tesis al consecuente
+    $\formTwo$. Viendo la negación como una implicación $\fNot \form \equiv
+    \form \fImp \fFalse$, se puede usar para introducir negaciones, tomando
+    $\formTwo = \fFalse$.
+
+    \begin{multicols}{2}
+        \lstinputlisting[firstline=1, lastline=7]{listings/interfaz/suppose.ppa}
+        \vfill\null
+        \columnbreak
+        \lstinputlisting[firstline=9, lastline=15]{listings/interfaz/suppose.ppa}    
+    \end{multicols}
+    \item \lstinline{cases} (\ruleOrE)
+    
+    Permite razonar por casos. Para cada uno se debe demostrar la tesis en su
+    totalidad por separado.
+
+    \lstinputlisting[firstline=1, lastline=11]{listings/interfaz/cases.ppa}
+
+    No es necesario que los casos sean exactamente iguales a como están
+    presentados en la hipótesis, solo debe valer que la disyunción de ellos sea
+    consecuencia de ella. Es decir, para poder usar
+
+    \begin{lstlisting}[numbers=none]
+cases by h1, ..., hn
+    case c1
+    ...
+    case cm
+end
+    \end{lstlisting}
+
+    Tiene que valer \lstinline{c1 | ... | cm by h1, ..., hn}.
+    
+    Por lo que en el ejemplo anterior, podríamos haber usado el mismo case
+    incluso si la hipótesis fuera \lstinline{~((~a | ~b) & (~c | ~a))}, pues es
+    equivalente a \lstinline{(a & b) | (c & a)}.
+
+    \item \lstinline{take} (\ruleExistsI)
+    
+    Introduce un existencial instanciando su variable y reemplazándola por un
+    término. Si la tesis es \lstinline{exists X . p(X)}, luego de
+    \lstinline{take X := a}, se reduce a \lstinline{p(a)}.
+
+    \item \lstinline{consider} (\ruleExistsE)
+    
+    Permite razonar sobre una variable que cumpla con un existencial. Si se
+    puede justificar \lstinline{exists X. p(X)}, permite razonar sobre
+    \lstinline{X}.
+
+    El comando \lstinline{consider X st h: p by ...} agrega \lstinline{p} como
+    hipótesis al contexto para el resto de la demostración. El \lstinline{by}
+    debe justificar \lstinline{exists X. p(X)}.
+
+    Valida que \lstinline{X} no esté libre en la tesis.
+
+    También es posible usar una fórmula $\alpha$-equivalente, por
+    ejemplo si podemos justificar \lstinline{exists X. p(X)}, podemos usarlo
+    para \lstinline{consider Y st h: p(Y) by ...}
+
+    \item \lstinline{let} (\ruleForallI)
+    
+    Permite demostrar un cuantificador universal. Si se tiene
+    \lstinline{forall X. p(X)}, luego de \lstinline{let X} la tesis se reduce a
+    \lstinline{p(X)} con un \lstinline{X} genérico. Puede ser el mismo nombre de
+    variable o uno diferente.
+
+\end{itemize}
+
+\subsection{Descarga de conjunciones}\label{ppa:sec:and-intro}
+
+Si la tesis es una conjunción, se puede probar solo una parte de ella y se
+reduce al resto.
+
+\begin{figure}[H]
+    \centering
+    \caption{Descarga de conjunción simple}
+    \begin{tabular}{c}
+        \lstinputlisting{listings/interfaz/discharge-simple.ppa}
+    \end{tabular}
+\end{figure}
+
+Esto puede ser prácticamente en cualquier orden.
+
+\begin{figure}[H]
+    \centering
+    \caption{Descarga de conjunción compleja}
+    \begin{tabular}{c}
+    \lstinputlisting{listings/interfaz/discharge-complex.ppa}
+    \end{tabular}
+\end{figure}
+
+
+\subsection{Otros comandos}
+
+\begin{itemize}
+    \item \lstinline{equivalently}: permite reducir la tesis a una fórmula
+    equivalente. Útil para usar descarga de conjunciones.
+    
+    \lstinputlisting{listings/interfaz/equivalently.ppa}
+
+    \item \lstinline{claim}: permite demostrar una afirmación auxiliar. Útil
+    para ordenar las demostraciones sin tener que definir otro teorema. Ejemplo
+    en \fullref{ppa:prog:alumnos}
+
+    \begin{lstlisting}[numbers=none]
+theorem t: <form>
+proof
+    claim <name>: <form>
+    proof
+        <proof>
+    end
+end
+    \end{lstlisting}
+\end{itemize}

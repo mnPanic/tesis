@@ -1,0 +1,10 @@
+axiom ax1: a -> b
+axiom ax2: b -> c
+
+theorem t1: a -> c 
+proof
+    suppose a: a
+
+    // La tesis ahora es c
+    thus c by a, ax1, ax2
+end

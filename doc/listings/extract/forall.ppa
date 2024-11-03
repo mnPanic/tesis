@@ -1,0 +1,7 @@
+axiom ax: forall Y . p(Y, v)
+theorem t: forall X. exists V . p(X, V)
+proof
+    let X
+    take V := v
+    thus p(X, v) by ax
+end

@@ -1,0 +1,13 @@
+axiom ax1: q
+axiom ax2: q -> p
+axiom ax3: p -> r
+
+theorem t1: p
+proof
+    thus p by ax1, ax2
+end
+
+theorem t2: r
+proof
+    thus r by t1, ax3
+end

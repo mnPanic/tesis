@@ -1,0 +1,16 @@
+// ppa extract t2 listings/extract/indirect.ppa out
+axiom ax1: q(m)
+axiom ax2: forall X. q(X) -> p(X)
+
+theorem t1: exists X. q(X)
+proof
+    take X := m
+    thus q(m) by ax1
+end
+
+theorem t2: exists X. p(X)
+proof
+    consider Y st h: q(Y) by t1
+    take X := Y
+    hence p(Y) by ax2
+end

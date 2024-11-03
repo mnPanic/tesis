@@ -1,0 +1,6 @@
+axiom ax: forall X . f(X)
+
+theorem t: f(n)
+proof
+    thus f(n) by ax
+end

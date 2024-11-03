@@ -1,0 +1,113 @@
+
+
+En este trabajo implementamos una asistente de demostración ``PPA''
+(\textit{Pani's proof assistant}) inspirado en Mizar.
+
+PPA se puede referir a varias cosas: el lenguaje para escribir demostraciones,
+la herramienta (junto con su extracción de testigos).
+
+
+\section{Teoremas}
+
+In mathematics and formal logic, a theorem is a statement that has been proven, or can be proven.[a][2][3] The proof of a theorem is a logical argument that uses the inference rules of a deductive system to establish that the theorem is a logical consequence of the axioms and previously proved theorems.
+
+In mainstream mathematics, the axioms and the inference rules are commonly left implicit, and, in this case, they are almost always those of Zermelo–Fraenkel set theory with the axiom of choice (ZFC), or of a less powerful theory, such as Peano arithmetic.[b] Generally, an assertion that is explicitly called a theorem is a proved result that is not an immediate consequence of other known theorems. Moreover, many authors qualify as theorems only the most important results, and use the terms lemma, proposition and corollary for less important theorems.
+
+Completar con https://en.wikipedia.org/wiki/Theorem
+
+\section{Asistentes de demostraciones}
+
+\begin{itemize}
+    \item Son programs que asisten al usuario a la hora de escribir una
+    demostración. Permiten representarlas en un programa.
+    \item Aplicaciones: formalización de teoremas, verificación formal de
+    programas, etc.
+    \item Ejemplos: Coq, isabelle (isar), Mizar
+    \item Reseña histórica de Mizar
+    \item Ventajas: colaboración a gran escala (confianza en el checker),
+    chequear el output de los LLMs
+\end{itemize}
+
+\section{Arquitectura de PPA}
+
+\begin{itemize}
+    \item Por qué certificados (criterio de De Brujin)
+    \item Certificados están en deducción natural. Sistema lógico que permite
+    construir demostraciones mediante reglas de inferencia.
+    \item PPA es un lenguaje que genera demostraciones "de bajo nivel" ND.
+    \item razón de ser: Más práctico que demos de bajo nivel
+    \item Implementado en Haskell
+\end{itemize}
+
+Principalmente hace dos cosas: certificar y extraer testigos.
+
+\section{Lógica de primer orden}
+
+Suponemos dados,
+
+\begin{itemize}
+    \item Un conjunto infinito numerable de \textbf{variables}
+    \(
+        \{\var, \varTwo, \varThree, \dots\}
+    \)
+    \item Un conjunto infinito numerable de \textbf{símbolos de función}
+    \(
+        \{\fun, \funTwo, \funThree, \dots\}
+    \)
+    \item Un conjunto infinito numerable de \textbf{símbolos de predicado}
+    \(
+        \{\pred, \predTwo, \predThree, \dots\}
+    \)
+\end{itemize}
+
+\begin{definition}[Términos]
+    Los términos están dados por la gramática
+    \begin{align*}
+        \term ::= &\ \var                               &\text{(variables)} \\
+                  & \mid \fun(\term_1, \dots, \term_n) &\text{(funciones)}
+    \end{align*}
+\end{definition}
+
+\begin{definition}[Fórmulas]
+    Las fórmulas están dadas por la gramática
+    \begin{align*}
+        \form, \formTwo ::=
+         & \ \pred(\term_1, \dots, \term_n) & (\text{predicados})                \\
+         & \mid \fFalse, \fTrue             & \text{(verdadero y falso)}         \\
+         & \mid \form \fAnd \formTwo        & \text{(conjunción)}                \\
+         & \mid \form \fOr \formTwo         & \text{(disyunción)}                \\
+         & \mid \form \fImp \formTwo        & \text{(implicación)}               \\
+         & \mid \fNot \form                 & \text{(negación)}                  \\
+         & \mid \forall \var . \form        & \text{(cuantificador universal)}   \\
+         & \mid \exists \var . \form        & \text{(cuantificador existencial)}
+    \end{align*}
+
+    Los predicados son \textbf{fórmulas atómicas}. Los de aridad 0 además son llamados \textit{variables proposicionales}.
+\end{definition}
+
+\begin{definition}[Variables libres y ligadas]
+    Las variables pueden ocurrir libres o ligadas. Los cuantificadores ligan a
+    las variables, y usamos $\fv(\form)$ para referirnos a las variables libres
+    de una fórmula. Se define por inducción estructural de la siguiente forma.
+
+    \begin{itemize}
+        \item Términos
+        \begin{align*}
+            \fv{\var} &= \{ \var \}\\
+            \fv{\fun(\term_1, \dots, \term_n)} &= \bigcup_{i \in 1\dots n} \fv{t_i} 
+        \end{align*}
+    
+        \item Fórmulas
+        \begin{align*}
+            \fv{\fFalse} &=\emptyset\\
+            \fv{\fTrue} &=\emptyset \\
+            \fv{\pred(\term_1, \dots, \term_n)} &= \bigcup_{i \in 1\dots n} \fv{t_i} \\
+            \fv{\form \fAnd \formTwo} &= \fv{\form} \cup \fv{\formTwo}\\
+            \fv{\form \fOr \formTwo} &=\fv{\form} \cup \fv{\formTwo}\\
+            \fv{\form \fImp \formTwo} &=\fv{\form} \cup \fv{\formTwo}\\
+            \fv{\fNot \form} &=\fv{\form}\\
+            \fv{\forall \var . \form} &= \fv{\form} \setminus \var \\
+            \fv{\exists \var . \form} &= \fv{\form} \setminus \var
+        \end{align*}
+    \end{itemize}
+\end{definition}

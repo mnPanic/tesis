@@ -1,0 +1,256 @@
+\ProvidesPackage{thesis}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+
+\usepackage{graphicx}
+\usepackage[utf8]{inputenc}
+\usepackage[left=3cm,right=3cm,bottom=3.5cm,top=3.5cm]{geometry}
+
+\usepackage[spanish]{babel}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bm}         % bold math
+\usepackage{float}      % [H]
+\usepackage{stmaryrd}   % \mapsfrom
+
+\usepackage{abraces}    % \aunderbrace y \aoverbrace
+
+\usepackage{listings}
+
+% https://tex.stackexchange.com/questions/159988/sidewaysfigure-and-landscape
+% \usepackage{pdflscape}
+
+
+% Colores 
+% https://es.overleaf.com/learn/latex/Using_colors_in_LaTeX
+\usepackage[dvipsnames]{xcolor} % \textcolor
+
+\usepackage[colorlinks=true]{hyperref}  % referencias
+
+% Programas
+% https://tex.stackexchange.com/questions/116595/highlighting-haskell-listings-in-large-tex-document
+% https://leportella.com/minted-vscode/
+% https://tex.stackexchange.com/questions/367332/minted-error-undefined-control-sequence-pyg-with-texmaker
+\usepackage[cache=false]{minted}     % código
+
+% https://tex.stackexchange.com/questions/121865/nameref-how-to-display-section-name-and-its-number
+\newcommand*{\ejemploautorefname}{Ejemplo}
+\newcommand*{\fullref}[1]{\hyperref[{#1}]{\autoref*{#1} \nameref*{#1}}}
+\newcommand*{\namedref}[1]{\hyperref[{#1}]{\autoref*{#1}}}
+
+
+% https://tex.stackexchange.com/questions/32701/side-by-side-equations-with-equation-numbers-for-each
+\usepackage{multicol}
+
+\usepackage{csquotes}
+\usepackage[
+    backend=biber,
+    style=alphabetic,
+]{biblatex}
+\addbibresource{sources.bib}
+
+\usepackage{amsthm}     % teoremas
+
+% Teoremas, corolarios, etc.
+% https://www.overleaf.com/learn/latex/theorems_and_proofs
+\theoremstyle{definition} % Para que no salga en italicas
+
+\newtheorem{theorem}{Teorema}
+\newtheorem*{theorem*}{Teorema}
+
+\newtheorem{lemma}{Lema}
+\newtheorem*{lemma*}{Lema}
+
+\newtheorem{prop}{Prop.}
+\newtheorem*{prop*}{Prop}
+
+\newtheorem{definition}{Def.}
+\newtheorem*{definition*}{Def}
+
+\newtheorem{obs}{Obs.}
+\newtheorem*{obs*}{Obs}
+
+\newtheorem{ejemplo}{Ejemplo}
+\newtheorem*{ejemplo*}{Ejemplo}
+
+% https://tex.stackexchange.com/questions/468/what-is-the-best-package-out-there-to-typeset-proof-trees
+% https://mathweb.ucsd.edu/~sbuss/ResearchWeb/bussproofs/BussGuide2_Smith2012.pdf
+% https://mathweb.ucsd.edu/~sbuss/ResearchWeb/bussproofs/
+\usepackage{bussproofs}
+
+%%%%%%%%%%%%%%%%%%%%%%%%% COMANDOS %%%%%%%%%%%%%%%%%%%%%
+
+% https://tex.stackexchange.com/questions/73275/rotated-ltimes-symbol
+\newcommand{\btimes}{\mathbin{\rotatebox[origin=c]{90}{\ltimes}}}
+%\newcommand{\invertedForall}{\mathbin{\rotatebox{origin=c}{180}{$\forall$}}}
+\newcommand{\iforall}{\rotatebox{180}{$\forall$}}
+\newcommand{\ppa}{PP\iforall{}}
+
+% Misceláneos
+\newcommand{\ubrace}[2]{\aunderbrace[l1r]{#1}_{#2}}
+\newcommand{\obrace}[2]{\aoverbrace[L1R]{#1}^{#2}}
+
+% "Comunicacionales", para que el director (Pablo) o yo lea en el futuro
+\newcommand{\todo}[1]{\textcolor{BrickRed}{(TODO: #1)}}
+\newcommand{\duda}[1]{\textcolor{Plum}{(DUDA: #1)}}
+\newcommand{\nota}[1]{\textcolor{BlueViolet}{(NOTA: #1)}}
+\newcommand{\ok}{\textcolor{Green}{\checkmark}}
+
+% Diffs, para que el director pueda ver bien distinguidos los cambios que voy haciendo
+\newcommand{\diffNew}[1]{\textcolor{Green}{#1}}
+\newcommand{\diffChanged}[1]{\textcolor{Goldenrod}{#1}}
+\newcommand{\diffDeleted}[1]{\textcolor{RedOrange}{#1}}
+
+% Matemática en general
+\newcommand{\setNaturals}{\mathbb{N}}
+
+% Módulos
+
+\newcommand{\modChecker}{\texttt{Checker}}
+\newcommand{\modCertifier}{\texttt{Certifier}}
+
+% Demostraciones de ND
+\newcommand{\LL}[1]{\LeftLabel{#1}}
+\newcommand{\RL}[1]{\RightLabel{#1}}
+
+\newcommand{\ruleI}[1]{I#1}
+\newcommand{\ruleE}[1]{E#1}
+
+\newcommand{\fOr}{\vee}
+\newcommand{\fAnd}{\wedge}
+\newcommand{\fImp}{\to}
+\newcommand{\fNot}{\neg}
+\newcommand{\fFalse}{\bot}
+\newcommand{\fTrue}{\top}
+
+\newcommand{\ruleExistsI}{\ruleI{$\exists$}}
+\newcommand{\ruleExistsE}{\ruleE{$\exists$}}
+
+\newcommand{\ruleForallI}{\ruleI{$\forall$}}
+\newcommand{\ruleForallE}{\ruleE{$\forall$}}
+
+\newcommand{\ruleOrIOne}{\ruleI{$\fOr_1$}}
+\newcommand{\ruleOrITwo}{\ruleI{$\fOr_2$}}
+\newcommand{\ruleOrE}{\ruleE{$\fOr$}}
+
+\newcommand{\ruleAndI}{\ruleI{$\fAnd$}}
+\newcommand{\ruleAndEOne}{\ruleE{$\fAnd_1$}}
+\newcommand{\ruleAndETwo}{\ruleE{$\fAnd_2$}}
+
+\newcommand{\ruleImpI}{\ruleI{$\fImp$}}
+\newcommand{\ruleImpE}{\ruleE{$\fImp$}}
+
+\newcommand{\ruleNotI}{\ruleI{$\fNot$}}
+\newcommand{\ruleNotE}{\ruleE{$\fNot$}}
+
+\newcommand{\ruleTrueI}{\ruleI{$\fTrue$}}
+\newcommand{\ruleFalseE}{\ruleE{$\fFalse$}}
+
+\newcommand{\ruleLEM}{LEM}
+\newcommand{\ruleAx}{Ax}
+
+% Reglas admisibles
+\newcommand{\admissibleRuleLine}{\doubleLine}
+\newcommand{\ruleCut}{cut}
+\newcommand{\ruleDnegE}{\ruleE{$\fNot\fNot$}}
+\newcommand{\ruleAndEProj}[1]{\ruleE{$\fAnd_{#1}$}}
+
+%% Contextos
+\newcommand{\ctx}{\Gamma}
+\newcommand{\ctxTwo}{\Delta}
+\newcommand{\hypId}{h}
+
+%% Fórmulas
+\newcommand{\var}{x}
+\newcommand{\varTwo}{y}
+\newcommand{\varThree}{z}
+
+\newcommand{\fun}{f}
+\newcommand{\funTwo}{g}
+\newcommand{\funThree}{h}
+
+\newcommand{\term}{t}
+\newcommand{\termTwo}{u}
+
+\newcommand{\pred}{p}
+\newcommand{\predTwo}{q}
+\newcommand{\predThree}{r}
+
+\newcommand{\form}{A}
+\newcommand{\formTwo}{B}
+\newcommand{\formThree}{C}
+
+\newcommand{\anyForm}{\alpha}
+\newcommand{\anyFormTwo}{\beta}
+
+\newcommand{\formLit}{a}
+\newcommand{\formLitTwo}{b}
+\newcommand{\formLitThree}{c}
+
+\newcommand{\clause}{C}
+
+% Funciones
+\newcommand{\fv}[1]{fv(#1)}
+\newcommand{\subst}[2]{\{#1 := #2\}}
+\newcommand{\substTwo}[4]{\{#1 := #2, #3 := #4\}}
+\newcommand{\alphaEq}{\overset{\alpha}{=}}
+
+%% Juicios
+\newcommand{\judg}[2]{#1 \vdash #2}
+\newcommand{\judG}{\vdash}
+\newcommand{\judgEquiv}{\dashv\vdash}
+
+% by
+\newcommand{\rewrite}{\rightsquigarrow}
+\newcommand{\dnf}[1]{#1_{\textrm{DNF}}}
+\newcommand{\unify}{\doteq}
+\newcommand{\metavar}[1]{\textrm{#1}}
+
+%% PPA
+% https://tex.stackexchange.com/questions/33039/using-ttfamily-with-bfseries-or-how-to-enable-bold-in-fixed-width-font
+\usepackage[T1]{fontenc}
+%\usepackage{lmodern}
+%\usepackage{luximono}
+\usepackage[scaled=0.85]{beramono}
+
+\lstdefinelanguage{PPA}{
+    basicstyle=\small\ttfamily,
+    keywords={theorem, axiom, proof, end, suppose, thus, hence, have, then, by,
+    equivalently, claim, cases, case, take, st, consider, let},
+    morekeywords={true, false, exists, forall, &, |},
+    columns=flexible,
+    %backgroundcolor=\color{gray!10},
+    sensitive=true,
+    morecomment=[l]{//},
+    morecomment=[s]{/*}{*/},
+    morestring=[b]",
+    stringstyle=\ttfamily,
+    showstringspaces=false,
+    extendedchars=true,
+    literate={á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1,
+    numberstyle=\tiny, %\footnotesize
+    numbers=left,
+}
+
+\lstset{language=PPA}
+\lstset{firstnumber=auto} % Para listings con el mismo nombre, el numerado se continúa
+
+\newcommand{\cmdLet}{\lstinline{let}}
+\newcommand{\cmdSuppose}{\lstinline{suppose}}
+\newcommand{\cmdClaim}{\lstinline{claim}}
+\newcommand{\cmdHave}{\lstinline{have}}
+\newcommand{\cmdBy}{\lstinline{by}}
+\newcommand{\cmdThus}{\lstinline{thus}}
+\newcommand{\cmdHence}{\lstinline{hence}}
+
+%% Friedman
+\newcommand{\someProof}{\Pi}
+\newcommand{\transDNeg}[1]{#1^{\neg\neg}}
+\newcommand{\negR}{\neg_R}
+\newcommand{\judgC}{\vdash_C}
+\newcommand{\judgI}{\vdash_I}
+
+\newcommand{\sigmaZeroOne}{\Sigma^0_1}
+\newcommand{\piZeroTwo}{\Pi^0_2}
