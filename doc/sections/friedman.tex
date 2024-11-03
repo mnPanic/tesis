@@ -29,6 +29,39 @@ Puntos a abordar
     \end{itemize}
 \end{itemize}
 
+\newpage
+
+En los capítulos anteriores vimos como el lenguaje PPA puede ser usado para
+escribir demostraciones de alto nivel, que son certificadas generando
+demostraciones de bajo nivel usando el sistema lógico de deducción natural.
+Ahora vamos a introducir una nueva funcionalidad: la \textbf{extracción de testigos}.
+
+\begin{multicols}{2}
+    \begin{figure}[H]
+        \lstinputlisting{listings/extract/exists.ppa}
+        \caption{Extracción simple}
+        \label{fri:prog:exists}
+    \end{figure}
+
+    \begin{figure}[H]
+        \lstinputlisting[firstline=2]{listings/extract/indirect.ppa}
+        \caption{Extracción indirecta}
+        \label{fri:prog:indirect}
+    \end{figure}
+\end{multicols}
+
+Por ejemplo, en el programa \fullref{fri:prog:exists} la extracción nos permitirá encontrar un término $t$ que sea testigo de $\exists
+x. p(x)$, es decir que cumpla $p(t)$. En este caso es fácil encontrarlo a ojo
+sobre la demostración de PPA, sería \lstinline{v}. Pero puede haber casos en
+donde no sea tan trivial, como \fullref{fri:prog:indirect}, en donde la
+instanciación de la variable en un término es indirecta.
+
+Buscamos un mecanismo
+general, que nos permita para cualquier demostración de una fo
+
+\todo{Hablar sobre y citar classical realizability, no tengo ni idea.}
+
+
 Queremos, dado un teorema, \textit{extraer testigos de un existencial}. Por
 ejemplo, si tenemos una demostración de $\exists x . p(x)$ la extracción nos
 debería instanciar $x$ en un término $t$ tal que $p(t)$. Imaginemos que tenemos
@@ -58,7 +91,7 @@ conocido por sus siglas en inglés, LEM (\textit{law of excluded middle}).
 Las demostraciones que usan este principio suelen dejar aspectos sin
 concretizar, como muestra el siguiente ejemplo bien conocido:
 
-\begin{theorem}\label{thm:irrat}
+\begin{theorem}\label{fri:thm:irrat}
     Existen dos números irracionales, $a, b$ tales que $a^b$ es irracional
 \end{theorem}
 \begin{proof}
@@ -232,14 +265,14 @@ luego, tomando $R$ como la fórmula que queremos probar, $\exists \var . \form$
 \end{align*}
 \end{proof}
 
-\begin{lemma}\label{lemma:tnegr-elim}
+\begin{lemma}\label{fri:lemma:tnegr-elim}
     $\negR\negR\negR \form \iff \negR \form$
 \end{lemma}
 \begin{proof}
     \todo{En deducción natural}
 \end{proof}
 
-\begin{obs}\label{obs:forall-exists}
+\begin{obs}\label{fri:obs:forall-exists}
     $\judgI \forall \var (\form \rightarrow \exists \var \form)$
 \end{obs}
 
