@@ -49,13 +49,13 @@ de predicados y de función. Pero se pueden agregar a modo informativo como un
 comentario. Consisten en fórmulas que son siempre consideradas como válidas.
 Definimos,
 \begin{itemize}
-    \item \lstinline{reprueba_recu_parcial_recursa}: Si un alumno reprueba el
+    \item \lstinline{reprueba_recu_parcial_recursa}: si un alumno reprueba el
     parcial y el recuperatorio de una materia, la recursa.
-    \item \lstinline{reprobo_rinde}: Si un alumno reprobó un examen, es porque lo
+    \item \lstinline{reprobo_rinde}: si un alumno reprobó un examen, es porque lo
     rindió.
-    \item \lstinline{rinde_recu_reprobo_parcial}: Si un alumno rinde el recu de
+    \item \lstinline{rinde_recu_reprobo_parcial}: si un alumno rinde el recu de
     un parcial, es porque reprobó la primer instancia.
-    \item \lstinline{falta_reprueba}: Si un alumno falta a un exámen, lo reprueba.
+    \item \lstinline{falta_reprueba}: si un alumno falta a un exámen, lo reprueba.
 \end{itemize}
 
 \lstinputlisting[firstline=1,lastline=23]{listings/interfaz/alumnos.ppa}
@@ -148,7 +148,7 @@ Los identificadores se dividen en tres tipos:
 
     \verb/[a-zA-Z0-9\_\-\?!#\$\%\*\+\<\>\=\?\@\^]+(\')*/
 
-    \item \textbf{Nombres} (\texttt{<name>}): Pueden ser identificadores, o
+    \item \textbf{Nombres} (\texttt{<name>}): pueden ser identificadores, o
     \textit{strings} arbitrarios encerrados por comillas dobles (\texttt{"..."})
 
     \verb/\"[^\"]*\"/
@@ -417,12 +417,12 @@ Esto puede ser prácticamente en cualquier orden.
 \subsection{Otros comandos}
 
 \begin{itemize}
-    \item \lstinline{equivalently}: Permite reducir la tesis a una fórmula
+    \item \lstinline{equivalently}: permite reducir la tesis a una fórmula
     equivalente. Útil para usar descarga de conjunciones.
     
     \lstinputlisting{listings/interfaz/equivalently.ppa}
 
-    \item \lstinline{claim}: Permite demostrar una afirmación auxiliar. Útil
+    \item \lstinline{claim}: permite demostrar una afirmación auxiliar. Útil
     para ordenar las demostraciones sin tener que definir otro teorema. Ejemplo
     en \fullref{ppa:prog:alumnos}
 

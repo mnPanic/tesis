@@ -62,37 +62,52 @@ Suponemos dados,
 
 \begin{definition}[Términos]
     Los términos están dados por la gramática
-    \begin{alignat*}{2}
-        \term ::=&\ \var
-        &&\text{(variables)}\\
-        &\mid \fun(\term_1, \dots, \term_n)    
-        &&\text{(funciones)}
-    \end{alignat*}
+    \begin{align*}
+        \term ::= &\ \var                               &\text{(variables)} \\
+                  & \mid \fun(\term_1, \dots, \term_n) &\text{(funciones)}
+    \end{align*}
 \end{definition}
 
 \begin{definition}[Fórmulas]
     Las fórmulas están dadas por la gramática
     \begin{align*}
-        \form, \formTwo ::=&\ \pred(\term_1, \dots, \term_n)
-        &&(\text{predicados})\\
-        &\mid \fFalse, \fTrue\\
-        &\mid \form \fAnd \formTwo
+        \form, \formTwo ::=
+         & \ \pred(\term_1, \dots, \term_n) & (\text{predicados})                \\
+         & \mid \fFalse, \fTrue             & \text{(verdadero y falso)}         \\
+         & \mid \form \fAnd \formTwo        & \text{(conjunción)}                \\
+         & \mid \form \fOr \formTwo         & \text{(disyunción)}                \\
+         & \mid \form \fImp \formTwo        & \text{(implicación)}               \\
+         & \mid \fNot \form                 & \text{(negación)}                  \\
+         & \mid \forall \var . \form        & \text{(cuantificador universal)}   \\
+         & \mid \exists \var . \form        & \text{(cuantificador existencial)}
     \end{align*}
-    Una fórmula puede ser
-    \begin{itemize}
-        \item Un predicado $\pred(\term_1, \dots, \term_n)$ donde $\term_1, \dots,
-        \term_n$ son términos
-        \item $\fFalse$, $\fTrue$
-        \item Sean $\form, \formTwo$ fórmulas
-        \begin{itemize}
-            \item Una conjunción $\form \fAnd \formTwo$
-            \item Una disyunción $\form \fOr \formTwo$
-            \item Una implicación $\form \fImp \formTwo$
-            \item Una negación $\fNot \form$
-            \item Un cuantificador universal $\forall \var . \form$
-            \item Un cuantificador existencial $\exists \var . \form$
-        \end{itemize}
-    \end{itemize}
+
+    Los predicados son \textbf{fórmulas atómicas}. Los de aridad 0 además son llamados \textit{variables proposicionales}.
 \end{definition}
 
-\todo{Definiciones, repaso, lo necesario}
+\begin{definition}[Variables libres y ligadas]
+    Las variables pueden ocurrir libres o ligadas. Los cuantificadores ligan a
+    las variables, y usamos $\fv(\form)$ para referirnos a las variables libres
+    de una fórmula. Se define por inducción estructural de la siguiente forma.
+
+    \begin{itemize}
+        \item Términos
+        \begin{align*}
+            \fv{\var} &= \{ \var \}\\
+            \fv{\fun(\term_1, \dots, \term_n)} &= \bigcup_{i \in 1\dots n} \fv{t_i} 
+        \end{align*}
+    
+        \item Fórmulas
+        \begin{align*}
+            \fv{\fFalse} &=\emptyset\\
+            \fv{\fTrue} &=\emptyset \\
+            \fv{\pred(\term_1, \dots, \term_n)} &= \bigcup_{i \in 1\dots n} \fv{t_i} \\
+            \fv{\form \fAnd \formTwo} &= \fv{\form} \cup \fv{\formTwo}\\
+            \fv{\form \fOr \formTwo} &=\fv{\form} \cup \fv{\formTwo}\\
+            \fv{\form \fImp \formTwo} &=\fv{\form} \cup \fv{\formTwo}\\
+            \fv{\fNot \form} &=\fv{\form}\\
+            \fv{\forall \var . \form} &= \fv{\form} \setminus \var \\
+            \fv{\exists \var . \form} &= \fv{\form} \setminus \var
+        \end{align*}
+    \end{itemize}
+\end{definition}
