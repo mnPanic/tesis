@@ -43,16 +43,41 @@ Principalmente hace dos cosas: certificar y extraer testigos.
 
 \section{Lógica de primer orden}
 
+Suponemos dados,
+
+\begin{itemize}
+    \item Un conjunto infinito numerable de \textbf{variables}
+    \(
+        \{\var, \varTwo, \varThree, \dots\}
+    \)
+    \item Un conjunto infinito numerable de \textbf{símbolos de función}
+    \(
+        \{\fun, \funTwo, \funThree, \dots\}
+    \)
+    \item Un conjunto infinito numerable de \textbf{símbolos de predicado}
+    \(
+        \{\pred, \predTwo, \predThree, \dots\}
+    \)
+\end{itemize}
+
 \begin{definition}[Términos]
-    Un término puede ser
-    \begin{itemize}
-        \item Una variable $\var$
-        \item Una función $\fun(\term_1, \dots, \term_n)$ donde $\term_1, \dots,
-        \term_n$ son términos
-    \end{itemize}
+    Los términos están dados por la gramática
+    \begin{alignat*}{2}
+        \term ::=&\ \var
+        &&\text{(variables)}\\
+        &\mid \fun(\term_1, \dots, \term_n)    
+        &&\text{(funciones)}
+    \end{alignat*}
 \end{definition}
 
 \begin{definition}[Fórmulas]
+    Las fórmulas están dadas por la gramática
+    \begin{align*}
+        \form, \formTwo ::=&\ \pred(\term_1, \dots, \term_n)
+        &&(\text{predicados})\\
+        &\mid \fFalse, \fTrue\\
+        &\mid \form \fAnd \formTwo
+    \end{align*}
     Una fórmula puede ser
     \begin{itemize}
         \item Un predicado $\pred(\term_1, \dots, \term_n)$ donde $\term_1, \dots,

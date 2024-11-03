@@ -755,13 +755,13 @@ Por otro lado, se eliminan los $\forall$ consecutivos de una sola fórmula de la
 
 \duda{Está bien decir poder expresivo?}
 
-El solver implementado es \textbf{completo para lógica proposicional}, pero heurístico para lógica de primer orden. Esto es aceptable, puesto que la satisfacibilidad de lógica de primer orden es indecidible \todo{Cita?}, y además el objetivo del trabajo no fue dar el mejor solver, sino dar alguno para el cual se pueda certificar.
+El solver implementado es \textbf{completo para lógica proposicional}, pero heurístico para lógica de primer orden. Esto es aceptable, puesto que la satisfacibilidad de lógica de primer orden es indecidible (por el teorema de Church \cite{church}), y además el objetivo del trabajo no fue dar el mejor solver, sino dar alguno para el cual se pueda certificar. 
 
-\todo{Citar Hilbert 1950}
 \begin{theorem}
     El solver es \textbf{completo} para lógica proposicional.
 \end{theorem}
 \begin{proof}
+    \todo{Citar Hilbert 1950}
 Lo hacemos semánticamente. Sea $\anyForm$ una fórmula proposicional cualquiera, supongamos que es válida ($\judG \anyForm$). Queremos argumentar que el solver va a poder generar una demostración para ello. Esto es cierto $\iff \fNot \anyForm$ es insatisfactible.
 
 Siempre vamos a poder convertir $\fNot \anyForm$ a DNF, por lo que tenemos
