@@ -44,45 +44,41 @@ Ahora vamos a introducir una nueva funcionalidad: la \textbf{extracción de test
     \end{figure}
 
     \begin{figure}[H]
+        \lstinputlisting{listings/extract/forall.ppa}
+        \caption{Extracción con instanciación}
+        \label{fri:prog:forall}
+    \end{figure}
+    \begin{figure}[H]
         \lstinputlisting[firstline=2]{listings/extract/indirect.ppa}
         \caption{Extracción indirecta}
         \label{fri:prog:indirect}
     \end{figure}
 \end{multicols}
 
-Por ejemplo, en el programa \fullref{fri:prog:exists} la extracción nos permitirá encontrar un término $t$ que sea testigo de $\exists
-x. p(x)$, es decir que cumpla $p(t)$. En este caso es fácil encontrarlo a ojo
-sobre la demostración de PPA, sería \lstinline{v}. Pero puede haber casos en
-donde no sea tan trivial, como \fullref{fri:prog:indirect}, en donde la
-instanciación de la variable en un término es indirecta.
+Por ejemplo, en el programa \fullref{fri:prog:exists} la extracción nos
+permitirá encontrar un término $t$ que sea testigo de $\exists x. p(x)$, es
+decir que cumpla $p(t)$. En este caso es fácil encontrarlo a ojo sobre la
+demostración de PPA, sería \lstinline{v}. Pero puede haber casos en donde no sea
+tan trivial, como en el programa \fullref{fri:prog:indirect}, en donde se
+instancia la variable en un término de forma indirecta. Además, también
+querríamos poder extraer en casos donde haya cuantificadores universales, como
+en \fullref{fri:prog:forall}. Buscamos un mecanismo general, que nos permita a
+partir de cualquier demostración una fórmula de la pinta $\forall \var_0 \dots
+\forall \var_n \exists \varTwo . \alpha$ extraer un testigo. Vamos a hacerlo a
+partir de los certificados de deducción natural.
 
-Buscamos un mecanismo
-general, que nos permita para cualquier demostración de una fo
+\section{Otros métodos de extracción}
 
 \todo{Hablar sobre y citar classical realizability, no tengo ni idea.}
 
+\section{La lógica clásica no es constructiva}
 
-Queremos, dado un teorema, \textit{extraer testigos de un existencial}. Por
-ejemplo, si tenemos una demostración de $\exists x . p(x)$ la extracción nos
-debería instanciar $x$ en un término $t$ tal que $p(t)$. Imaginemos que tenemos
-el siguiente programa de PPA
-
-\begin{verbatim}
-    axiom ax: p(v)
-    theorem thm: exists X . p(X)
-    proof
-        take X := v
-        thus p(v) by ax
-    end
-\end{verbatim}
-
-¿Cómo hacemos para extraer La demostración generada por el certificador es \textbf{clásica}. La forma más
-fácil de extraer un testigo de una demostración es normalizarla y obtener el
-testigo de su forma normal. Pero esto no se puede hacer en general para lógica
-clásica, porque las demostraciones en general no son \textbf{constructivas}.
-
-En la lógica clásica vale el \textit{principio del tercero excluido}, comúnmente
-conocido por sus siglas en inglés, LEM (\textit{law of excluded middle}).
+El objetivo es extraer el testigo de las demostraciones generadas por el
+certificador, pero estas son en lógica clásica, que tiene el gran problema de
+que en general, \textbf{no es constructiva}. ¿Qué quiere decir? Que en general,
+puede suceder que una demostración de $\exists x . p(x)$ no nos diga quien es
+$x$, y por lo tanto no podamos extraer un testigo. Esto es porque en la lógica
+clásica vale el \textit{principio del tercero excluido} o LEM
 
 \begin{prop}[LEM] Para toda fórmula $\form$, es verdadera ella o su negación
     \[ \form \vee \neg \form \]
@@ -115,46 +111,51 @@ concretizar, como muestra el siguiente ejemplo bien conocido:
     \end{itemize}
 \end{proof}
 
-Como se puede ver, la prueba no nos da forma de saber cuales son $a$ y $b$. Es
-por eso que en general, tener una demostración de un teorema que afirma la
+La prueba no nos da forma de saber cuales son $a$ y $b$. Es por eso que en
+general, en lógica clásica, tener una demostración de un teorema que afirma la
 existencia de un objeto que cumpla cierta propiedad, no necesariamente nos da
 una forma de encontrar tal objeto. Entonces tampoco vamos a poder extraer un
 testigo.
 
-En el caso de \fullref{thm:irrat}, lo demostramos de una forma no constructiva pero
-existen formas constructivas de hacerlo \todo{citar}. Pero hay casos en donde
-no. Por ejemplo, si consideramos la fórmula
+En el caso de \fullref{fri:thm:irrat} elegimos demostrarlo de forma no
+constructiva, pero existen formas constructivas de hacerlo \todo{citation
+needed}. Pero hay casos en donde no.
 
-\[
-    \exists x ((x = 1 \wedge C) \vee (x = 0 \wedge \neg C))
-\]
-
-y pensamos en $C$ como algo indecidible, por ejemplo \texttt{HALT}, trivialmente
-podemos demostrarlo de forma no constructiva (LEM con $C \vee \neg C$) pero no
-de forma constructiva.
+\begin{ejemplo}[Demostración no constructiva]
+    Si consideramos la fórmula
+    \[
+        \exists x . ((x = 1 \wedge C) \vee (x = 0 \wedge \neg C))
+    \]
+    y pensamos en $C$ como algo indecidible, por ejemplo \texttt{HALT},
+    trivialmente podemos demostrarlo de forma no constructiva (LEM con $C \vee
+    \neg C$) pero nunca de forma constructiva.
+\end{ejemplo}
 
 \section{Lógica intuicionista}
 
-Para solucionar estos problemas existe la lógica \textbf{intuicionista}, que se
-puede definir como la lógica clásica sin LEM. Al no contar con ese principio,
-las demostraciones son constructiva. Esto permite por un lado para tener
-interpretaciones computacionales (como la \textit{BHK}) y además que exista la
-noción de \textit{forma normal} de uan demostración. Existen métodos bien
-conocidos para reducir prueba hacia su
-forma normal con un proceso análogo a una reducción de cálculo $\lambda$. Luego
-en la forma normal se esperaría que toda demostración de un $\exists$ sea
-mediante \ruleExistsI, explicitando el testigo.
+Como alternativa a la lógica clásica existe existe la lógica
+\textbf{intuicionista}, que se puede definir como la lógica clásica sin LEM. Al
+no contar con ese principio, las demostraciones son constructivas. Esto permite
+por un lado tener interpretaciones computacionales (como la \textit{BHK}) y
+además que exista la noción de \textit{forma normal} de una demostración.
+Existen métodos bien conocidos para reducir prueba hacia su forma normal con un
+proceso análogo a una reducción de cálculo $\lambda$. 
 
-Al no tener LEM, tampoco valen principios equivalentes, como la eliminación de
-la doble negación \todo{hablar un poco más de esto}
+Esto permite usar como estrategia de extracción la siguiente: normalizar la
+demostración y obtener el testigo de la forma normal. En ella, se esperaría que
+toda demostración de un $\exists$ sea mediante \ruleExistsI{}, explicitando el
+testigo.
+
+Al no tener LEM, tampoco valen principios de razonamiento clásicos equivalentes,
+como la eliminación de la doble negación.
 
 \section{Traducción de Friedman}
-
-\subsection{Traducción de doble negación}
 
 Queremos extraer testigos de las demostraciones generadas por el certificador de
 PPA, pero son en lógica clásica. Sabemos que podemos hacerlo para lógica
 intuicionista. ¿Cómo conciliamos ambos mundos?
+
+\subsection{Traducción de doble negación}
 
 Existen muchos métodos que permiten embeber la lógica clásica en la
 intuicionista \todo{citar}. Un mecanismo general es la traducción de
@@ -164,12 +165,12 @@ negación recursivamente a toda la fórmula. Por ejemplo
 \newcommand{\gN}[1]{#1^{\text{N}}}
 
 \begin{definition}[Traducción \textit{Gödel-Gentzen}] Dada una fórmula $\form$ se asocia con otra $\gN{\form}$. La
-    traducción se define inductivamente en la estructura de la fórmula de la
-    siguiente forma
+    traducción se define por inducción estructural.
 
     \begin{align*}
-        \gN{\bot} &= \bot\\
-        \gN{\form} &= \neg\neg \form \quad \text{con $\form \neq \bot$ atómica}\\
+        \gN{\fFalse} &= \fFalse\\
+        \gN{\fTrue} &= \fTrue\\
+        \gN{\form} &= \neg\neg \form \quad \text{con $\form \neq \fFalse$ atómica}\\
         \gN{(\form \wedge \formTwo)} &= \gN{\form} \wedge \gN{\formTwo}\\
         \gN{(\form \vee \formTwo)} &= \neg(\neg\gN{\form} \wedge \neg\gN{\formTwo})\\
         \gN{(\form \rightarrow \formTwo)} &= \gN{\form} \rightarrow \gN{\formTwo}\\
@@ -199,7 +200,7 @@ La idea de Friedman \cite{miquel-friedman} es generalizar la traducción
 Gödel-Gentzen reemplazando la negación intuicionista $\neg \form \equiv A
 \rightarrow \bot$ por una relativa $\negR \form \equiv \form \rightarrow R$ que
 está parametrizada por una fórmula arbitraria $R$. Esto nos va a permitir, con
-una elección particular de $R$,
+una elección inteligente de $R$,
 traducir una demostración clásica de una fórmula $\sigmaZeroOne$ (e incluso
 $\piZeroTwo$) a una intuicionista, y usarla para demostrar \textbf{la fórmula
 original}. Finalmente podremos reducirla y hacer la extracción de forma usual.
@@ -277,3 +278,9 @@ luego, tomando $R$ como la fórmula que queremos probar, $\exists \var . \form$
 \end{obs}
 
 \todo{IDem pero en ND, y también para $\forall$}
+
+\section{Normalización}
+
+\section{Extracción de testigos}
+
+Hacer un balance de todo lo que se mostró, pipeline
