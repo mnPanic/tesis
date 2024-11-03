@@ -21,15 +21,12 @@ escritas por el usuario?
 \section{Certificados}
 
 Los programas de PPA se \textbf{certifican}, generando una demostración en
-deducción natural. ¿Por qué? El lenguaje de PPA es complejo, la implementación
-no es trivial. Si se escribe una demostración, para confiar en que es correcta
-hay que confiar en la implementación de PPA.
-
-Pero si PPA genera una demostración de bajo nivel, que usa las reglas de un
-sistema lógico simple y conocido, entonces cualquiera que desconfíe
-podría fácilmente escribir un chequeador, o usar uno confiable. Por eso genera
-demostraciones en deducción natural, haciendo que cumpla con el \textbf{criterio
-de de Bruijn}
+deducción natural. ¿Por qué? El lenguaje es complejo, la implementación no es
+trivial. Si se programa una demostración, para confiar en que es correcta hay
+que confiar en la implementación de PPA. Si generara una demostración de bajo
+nivel, que use las reglas de un sistema lógico simple y conocido, entonces
+cualquiera que desconfíe podría fácilmente escribir un chequeador, o usar uno
+confiable. Al generar demostraciones en deducción natural, cumple con esto, que se llama \textbf{criterio de de Bruijn}.
 
 \begin{definition}[Criterio de de Bruijn \cite{freek-bruijn}] Un asistente de
     demostración que satisface que sus demostraciones puedan ser chequeadas por
@@ -48,13 +45,14 @@ errores siempre se chequean con el \modChecker{} de DN.
 \section{Certificador}
 
 El \modCertifier{} en realidad no genera una sola demostración de deducción
-natural, sino que al poder haber más de un teorema en un archivo PPA, este
-genera un \textbf{contexto} compuesto por una lista ordenada de
-\textbf{hipótesis}. Hay dos tipos
+natural, sino que al poder haber más de un teorema en un archivo PPA, el
+certificado en realidad es un \textbf{contexto} compuesto por una lista ordenada
+de \textbf{hipótesis} de dos tipos:
 
 \begin{itemize}
-    \item Teoremas: son fórmulas con demostraciones asociadas.
-    \item Axiomas: son fórmulas que se asumen válidas (pueden ser usadas para
+    \item \textbf{Teoremas}: son fórmulas con demostraciones de deducción natural
+    asociadas.
+    \item \textbf{Axiomas}: son fórmulas que se asumen válidas (pueden ser usadas para
     modelar una teoría)
 \end{itemize}
 
@@ -72,19 +70,19 @@ genera un \textbf{contexto} compuesto por una lista ordenada de
 
 Por lo tanto, en vez de chequear demostraciones, se chequean contextos: Una
 demostración será válida en el \textit{prefijo estricto del contexto} que la
-contiene. Es decir, a la hora de chequearla, se deben asumir como ciertas todas
-las hipótesis que fueron definidas previamente.
+contiene. Es decir, a la hora de chequear la demostración de un teorema, se
+deben asumir como ciertas todas las hipótesis que fueron definidas antes que él.
 
 Pero no solo los axiomas y teoremas declarados en el programa se agregan al
 contexto. Cada demostración de un teorema tendrá además un \textit{contexto
-local} que extiende al anterior, solo en el marco de su demostración. Las
-afirmaciones auxiliares que no afectan la tesis (\lstinline{have},
-\lstinline{claim}, \lstinline{consider}, etc.) se agregan como teoremas. Por lo
-tanto, cuando se citen, se pegan sus demostraciones. Por otro lado, algunos
-comandos agregan axiomas, los mismos que en deducción natural agregan fórmulas
-al contexto (\lstinline{suppose} y \lstinline{consider}). Es correcto asumir
-como ciertas esas hipótesis, porque lo mismo se hará durante el chequeo de la
-demostración en deducción natural.
+local} que extiende al anterior, solo al alcance de su demostración (y se omiten
+en el certificado). Las afirmaciones auxiliares que no afectan la tesis
+(\lstinline{have}, \lstinline{claim}, \lstinline{consider}, etc.) se agregan
+como teoremas. Por lo tanto, cuando se citen, se pegan sus demostraciones. Por
+otro lado, algunos comandos agregan axiomas, los mismos que en deducción natural
+agregan fórmulas al contexto (\lstinline{suppose} y \lstinline{consider}). Es
+correcto asumir como ciertas esas hipótesis, porque lo mismo se hará durante el
+chequeo de la demostración generada de deducción natural.
 
 \begin{figure}[H]
     \centering
@@ -106,9 +104,7 @@ consecuencia lógica de una lista de hipótesis. Es un \textit{solver heurístic
 
 Sea $A$ una fórmula. Supongamos que queremos demostrar \lstinline{thus A by h1, ..., hn} y que en el contexto tenemos que las hipótesis $h_i$ corresponden a
 fórmulas $\formTwo_i$, con $i \in \{1, ..., n\}, n \in \setNaturals$. Primero
-veamos la idea general de la estrategia y luego profundizamos en cada paso.
-
-Los pasos para certificar un \lstinline{by} conceptualmente son los siguientes. Luego vemos su implementación.
+veamos la idea general de la estrategia y luego profundizamos en cada paso. Los pasos para certificar un \lstinline{by} son los siguientes. 
 \begin{itemize}
     \item Queremos demostrar la implicación de las hipótesis a la fórmula.
     \[
@@ -151,8 +147,8 @@ Los pasos para certificar un \lstinline{by} conceptualmente son los siguientes. 
 
 La complejidad del mecanismo no reside solo en tener que realizar todos estos
 pasos, sino que el desafío principal fue \textbf{generar la demostración en
-deducción natural}. Veamos un ejemplo sin generar la demostración, sin
-eliminación de existenciales.
+deducción natural}. Veamos un ejemplo sin generar la demostración, y sin
+eliminar existenciales.
 
 \begin{ejemplo}[Ejemplo sin cuantificadores]
     Tenemos el siguiente programa
@@ -172,19 +168,18 @@ eliminación de existenciales.
         \[ \fNot [ \big( (a \to b) \fAnd a \big) \to b ] \]
 
         \item La convertimos a DNF
-        \todo{Cambiar x e y}
         \begin{align*}
             &\fNot [ \big( (a \to b) \fAnd a \big) \to b ] \\
             &\equiv \fNot [ \fNot \big( (a \to b) \fAnd a \big) \fOr b ]
-                && (x \to y \equiv \fNot x \fOr y)\\
+                && (\form \to \formTwo \equiv \fNot \form \fOr \formTwo)\\
             &\equiv \fNot \fNot \big( (a \to b) \fAnd a \big) \fAnd \fNot b
-                && (\fNot(x \fOr y) \equiv \fNot x \fAnd \fNot y)\\
+                && (\fNot(\form \fOr \formTwo) \equiv \fNot \form \fAnd \fNot \formTwo)\\
             &\equiv \big( (a \to b) \fAnd a \big) \fAnd \fNot b
-                && (\fNot\fNot x \equiv x)\\
+                && (\fNot\fNot \form \equiv \form)\\
             &\equiv (\fNot a \fOr b) \fAnd a \fAnd \fNot b
-                 && (x \to y \equiv \fNot x \fOr y)\\
+                 && (\form \to \formTwo \equiv \fNot \form \fOr \formTwo)\\
             &\equiv (\fNot a \fOr b) \fAnd a \fAnd \fNot b
-                && ((x \fOr y) \fAnd z \equiv (x \fAnd z) \fOr (y \fAnd z))\\
+                && ((\form \fOr \formTwo) \fAnd \formThree \equiv (\form \fAnd \formThree) \fOr (\formTwo \fAnd \formThree))\\
             &\equiv
                 (\fNot a \fAnd a \fAnd \fNot b)
                 \vee
@@ -193,8 +188,8 @@ eliminación de existenciales.
 
         \item Buscamos una contradicción refutando cada cláusula
         \begin{itemize}
-            \item $(\fNot a \fAnd a \fAnd \fNot b)$ tenemos $\fNot a$ y $a$.
-            \item $(b \fAnd a \fAnd \fNot b)$ tenemos $b$ y $\fNot b$.
+            \item En $(\fNot a \fAnd a \fAnd \fNot b)$ tenemos $\fNot a$ y $a$.
+            \item En $(b \fAnd a \fAnd \fNot b)$ tenemos $b$ y $\fNot b$.
         \end{itemize}
     \end{enumerate}
 \end{ejemplo}
@@ -304,7 +299,7 @@ de $\formTwo$ (la continuación). Podemos usar cut de la siguiente manera.
     \BinaryInfC{$\ctx \judG \form$}
 \end{prooftree}
 
-Que es generado como
+Que es certificado como
 
 \begin{prooftree}
     \AxiomC{$\someProof_{\formTwo \fImp \form}$}
@@ -323,9 +318,9 @@ Que es generado como
 \begin{lemma}[Razonamiento por el absurdo] Imaginemos que queremos demostrar
 $\form$ por el absurdo. Podemos juntar con cut con la eliminación de la doble
 negación, pasando a demostrar $\fNot \fNot \form$, que para introducirla,
-debemos demostrar $\ctx, \fNot \form \judG \fFalse$. Es decir, asumiendo que no
-es cierta la fórmula, deducimos una contradicción. Justo lo que estábamos
-buscando para razonar por el absurdo.
+debemos demostrar el juicio $\ctx, \fNot \form \judG \fFalse$. Es decir,
+asumiendo que no es cierta la fórmula, deducimos una contradicción. Justo lo que
+estábamos buscando para razonar por el absurdo.
 
 \begin{prooftree}
     \AxiomC{}
@@ -353,7 +348,7 @@ buscando para razonar por el absurdo.
 \subsection{DNF}
 
 Tenemos que generar una demostración de que la negación de la tesis genera una
-contradicción, pero lo queremos hacer a partir de la tesis en DNF.
+contradicción, pero lo queremos hacer a partir de la tesis en DNF. ¿Cómo la convertimos?
 
 \begin{definition}[DNF]
     Una fórmula está en \textbf{forma normal disyuntiva} o DNF
@@ -381,10 +376,10 @@ el uso de cut.
 \begin{prooftree}
     \AxiomC{\vdots}
     \noLine
-    \UnaryInfC{$\ctx, \form \judG \dnf{\form}$}
+    \UnaryInfC{$\ctx, \form, \dnf{\form} \judG \fFalse$}
     \AxiomC{\vdots}
     \noLine
-    \UnaryInfC{$\ctx, \form, \dnf{\form} \judG \fFalse$}
+    \UnaryInfC{$\ctx, \form \judG \dnf{\form}$}
     \RL{\ruleCut}
     \admissibleRuleLine
     \BinaryInfC{$\ctx, \form \judG \fFalse$}
@@ -397,73 +392,70 @@ Para convertir una fórmula cualquiera a DNF, vamos a implementar una traducció
 
 \begin{figure}[H]
     \begin{align*}
-        \fNot\fNot \formLit &\rightsquigarrow
+        \fNot\fNot \formLit &\rewrite
             \formLit
             &&\text{eliminación de $\fNot\fNot$}\\
-        \fNot \fFalse &\rightsquigarrow
+        \fNot \fFalse &\rewrite
             \fTrue\\
-        \fNot \fTrue &\rightsquigarrow
+        \fNot \fTrue &\rewrite
             \fFalse\\
-        \formLit \fImp \formLitTwo &\rightsquigarrow
+        \formLit \fImp \formLitTwo &\rewrite
             \fNot \formLit \fOr \formLitTwo
             &&\text{definición de implicación}\\
-        \fNot(\formLit \fOr \formLitTwo) &\rightsquigarrow
+        \fNot(\formLit \fOr \formLitTwo) &\rewrite
             \fNot \formLit \fAnd \fNot \formLitTwo
             &&\text{distributiva de $\fNot$ sobre $\fAnd$}\\
-        \fNot(\formLit \fAnd \formLitTwo) &\rightsquigarrow
+        \fNot(\formLit \fAnd \formLitTwo) &\rewrite
             \fNot \formLit \fOr \fNot \formLitTwo
             &&\text{distributiva de $\fNot$ sobre $\fOr$}\\
-        (\formLit \fOr \formLitTwo) \fAnd \formLitThree &\rightsquigarrow
+        (\formLit \fOr \formLitTwo) \fAnd \formLitThree &\rewrite
             (\formLit \fAnd \formLitThree) \fOr (\formLitTwo \fAnd \formLitThree)
             &&\text{distributiva de $\fAnd$ sobre $\fOr$ (der)}\\
-        \formLitThree \fAnd (\formLit \fOr \formLitTwo) &\rightsquigarrow
+        \formLitThree \fAnd (\formLit \fOr \formLitTwo) &\rewrite
             (\formLitThree \fAnd \formLit) \fOr (\formLitThree \fAnd \formLitTwo)
             &&\text{distributiva de $\fAnd$ sobre $\fOr$ (izq)}\\
-        \formLit \fOr (\formLitTwo \fOr \formLitThree) &\rightsquigarrow
+        \formLit \fOr (\formLitTwo \fOr \formLitThree) &\rewrite
             (\formLit \fOr \formLitTwo) \fOr \formLitThree
             &&\text{asociatividad de $\fOr$}\\
-        \formLit \fAnd (\formLitTwo \fAnd \formLitThree) &\rightsquigarrow
+        \formLit \fAnd (\formLitTwo \fAnd \formLitThree) &\rewrite
             (\formLit \fAnd \formLitTwo) \fAnd \formLitThree
             &&\text{asociatividad de $\fAnd$}
     \end{align*}    
     \caption{Sistema de reescritura para conversión a DNF de forma sintáctica}
 \end{figure}
 
-Para su implementación, no podemos hacerlo meramente de forma sintáctica, sino
-que tenemos \textit{generar una demostración} para cada equivalencia. Además,
-hay casos en donde tenemos que reemplazar una sub-fórmula por una equivalente.
-En ese caso usamos la \textit{congruencia} de los operadores, que también
-tuvimos que demostrar. Por ejemplo en
-\[
+Pero no podemos hacerlo meramente de forma sintáctica, sino que tenemos
+\textit{generar una demostración} para cada equivalencia.
+
+\subsubsection{Congruencias}
+
+Hay casos en donde tenemos que reemplazar una sub-fórmula por una equivalente.  Por ejemplo para reescribir
+\(
     \formLit \fOr \bm{\fNot (\formLitTwo \fOr \formLitThree)}
-    \equiv
+    \rewrite
     \formLit \fOr \bm{(\fNot \formLitTwo \fAnd \fNot \formLitThree)}
-\]
-donde reescribimos $\fNot
+\)
+reescribimos la sub-fórmula $\fNot
 (\formLitTwo \fOr
-\formLitThree) \equiv (\fNot \formLitTwo \fAnd \fNot \formLitThree)$ manteniendo el
-resto.
-
-\begin{figure}[H]
-    \begin{align*}
-        \form \judG \form'
-            &\Rightarrow \form \fAnd \formTwo \judG \form' \fAnd \formTwo\\
-        \form \judG \form'
-            &\Rightarrow \form \fOr \formTwo \judG \form' \fOr \formTwo\\
-        \form' \judG \form
-            &\Rightarrow \fNot \form \judG \fNot \form'
-    \end{align*}
-    \caption{Congruencias}
-\end{figure}
-
+\formLitThree) \rewrite \fNot \formLitTwo \fAnd \fNot \formLitThree$.
+Esto de forma sintáctica sería trivial, basta con hacerlo recursivamente. Pero para demostrarlo hay que usar la la
+\textit{congruencia} de los conectivos, que también hay que demostrar.
+\begin{align*}
+    \form \judG \form'
+        &\Rightarrow \form \fAnd \formTwo \judG \form' \fAnd \formTwo\\
+    \form \judG \form'
+        &\Rightarrow \form \fOr \formTwo \judG \form' \fOr \formTwo\\
+    \form' \judG \form
+        &\Rightarrow \fNot \form \judG \fNot \form'
+\end{align*}
 No hay regla de congruencia para $\fImp$ pues se convierte en un $\fOr$. Es
 sumamente importante observar que $\fNot$ es \textit{contravariante}, para
-demostrar $\fNot \form \judG \fNot \form'$ no necesitamos tener una demostración
+demostrar $\fNot \form \judG \fNot \form'$ no necesitamos una demostración
 de $\form \judG \form'$, sino de $\form' \judG \form$. Esto quiere decir que
 para todas las equivalencias, incluso las congruencias, no nos alcanza con
-demostrarlas en un solo sentido (por ej. $\fNot(\formLit \fOr \formLitTwo) \judG
-\fNot \formLit \fAnd \fNot \formLitTwo$) sino que vamos a necesitar ambos, la
-ida y la vuelta:
+demostrarlas en un solo sentido, sino que vamos a necesitar ambos, la
+ida y la vuelta: para $\fNot(\formLit \fOr \formLitTwo) \rewrite
+\fNot \formLit \fAnd \fNot \formLitTwo$ necesitamos
 \(
     \fNot(\formLit \fOr \formLitTwo)
         \judG \fNot \formLit \fAnd \fNot \formLitTwo
@@ -477,10 +469,10 @@ ida y la vuelta:
 \subsubsection{Algoritmo}
 
 Finalmente, el algoritmo para generar la demostración de la conversión de una
-fórmula en DNF se implementa de forma \textit{small-step}. Es la clausura de
-hacer un ``paso'' de la conversión a DNF, que puede o bien ser un paso de
-reescritura, o uno de congruencia reescribiendo una sub-fórmula. En cada uno se
-usa una de las siguientes demostraciones.
+fórmula en DNF se implementa de forma \textit{small-step}. La conversión es la
+clausura de hacer un ``paso'', que puede o bien ser un paso de reescritura, o
+uno de congruencia reescribiendo una sub-fórmula. En cada uno se usa una de las
+siguientes demostraciones.
 
 \begin{figure}[H]
     \begin{align*}
@@ -530,9 +522,9 @@ conocidas (por ej. DeMorgan).
 
 Tenemos la fórmula traducida a DNF. Debemos demostrar una contradicción a partir
 de ella. Si tenemos las cláusulas $\clause_1 \fOr \clause_2$, podemos demostrar
-$\clause_1 \fOr \clause_2 \judG \fFalse$ usando \ruleOrE{} y a partir de cada
-una, llegando a una contradicción. Esto se generaliza a N cláusulas mediante el
-uso \ruleOrE{} anidados. Por esto decimos que hay que \textit{``refutar cada
+$\clause_1 \fOr \clause_2 \judG \fFalse$ usando \ruleOrE{} y asumiendo cada
+una, llegar a una contradicción. Esto se generaliza a N cláusulas mediante el
+uso de \ruleOrE{} anidados. Por esto decimos que hay que \textit{``refutar cada
 cláusula''}. El método tiene tres formas de refutarlas
 
 \begin{itemize}
@@ -548,7 +540,7 @@ asociado el $\fAnd$, una demostración a mano de
 \(
     \form_1 \fAnd \dots \fAnd \form_i \fAnd \dots \fAnd \form_n \judG \form_i,
 \)
-puede ser muy engorrosa. Como las reglas son binarias, hay que
+puede ser muy laboriosa. Como las reglas son binarias, hay que
 usar \ruleAndEOne{} y \ruleAndETwo{} anidados. Para simplificarlo demostramos
 otra regla admisible, la proyección de un elemento \ruleAndEProj{\anyForm}.
 
@@ -654,6 +646,7 @@ de su variable por \textit{meta-variables}: aquellas que pueden ser unificadas.
         \item $p(\metavar{u}) \fImp q(b) \not\unify p(a) \fAnd q(\metavar{v})$
     \end{itemize}
     
+    \duda{Hace falta agregar el algoritmo de unificación que implementamos?}
 \end{definition}
 
 \begin{ejemplo}[Ejemplo de by con cuantificadores]
@@ -668,7 +661,7 @@ de su variable por \textit{meta-variables}: aquellas que pueden ser unificadas.
 
     Para certificar \lstinline{thus q(a) by ax1, ax2} hay que generar una
     demostración para la implicación \(
-        \bigg(\Big(\forall x. (p(x) \fImp q(x))\Big) \fAnd p(a) \bigg)
+        \Big(\big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(a) \Big)
         \fImp q(a)
     \).
 
@@ -676,37 +669,37 @@ de su variable por \textit{meta-variables}: aquellas que pueden ser unificadas.
         \item Negamos la fórmula 
         \[
             \fNot \left[
-            \bigg(\Big(\forall x. (p(x) \fImp q(x))\Big) \fAnd p(a) \bigg)
+            \Big(\big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(a) \Big)
             \fImp q(a)
-        \right]
+        \right].
         \]
 
         \item La convertimos a DNF
         \begin{align*}
             &\fNot \left[
-                \bigg(\Big(\forall x. (p(x) \fImp q(x))\Big) \fAnd p(a) \bigg)
+                \Big(\big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(a) \Big)
                 \fImp q(a)
             \right] \\
             &\equiv \fNot \left[
-                \fNot \bigg(\Big(\forall x. (p(x) \fImp q(x))\Big) \fAnd p(a) \bigg)
+                \fNot \Big(\big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(a) \Big)
                 \fOr q(a)
             \right] 
-                && (x \to y \equiv \fNot x \fOr y)\\
+                && (\form \to \formTwo \equiv \fNot \form \fOr \formTwo)\\
             &\equiv
-                \fNot \fNot \bigg(\Big(\forall x. (p(x) \fImp q(x))\Big) \fAnd p(a) \bigg)
+                \fNot \fNot \Big(\big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(a) \Big)
                 \fAnd \fNot q(a)
-                && (\fNot(x \fOr y) \equiv \fNot x \fAnd \fNot y)\\
-            &\equiv \Big(\forall x. (p(x) \fImp q(x))\Big) \fAnd p(a)
+                && (\fNot(\form \fOr \formTwo) \equiv \fNot \form \fAnd \fNot \formTwo)\\
+            &\equiv \big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(a)
             \fAnd \fNot q(a)
-                && (\fNot\fNot x \equiv x)
+                && (\fNot\fNot \form \equiv \form)
         \end{align*}
 
-        Como a los ojos de DNF un $\forall$ es opaco, a pesar de que dentro
+        como a los ojos de DNF un $\forall$ es opaco, a pesar de que dentro
         tenga una implicación, la fórmula ya está en forma normal.
 
         \item Buscamos una contradicción refutando cada cláusula. No hay forma
-        encontrando literales opuestos o $\fFalse$, por ej. para la cláusula
-        $p(a)$
+        encontrando literales opuestos o $\fFalse$, por ej. la cláusula
+        $p(a)$ no es refutable.
         \item Probamos eliminando $\forall x. (p(x) \fImp q(x))$. Reemplazamos
         $x$ por una meta-variable fresca $\metavar{u}$.
         \[
@@ -717,11 +710,15 @@ de su variable por \textit{meta-variables}: aquellas que pueden ser unificadas.
         \begin{align*}
             &(p(\metavar{u}) \fImp q(\metavar{u})) \fAnd p(a) \fAnd \fNot q(a)\\
             &\equiv (\fNot p(\metavar{u}) \fOr q(\metavar{u})) \fAnd p(a) \fAnd \fNot q(a)
-            &&(x \to y \equiv \fNot x \fOr y)\\
+            &&(\form \to \formTwo \equiv \fNot \form \fOr \formTwo)\\
             &\equiv ( (\fNot p(\metavar{u}) \fAnd p(a)) \fOr (q(\metavar{u}) \fAnd p(a))) \fAnd \fNot q(a)
-            &&((x \fOr y) \fAnd z \equiv (x \fAnd z) \fOr (x \fAnd z))\\
-            &\equiv (\fNot p(\metavar{u}) \fAnd p(a) \fAnd \fNot q(a)) \fOr (q(\metavar{u}) \fAnd p(a)\fAnd \fNot q(a))
-            &&((x \fOr y) \fAnd z \equiv (x \fAnd z) \fOr (x \fAnd z))
+            &&((\form \fOr \formTwo) \fAnd \formThree \equiv (\form \fAnd \formThree) \fOr (\form \fAnd \formThree))\\
+            &\equiv 
+            \begin{aligned}[t]
+                &(\fNot p(\metavar{u}) \fAnd p(a) \fAnd \fNot q(a))\ \fOr\\
+                &(q(\metavar{u}) \fAnd p(a)\fAnd \fNot q(a))
+            \end{aligned}
+            &&((\form \fOr \formTwo) \fAnd \formThree \equiv (\form \fAnd \formThree) \fOr (\form \fAnd \formThree))
         \end{align*}
         \item Buscamos una contradicción refutando cada cláusula. Esta vez, no
         podemos volver a eliminar un forall (por motivos de eficiencia) y los
@@ -736,11 +733,26 @@ de su variable por \textit{meta-variables}: aquellas que pueden ser unificadas.
 \end{ejemplo}
 
 \subsubsection{Algoritmo}
+\begin{enumerate}
+    \item Si la cláusula no puede ser refutada por contener $\fFalse$ ni literales opuestos
+    \item Para cada fórmula, si comienza con $\forall$ (ej. $\forall \var_0 . \forall x_1 \dots \forall \var_n . p(\var_0, \dots, \var_n)$) se busca una refutación sin generar la demostración.
+    \begin{itemize}
+        \item Para combinación de prefijos de $\forall$ consecutivos, se
+        reemplaza su variable por una meta-variable fresca, se re-convierte a
+        DNF y se intenta encontrar una refutación (unificando con $\alpha-$equivalencia)
+        \begin{itemize}
+            \item $\forall \var_1 \dots \forall \var_n . p(u_0, \dots, \var_n)$
+            \item $\dotso$
+            \item $p(u_0, \dots, u_n)$
+        \end{itemize}
+        \item Se usa la menor cantidad de eliminaciones posibles.
+        \item Si puede ser refutada, nos da como resultado una sustitución que asigna a cada meta-variable $u_i$ un término $t_i$.
+    \end{itemize}
+    \item Se usa \ruleForallE{} reemplazando cada variable por el término asignado a la meta-variable correspondiente, para obtener la fórmula con los $\forall$ eliminados, y luego se genera la demostración de la refutación de la forma usual.
+\end{enumerate}
 
-En general, si se tiene una cláusula 
-\(
-    \anyForm_0 \fAnd \dots \fAnd \anyForm_n
-\), intentamos para cada $\anyForm_i$ que comience con $\forall$ eliminar los necesarios reemplazando sus variable por meta-variables frescas. Por ejemplo,  si se tiene
+\begin{ejemplo}[Eliminación consecutiva minimal]
+Si se tiene
 \[
     (\forall x. \forall y . p(x) \fOr q(y)) \fAnd \fNot p(a) \fAnd \fNot q(b)
 \]
@@ -750,41 +762,60 @@ se reemplazarían tanto $x$ como $y$ por meta-variables frescas $u_0$ y $u_1$, q
     (\forall x. \forall y . p(x) \fAnd q(y)) \fAnd \fNot (\forall z. p(a) \fAnd q(z))
 \]
 
-alcanza con eliminar $\forall x$ y el otro no debe ser eliminado. Y la unificación será capaz de tener en cuenta la alpha equivalencia, así puede unificar $\forall y . p(u_0) \fAnd q(y) \unify \forall z. p(a) \fAnd q(z)$.
+es necesario eliminar solamente $\forall x$. Y la unificación será capaz de tener en cuenta la alpha equivalencia, así puede unificar $\forall y . p(u_0) \fAnd q(y) \unify \forall z. p(a) \fAnd q(z)$.
+\end{ejemplo}
 
-Por otro lado, se eliminan los $\forall$ consecutivos de una sola fórmula de la cláusula. Por ejemplo, en la siguiente o bien eliminamos $\forall x . p(x)$ o $\forall y . q(y)$ pero no ambos.
+\begin{ejemplo}[Eliminación de una sola fórmula]
+    Se eliminan los $\forall$ consecutivos de una sola fórmula de la cláusula. Por ejemplo, en la siguiente o bien eliminamos $\forall x . p(x)$ o $\forall y . q(y)$ pero no ambos.
 \[
     (\forall x . p(x)) \fAnd (\forall y . q(y)) \fAnd \fNot p(a) \fAnd \fNot q(b)
 \]
+\end{ejemplo}
+
+
+\subsubsection{Compatibilidad de sustituciones}
+
+Como cada cláusula se refuta por separado, hay que asegurar que las sustituciones de cada una sean compatibles entre sí. Es decir, que no asignen términos diferentes a las mismas meta-variables. Por ejemplo, en
+
+Esto quiere decir que debemos probar con todas las sustituciones posibles, porque puede haber combinaciones que la hagan incompatible. Por ejemplo, en las siguientes cláusulas hay más de una sustitución candidata para cada una.
+
+\begin{itemize}
+    \item $f(u_0) \fAnd \fNot f(a) \fAnd \fNot f(b)$ tenemos $\subst{u_0}{a}$, $\subst{u_0}{b}$
+    \item $f(u_0) \fAnd \fNot f(b)$ solo $\subst{u_0}{b}$
+\end{itemize}
+
+Si en la primera nos quedamos con $\subst{u_0}{a}$, no podríamos refutar la 2da.
 
 \subsection{Poder expresivo}
 \label{ppa-cert:sec:expressiveness}
 
 \duda{Está bien decir poder expresivo?}
 
-El solver implementado es \textbf{completo para lógica proposicional}, pero heurístico para lógica de primer orden. Esto es aceptable, puesto que la satisfacibilidad de lógica de primer orden es indecidible (por el teorema de Church \cite{church}), y además el objetivo del trabajo no fue dar el mejor solver, sino dar alguno para el cual se pueda certificar. 
+El solver implementado es \textbf{completo para lógica proposicional}, pero heurístico para lógica de primer orden. Esto es aceptable, puesto que la satisfacibilidad de lógica de primer orden es indecidible (por el teorema de Church \cite{church}), y además el objetivo del trabajo no fue dar el mejor solver, sino dar alguno que se pueda certificar. 
 
 \begin{theorem}
     El solver es \textbf{completo} para lógica proposicional.
 \end{theorem}
 \begin{proof}
-    \todo{Citar Hilbert 1950}
+    \duda{Citar Hilbert 1950?}
 Lo hacemos semánticamente. Sea $\anyForm$ una fórmula proposicional cualquiera, supongamos que es válida ($\judG \anyForm$). Queremos argumentar que el solver va a poder generar una demostración para ello. Esto es cierto $\iff \fNot \anyForm$ es insatisfactible.
 
 Siempre vamos a poder convertir $\fNot \anyForm$ a DNF, por lo que tenemos
-\[
+\(
     (\formLit_1 \fAnd \dots \fAnd \formLit_n)
     \fOr \dots \fOr
     (\formLitTwo_1 \fAnd \dots \fAnd \formLitTwo_m).
-\]
+\)
+Para que sea insatisfactible, por definición sobre $\fOr$ todas las cláusulas
+tienen que serlo. Para que una claúsula lo sea, no tiene que haber una valuación
+que la haga verdadera. Supongamos que lo es y existe una valuación $v$. Esta
+valuación está unívocamente determinada, al ser una conjunción, tiene que
+asignar a cada literal $p_1$ un 1 si es positivo o un 0 si es negativo. Para que
+no sea verdadera, necesariamente debe aparecer la misma variable dos veces, una
+vez negada y la otra sin negar, o bien debe aparecer false.
 
-para que sea insatisfactible, por definición sobre $\fOr$ todas las
-cláusulas tienen que serlo (alcanza con satisfacer una). Para que una claúsula
-sea insatisfactible, no tiene que haber una valuación que la haga verdadera. Si
-existe, los valores para los literales $p_i$ están unívocamente determinados,
-tienen que ser 1 si es positivo y 0 si es negativo. Con una valuación tal,
-solamente no sería verdadero si la misma variable aparece dos veces, una vez
-negada y la otra sin negar (o si aparece false). Esto es exactamente lo que busca el solver, por lo que siempre va a poder encontrarla.
+Esto es exactamente lo que busca el solver, por lo que si es refutable, siempre va a poder refutarla.
+
 \duda{Está suficientemente bien escrito esto? Supongo que no. En la intro hay que agregar las definiciones de la semántica de LPO.}
 \end{proof}
 
@@ -792,7 +823,9 @@ negada y la otra sin negar (o si aparece false). Esto es exactamente lo que busc
     El solver es \textbf{incompleto} para lógica de primer orden.
 \end{theorem}
 \begin{proof}
-El siguiente es un contra ejemplo, que falla porque para funcionar debería eliminar ambos $\forall$ pero elimina a lo sumo los de una fórmula.
+El siguiente es un contra ejemplo, que no encuentra la refutación porque para
+ello debería eliminar ambos $\forall$, pero elimina a lo sumo los de una
+fórmula.
 \begin{lstlisting}
 axiom ax1: forall X . p(X) -> q(X)
 axiom ax2: forall X . p(X)
@@ -802,12 +835,12 @@ proof
 end
 \end{lstlisting}
 
-Pero esto no es lo único que le falta, también se podría dar uno un poco más burdo que requiera un \textit{SAT solver} completo.
+Pero esto no es lo único que le falta para ser completo. También se podría dar un contra ejemplo más burdo que requiera un \textit{SAT solver} completo.
 \end{proof}
 
 \subsection{Azúcar sintáctico}
 
-Antes mencionamos que se puede usar \lstinline{hence} en lugar de \lstinline{thus} referenciando automáticamente a la hipótesis anterior, y análogamente lo mismo para \lstinline{have} y \lstinline{then}. Esto se implementa desde el \textit{parser}, todo se compila como los comandos base, y se agrega la hipótesis anterior (\lstinline{-}) cuando es necesario.
+Antes mencionamos que se puede usar \lstinline{hence} en lugar de \lstinline{thus} referenciando automáticamente a la hipótesis anterior, y análogamente lo mismo para \lstinline{have} y \lstinline{then}. Esto se implementa desde el \textit{parser}, todo se compila como los comandos base, y se agrega la hipótesis anterior (\lstinline{-}) cuando es necesario. Esto simplifica al certificador permitiendo que solo conozca a \lstinline{have} y \lstinline{thus}.
 
 \section{Descarga de conjunciones}
 
@@ -815,19 +848,19 @@ Antes mencionamos que se puede usar \lstinline{hence} en lugar de \lstinline{thu
 
 \lstinputlisting{listings/interfaz/discharge-complex.ppa}
 
-Veamos en particular el primer comando de la demostración. La tesis es una conjunción que está asociada de una forma particular, y se quiere demostrar $a \fAnd e$ que es parte de la tesis. Pero sería mucho más fácil generar la demostración si se demostrara partes contiguas de la conjunción. Veamos cómo lo solventamos.
+Veamos en particular el primer comando de la demostración. La tesis es una conjunción que está asociada de una forma particular, y se quiere demostrar $a \fAnd e$ que es parte de la tesis.
 
 \begin{enumerate}
     \item Se convierte la conjunción y lo que se demuestra en conjuntos
     \begin{align*}
         (a \fAnd b) \fAnd ((c \fAnd d) \fAnd e)
-        &\rightsquigarrow
+        &\rewrite
         \{a, b, c, d, e\}\\
-        (a \fAnd e) &\rightsquigarrow \{a, e\}
+        (a \fAnd e) &\rewrite \{a, e\}
     \end{align*}
     \item Si está contenido, se separa lo demostrado y el resto
     \[
-        \{a, b, c, d, e\} \rightsquigarrow \{b, c, d\} \{a, e\}
+        \{a, b, c, d, e\} \rewrite \{b, c, d\} \{a, e\}
     \]
     \item Se construye una \textit{nueva tesis} reordenando la fórmula de forma tal que sea sencillo hacer \ruleAndI{} (poniendo a la izquierda lo demostrado aislado de lo demás)
     \[
@@ -838,9 +871,11 @@ Veamos en particular el primer comando de la demostración. La tesis es una conj
 
     \proofTreeAndI
 
-    la demostración de $a \fAnd e$ se hace de la forma usual con by, y se reduce la tesis a $b \fAnd c \fAnd d$ continuando la certificación por ahí, y insertando la demostración resultante en $\ctx \judG \formTwo$.
+    la demostración de $a \fAnd e$ se hace de la forma usual con by, y se reduce
+    la tesis a $b \fAnd c \fAnd d$ continuando la certificación por allí,
+    insertando la demostración resultante en $\ctx \judG \formTwo$.
 
-    \item Para demostrar que la tesis vieja es demostrada por la nueva de forma ordenada, se usa el mismo solver que el by, que como es completo para proposicional, también puede resolver equivalencias por asociatividad y re-orden.
+    \item Para demostrar la equivalencia entre la tesis vieja y su versión re-ordenada se usa el mismo solver que el by. Al ser completo para proposicional, también puede resolver equivalencias por asociatividad y re-orden.
 \end{enumerate}
 
 Finalmente, queda certificado como
@@ -943,12 +978,12 @@ por lo que su traducción es directa.
     
     La certificación del comando
     \begin{lstlisting}[numbers=none]
-        claim h: f
-        proof
-            ...
-        end
+claim h: f
+proof
+    ...
+end
     \end{lstlisting}
     
-    No es más que hacer la certificación de la sub-demostración, y agregar la hipótesis \lstinline{h: f} como teorema al contexto.
+    Consiste en certificar la sub-demostración y agregar la hipótesis \lstinline{h: f} como teorema al contexto.
 
 \end{itemize}
