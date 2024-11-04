@@ -69,6 +69,9 @@
 \newtheorem{definition}{Def.}
 \newtheorem*{definition*}{Def}
 
+\newtheorem{notation}{Notación.}
+\newtheorem*{notation*}{Notación}
+
 \newtheorem{obs}{Obs.}
 \newtheorem*{obs*}{Obs}
 
@@ -182,8 +185,8 @@
 \newcommand{\formTwo}{B}
 \newcommand{\formThree}{C}
 
-\newcommand{\anyForm}{\alpha}
-\newcommand{\anyFormTwo}{\beta}
+\newcommand{\anyForm}{\varphi}
+\newcommand{\anyFormTwo}{\psi}
 
 \newcommand{\formLit}{a}
 \newcommand{\formLitTwo}{b}
@@ -248,9 +251,13 @@
 %% Friedman
 \newcommand{\someProof}{\Pi}
 \newcommand{\transDNeg}[1]{#1^{\neg\neg}}
-\newcommand{\negR}{\neg_R}
+\newcommand{\gN}[1]{#1^{\text{N}}}
+\newcommand{\fNotR}{\fNot_R}
 \newcommand{\judgC}{\vdash_C}
 \newcommand{\judgI}{\vdash_I}
 
-\newcommand{\sigmaZeroOne}{\Sigma^0_1}
-\newcommand{\piZeroTwo}{\Pi^0_2}
+\newcommand{\classSigmaOne}{\classSigma{1}}
+\newcommand{\classPiTwo}{\classPi{2}}
+
+\newcommand{\classPi}[1]{\Pi^0_{#1}}
+\newcommand{\classSigma}[1]{\Sigma^0_{#1}}

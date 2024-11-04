@@ -8,7 +8,7 @@ Puntos a abordar
     \item Lógica intuicionista
     \item Como necesitamos reducir en ND, necesitamos la demo en ND. Escribirla
     en este caso.
-    \item También queremos para $\piZeroTwo$, mostrar la extensión en ND.
+    \item También queremos para $\classPiTwo$, mostrar la extensión en ND.
     \item En realidad no nos sirve $\transDNeg{\Gamma}$, queremos dejarlo como
     está y demostrar que los axiomas demuestran sus traducciones. Pero no vale
     siempre (buscar c.ej), caracterizar cuando.
@@ -67,10 +67,6 @@ partir de cualquier demostración una fórmula de la pinta $\forall \var_0 \dots
 \forall \var_n \exists \varTwo . \alpha$ extraer un testigo. Vamos a hacerlo a
 partir de los certificados de deducción natural.
 
-\section{Otros métodos de extracción}
-
-\todo{Hablar sobre y citar classical realizability, no tengo ni idea.}
-
 \section{La lógica clásica no es constructiva}
 
 El objetivo es extraer el testigo de las demostraciones generadas por el
@@ -81,7 +77,7 @@ $x$, y por lo tanto no podamos extraer un testigo. Esto es porque en la lógica
 clásica vale el \textit{principio del tercero excluido} o LEM
 
 \begin{prop}[LEM] Para toda fórmula $\form$, es verdadera ella o su negación
-    \[ \form \vee \neg \form \]
+    \[ \form \fOr \fNot \form \]
 \end{prop}
 
 Las demostraciones que usan este principio suelen dejar aspectos sin
@@ -124,17 +120,18 @@ needed}. Pero hay casos en donde no.
 \begin{ejemplo}[Demostración no constructiva]
     Si consideramos la fórmula
     \[
-        \exists x . ((x = 1 \wedge C) \vee (x = 0 \wedge \neg C))
+        \exists x . ((x = 1 \fAnd C) \fOr (x = 0 \fAnd \fNot C))
     \]
     y pensamos en $C$ como algo indecidible, por ejemplo \texttt{HALT},
-    trivialmente podemos demostrarlo de forma no constructiva (LEM con $C \vee
-    \neg C$) pero nunca de forma constructiva.
+    trivialmente podemos demostrarlo de forma no constructiva (LEM con $C \fOr
+    \fNot C$) pero nunca de forma constructiva.
 \end{ejemplo}
 
 \section{Lógica intuicionista}
 
 Como alternativa a la lógica clásica existe existe la lógica
-\textbf{intuicionista}, que se puede definir como la lógica clásica sin LEM. Al
+\textbf{intuicionista}, que se puede definir como la lógica clásica sin LEM\footnote{Al no tener LEM, tampoco valen principios de razonamiento clásicos equivalentes,
+como la eliminación de la doble negación.}. Al
 no contar con ese principio, las demostraciones son constructivas. Esto permite
 por un lado tener interpretaciones computacionales (como la \textit{BHK}) y
 además que exista la noción de \textit{forma normal} de una demostración.
@@ -146,85 +143,170 @@ demostración y obtener el testigo de la forma normal. En ella, se esperaría qu
 toda demostración de un $\exists$ sea mediante \ruleExistsI{}, explicitando el
 testigo.
 
-Al no tener LEM, tampoco valen principios de razonamiento clásicos equivalentes,
-como la eliminación de la doble negación.
-
-\section{Traducción de Friedman}
+\section{Estrategia de extracción de testigos}
 
 Queremos extraer testigos de las demostraciones generadas por el certificador de
 PPA, pero son en lógica clásica. Sabemos que podemos hacerlo para lógica
-intuicionista. ¿Cómo conciliamos ambos mundos?
+intuicionista. ¿Cómo conciliamos ambos mundos? Existen métodos que permiten
+\textit{embeber} la lógica clásica en la intuicionista. Uno de ellos es la
+\textbf{traducción de Friedman} que se aborda en la siguiente sección. La
+estrategia general entonces es la siguiente (esquematizada en \namedref{fri:fig:strat}), dada una demostración en PPA como
+por ejemplo de \namedref{fri:prog:exists}:
+\begin{enumerate}
+    \item Certificarla generando una demostración clásica en deducción natural,
+    usando el \modCertifier{}.
+    \item Usar la traducción de Friedman para obtener una demostración
+    intuicionista de la misma fórmula.
+
+    \textbf{Restricción}: La fórmula a demostrar debe ser de la forma
+    $\forall \varTwo_0 \dots \forall \varTwo_n . \exists \var . \form$.
+    \item Instanciar las variables de los $\forall$ en términos proporcionados
+    por el usuario, quedando una fórmula de la forma $\exists \var . \form$.
+    \item Normalizar la demostración.
+    
+    \textbf{Limitación}: No vamos a poder llevar cualquier demostración a su
+    forma normal.
+
+    \item Al ser una demostración normalizada de un $\exists$, debe comenzar con
+    \ruleExistsI{}, que especifica el término que hace cierta la fórmula. Este
+    es precisamente el testigo que estábamos buscando.
+
+    \proofTreeExistsI
+\end{enumerate}
+
+En las siguientes secciones vemos en detalle la traducción de Friedman y la
+normalización (o reducción) de demostraciones.
+
+\begin{figure}
+    \includegraphics[scale=0.35]{img/fri-extract-strategy.png}
+    \centering
+    \caption{Estrategia de extracción de testigos}
+    \label{fri:fig:strat}
+\end{figure}
+
+\section{Traducción de Friedman}
 
 \subsection{Traducción de doble negación}
 
 Existen muchos métodos que permiten embeber la lógica clásica en la
-intuicionista \todo{citar}. Un mecanismo general es la traducción de
-\textbf{doble negación}, que intuitivamente consiste en agregar una doble
-negación recursivamente a toda la fórmula. Por ejemplo
+intuicionista \duda{citar?}. Un mecanismo general es la traducción de
+\textbf{doble negación}, que tiene distintas variaciones. Una es la
+\textit{Gödel-Gentzen} \cite{Avigad1998-FEFOFD}
 
-\newcommand{\gN}[1]{#1^{\text{N}}}
-
-\begin{definition}[Traducción \textit{Gödel-Gentzen}] Dada una fórmula $\form$ se asocia con otra $\gN{\form}$. La
-    traducción se define por inducción estructural.
-
+\begin{definition}[Traducción \textit{Gödel-Gentzen}] Dada una fórmula $\form$
+se asocia con otra $\gN{\form}$. La traducción se define por inducción
+estructural.
     \begin{align*}
         \gN{\fFalse} &= \fFalse\\
         \gN{\fTrue} &= \fTrue\\
-        \gN{\form} &= \neg\neg \form \quad \text{con $\form \neq \fFalse$ atómica}\\
-        \gN{(\form \wedge \formTwo)} &= \gN{\form} \wedge \gN{\formTwo}\\
-        \gN{(\form \vee \formTwo)} &= \neg(\neg\gN{\form} \wedge \neg\gN{\formTwo})\\
-        \gN{(\form \rightarrow \formTwo)} &= \gN{\form} \rightarrow \gN{\formTwo}\\
-        \gN{(\forall \var . \form)} &= \forall \var . \gN{\form}\\
-        \gN{(\exists \var . \form)} &= \neg \forall \var . \neg \gN{\form}
+        \gN{\form} &= \fNot\fNot \form \quad \text{con $\form$ atómica}\\
+        \gN{(\form \fAnd \formTwo)} &= \gN{\form} \fAnd \gN{\formTwo}\\
+        \gN{(\form \fOr \formTwo)} &= \fNot(\fNot\gN{\form} \fAnd \fNot\gN{\formTwo})\\
+        \gN{(\form \fImp \formTwo)} &= \gN{\form} \fImp \gN{\formTwo}\\
+        \gN{(\forall \var . \form(\var))} &= \forall \var . \gN{\form(\var)}\\
+        \gN{(\exists \var . \form(\var))} &= \fNot \forall \var . \fNot \gN{\form(\var)}
     \end{align*}
 \end{definition}
 
+
+\begin{definition}[Traducción de contextos]
+    Se extiende a contextos de la forma esperable
+    \[
+        \gN{\ctx} = \{\gN{\form} \mid \form \in \ctx \}.
+    \]
+\end{definition}
+
+\begin{notation*}
+    Usamos $\judgC$ para expresar que un juicio es derivable en lógica clásica,
+    y $\judgI$ para intuicionista.
+\end{notation*}
+
 \begin{theorem}
-    Si tenemos $\judgC \form$, luego $\judgI \gN{\form}$
+    Si tenemos $\ctx \judgC \form$, luego $\gN{\ctx} \judgI \gN{\form}$.
 \end{theorem}
 
-Esto significa que dada una demostración en lógica clásica, podemos obtener una
-en lógica intuicionista de su traducción. Pero esto no es exactamente lo que
-queremos, porque por ejemplo
-
-\[
-    \gN{(\exists x. p(x))} = \neg \forall x . \neg\neg\neg p(x)
-\]
-
-Que al no ser una demostración de un $\exists$, al reducirla no necesariamente
-obtendremos un testigo.
+Dada una demostración en lógica clásica, podemos obtener una en lógica
+intuicionista de su traducción. Pero esto no es exactamente lo que queremos,
+pues si quisiéramos extraer un testigo de una demostración de la fórmula
+$\exists \var. \pred(\var)$, al traducirla nos quedaría
+\(
+    \gN{(\exists \var. \pred(\var))}
+        = \fNot \forall \var . \fNot\fNot\fNot \pred(\var),
+\)
+que si bien su demostración sería intuicionista (y por lo tanto constructiva),
+como no es de un $\exists$ al normalizarla no podremos hacer la extracción.
 
 \subsection{El truco de Friedman}
 
 La idea de Friedman \cite{miquel-friedman} es generalizar la traducción
-Gödel-Gentzen reemplazando la negación intuicionista $\neg \form \equiv A
-\rightarrow \bot$ por una relativa $\negR \form \equiv \form \rightarrow R$ que
+Gödel-Gentzen reemplazando la negación intuicionista $\fNot \form \equiv A
+\rightarrow \bot$ por una relativa $\fNotR \form \equiv \form \rightarrow R$ que
 está parametrizada por una fórmula arbitraria $R$. Esto nos va a permitir, con
-una elección inteligente de $R$,
-traducir una demostración clásica de una fórmula $\sigmaZeroOne$ (e incluso
-$\piZeroTwo$) a una intuicionista, y usarla para demostrar \textbf{la fórmula
-original}. Finalmente podremos reducirla y hacer la extracción de forma usual.
+una elección inteligente de $R$, traducir una demostración clásica de una
+fórmula a una intuicionista, y usarla para demostrar \textbf{la fórmula
+original}. Esto nos permite reducirla y hacer la extracción. No va a ser posible para cualquier fórmula, sino las de una clase particular (de la forma 
+$\forall \varTwo_1 \dots \forall \varTwo_m . \exists \var_1 \dots \exists \var_k . \form$ o $\classPiTwo$)
+
+\begin{definition}[Jerarquía aritmética de fórmulas]
+    Clasifica las fórmulas en dos clases: $\classPi{n}$ y
+    $\classSigma{n}$. Se define por inducción en $n$.
+
+    \begin{itemize}
+        \item Si $\anyForm$ es equivalente a una fórmula sin cuantificadores, está en
+        $\classPi{0}$ y $\classSigma{0}$.
+        \item Sean las clasificaciones $\classPi{n}$ y $\classSigma{n}$. Definimos para $n+1$.
+        \begin{itemize}
+            \item Si $\anyForm$ es equivalente a una formula de la forma $\exists
+            \var_1 \dots \exists \var_k. \anyFormTwo$ donde $\anyFormTwo$ es
+            $\classPi{n}$, entonces $\anyForm$ es asignada la clasificación $\classSigma{n+1}$.
+    
+            \item Si $\anyForm$ es equivalente a una formula de la forma $\forall
+            \var_1 \dots \forall \var_k. \anyFormTwo$ donde $\anyFormTwo$ es
+            $\classSigma{n}$, entonces $\anyForm$ es asignada la clasificación $\classPi{n+1}$.
+        \end{itemize}
+    \end{itemize}
+
+    Una fórmula de $\classSigma{n}$ es equivalente a una que comienza con
+    cuantificadores existenciales y alterna $n-1$ veces entre series de
+    universales y existenciales. Mientras que una $\classPi{n}$ es análoga pero
+    comenzando con universales. Las dos que más nos interesan son:
+    \begin{itemize}
+        \item $\classSigmaOne$: fórmulas de la pinta $\exists \var_1 \dots
+        \exists \var_k . \form$ con $\form$ atómica.
+        \item $\classPiTwo$: fórmulas de la pinta $\forall \varTwo_1 \dots \forall \varTwo_m . \exists \var_1 \dots \exists \var_k . \form$ con $\form$ atómica.
+    \end{itemize}
+
+    Una intuición detrás de los nombres de las clases puede ser
+    \begin{itemize}
+        \item $\Sigma$ es una sumatoria, que se puede pensar como disyunciones, y las disyunciones sobre un dominio entero son un existencial.
+        \item $\Pi$ análogamente pero con productoria, se puede pensar como conjunciones y sobre el dominio un universal.
+    \end{itemize}
+\end{definition}
 
 \begin{definition}[Traducción de doble negación relativizada]
     \begin{align*}
         \transDNeg{\bot} &= \bot\\
-        \transDNeg{\form} &= \negR\negR \form \quad \text{con $\form \neq \bot$ atómica}\\
-        \transDNeg{(\form \wedge \formTwo)} &= \transDNeg{\form} \wedge \transDNeg{\formTwo}\\
-        \transDNeg{(\form \vee \formTwo)} &= \negR(\negR\transDNeg{\form} \wedge \negR\transDNeg{\formTwo})\\
+        \transDNeg{\form} &= \fNotR\fNotR \form \quad \text{con $\form$ atómica}\\
+        \transDNeg{(\fNot \form)} &= \fNot \transDNeg{\form}\\
+        \transDNeg{(\form \fAnd \formTwo)} &= \transDNeg{\form} \fAnd \transDNeg{\formTwo}\\
+        \transDNeg{(\form \fOr \formTwo)} &= \fNotR(\fNotR\transDNeg{\form} \fAnd \fNotR\transDNeg{\formTwo})\\
         \transDNeg{(\form \rightarrow \formTwo)} &= \transDNeg{\form} \rightarrow \transDNeg{\formTwo}\\
         \transDNeg{(\forall x . \form)} &= \forall x . \transDNeg{\form}\\
-        \transDNeg{(\exists x . \form)} &= \negR \forall x . \negR \transDNeg{\form}
+        \transDNeg{(\exists x . \form)} &= \fNotR \forall x . \fNotR \transDNeg{\form}
     \end{align*}
 \end{definition}
 
 \begin{theorem}
     Si $\ctx \judgC \form$, luego $\transDNeg{\ctx} \judgI \transDNeg{\form}$
-
-    Veremos esta extensión de la traducción a contextos y demostraciones más adelante.
 \end{theorem}
+\begin{proof}
+    Dada una demostración en deducción natural clásica $\ctx \judgC \form$, podemos traducirla recursivamente extendiendo la traducción de fórmulas a reglas de inferencia, así generando una demostración de $\transDNeg{\ctx} \judgI \transDNeg{\form}$.
+    Este proceso está descrito en detalle en \fullref{fri:sec:proof-trans}
+\end{proof}
 
-Veamos cómo podemos usarla para, dada una demostración clásica de $\exists \var
-\form$ obtener una intuicionista.
+\begin{theorem}[Traducción de Friedman]
+    
+\end{theorem}
 
 \begin{prop}
     Sea $\someProof$ una demostración clásica de $\exists \var . \form$, y
@@ -251,23 +333,26 @@ se traduce a
 
 \begin{prooftree}
     \AxiomC{$\transDNeg{\someProof}$}
-    \UnaryInfC{$\transDNeg{\ctx} \judgI \negR \forall \var . \negR \negR \negR \form$}
+    \UnaryInfC{$\transDNeg{\ctx} \judgI \fNotR \forall \var . \fNotR \fNotR \fNotR \form$}
 \end{prooftree}
 
 luego, tomando $R$ como la fórmula que queremos probar, $\exists \var . \form$
 
 \begin{align*}
-    \transDNeg{\someProof} \vartriangleright\ & \transDNeg{\ctx} \judgI \negR \forall \var . \negR \negR \negR \form\\
-    \iff & \transDNeg{\ctx} \judgI \negR \forall \var . \negR \form
-    &&(\fullref{lemma:tnegr-elim})\\
+    \transDNeg{\someProof} \vartriangleright\ & \transDNeg{\ctx} \judgI \fNotR \forall \var . \fNotR \fNotR \fNotR \form\\
+    \iff & \transDNeg{\ctx} \judgI \fNotR \forall \var . \fNotR \form
+    &&(\fullref{fri:lemma:tnegr-elim})\\
     =\ &\transDNeg{\ctx} \judgI (\forall \var . (\form \rightarrow R)) \rightarrow R\\
     =\ &\transDNeg{\ctx} \judgI (\forall \var . (\form \rightarrow \exists \var . \form)) \rightarrow \exists \var . \form && (R = \exists \var \form)\\
     \Rightarrow\ &\transDNeg{\ctx} \judgI \exists \var . \form && (\fullref{obs:forall-exists})
 \end{align*}
 \end{proof}
 
+\subsection{Traducción de demostraciones}
+\label{fri:sec:proof-trans}
+
 \begin{lemma}\label{fri:lemma:tnegr-elim}
-    $\negR\negR\negR \form \iff \negR \form$
+    $\fNotR\fNotR\fNotR \form \iff \fNotR \form$
 \end{lemma}
 \begin{proof}
     \todo{En deducción natural}
@@ -281,6 +366,10 @@ luego, tomando $R$ como la fórmula que queremos probar, $\exists \var . \form$
 
 \section{Normalización}
 
-\section{Extracción de testigos}
+\subsection{Limitaciones}
 
-Hacer un balance de todo lo que se mostró, pipeline
+No funciona para todas las demostraciones, porque hay algunas reducciones que no implementamos.
+
+\section{Otros métodos de extracción}
+
+\todo{Hablar sobre y citar classical realizability, no tengo ni idea.}
