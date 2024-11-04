@@ -217,8 +217,16 @@ estructural.
 \end{definition}
 
 \begin{notation*}
-    Usamos $\judgC$ para expresar que un juicio es derivable en lógica clásica,
-    y $\judgI$ para intuicionista.
+    Notamos,    
+    \begin{itemize}
+        \item $\judgC$ para expresar que un juicio es derivable en lógica clásica,
+        y $\judgI$ para intuicionista.
+        \item $\someProof \proves \ctx \judG \form$ para expresar que $\someProof$ es una demostración de $\ctx \judG \form$. Equivalente a
+            \AxiomC{$\someProof$}
+            \noLine
+            \UnaryInfC{$\ctx \judG \form$}
+            \DisplayProof
+    \end{itemize}
 \end{notation*}
 
 \begin{theorem}
@@ -269,24 +277,30 @@ $\forall \varTwo_1 \dots \forall \varTwo_m . \exists \var_1 \dots \exists \var_k
     Una fórmula de $\classSigma{n}$ es equivalente a una que comienza con
     cuantificadores existenciales y alterna $n-1$ veces entre series de
     universales y existenciales. Mientras que una $\classPi{n}$ es análoga pero
-    comenzando con universales. Las dos que más nos interesan son:
+    comenzando con universales.
+    
+    Las dos que más nos interesan son:
     \begin{itemize}
         \item $\classSigmaOne$: fórmulas de la pinta $\exists \var_1 \dots
-        \exists \var_k . \form$ con $\form$ atómica.
-        \item $\classPiTwo$: fórmulas de la pinta $\forall \varTwo_1 \dots \forall \varTwo_m . \exists \var_1 \dots \exists \var_k . \form$ con $\form$ atómica.
+        \exists \var_k . \anyForm$.
+        \item $\classPiTwo$: fórmulas de la pinta $\forall \varTwo_1 \dots \forall \varTwo_m . \exists \var_1 \dots \exists \var_k . \anyForm$
     \end{itemize}
+
+    
 
     Una intuición detrás de los nombres de las clases puede ser
     \begin{itemize}
-        \item $\Sigma$ es una sumatoria, que se puede pensar como disyunciones, y las disyunciones sobre un dominio entero son un existencial.
-        \item $\Pi$ análogamente pero con productoria, se puede pensar como conjunciones y sobre el dominio un universal.
+        \item $\Sigma$ es una sumatoria, que se puede interpretar como
+        disyunciones (en el sentido del álgebra de Boole), y generalizar con un existencial.
+        \item $\Pi$ análogamente pero con productoria, conjunciones y universales.
     \end{itemize}
 \end{definition}
 
 \begin{definition}[Traducción de doble negación relativizada]
     \begin{align*}
         \transDNeg{\bot} &= \bot\\
-        \transDNeg{\form} &= \fNotR\fNotR \form \quad \text{con $\form$ atómica}\\
+        \transDNeg{\form} &= \fNotR\fNotR \form
+            \quad \text{con $\form$ atómica}\\
         \transDNeg{(\fNot \form)} &= \fNot \transDNeg{\form}\\
         \transDNeg{(\form \fAnd \formTwo)} &= \transDNeg{\form} \fAnd \transDNeg{\formTwo}\\
         \transDNeg{(\form \fOr \formTwo)} &= \fNotR(\fNotR\transDNeg{\form} \fAnd \fNotR\transDNeg{\formTwo})\\
@@ -297,6 +311,7 @@ $\forall \varTwo_1 \dots \forall \varTwo_m . \exists \var_1 \dots \exists \var_k
 \end{definition}
 
 \begin{theorem}
+    \label{fri:thm:dneg-trans-classic-int}
     Si $\ctx \judgC \form$, luego $\transDNeg{\ctx} \judgI \transDNeg{\form}$
 \end{theorem}
 \begin{proof}
@@ -304,65 +319,246 @@ $\forall \varTwo_1 \dots \forall \varTwo_m . \exists \var_1 \dots \exists \var_k
     Este proceso está descrito en detalle en \fullref{fri:sec:proof-trans}
 \end{proof}
 
-\begin{theorem}[Traducción de Friedman]
-    
-\end{theorem}
+Vamos a enunciar diferentes versiones de la traducción de Friedman en orden de sofisticación. No solo ayuda a entenderla, sino que también fue el mismo enfoque con el que las implementamos.
 
-\begin{prop}
+\begin{enumerate}
+    \item \textbf{Fórmulas $\classSigmaOne$ atómicas} (\namedref{fri:thm:fri-sigmaone}):
+    \[
+        \exists \var . \form(\var) \text{ con } \form(\var) \text{ atómica.} 
+    \]
+    \item \textbf{Fórmulas $\classPiTwo$ atómicas} (\namedref{fri:thm:fri-pitwo}):
+    
+    \[
+        \forall \varTwo_1 \dots \forall \varTwo_n . \exists \var . \form(\var, \varTwo_1, \dots, \varTwo_n) \text{ con } \form(\dots) \text{ atómica}.
+    \]
+
+    \item \textbf{Fórmulas $\classPiTwo$ no atómicas} (\namedref{fri:thm:fri-pitwo-general}):
+    
+    \[
+    \forall \varTwo_1 \dots \forall \varTwo_n . \exists \var . \anyForm(\var, \varTwo_1, \dots, \varTwo_n) \text{ con } \anyForm(\dots) \text{ no atómica}.
+    \]
+    
+    Por ejemplo, podría ser $\pred(x) \fAnd \predTwo(\varTwo_1, \dots, \varTwo_n)$.
+    Pero no podrá ser cualquier fórmula, por ej. no $\fNot(\pred(x) \fAnd \predTwo(\varTwo_1, \dots, \varTwo_n))$. En \todo{Cita} damos una caracterización.
+\end{enumerate}
+
+\begin{theorem}[Traducción de Friedman para fórmulas $\classSigmaOne$]
+    \label{fri:thm:fri-sigmaone}
+
     Sea $\someProof$ una demostración clásica de $\exists \var . \form$, y
     $\form$ una fórmula atómica.
     Si tenemos
     \[
         \ctx \judgC \exists \var . \form,
     \]
-    luego
+    luego, podemos generar una demostración intuicionista de \textit{la misma fórmula}
     \[
         \transDNeg{\ctx} \judgI \exists \var . \form.
     \]
-\end{prop}
+\end{theorem}
 \begin{proof}
 
 Aplicando la traducción, tenemos que
 
-\begin{prooftree}
-    \AxiomC{$\someProof$}
-    \UnaryInfC{$\ctx \judgC \exists \var . \form$}
-\end{prooftree}
+\begin{gather*}
+    \transDNeg{\big(
+        \someProof \proves \ctx \judgC \exists \var . \form
+    \big)}\\
+    \verteq\\
+    \transDNeg{\someProof} \proves \transDNeg{\ctx} \judgI \fNotR \forall \var . \fNotR \fNotR \fNotR \form
+\end{gather*}
 
-se traduce a
-
-\begin{prooftree}
-    \AxiomC{$\transDNeg{\someProof}$}
-    \UnaryInfC{$\transDNeg{\ctx} \judgI \fNotR \forall \var . \fNotR \fNotR \fNotR \form$}
-\end{prooftree}
-
-luego, tomando $R$ como la fórmula que queremos probar, $\exists \var . \form$
+luego, tomando $R = \exists \var . \form$ la fórmula que buscamos probar,
 
 \begin{align*}
-    \transDNeg{\someProof} \vartriangleright\ & \transDNeg{\ctx} \judgI \fNotR \forall \var . \fNotR \fNotR \fNotR \form\\
+    \transDNeg{\someProof} \proves & \transDNeg{\ctx} \judgI \fNotR \forall \var . \fNotR \fNotR \fNotR \form\\
     \iff & \transDNeg{\ctx} \judgI \fNotR \forall \var . \fNotR \form
-    &&(\fullref{fri:lemma:tnegr-elim})\\
-    =\ &\transDNeg{\ctx} \judgI (\forall \var . (\form \rightarrow R)) \rightarrow R\\
+        &&(\text{\namedref{fri:lemma:tnegr-elim}})\\
+    =\ &\transDNeg{\ctx} \judgI (\forall \var . (\form \rightarrow R)) \rightarrow R
+        &&(\fNotR \form = \form \fImp R)\\
     =\ &\transDNeg{\ctx} \judgI (\forall \var . (\form \rightarrow \exists \var . \form)) \rightarrow \exists \var . \form && (R = \exists \var \form)\\
-    \Rightarrow\ &\transDNeg{\ctx} \judgI \exists \var . \form && (\fullref{obs:forall-exists})
+    \Rightarrow\ &\transDNeg{\ctx} \judgI \exists \var . \form
+        && (\text{\namedref{fri:obs:forall-exists}})
 \end{align*}
+
+En deducción natural,
+
+\begin{prooftree}
+    \def\defaultHypSeparation{\hskip .1in}
+    \AxiomC{$\transDNeg{\someProof}$}
+    \noLine
+    \UnaryInfC{\(
+        \transDNeg{\ctx} \judgI \fNotR \forall \var \fNotR \transDNeg{\form}
+    \)}
+    \AxiomC{}
+    \RL{\ruleTNegRI}
+    \admissibleRuleLine
+    \UnaryInfC{$\transDNeg{\ctx}, \fNotR \form \judgI \fNotR \fNotR \fNotR \form$}
+    \AxiomC{}
+    \RL{\ruleAx}
+    \UnaryInfC{$\transDNeg{\ctx}, \form \judgI \form$}
+    \RL{\ruleExistsI}
+    \UnaryInfC{$\transDNeg{\ctx}, \form \judgI R = \exists \var \form$}
+    \RL{\ruleImpI}
+    \UnaryInfC{$\transDNeg{\ctx} \judgI \fNotR \form$}
+    \RL{\ruleCut}
+    \admissibleRuleLine
+    \BinaryInfC{$\transDNeg{\ctx} \judgI \fNotR \fNotR \fNotR \form$}
+    \RL{\ruleForallI}
+    \UnaryInfC{\(
+        \transDNeg{\ctx} \judgI \forall \var \fNotR \transDNeg{\form}
+    \)}
+    \RL{\ruleImpE}
+    \BinaryInfC{$\transDNeg{\ctx} \judgI \exists \var . \form$}
+\end{prooftree}
+\end{proof}
+
+\begin{obs}
+    En la demostración del \namedref{fri:thm:fri-sigmaone} y las de esta sección, luego de la traducción de Friedman, todas las demostraciones deben ser intuicionistas para que sigan siendo constructivas.
+\end{obs}
+
+\begin{lemma}[Eliminación de triple negación relativa]\label{fri:lemma:tnegr-elim}
+    $\fNotR\fNotR\fNotR \form \iff \fNotR \form$ y lo demostramos como dos reglas admisibles, una para cada lado
+
+    \begin{multicols}{2}
+        \begin{prooftree}
+            \AxiomC{}
+            \RL{\ruleTNegRE}
+            \admissibleRuleLine
+            \UnaryInfC{$\fNotR\fNotR\fNotR \form \judgI \fNotR \form$}
+        \end{prooftree}
+    
+        \begin{prooftree}
+            \AxiomC{}
+            \RL{\ruleTNegRI}
+            \admissibleRuleLine
+            \UnaryInfC{$\fNotR \form \judgI \fNotR\fNotR\fNotR \form$}
+        \end{prooftree}
+    \end{multicols}
+\end{lemma}
+\begin{proof}
+
+    Primero \ruleTNegRI{}
+
+    \begin{prooftree}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{$\fNotR \form, \fNotR\fNotR \form \judgI \fNotR \fNotR \form$}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{$\fNotR \form, \fNotR\fNotR \form \judgI \fNotR \form$}
+        \RL{\ruleImpE}
+        \BinaryInfC{$\fNotR \form, \fNotR\fNotR \form \judgI R$}
+        \RL{\ruleImpI}
+        \UnaryInfC{$\fNotR \form \judgI \fNotR\fNotR\fNotR \form$}
+    \end{prooftree}
+
+    Ahora \ruleTNegRE{}
+
+    \begin{prooftree}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{$\fNotR\fNotR\fNotR \form, \form \judgI \fNotR\fNotR\fNotR \form$}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{$\ctx \judgI \fNotR \form$}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{$\ctx \judgI \form$}
+        \RL{\ruleImpE}
+        \BinaryInfC{$\ctx = \fNotR\fNotR\fNotR \form, \form, \fNotR \form \judgI R$}
+        \RL{\ruleImpI}
+        \UnaryInfC{$\fNotR\fNotR\fNotR \form, \form \judgI \fNotR\fNotR \form$}
+        \RL{\ruleImpE}
+        \BinaryInfC{$\fNotR\fNotR\fNotR \form, \form \judgI R$}
+        \RL{\ruleImpI}
+        \UnaryInfC{$\fNotR\fNotR\fNotR \form \judgI \fNotR \form$}
+    \end{prooftree}
+\end{proof}
+
+\begin{obs}\label{fri:obs:forall-exists}
+    $\judgI \forall \var (\form \rightarrow \exists \var \form)$.
+    Trivialmente, para cualquier $\var$ si vale $\form$ entonces va a existir un $\var$ tal que valga $\form$.
+\end{obs}
+
+\todo{IDem pero en ND, y también para $\forall$}
+
+
+\begin{theorem}[Traducción de Friedman para fórmulas $\classPiTwo$ atómicas]
+    \label{fri:thm:fri-pitwo}
+
+    Sea $\someProof$ una demostración clásica de
+    \(
+        \forall \varTwo_1 \dots \forall \varTwo_n .
+        \exists \var .
+        \form(\var, \varTwo_1, \dots, \varTwo_n)
+    \)
+    y $\form(\dots)$ una fórmula atómica
+
+    Si tenemos
+    \[
+        \ctx \judgC
+        \forall \varTwo_1 \dots \forall \varTwo_n .
+        \exists \var .
+        \form(\var, \varTwo_1, \dots, \varTwo_n),
+    \]
+    podemos generar una demostración intuicionista de la misma fórmula
+    \[
+        \transDNeg{\ctx} \judgI
+        \forall \varTwo_1 \dots \forall \varTwo_n .
+        \exists \var .
+        \form(\var, \varTwo_1, \dots, \varTwo_n).
+    \]
+\end{theorem}
+\begin{proof}
+    \todo{proof}
+\end{proof}
+
+\subsubsection{Formulas no atómicas}
+Es igual al anterior, pero para una fórmula arbitraria. Queremos generalizar r intro. Lema
+
+\begin{lemma}[Introducción de $\fNotR$]
+    No vale siempre.
+\end{lemma}
+
+\begin{theorem}[Traducción de Friedman para fórmulas $\classSigmaOne$ en general]
+    \label{fri:thm:fri-pitwo-general}
+
+    Sea $\someProof$ una demostración clásica de\(
+        \forall \varTwo_1 \dots \forall \varTwo_n .
+        \exists \var .
+        \anyForm(\var, \varTwo_1, \dots, \varTwo_n)
+    \), y
+    $\anyForm(\var, \varTwo_1, \dots, \varTwo_n)$ una fórmula no atómica.
+    Si tenemos
+    \[
+        \ctx \judgC 
+        \forall \varTwo_1 \dots \forall \varTwo_n .
+        \exists \var .
+        \anyForm(\var, \varTwo_1, \dots, \varTwo_n),
+    \]
+    podemos generar una demostración intuicionista de la misma fórmula
+    \[
+        \transDNeg{\ctx} \judgI
+        \forall \varTwo_1 \dots \forall \varTwo_n .
+        \exists \var .
+        \anyForm(\var, \varTwo_1, \dots, \varTwo_n).
+    \]
+\end{theorem}
+\begin{proof}
+    \todo{}
 \end{proof}
 
 \subsection{Traducción de demostraciones}
 \label{fri:sec:proof-trans}
 
-\begin{lemma}\label{fri:lemma:tnegr-elim}
-    $\fNotR\fNotR\fNotR \form \iff \fNotR \form$
+\subsection{Manteniendo el contexto}
+
+Problema con normalización: axiomas, hay que traducirlos para que la traducción de Friedman funcione. Solución? Dejar los axiomas originales y demostrar su traducción. No funciona siempre.
+
+\begin{lemma}[Introducción de la traducción $\fNot\fNot$]
+    Se reduce a transintro
 \end{lemma}
-\begin{proof}
-    \todo{En deducción natural}
-\end{proof}
-
-\begin{obs}\label{fri:obs:forall-exists}
-    $\judgI \forall \var (\form \rightarrow \exists \var \form)$
-\end{obs}
-
-\todo{IDem pero en ND, y también para $\forall$}
 
 \section{Normalización}
 
