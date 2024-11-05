@@ -153,16 +153,18 @@ intuicionista. ¿Cómo conciliamos ambos mundos? Existen métodos que permiten
 estrategia general entonces es la siguiente (esquematizada en \namedref{fri:fig:strat}), dada una demostración en PPA como
 por ejemplo de \namedref{fri:prog:exists}:
 \begin{enumerate}
-    \item Certificarla generando una demostración clásica en deducción natural,
-    usando el \modCertifier{}.
-    \item Usar la traducción de Friedman para obtener una demostración
+    \item La certificamos generando una demostración clásica en deducción
+    natural, usando el \modCertifier{}. Nos da un contexto con una demostración
+    por teorema.
+    \item Generamos una única demostración haciendo \textit{inline} de las demostraciones de otros teoremas citados, así cuando se reduce, se reduce la demostración completa y no una parte.
+    \item Usamos la traducción de Friedman para obtener una demostración
     intuicionista de la misma fórmula.
 
     \textbf{Restricción}: La fórmula a demostrar debe ser de la forma
     $\forall \varTwo_0 \dots \forall \varTwo_n . \exists \var . \form$.
-    \item Instanciar las variables de los $\forall$ en términos proporcionados
+    \item Instanciamos las variables de los $\forall$ en términos proporcionados
     por el usuario, quedando una fórmula de la forma $\exists \var . \form$.
-    \item Normalizar la demostración.
+    \item Normalizamos la demostración.
     
     \textbf{Limitación}: No vamos a poder llevar cualquier demostración a su
     forma normal.
@@ -552,6 +554,90 @@ Es igual al anterior, pero para una fórmula arbitraria. Queremos generalizar r 
 \subsection{Traducción de demostraciones}
 \label{fri:sec:proof-trans}
 
+En \fullref{fri:thm:dneg-trans-classic-int} se introduce la necesidad de extender la traducción de doble negación relativizada de fórmulas a demostraciones, para poder convertir una demostración clásica a intuicionista. En esta sección lo vemos más en detalle.
+
+La conversión se efectúa por inducción estructural en la demostración. Para cada regla de inferencia que demuestra $\form$, se genera una demostración a partir de ella para demostrar $\transDNeg{\form}$. La estrategia para hacerlo es similar para todas: usar la hipótesis inductiva para convertir las sub-demostraciones, y usarlas para generar la nueva demostración. Pero hay algunas que requieren un truco. Solo mostramos las interesantes.
+
+\begin{itemize}
+    \item \ruleAndI{} (\namedref{fri:lemma:trad-and-i}), \ruleAndEOne{}, \ruleAndETwo{}, \ruleImpI{}, \ruleImpE{}, 
+    \ruleOrIOne{}, \ruleOrITwo{}, \ruleForallI{}, \ruleForallE{}, \ruleNotI{}, \ruleNotE{}, \ruleTrueI{}, \ruleAx{} son todas similares entre sí, por lo que solo mostramos una.
+    \item \ruleExistsI{} (\namedref{fri:lemma:trad-exists-i}) es una regla simple pero más interesante que las anteriores, por la traducción de $\exists$.
+    \item \ruleLEM{} (\namedref{fri:lemma:trad-lem}) es sumamente interesante, ya que se encuentra en el corazón de la traducción al ser la parte clave: ¿cómo traducimos el principio de razonamiento clásico que lo separa de la lógica intuicionista?
+    \item \ruleFalseE{} (\namedref{fri:lemma:trad-false-e})  se prueba como lema por inducción estructural en la fórmula a demostrar.
+    \item \ruleOrE{} (\namedref{fri:lemma:trad-or-e}) y \ruleExistsE{} son análogos y requieren un truco: usar la eliminación de la doble negación. Si bien al ser un principio de razonamiento clásico no vale para lógica intuicionista (por ser equivalente a LEM), lo que si vale es la eliminación de la doble negación relativizada: \ruleDnegRE{} (\namedref{fri:lemma:dnegr-e}).
+\end{itemize}
+
+\begin{lemma}[Traducción de \ruleAndI{}]
+    \label{fri:lemma:trad-and-i}
+    Dada una aparición de la regla \ruleAndI{},
+
+    \begin{prooftree}
+        \AxiomC{$\someProof_\form$}
+        \noLine
+        \UnaryInfC{$\ctx \judgI \form$}
+        \AxiomC{$\someProof_\formTwo$}
+        \noLine
+        \UnaryInfC{$\ctx \judgI \formTwo$}
+        \RL{\ruleAndI}
+        \BinaryInfC{$\ctx \judgI \form \wedge \formTwo$}
+    \end{prooftree}
+
+    es posible traducirla generando una demostración de $\tdn{(\form \fAnd \formTwo)} = \tdn{\form} \fAnd \tdn{\formTwo}$.
+\end{lemma}
+\begin{proof}
+    Por hipótesis inductiva, tenemos que
+    \begin{itemize}
+        \item \(
+            \tdn{\someProof_\form} \proves
+            \tdn{\ctx} \judgI
+            \tdn{\form}
+        \) y
+        \item \(
+            \tdn{\someProof_\formTwo} \proves
+            \tdn{\ctx} \judgI
+            \tdn{\formTwo}
+        \)
+    \end{itemize}
+
+    Luego, podemos generar una demostración de $\tdn{\form} \fAnd \tdn{\formTwo}$
+
+    \begin{prooftree}
+        \AxiomC{$\tdn{\someProof_\form}$}
+        \noLine
+        \UnaryInfC{$\tdn{\ctx} \judgI \tdn{\form}$}
+        \AxiomC{$\tdn{\someProof_\formTwo}$}
+        \noLine
+        \UnaryInfC{$\tdn{\ctx} \judgI \tdn{\formTwo}$}
+        \RL{\ruleAndI}
+        \BinaryInfC{$\tdn{\ctx} \judgI \tdn{\form} \fAnd \tdn{\formTwo}$}
+    \end{prooftree}
+\end{proof}
+
+\begin{lemma}[Traducción de \ruleExistsI{}]
+    \label{fri:lemma:trad-exists-i}
+    \todo{Enunciar y demostrar}
+\end{lemma}
+
+\begin{lemma}[Traducción de \ruleLEM{}]
+    \label{fri:lemma:trad-lem}
+    \todo{Enunciar y demostrar}
+\end{lemma}
+
+\begin{lemma}[Traducción de \ruleFalseE{}]
+    \label{fri:lemma:trad-false-e}
+    \todo{Enunciar y demostrar}
+\end{lemma}
+
+\begin{lemma}[Eliminación de doble negación relativizada (\ruleDnegRE{})]
+    \label{fri:lemma:dnegr-e}
+    \todo{Enunciar y demostrar}
+\end{lemma}
+
+\begin{lemma}[Traducción de \ruleOrE{}]
+    \label{fri:lemma:trad-or-e}
+    \todo{Enunciar y demostrar}
+\end{lemma}
+
 \subsection{Manteniendo el contexto}
 
 Problema con normalización: axiomas, hay que traducirlos para que la traducción de Friedman funcione. Solución? Dejar los axiomas originales y demostrar su traducción. No funciona siempre.
@@ -560,7 +646,29 @@ Problema con normalización: axiomas, hay que traducirlos para que la traducció
     Se reduce a transintro
 \end{lemma}
 
+\todo{Enunciar y demostrar}
+
 \section{Normalización}
+
+existe curry howard \cite{curry-howard-isomorphism}, relación entre deducción
+natural y cálculo lambda. Luego, la normalización de demostraciones es el
+isomorfismo de la semántica del cálculo lambda.
+
+evitar \textit{detours}, leer más en el libro de curry howard
+
+Mostrar ejemplo del and de curry howard.
+
+\subsection{Sustituciones}
+
+substHyp y substVar, la especificación matemática (y descripción de los problemas)
+
+\subsection{Reglas de reducción}
+
+Mostrar un par que sean intersantes, no todas.
+
+\subsection{Estrategia de reducción}
+
+...
 
 \subsection{Limitaciones}
 
@@ -569,3 +677,7 @@ No funciona para todas las demostraciones, porque hay algunas reducciones que no
 \section{Otros métodos de extracción}
 
 \todo{Hablar sobre y citar classical realizability, no tengo ni idea.}
+
+Buena intro acá https://www.degruyter.com/document/doi/10.1515/9783110324921.11/html?lang=en
+
+In the past years, many computational interpretations of Classical Arithmetic havebeen put forward.  Under a first classification, they fall into two large categories:directandindirectinterpretations.   Among  the  indirect  interpretations  one  findsthe  negative  translations  followed  either  by  Dialectica  interpretations  [13],  [30](see e.g.   Kohlenbach [19]) or by intuitionistic realizability interpretations com-bined with Friedman’s translation [13] (see e.g. Berger and Schwichtenberg [10]).Among the direct interpretations, there are different versions of Classical Realiz-ability (Krivine’s [22] and Avigad’s [6]), there is Coquand game semantics [11],

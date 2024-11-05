@@ -468,11 +468,12 @@ ida y la vuelta: para $\fNot(\formLit \fOr \formLitTwo) \rewrite
 
 \subsubsection{Algoritmo}
 
-Finalmente, el algoritmo para generar la demostración de la conversión de una
-fórmula en DNF se implementa de forma \textit{small-step}. La conversión es la
-clausura de hacer un ``paso'', que puede o bien ser un paso de reescritura, o
-uno de congruencia reescribiendo una sub-fórmula. En cada uno se usa una de las
-siguientes demostraciones.
+\diffNew{Finalmente, el algoritmo para generar la demostración de la conversión de una
+fórmula en DNF se implementa de forma \textit{small-step}. La conversión se
+implementa como la clausura reflexiva transitiva de la conversión de un paso (es
+decir, aplicarla 0 o más veces hasta que no cambie). Estos pasos pueden ser o
+bien ser un paso de reescritura, o uno de congruencia reescribiendo una
+sub-fórmula. En cada uno se usa una de las siguientes demostraciones.}
 
 \begin{figure}[H]
     \begin{align*}
