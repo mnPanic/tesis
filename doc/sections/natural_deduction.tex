@@ -533,35 +533,47 @@ En las secciones anteriores presentamos a los contextos $\ctx$ como \textit{conj
     \begin{multicols}{3}
         \begin{prooftree}
             \AxiomC{$\bm{\hypId: } \form \in \ctx$}
-            \RL{\ruleAx$\bm{_\hypId}$}
+            \RL{\ruleAxh{\bm{\hypId}}}
             \UnaryInfC{$\judg{\ctx}{\form}$}
         \end{prooftree}
     
         \begin{prooftree}
             \AxiomC{$\judg{\ctx, \bm{\hypId:} \form}{\formTwo}$}
-            \RL{\ruleImpI$\bm{_\hypId}$}
+            \RL{\ruleImpIh{\bm{\hypId}}}
             \UnaryInfC{$\judg{\ctx}{\form \to \formTwo}$}
         \end{prooftree}
     
         \begin{prooftree}
             \AxiomC{$\judg{\ctx, \bm{\hypId:} \form}{\bot}$}
-            \RL{\ruleNotI$\bm{_\hypId}$}
+            \RL{\ruleNotIh{\bm{\hypId}}}
             \UnaryInfC{$\judg{\ctx}{\fNot \form}$}
         \end{prooftree}
     \end{multicols}
 
     \begin{prooftree}
+        \AxiomC{$\judg{\ctx}{\form \vee \formTwo}$}
+        \AxiomC{$\judg{\ctx, \bm{\hypId_1:} \form}{\formThree}$}
+        \AxiomC{$\judg{\ctx, \bm{\hypId_2:} \formTwo}{\formThree}$}
+        \RL{\ruleOrEh{\bm{(\hypId_1, \hypId_2)}}}
+        \TrinaryInfC{$\judg{\ctx}{\formThree}$}
+    \end{prooftree}
+
+    \begin{prooftree}
         \AxiomC{$\judg{\ctx}{\exists \var.\form}$}
         \AxiomC{$\judg{\ctx, \bm{\hypId:}\form}{\formTwo}$}
         \AxiomC{$x \notin \fv{\ctx, \formTwo}$}
-        \RL{\ruleExistsE$\bm{_\hypId}$}
+        \RL{\ruleExistsEh{\bm{\hypId}}}
         \TrinaryInfC{$\judg{\ctx}{\formTwo}$}
     \end{prooftree}
 \end{itemize}
 
-\begin{obs}
+\begin{notation*}
+    Como abuso de notación, nos vamos a permitir la libertad de usar ambas versiones a lo largo del documento. En casos en donde no sea relevante usar etiquetas, no las usaremos, y en los casos en donde sí lo haremos explícitamente.
+\end{notation*}
+
+\begin{obs*}
     Las reglas están decoradas con el nombre de la hipótesis porque esto hace que según cual se use, el uso de la regla y por lo tanto la demostración sea diferente. Por lo que si por ejemplo demostramos $\form \fImp \form \fImp \form$, con etiquetas hay dos demostraciones distintas (dependiendo de si se usa la primera o segunda asunción) y sin habría una sola (como el contexto es un conjunto, se combinan ambas hipótesis en una).
-\end{obs}
+\end{obs*}
 
 \subsection{\diffNew{Variables libres en contexto}}
 \diffNew{Re-redactado!}
@@ -725,6 +737,7 @@ si sustituimos sin más, estaríamos involuntariamente ``capturando'' a $\varTwo
 donde $\varThree$ es una variable \textit{fresca}.
 
 \begin{definition}[\diffNew{Sustitución sin capturas}]
+    \label{nd:def:subst}
     \diffNew{Corregido!}
     Se define por inducción estructural.
     \begin{itemize}

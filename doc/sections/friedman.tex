@@ -7,26 +7,26 @@ Puntos a abordar
     \item Motivación, limitaciones de lógica clásica. Demostración sqrt 2
     \item Lógica intuicionista
     \item Como necesitamos reducir en ND, necesitamos la demo en ND. Escribirla
-    en este caso.
+          en este caso.
     \item También queremos para $\classPiTwo$, mostrar la extensión en ND.
     \item En realidad no nos sirve $\transDNeg{\Gamma}$, queremos dejarlo como
-    está y demostrar que los axiomas demuestran sus traducciones. Pero no vale
-    siempre (buscar c.ej), caracterizar cuando.
+          está y demostrar que los axiomas demuestran sus traducciones. Pero no vale
+          siempre (buscar c.ej), caracterizar cuando.
     \item Sumarizar cómo queda, vincular con reducción. Mostrar ejemplos en PPA
-    que funcionan y ejemplos que no.
+          que funcionan y ejemplos que no.
     \item Extensión a demostraciones. Mostrar algunos ejemplos interesantes (y
-    los que usen los lemas dNegRElim y rElim)
+          los que usen los lemas dNegRElim y rElim)
     \item Lemas para demostraciones: dNegRElim (relacionar con \ref{ppa-cert:sec:abs-reasoning}), rElim, tNegRElim
     \item Reducción (buena explicación
-    \url{https://plato.stanford.edu/entries/natural-deduction/}). En realidad se
-    conoce como \textbf{normalization}.
-    \begin{itemize}
-        \item Similitud con reducción en cálculo lambda.
-        \item Ejemplos de LP y todo LPO
-        \item substHyp, substVar en proofs
-        \item Argumentos de que es correcto y completo?
-        \item Small step vs big step
-    \end{itemize}
+          \url{https://plato.stanford.edu/entries/natural-deduction/}). En realidad se
+          conoce como \textbf{normalization}.
+          \begin{itemize}
+              \item Similitud con reducción en cálculo lambda.
+              \item Ejemplos de LP y todo LPO
+              \item substHyp, substVar en proofs
+              \item Argumentos de que es correcto y completo?
+              \item Small step vs big step
+          \end{itemize}
 \end{itemize}
 
 \newpage
@@ -64,7 +64,7 @@ instancia la variable en un término de forma indirecta. Además, también
 querríamos poder extraer en casos donde haya cuantificadores universales, como
 en \fullref{fri:prog:forall}. Buscamos un mecanismo general, que nos permita a
 partir de cualquier demostración una fórmula de la pinta $\forall \var_0 \dots
-\forall \var_n \exists \varTwo . \alpha$ extraer un testigo. Vamos a hacerlo a
+    \forall \var_n \exists \varTwo . \alpha$ extraer un testigo. Vamos a hacerlo a
 partir de los certificados de deducción natural.
 
 \section{La lógica clásica no es constructiva}
@@ -91,19 +91,19 @@ concretizar, como muestra el siguiente ejemplo bien conocido:
     irracional.
     \begin{itemize}
         \item Supongamos que es racional. Como sabemos que $\sqrt{2}$ es
-        irracional, podemos tomar $a=b=\sqrt{2}$.
+              irracional, podemos tomar $a=b=\sqrt{2}$.
         \item Supongamos que es irracional. Tomamos $a = \sqrt{2}^{\sqrt{2}}, b
-        = \sqrt{2}$. Ambos son irracionales, y tenemos
+                  = \sqrt{2}$. Ambos son irracionales, y tenemos
 
-        \[
-            a^b
-            = \left( \sqrt{2}^{\sqrt{2}} \right)^{\sqrt{2}}
-            = \sqrt{2}^{\sqrt{2} \cdot \sqrt{2}}
-            = \sqrt{2}^{2}
-            = 2,
-        \]
+              \[
+                  a^b
+                  = \left( \sqrt{2}^{\sqrt{2}} \right)^{\sqrt{2}}
+                  = \sqrt{2}^{\sqrt{2} \cdot \sqrt{2}}
+                  = \sqrt{2}^{2}
+                  = 2,
+              \]
 
-        que es racional.
+              que es racional.
     \end{itemize}
 \end{proof}
 
@@ -115,7 +115,7 @@ testigo.
 
 En el caso de \fullref{fri:thm:irrat} elegimos demostrarlo de forma no
 constructiva, pero existen formas constructivas de hacerlo \todo{citation
-needed}. Pero hay casos en donde no.
+    needed}. Pero hay casos en donde no.
 
 \begin{ejemplo}[Demostración no constructiva]
     Si consideramos la fórmula
@@ -124,19 +124,19 @@ needed}. Pero hay casos en donde no.
     \]
     y pensamos en $C$ como algo indecidible, por ejemplo \texttt{HALT},
     trivialmente podemos demostrarlo de forma no constructiva (LEM con $C \fOr
-    \fNot C$) pero nunca de forma constructiva.
+        \fNot C$) pero nunca de forma constructiva.
 \end{ejemplo}
 
 \section{Lógica intuicionista}
 
 Como alternativa a la lógica clásica existe existe la lógica
 \textbf{intuicionista}, que se puede definir como la lógica clásica sin LEM\footnote{Al no tener LEM, tampoco valen principios de razonamiento clásicos equivalentes,
-como la eliminación de la doble negación.}. Al
+    como la eliminación de la doble negación.}. Al
 no contar con ese principio, las demostraciones son constructivas. Esto permite
 por un lado tener interpretaciones computacionales (como la \textit{BHK}) y
 además que exista la noción de \textit{forma normal} de una demostración.
 Existen métodos bien conocidos para reducir prueba hacia su forma normal con un
-proceso análogo a una reducción de cálculo $\lambda$. 
+proceso análogo a una reducción de cálculo $\lambda$.
 
 Esto permite usar como estrategia de extracción la siguiente: normalizar la
 demostración y obtener el testigo de la forma normal. En ella, se esperaría que
@@ -154,26 +154,26 @@ estrategia general entonces es la siguiente (esquematizada en \namedref{fri:fig:
 por ejemplo de \namedref{fri:prog:exists}:
 \begin{enumerate}
     \item La certificamos generando una demostración clásica en deducción
-    natural, usando el \modCertifier{}. Nos da un contexto con una demostración
-    por teorema.
+          natural, usando el \modCertifier{}. Nos da un contexto con una demostración
+          por teorema.
     \item Generamos una única demostración haciendo \textit{inline} de las demostraciones de otros teoremas citados, así cuando se reduce, se reduce la demostración completa y no una parte.
     \item Usamos la traducción de Friedman para obtener una demostración
-    intuicionista de la misma fórmula.
+          intuicionista de la misma fórmula.
 
-    \textbf{Restricción}: La fórmula a demostrar debe ser de la forma
-    $\forall \varTwo_0 \dots \forall \varTwo_n . \exists \var . \form$.
+          \textbf{Restricción}: La fórmula a demostrar debe ser de la forma
+          $\forall \varTwo_0 \dots \forall \varTwo_n . \exists \var . \form$.
     \item Instanciamos las variables de los $\forall$ en términos proporcionados
-    por el usuario, quedando una fórmula de la forma $\exists \var . \form$.
+          por el usuario, quedando una fórmula de la forma $\exists \var . \form$.
     \item Normalizamos la demostración.
-    
-    \textbf{Limitación}: No vamos a poder llevar cualquier demostración a su
-    forma normal.
+
+          \textbf{Limitación}: No vamos a poder llevar cualquier demostración a su
+          forma normal.
 
     \item Al ser una demostración normalizada de un $\exists$, debe comenzar con
-    \ruleExistsI{}, que especifica el término que hace cierta la fórmula. Este
-    es precisamente el testigo que estábamos buscando.
+          \ruleExistsI{}, que especifica el término que hace cierta la fórmula. Este
+          es precisamente el testigo que estábamos buscando.
 
-    \proofTreeExistsI
+          \proofTreeExistsI
 \end{enumerate}
 
 En las siguientes secciones vemos en detalle la traducción de Friedman y la
@@ -196,17 +196,17 @@ intuicionista \duda{citar?}. Un mecanismo general es la traducción de
 \textit{Gödel-Gentzen} \cite{Avigad1998-FEFOFD}
 
 \begin{definition}[Traducción \textit{Gödel-Gentzen}] Dada una fórmula $\form$
-se asocia con otra $\gN{\form}$. La traducción se define por inducción
-estructural.
+    se asocia con otra $\gN{\form}$. La traducción se define por inducción
+    estructural.
     \begin{align*}
-        \gN{\fFalse} &= \fFalse\\
-        \gN{\fTrue} &= \fTrue\\
-        \gN{\form} &= \fNot\fNot \form \quad \text{con $\form$ atómica}\\
-        \gN{(\form \fAnd \formTwo)} &= \gN{\form} \fAnd \gN{\formTwo}\\
-        \gN{(\form \fOr \formTwo)} &= \fNot(\fNot\gN{\form} \fAnd \fNot\gN{\formTwo})\\
-        \gN{(\form \fImp \formTwo)} &= \gN{\form} \fImp \gN{\formTwo}\\
-        \gN{(\forall \var . \form(\var))} &= \forall \var . \gN{\form(\var)}\\
-        \gN{(\exists \var . \form(\var))} &= \fNot \forall \var . \fNot \gN{\form(\var)}
+        \gN{\fFalse}                      & = \fFalse                                           \\
+        \gN{\fTrue}                       & = \fTrue                                            \\
+        \gN{\form}                        & = \fNot\fNot \form \quad \text{con $\form$ atómica} \\
+        \gN{(\form \fAnd \formTwo)}       & = \gN{\form} \fAnd \gN{\formTwo}                    \\
+        \gN{(\form \fOr \formTwo)}        & = \fNot(\fNot\gN{\form} \fAnd \fNot\gN{\formTwo})   \\
+        \gN{(\form \fImp \formTwo)}       & = \gN{\form} \fImp \gN{\formTwo}                    \\
+        \gN{(\forall \var . \form(\var))} & = \forall \var . \gN{\form(\var)}                   \\
+        \gN{(\exists \var . \form(\var))} & = \fNot \forall \var . \fNot \gN{\form(\var)}
     \end{align*}
 \end{definition}
 
@@ -219,15 +219,15 @@ estructural.
 \end{definition}
 
 \begin{notation*}
-    Notamos,    
+    Notamos,
     \begin{itemize}
         \item $\judgC$ para expresar que un juicio es derivable en lógica clásica,
-        y $\judgI$ para intuicionista.
+              y $\judgI$ para intuicionista.
         \item $\someProof \proves \ctx \judG \form$ para expresar que $\someProof$ es una demostración de $\ctx \judG \form$. Equivalente a
-            \AxiomC{$\someProof$}
-            \noLine
-            \UnaryInfC{$\ctx \judG \form$}
-            \DisplayProof
+              \AxiomC{$\someProof$}
+              \noLine
+              \UnaryInfC{$\ctx \judG \form$}
+              \DisplayProof
     \end{itemize}
 \end{notation*}
 
@@ -240,8 +240,8 @@ intuicionista de su traducción. Pero esto no es exactamente lo que queremos,
 pues si quisiéramos extraer un testigo de una demostración de la fórmula
 $\exists \var. \pred(\var)$, al traducirla nos quedaría
 \(
-    \gN{(\exists \var. \pred(\var))}
-        = \fNot \forall \var . \fNot\fNot\fNot \pred(\var),
+\gN{(\exists \var. \pred(\var))}
+= \fNot \forall \var . \fNot\fNot\fNot \pred(\var),
 \)
 que si bien su demostración sería intuicionista (y por lo tanto constructiva),
 como no es de un $\exists$ al normalizarla no podremos hacer la extracción.
@@ -250,65 +250,24 @@ como no es de un $\exists$ al normalizarla no podremos hacer la extracción.
 
 La idea de Friedman \cite{miquel-friedman} es generalizar la traducción
 Gödel-Gentzen reemplazando la negación intuicionista $\fNot \form \equiv A
-\rightarrow \bot$ por una relativa $\fNotR \form \equiv \form \rightarrow R$ que
+    \rightarrow \bot$ por una relativa $\fNotR \form \equiv \form \rightarrow R$ que
 está parametrizada por una fórmula arbitraria $R$. Esto nos va a permitir, con
 una elección inteligente de $R$, traducir una demostración clásica de una
 fórmula a una intuicionista, y usarla para demostrar \textbf{la fórmula
-original}. Esto nos permite reducirla y hacer la extracción. No va a ser posible para cualquier fórmula, sino las de una clase particular (de la forma 
+    original}. Esto nos permite reducirla y hacer la extracción. No va a ser posible para cualquier fórmula, sino las de una clase particular (de la forma
 $\forall \varTwo_1 \dots \forall \varTwo_m . \exists \var_1 \dots \exists \var_k . \form$ o $\classPiTwo$)
-
-\begin{definition}[Jerarquía aritmética de fórmulas]
-    Clasifica las fórmulas en dos clases: $\classPi{n}$ y
-    $\classSigma{n}$. Se define por inducción en $n$.
-
-    \begin{itemize}
-        \item Si $\anyForm$ es equivalente a una fórmula sin cuantificadores, está en
-        $\classPi{0}$ y $\classSigma{0}$.
-        \item Sean las clasificaciones $\classPi{n}$ y $\classSigma{n}$. Definimos para $n+1$.
-        \begin{itemize}
-            \item Si $\anyForm$ es equivalente a una formula de la forma $\exists
-            \var_1 \dots \exists \var_k. \anyFormTwo$ donde $\anyFormTwo$ es
-            $\classPi{n}$, entonces $\anyForm$ es asignada la clasificación $\classSigma{n+1}$.
-    
-            \item Si $\anyForm$ es equivalente a una formula de la forma $\forall
-            \var_1 \dots \forall \var_k. \anyFormTwo$ donde $\anyFormTwo$ es
-            $\classSigma{n}$, entonces $\anyForm$ es asignada la clasificación $\classPi{n+1}$.
-        \end{itemize}
-    \end{itemize}
-
-    Una fórmula de $\classSigma{n}$ es equivalente a una que comienza con
-    cuantificadores existenciales y alterna $n-1$ veces entre series de
-    universales y existenciales. Mientras que una $\classPi{n}$ es análoga pero
-    comenzando con universales.
-    
-    Las dos que más nos interesan son:
-    \begin{itemize}
-        \item $\classSigmaOne$: fórmulas de la pinta $\exists \var_1 \dots
-        \exists \var_k . \anyForm$.
-        \item $\classPiTwo$: fórmulas de la pinta $\forall \varTwo_1 \dots \forall \varTwo_m . \exists \var_1 \dots \exists \var_k . \anyForm$
-    \end{itemize}
-
-    
-
-    Una intuición detrás de los nombres de las clases puede ser
-    \begin{itemize}
-        \item $\Sigma$ es una sumatoria, que se puede interpretar como
-        disyunciones (en el sentido del álgebra de Boole), y generalizar con un existencial.
-        \item $\Pi$ análogamente pero con productoria, conjunciones y universales.
-    \end{itemize}
-\end{definition}
 
 \begin{definition}[Traducción de doble negación relativizada]
     \begin{align*}
-        \transDNeg{\bot} &= \bot\\
-        \transDNeg{\form} &= \fNotR\fNotR \form
-            \quad \text{con $\form$ atómica}\\
-        \transDNeg{(\fNot \form)} &= \fNot \transDNeg{\form}\\
-        \transDNeg{(\form \fAnd \formTwo)} &= \transDNeg{\form} \fAnd \transDNeg{\formTwo}\\
-        \transDNeg{(\form \fOr \formTwo)} &= \fNotR(\fNotR\transDNeg{\form} \fAnd \fNotR\transDNeg{\formTwo})\\
-        \transDNeg{(\form \rightarrow \formTwo)} &= \transDNeg{\form} \rightarrow \transDNeg{\formTwo}\\
-        \transDNeg{(\forall x . \form)} &= \forall x . \transDNeg{\form}\\
-        \transDNeg{(\exists x . \form)} &= \fNotR \forall x . \fNotR \transDNeg{\form}
+        \transDNeg{\bot}                         & = \bot                                                             \\
+        \transDNeg{\form}                        & = \fNotR\fNotR \form
+        \quad \text{con $\form$ atómica}                                                                              \\
+        \transDNeg{(\fNot \form)}                & = \fNot \transDNeg{\form}                                          \\
+        \transDNeg{(\form \fAnd \formTwo)}       & = \transDNeg{\form} \fAnd \transDNeg{\formTwo}                     \\
+        \transDNeg{(\form \fOr \formTwo)}        & = \fNotR(\fNotR\transDNeg{\form} \fAnd \fNotR\transDNeg{\formTwo}) \\
+        \transDNeg{(\form \rightarrow \formTwo)} & = \transDNeg{\form} \rightarrow \transDNeg{\formTwo}               \\
+        \transDNeg{(\forall x . \form)}          & = \forall x . \transDNeg{\form}                                    \\
+        \transDNeg{(\exists x . \form)}          & = \fNotR \forall x . \fNotR \transDNeg{\form}
     \end{align*}
 \end{definition}
 
@@ -321,27 +280,69 @@ $\forall \varTwo_1 \dots \forall \varTwo_m . \exists \var_1 \dots \exists \var_k
     Este proceso está descrito en detalle en \fullref{fri:sec:proof-trans}
 \end{proof}
 
-Vamos a enunciar diferentes versiones de la traducción de Friedman en orden de sofisticación. No solo ayuda a entenderla, sino que también fue el mismo enfoque con el que las implementamos.
+Vamos a enunciar diferentes versiones de la traducción de Friedman en orden de sofisticación, según para qué clase de fórmulas funcionan. No solo ayuda a entenderla, sino que también fue el mismo enfoque con el que las implementamos.
+
+
+\begin{definition}[Jerarquía aritmética de fórmulas]
+    Clasifica las fórmulas en dos clases: $\classPi{n}$ y
+    $\classSigma{n}$. Se define por inducción en $n$.
+
+    \begin{itemize}
+        \item Si $\anyForm$ es equivalente a una fórmula sin cuantificadores, está en
+              $\classPi{0}$ y $\classSigma{0}$.
+        \item Sean las clasificaciones $\classPi{n}$ y $\classSigma{n}$. Definimos para $n+1$.
+              \begin{itemize}
+                  \item Si $\anyForm$ es equivalente a una formula de la forma $\exists
+                            \var_1 \dots \exists \var_k. \anyFormTwo$ donde $\anyFormTwo$ es
+                        $\classPi{n}$, entonces $\anyForm$ es asignada la clasificación $\classSigma{n+1}$.
+
+                  \item Si $\anyForm$ es equivalente a una formula de la forma $\forall
+                            \var_1 \dots \forall \var_k. \anyFormTwo$ donde $\anyFormTwo$ es
+                        $\classSigma{n}$, entonces $\anyForm$ es asignada la clasificación $\classPi{n+1}$.
+              \end{itemize}
+    \end{itemize}
+
+    Una fórmula de $\classSigma{n}$ es equivalente a una que comienza con
+    cuantificadores existenciales y alterna $n-1$ veces entre series de
+    universales y existenciales. Mientras que una $\classPi{n}$ es análoga pero
+    comenzando con universales.
+
+    Las dos que más nos interesan son:
+    \begin{itemize}
+        \item $\classSigmaOne$: fórmulas de la pinta $\exists \var_1 \dots
+                  \exists \var_k . \anyForm$.
+        \item $\classPiTwo$: fórmulas de la pinta $\forall \varTwo_1 \dots \forall \varTwo_m . \exists \var_1 \dots \exists \var_k . \anyForm$
+    \end{itemize}
+
+    Una intuición detrás de los nombres de las clases puede ser
+    \begin{itemize}
+        \item $\Sigma$ es una sumatoria, que se puede interpretar como
+              disyunciones (en el sentido del álgebra de Boole), y generalizar con un existencial.
+        \item $\Pi$ análogamente pero con productoria, conjunciones y universales.
+    \end{itemize}
+\end{definition}
+
+\subsection{Versiones de la traducción}
 
 \begin{enumerate}
     \item \textbf{Fórmulas $\classSigmaOne$ atómicas} (\namedref{fri:thm:fri-sigmaone}):
-    \[
-        \exists \var . \form(\var) \text{ con } \form(\var) \text{ atómica.} 
-    \]
+          \[
+              \exists \var . \form(\var) \text{ con } \form(\var) \text{ atómica.}
+          \]
     \item \textbf{Fórmulas $\classPiTwo$ atómicas} (\namedref{fri:thm:fri-pitwo}):
-    
-    \[
-        \forall \varTwo_1 \dots \forall \varTwo_n . \exists \var . \form(\var, \varTwo_1, \dots, \varTwo_n) \text{ con } \form(\dots) \text{ atómica}.
-    \]
+
+          \[
+              \forall \varTwo_1 \dots \forall \varTwo_n . \exists \var . \form(\var, \varTwo_1, \dots, \varTwo_n) \text{ con } \form(\dots) \text{ atómica}.
+          \]
 
     \item \textbf{Fórmulas $\classPiTwo$ no atómicas} (\namedref{fri:thm:fri-pitwo-general}):
-    
-    \[
-    \forall \varTwo_1 \dots \forall \varTwo_n . \exists \var . \anyForm(\var, \varTwo_1, \dots, \varTwo_n) \text{ con } \anyForm(\dots) \text{ no atómica}.
-    \]
-    
-    Por ejemplo, podría ser $\pred(x) \fAnd \predTwo(\varTwo_1, \dots, \varTwo_n)$.
-    Pero no podrá ser cualquier fórmula, por ej. no $\fNot(\pred(x) \fAnd \predTwo(\varTwo_1, \dots, \varTwo_n))$. En \todo{Cita} damos una caracterización.
+
+          \[
+              \forall \varTwo_1 \dots \forall \varTwo_n . \exists \var . \anyForm(\var, \varTwo_1, \dots, \varTwo_n) \text{ con } \anyForm(\dots) \text{ no atómica}.
+          \]
+
+          Por ejemplo, podría ser $\pred(x) \fAnd \predTwo(\varTwo_1, \dots, \varTwo_n)$.
+          Pero no podrá ser cualquier fórmula, por ej. no $\fNot(\pred(x) \fAnd \predTwo(\varTwo_1, \dots, \varTwo_n))$. En \todo{Cita} damos una caracterización.
 \end{enumerate}
 
 \begin{theorem}[Traducción de Friedman para fórmulas $\classSigmaOne$]
@@ -360,59 +361,59 @@ Vamos a enunciar diferentes versiones de la traducción de Friedman en orden de 
 \end{theorem}
 \begin{proof}
 
-Aplicando la traducción, tenemos que
+    Aplicando la traducción, tenemos que
 
-\begin{gather*}
-    \transDNeg{\big(
-        \someProof \proves \ctx \judgC \exists \var . \form
-    \big)}\\
-    \verteq\\
-    \transDNeg{\someProof} \proves \transDNeg{\ctx} \judgI \fNotR \forall \var . \fNotR \fNotR \fNotR \form
-\end{gather*}
+    \begin{gather*}
+        \transDNeg{\big(
+            \someProof \proves \ctx \judgC \exists \var . \form
+            \big)}\\
+        \verteq\\
+        \transDNeg{\someProof} \proves \transDNeg{\ctx} \judgI \fNotR \forall \var . \fNotR \fNotR \fNotR \form
+    \end{gather*}
 
-luego, tomando $R = \exists \var . \form$ la fórmula que buscamos probar,
+    luego, tomando $R = \exists \var . \form$ la fórmula que buscamos probar,
 
-\begin{align*}
-    \transDNeg{\someProof} \proves & \transDNeg{\ctx} \judgI \fNotR \forall \var . \fNotR \fNotR \fNotR \form\\
-    \iff & \transDNeg{\ctx} \judgI \fNotR \forall \var . \fNotR \form
-        &&(\text{\namedref{fri:lemma:tnegr-elim}})\\
-    =\ &\transDNeg{\ctx} \judgI (\forall \var . (\form \rightarrow R)) \rightarrow R
-        &&(\fNotR \form = \form \fImp R)\\
-    =\ &\transDNeg{\ctx} \judgI (\forall \var . (\form \rightarrow \exists \var . \form)) \rightarrow \exists \var . \form && (R = \exists \var \form)\\
-    \Rightarrow\ &\transDNeg{\ctx} \judgI \exists \var . \form
-        && (\text{\namedref{fri:obs:forall-exists}})
-\end{align*}
+    \begin{align*}
+        \transDNeg{\someProof} \proves & \transDNeg{\ctx} \judgI \fNotR \forall \var . \fNotR \fNotR \fNotR \form                                                                                                                  \\
+        \iff                           & \transDNeg{\ctx} \judgI \fNotR \forall \var . \fNotR \form
+                                       &                                                                                                                    & (\text{\namedref{fri:lemma:tnegr-elim}})                             \\
+        =\                             & \transDNeg{\ctx} \judgI (\forall \var . (\form \rightarrow R)) \rightarrow R
+                                       &                                                                                                                    & (\fNotR \form = \form \fImp R)                                       \\
+        =\                             & \transDNeg{\ctx} \judgI (\forall \var . (\form \rightarrow \exists \var . \form)) \rightarrow \exists \var . \form &                                           & (R = \exists \var \form) \\
+        \Rightarrow\                   & \transDNeg{\ctx} \judgI \exists \var . \form
+                                       &                                                                                                                    & (\text{\namedref{fri:obs:forall-exists}})
+    \end{align*}
 
-En deducción natural,
+    En deducción natural,
 
-\begin{prooftree}
-    \def\defaultHypSeparation{\hskip .1in}
-    \AxiomC{$\transDNeg{\someProof}$}
-    \noLine
-    \UnaryInfC{\(
-        \transDNeg{\ctx} \judgI \fNotR \forall \var \fNotR \transDNeg{\form}
-    \)}
-    \AxiomC{}
-    \RL{\ruleTNegRI}
-    \admissibleRuleLine
-    \UnaryInfC{$\transDNeg{\ctx}, \fNotR \form \judgI \fNotR \fNotR \fNotR \form$}
-    \AxiomC{}
-    \RL{\ruleAx}
-    \UnaryInfC{$\transDNeg{\ctx}, \form \judgI \form$}
-    \RL{\ruleExistsI}
-    \UnaryInfC{$\transDNeg{\ctx}, \form \judgI R = \exists \var \form$}
-    \RL{\ruleImpI}
-    \UnaryInfC{$\transDNeg{\ctx} \judgI \fNotR \form$}
-    \RL{\ruleCut}
-    \admissibleRuleLine
-    \BinaryInfC{$\transDNeg{\ctx} \judgI \fNotR \fNotR \fNotR \form$}
-    \RL{\ruleForallI}
-    \UnaryInfC{\(
-        \transDNeg{\ctx} \judgI \forall \var \fNotR \transDNeg{\form}
-    \)}
-    \RL{\ruleImpE}
-    \BinaryInfC{$\transDNeg{\ctx} \judgI \exists \var . \form$}
-\end{prooftree}
+    \begin{prooftree}
+        \def\defaultHypSeparation{\hskip .1in}
+        \AxiomC{$\transDNeg{\someProof}$}
+        \noLine
+        \UnaryInfC{\(
+            \transDNeg{\ctx} \judgI \fNotR \forall \var \fNotR \transDNeg{\form}
+            \)}
+        \AxiomC{}
+        \RL{\ruleTNegRI}
+        \admissibleRuleLine
+        \UnaryInfC{$\transDNeg{\ctx}, \fNotR \form \judgI \fNotR \fNotR \fNotR \form$}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{$\transDNeg{\ctx}, \form \judgI \form$}
+        \RL{\ruleExistsI}
+        \UnaryInfC{$\transDNeg{\ctx}, \form \judgI R = \exists \var \form$}
+        \RL{\ruleImpI}
+        \UnaryInfC{$\transDNeg{\ctx} \judgI \fNotR \form$}
+        \RL{\ruleCut}
+        \admissibleRuleLine
+        \BinaryInfC{$\transDNeg{\ctx} \judgI \fNotR \fNotR \fNotR \form$}
+        \RL{\ruleForallI}
+        \UnaryInfC{\(
+            \transDNeg{\ctx} \judgI \forall \var \fNotR \transDNeg{\form}
+            \)}
+        \RL{\ruleImpE}
+        \BinaryInfC{$\transDNeg{\ctx} \judgI \exists \var . \form$}
+    \end{prooftree}
 \end{proof}
 
 \begin{obs}
@@ -429,7 +430,7 @@ En deducción natural,
             \admissibleRuleLine
             \UnaryInfC{$\fNotR\fNotR\fNotR \form \judgI \fNotR \form$}
         \end{prooftree}
-    
+
         \begin{prooftree}
             \AxiomC{}
             \RL{\ruleTNegRI}
@@ -483,17 +484,14 @@ En deducción natural,
     Trivialmente, para cualquier $\var$ si vale $\form$ entonces va a existir un $\var$ tal que valga $\form$.
 \end{obs}
 
-\todo{IDem pero en ND, y también para $\forall$}
-
-
 \begin{theorem}[Traducción de Friedman para fórmulas $\classPiTwo$ atómicas]
     \label{fri:thm:fri-pitwo}
 
     Sea $\someProof$ una demostración clásica de
     \(
-        \forall \varTwo_1 \dots \forall \varTwo_n .
-        \exists \var .
-        \form(\var, \varTwo_1, \dots, \varTwo_n)
+    \forall \varTwo_1 \dots \forall \varTwo_n .
+    \exists \var .
+    \form(\var, \varTwo_1, \dots, \varTwo_n)
     \)
     y $\form(\dots)$ una fórmula atómica
 
@@ -527,14 +525,14 @@ Es igual al anterior, pero para una fórmula arbitraria. Queremos generalizar r 
     \label{fri:thm:fri-pitwo-general}
 
     Sea $\someProof$ una demostración clásica de\(
-        \forall \varTwo_1 \dots \forall \varTwo_n .
-        \exists \var .
-        \anyForm(\var, \varTwo_1, \dots, \varTwo_n)
+    \forall \varTwo_1 \dots \forall \varTwo_n .
+    \exists \var .
+    \anyForm(\var, \varTwo_1, \dots, \varTwo_n)
     \), y
     $\anyForm(\var, \varTwo_1, \dots, \varTwo_n)$ una fórmula no atómica.
     Si tenemos
     \[
-        \ctx \judgC 
+        \ctx \judgC
         \forall \varTwo_1 \dots \forall \varTwo_n .
         \exists \var .
         \anyForm(\var, \varTwo_1, \dots, \varTwo_n),
@@ -559,8 +557,8 @@ En \fullref{fri:thm:dneg-trans-classic-int} se introduce la necesidad de extende
 La conversión se efectúa por inducción estructural en la demostración. Para cada regla de inferencia que demuestra $\form$, se genera una demostración a partir de ella para demostrar $\transDNeg{\form}$. La estrategia para hacerlo es similar para todas: usar la hipótesis inductiva para convertir las sub-demostraciones, y usarlas para generar la nueva demostración. Pero hay algunas que requieren un truco. Solo mostramos las interesantes.
 
 \begin{itemize}
-    \item \ruleAndI{} (\namedref{fri:lemma:trad-and-i}), \ruleAndEOne{}, \ruleAndETwo{}, \ruleImpI{}, \ruleImpE{}, 
-    \ruleOrIOne{}, \ruleOrITwo{}, \ruleForallI{}, \ruleForallE{}, \ruleNotI{}, \ruleNotE{}, \ruleTrueI{}, \ruleAx{} son todas similares entre sí, por lo que solo mostramos una.
+    \item \ruleAndI{} (\namedref{fri:lemma:trad-and-i}), \ruleAndEOne{}, \ruleAndETwo{}, \ruleImpI{}, \ruleImpE{},
+          \ruleOrIOne{}, \ruleOrITwo{}, \ruleForallI{}, \ruleForallE{}, \ruleNotI{}, \ruleNotE{}, \ruleTrueI{}, \ruleAx{} son todas similares entre sí, por lo que solo mostramos una.
     \item \ruleExistsI{} (\namedref{fri:lemma:trad-exists-i}) es una regla simple pero más interesante que las anteriores, por la traducción de $\exists$.
     \item \ruleLEM{} (\namedref{fri:lemma:trad-lem}) es sumamente interesante, ya que se encuentra en el corazón de la traducción al ser la parte clave: ¿cómo traducimos el principio de razonamiento clásico que lo separa de la lógica intuicionista?
     \item \ruleFalseE{} (\namedref{fri:lemma:trad-false-e})  se prueba como lema por inducción estructural en la fórmula a demostrar.
@@ -588,15 +586,15 @@ La conversión se efectúa por inducción estructural en la demostración. Para 
     Por hipótesis inductiva, tenemos que
     \begin{itemize}
         \item \(
-            \tdn{\someProof_\form} \proves
-            \tdn{\ctx} \judgI
-            \tdn{\form}
-        \) y
+              \tdn{\someProof_\form} \proves
+              \tdn{\ctx} \judgI
+              \tdn{\form}
+              \) y
         \item \(
-            \tdn{\someProof_\formTwo} \proves
-            \tdn{\ctx} \judgI
-            \tdn{\formTwo}
-        \)
+              \tdn{\someProof_\formTwo} \proves
+              \tdn{\ctx} \judgI
+              \tdn{\formTwo}
+              \)
     \end{itemize}
 
     Luego, podemos generar una demostración de $\tdn{\form} \fAnd \tdn{\formTwo}$
@@ -650,29 +648,155 @@ Problema con normalización: axiomas, hay que traducirlos para que la traducció
 
 \section{Normalización}
 
-existe curry howard \cite{curry-howard-isomorphism}, relación entre deducción
-natural y cálculo lambda. Luego, la normalización de demostraciones es el
-isomorfismo de la semántica del cálculo lambda.
+Repasemos en dónde estamos parados. Queremos extraer un testigo de la demostración de un existencial (i.e extraer de $\exists \var . \pred(\var)$ a un $\term$ tal que $\pred(\term)$). Partimos de una demostración escrita en el lenguaje de alto nivel PPA, que se certifica a una demostración en deducción natural \textit{clásica} (que tiene el problema que no es constructiva). Mediante la traducción de Friedman, para cierto tipo de fórmulas ($\classPiTwo$), podemos convertir la demostración a \textit{intuicionista} manteniendo la fórmula. Ahora, queremos extraer el testigo a partir de ella. Eso lo podemos lograr normalizando la demostración. ¿Cómo funciona la normalización?
 
-evitar \textit{detours}, leer más en el libro de curry howard
+Intuitivamente, la estrategia que empleamos consiste en evitar \textit{desvíos superfluos} en la demostración, sucesivamente simplificándolos hasta que queda una demostración en forma normal. Por ejemplo, en la siguiente demostración se prueba $\form \fImp \form$ usando $(\form \fImp \form) \fAnd (\formTwo \fImp \formTwo)$ y demostrándo ambos por separado. Pero se puede demostrar de forma más directa, insertando directo la demostración de $\form \fImp \form$ y eliminado el desvío.
 
-Mostrar ejemplo del and de curry howard.
+\[
+    \AxiomC{}
+    \RL{\ruleAx}
+    \UnaryInfC{$\form \judG \form$}
+    \RL{\ruleImpI}
+    \UnaryInfC{$\judG \form \fImp \form$}
+    \AxiomC{}
+    \RL{\ruleAx}
+    \UnaryInfC{$\formTwo \judG \formTwo$}
+    \RL{\ruleImpI}
+    \UnaryInfC{$\judG \formTwo \fImp \formTwo$}
+    \RL{\ruleAndI}
+    \BinaryInfC{$\judG (\form \fImp \form) \fAnd (\formTwo \fImp \formTwo)$}
+    \RL{\ruleAndEOne{}}
+    \UnaryInfC{$\judG \form \fImp \form$}
+\DisplayProof
+\quad
+\rewrite
+\quad
+    \AxiomC{}
+    \RL{\ruleAx}
+    \UnaryInfC{$\form \judG \form$}
+    \RL{\ruleImpI}
+    \UnaryInfC{$\judG \form \fImp \form$}
+    \DisplayProof
+\]
+Todos los desvíos que normalizamos se ven de esta forma: una \textbf{eliminación} seguida inmediatamente de su \textbf{introducción} correspondiente. Por ejemplo, \ruleAndEOne{} seguida de \ruleAndI{}.
+
+Esto es análogo a las reducciones de cálculo $\lambda$. Más aún, existe un
+isomorfismo entre demostraciones en deducción natural y términos de cálculo
+$\lambda$: El isomorfismo Curry-Howard \cite{curry-howard-isomorphism}. Luego,
+la normalización de demostraciones es el isomorfismo de la semántica del cálculo
+lambda: sus reducciones. Por ejemplo, si pensamos a una conjunción como una tupla, y las eliminaciones como proyecciones, podemos ver cómo la regla de normalización de la conjunción es isomorfa a la regla de reducción de las proyecciones.
+
+\begin{align*}
+    \projectOne{\tuple{\lTerm_1, \lTerm_2}} &\rewrite \lTerm_1\\
+    \projectTwo{\tuple{\lTerm_1, \lTerm_2}} &\rewrite \lTerm_2
+\end{align*}
+
+\[
+    \reductionAnd
+\]
+
+De acá en adelante presentamos las reducciones directamente en deducción natural, dado que es lo que tuvimos que implementar para PPA. Se usan de forma intercambiable \textit{reducción} y \textit{normalización}, pues en el fondo, son lo mismo.
+
+\begin{obs}
+    Es interesante notar que en las reducciones mencionadas en esta sección, no se asume ni $\judgI$ ni $\judgC$ a diferencia de las demostraciones que vimos para la traducción de Friedman. Esto es porque la normalización se puede ejecutar en ambos casos, con la diferencia de que si lo hacemos para una demostración de lógica clásica que use \ruleLEM{}, se traba cuando llega ahí y su forma normal no es muy útil.
+\end{obs}
 
 \subsection{Sustituciones}
 
-substHyp y substVar, la especificación matemática (y descripción de los problemas)
+Lamentablemente, no todas las reglas de reducción son igual de sencillas que $\fAnd$. Veamos el caso de la implicación.
 
-\subsection{Reglas de reducción}
+\begin{prooftree}
+    \AxiomC{$\someProof_\formTwo$}
+    \noLine
+    \UnaryInfC{$\ctx, \hypId: \form \judG \formTwo$}
+    \RL{\ruleImpIh{\hypId}}
+    \UnaryInfC{$\ctx \judG \form \fImp \formTwo$}
+    \AxiomC{$\someProof_\form$}
+    \noLine
+    \UnaryInfC{$\ctx \judG \form$}
+    \RL{\ruleImpE}
+    \BinaryInfC{$\ctx \judG \formTwo$}
+\end{prooftree}
 
-Mostrar un par que sean intersantes, no todas.
+Tenemos una eliminación seguida por una introducción de la misma. Para eliminar el desvío, uno podría estar tentado a hacer directamente $\someProof_\formTwo \proves \ctx \judG \formTwo$ pero ¡\textbf{no sería correcto}! La demostración $\someProof_\formTwo$ requiere con la hipótesis $\hypId : \form$. Lo correcto sería usar $\someProof_\formTwo$, pero reemplazando todas las ocurrencias de la hipótesis $\hypId$ por la demostración $\someProof_\form$. A continuación introducimos esa noción.
 
-\subsection{Estrategia de reducción}
+\begin{definition}[Sustitución de hipótesis]
+    Notamos como \(\someProof \subst{\hypId}{\someProof'}\) a la sustitución sin capturas de todas las ocurrencias libres de una hipótesis $\hypId$ por una demostración $\someProof'$ en otra demostración $\someProof$.
 
-...
+    \todo{seguir, por que sin capturas}
+
+    Las hipótesis están libres hasta que se re-definen
+\end{definition}
+
+
+Además, para la reducción del $\exists$, necesitaremos extender la sustitución usual de variables (\namedref{nd:def:subst}) por términos a demostraciones. La implementación es análoga, evitando capturas y haciéndolo en una pasada de forma lineal.
+\begin{definition}[Sustitución de variables en demostraciones]
+    Notamos como $\someProof \subst{\var}{\term}$ a la sustitución sin capturas de todas las ocurrencias libres de una variable $\var$ por un término $\term$ en una demostración $\someProof$.
+    
+    \duda{Hace falta definirlo más?}
+\end{definition}
+
+
+\duda{Pensamiento: Si no tuvieramos etiquetas, esta sustitución sería más fácil, no? Porque en lugar de reemplazar por ocurrencias de la etiqueta, reemplazas por veces que citas en un axioma una \textit{fórmula}, entonces si lo estás capturando te da igual, total es la misma fórmula. O se podrá romper?}
+
+\subsection{Algoritmo de reducción}
+
+\begin{figure}[H]
+    $$\reductionAnd$$
+    
+    \[
+        \reductionImp
+    \]
+    \duda{Por qué no directamente así?
+        \AxiomC{$\someProof_\formTwo \subst{\hypId}{\someProof_\form}$}
+        \noLine
+        \UnaryInfC{$\ctx \judG \formTwo$}
+        \DisplayProof
+    }
+    \begin{gather*}
+        \AxiomC{$\someProof_{\form_i}$}
+    \noLine
+    \UnaryInfC{$\ctx \judG \form_i$}
+    \RL{\ruleOrI{i}}
+    \UnaryInfC{$\ctx \judG \form_1 \fOr \form_2$}
+    \AxiomC{$\someProof_{1}$}
+    \noLine
+    \UnaryInfC{$\ctx, \hypId_1 : \form_1 \judG \formTwo$}
+    \AxiomC{$\someProof_{2}$}
+    \noLine
+    \UnaryInfC{$\ctx, \hypId_2 : \form_2 \judG \formTwo$}
+    \RL{\ruleOrE{}}
+    \TrinaryInfC{$\ctx \judG \formTwo$}
+    \DisplayProof\\
+    \rewrite \quad
+    \left(
+    \AxiomC{$\someProof_i$}
+    \noLine
+    \UnaryInfC{$\ctx, \hypId_i: \form_i \judG \formTwo$}
+    \DisplayProof
+    \right)\subst{\hypId_i}{\someProof_{\form_i}}
+    \end{gather*}
+    \todo{Not, forall, exists.}
+    \label{fri:fig:reduction-rules}
+    \caption{Reglas de reducción}
+\end{figure}
+
+A partir de todas las reglas de reducción (\namedref{fri:fig:reduction-rules}), como son \textit{pasos} que acercan la demostración sucesivamente a su versión normalizada, podemos implementarlo de forma análoga a DNF (\namedref{ppa:sec:dnf:algoritmo}): la clausura reflexiva transitiva de la reducción de un paso (aplicarla 0 o más veces hasta que esté en forma normal). Al igual que DNF, también necesitaremos reglas de congruencia: si no hay una eliminación de una introducción para simplificar, se intentan de reducir recursivamente las sub-demostraciones.
+
+En una primera implementación las sub-demostraciones las reducíamos en un paso, de izquierda a derecha. Por ejemplo, si teníamos una introducción de una conjunción, reducíamos $\form \rewrite \form_1 \rewrite \form_2 \rewrite \dots \rewrite \form^{*}$ hasta llegar a $\form^{*}$ irreducible. Luego, lo mismo para $\formTwo$.
+
+\proofTreeAndI
+
+Pero esto resultó demasiado lento, dado que las demostraciones que reducimos son muy grandes (pues son generadas automáticamente), y cuando es necesario hacer sustituciones en demostraciones el proceso de sustituir resultado de certificar \todo{Averiguar altura de un árbol grande}
+\todo{Pensar un ejemplo. Probablemente con and, impI o algo así.}
+
+En la literatura se pueden encontrar muchas \textit{estrategias de reducción}, que se dividen en un paso o muchos pasos. Dentro de las de muchos pasos, la que implementamos fue \textbf{Gross-Knuth}, que reduce en muchos pasos todos los sub-términos posibles al mismo tiempo. Aplicado a demostraciones, quiere decir que en un único paso de reducción, al mismo tiempo reduciríamos $\form \rewrite \form^{*}$ y $\formTwo^{*} \rewrite \formTwo^{*}$. Esto hace que la convergencia sea mucho más rápida, ya que como en promedio las demostraciones más chicas, se tarda mucho menos en sustituir.
 
 \subsection{Limitaciones}
 
 No funciona para todas las demostraciones, porque hay algunas reducciones que no implementamos.
+
+\todo{Mostrar ejemplo de OrE.}
 
 \section{Otros métodos de extracción}
 

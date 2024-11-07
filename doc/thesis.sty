@@ -37,8 +37,9 @@
 
 % https://tex.stackexchange.com/questions/121865/nameref-how-to-display-section-name-and-its-number
 \newcommand*{\ejemploautorefname}{Ejemplo}
+\newcommand*{\definitionautorefname}{Def.}
 \newcommand*{\lemmaautorefname}{Lema}
-\newcommand*{\obsautorefname}{Obs}
+\newcommand*{\obsautorefname}{Obs.}
 \newcommand*{\fullref}[1]{\hyperref[{#1}]{\autoref*{#1} \nameref*{#1}}}
 \newcommand*{\namedref}[1]{\hyperref[{#1}]{\autoref*{#1}}}
 
@@ -139,6 +140,7 @@
 
 \newcommand{\ruleOrIOne}{\ruleI{$\fOr_1$}}
 \newcommand{\ruleOrITwo}{\ruleI{$\fOr_2$}}
+\newcommand{\ruleOrI}[1]{\ruleI{$\fOr_{#1}$}}
 \newcommand{\ruleOrE}{\ruleE{$\fOr$}}
 
 \newcommand{\ruleAndI}{\ruleI{$\fAnd$}}
@@ -156,6 +158,13 @@
 
 \newcommand{\ruleLEM}{LEM}
 \newcommand{\ruleAx}{Ax}
+
+% Reglas etiquetadas
+\newcommand{\ruleImpIh}[1]{\ruleI{$\fImp_{#1}$}}
+\newcommand{\ruleAxh}[1]{Ax$_{#1}$}
+\newcommand{\ruleNotIh}[1]{\ruleI{$\fNot_{#1}$}}
+\newcommand{\ruleExistsEh}[1]{\ruleE{$\exists_{#1}$}}
+\newcommand{\ruleOrEh}[1]{\ruleE{$\fOr_{#1}$}}
 
 % Reglas admisibles
 \newcommand{\admissibleRuleLine}{\doubleLine}
@@ -265,6 +274,12 @@
 
 \newcommand{\classPi}[1]{\Pi^0_{#1}}
 \newcommand{\classSigma}[1]{\Sigma^0_{#1}}
+
+% LC
+\newcommand{\tuple}[2]{\langle#1, #2\rangle}
+\newcommand{\projectOne}[1]{\pi_1(#1)}
+\newcommand{\projectTwo}[1]{\pi_2(#1)}
+\newcommand{\lTerm}{M}
 
 % Reglas
 \newcommand{\ruleTNegRE}{\ruleE{$\fNotR\fNotR\fNotR$}}
