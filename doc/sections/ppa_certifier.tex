@@ -315,6 +315,21 @@ Que es certificado como
 \end{prooftree}
 \end{ejemplo}
 
+
+\begin{notation*}
+    \diffNew{Notación nueva!}
+    En los casos en donde queramos continuar la demostración por la nueva y la demostración de la implicación sea omitida (por ejemplo por ser una regla admisible) lo notaremos de la siguiente forma más sucinta
+
+    \begin{prooftree}
+        \AxiomC{$\someProof_\formTwo$}
+        \noLine
+        \UnaryInfC{$\ctx \judG \formTwo$}
+        \RL{\ruleCutWith{$\someProof_{\formTwo \fImp \form}$}}
+        \admissibleRuleLine
+        \UnaryInfC{$\ctx \judG \form$}
+    \end{prooftree}
+\end{notation*}
+
 \begin{lemma}[Razonamiento por el absurdo]
     \label{ppa:sec:abs-reasoning}
     Imaginemos que queremos demostrar
@@ -338,6 +353,20 @@ estábamos buscando para razonar por el absurdo.
     \admissibleRuleLine
     \BinaryInfC{$\ctx \judG \form$}
 \end{prooftree}
+
+\diffNew{Que también se puede notar de la siguiente forma}
+
+\begin{prooftree}
+    \AxiomC{$\vdots$}
+    \noLine
+    \UnaryInfC{$\ctx, \fNot \form \judG \fFalse$}
+    \RL{\ruleNotI}
+    \UnaryInfC{$\ctx \judG \fNot\fNot \form$}
+    \RL{\ruleCutWith{\ruleDnegE}}
+    \admissibleRuleLine
+    \UnaryInfC{$\ctx \judG \form$}
+\end{prooftree}
+
 \end{lemma}
 
 \begin{obs}

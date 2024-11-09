@@ -1042,30 +1042,6 @@ La conversión se efectúa por inducción estructural en la demostración. Para 
         donde $\someProof_L$ y $\someProof_R$ son simétricas, y
 
         \begin{prooftree}
-            \AxiomC{(HI)}
-            \noLine
-            \UnaryInfC{\(
-                \fNotR \fNotR \tdn{(\form \fAnd \formTwo)},
-                \fNotR \fNotR \tdn{\form} \judgI \tdn{\form}
-            \)}
-            %
-            \AxiomC{$\someProof_{L_1}$}
-            \noLine
-            \UnaryInfC{\(
-                \fNotR \fNotR \tdn{(\form \fAnd \formTwo)} \judgI
-                    \fNotR \fNotR \tdn{\form}
-            \)}
-            \RL{\ruleCut}
-            \admissibleRuleLine
-            \LL{$\someProof_L=$}
-            \BinaryInfC{\(
-                \fNotR \fNotR \tdn{(\form \fAnd \formTwo)} \judgI \tdn{\form}
-            \)}
-        \end{prooftree}
-
-        con
-
-        \begin{prooftree}
             \AxiomC{}
             \RL{\ruleAx}
             \UnaryInfC{\(
@@ -1100,10 +1076,15 @@ La conversión se efectúa por inducción estructural en la demostración. Para 
                 \judgI R
             \)}
             \RL{\ruleImpI}
-            \LL{$\someProof_{L_1}=$}
             \UnaryInfC{\(
                 \fNotR \fNotR \tdn{(\form \fAnd \formTwo)} \judgI
                     \fNotR \fNotR \tdn{\form}
+            \)}
+            \RL{\ruleCutWith{(HI)}}
+            \admissibleRuleLine
+            \LL{$\someProof_L=$}
+            \UnaryInfC{\(
+                \fNotR \fNotR \tdn{(\form \fAnd \formTwo)} \judgI \tdn{\form}
             \)}
         \end{prooftree}
     \end{itemize}
@@ -1149,7 +1130,7 @@ La conversión se efectúa por inducción estructural en la demostración. Para 
             \tdn{\ctx}, \fNotR \tdn{\formThree} \judgI 
             \fNotR (\fNotR \tdn{\form} \fAnd \fNotR \tdn{\formTwo})
         \)}
-        \AxiomC{$...$}
+        \AxiomC{$\someProofTwo$}
         \noLine
         \UnaryInfC{\(
             \tdn{\ctx}, \fNotR \tdn{\formThree}
@@ -1163,7 +1144,7 @@ La conversión se efectúa por inducción estructural en la demostración. Para 
         \UnaryInfC{\(
             \tdn{\ctx} \judgI \fNotR \fNotR \tdn{\formThree} 
         \)}
-        \RL{\ruleCut$+$\ruleDnegRE}
+        \RL{\ruleCutWith{\ruleDnegRE}}
         \admissibleRuleLine
         \UnaryInfC{$\tdn{\ctx} \judgI \tdn{\formThree}$}
     \end{prooftree}
@@ -1188,11 +1169,20 @@ La conversión se efectúa por inducción estructural en la demostración. Para 
             \tdn{\ctx}, \fNotR \tdn{\formThree}
             \judgI \fNotR \tdn{\form}
         \)}
+        %
         \AxiomC{\(
+            \begin{gathered}
+                \vdots\\
+                \text{\textit{(simétrico)}}
+            \end{gathered}
+        \)}
+        \noLine
+        \UnaryInfC{\(
             \tdn{\ctx}, \fNotR \tdn{\formThree}
             \judgI \fNotR \tdn{\formTwo}
         \)}
         \RL{\ruleAndI}
+        \LL{$\someProofTwo=$}
         \BinaryInfC{\(
             \tdn{\ctx}, \fNotR \tdn{\formThree}
             \judgI \fNotR \tdn{\form} \fAnd \fNotR \tdn{\formTwo}
