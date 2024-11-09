@@ -195,3 +195,26 @@
     \DisplayProof
     \right)\subst{\hypId}{\someProof_\form}
 }
+
+\newcommand{\reductionNot}{%
+\AxiomC{$\someProof_\fFalse$}
+\noLine
+\UnaryInfC{$\ctx, \hypId: \form \judG \fFalse$}
+\RL{\ruleNotI}
+\UnaryInfC{$\ctx \judG \fNot \form$}
+\AxiomC{$\someProof_\form$}
+\noLine
+\UnaryInfC{$\ctx \judG \form$}
+\RL{\ruleNotE}
+\BinaryInfC{$\ctx \judG \fFalse$}
+\DisplayProof
+%
+\quad \rewrite \quad
+%
+\left(
+\AxiomC{$\someProof_\fFalse$}
+\noLine
+\UnaryInfC{$\ctx, \hypId: \form \judG \fFalse$}
+\DisplayProof
+\right)\subst{\hypId}{\someProof_\form}
+}

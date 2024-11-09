@@ -19,6 +19,9 @@
 
 \usepackage{listings}
 
+\usepackage{caption}
+\usepackage{subcaption}
+
 % https://tex.stackexchange.com/questions/159988/sidewaysfigure-and-landscape
 % \usepackage{pdflscape}
 
@@ -116,6 +119,21 @@
 
 \newcommand{\modChecker}{\texttt{Checker}}
 \newcommand{\modCertifier}{\texttt{Certifier}}
+
+% Ejemplo alumnos
+\newcommand{\reprueba}{X}
+\newcommand{\recursa}{R}
+\newcommand{\falta}{F}
+
+\newcommand{\predReprueba}{\textrm{reprueba}}
+\newcommand{\predRecursa}{\textrm{recursa}}
+\newcommand{\predFalta}{\textrm{falta}}
+\newcommand{\funFinal}{\textrm{final}}
+
+\newcommand{\vAlu}{a}
+\newcommand{\vMat}{m}
+\newcommand{\vEx}{e}
+
 
 % Demostraciones de ND
 \newcommand{\proves}{\vartriangleright}
@@ -262,6 +280,7 @@
 
 %% Friedman
 \newcommand{\someProof}{\Pi}
+\newcommand{\someProofTwo}{\Sigma}
 \newcommand{\transDNeg}[1]{#1^{\neg\neg}}
 \newcommand{\tdn}[1]{\transDNeg{#1}}
 \newcommand{\gN}[1]{#1^{\text{N}}}
@@ -274,6 +293,8 @@
 
 \newcommand{\classPi}[1]{\Pi^0_{#1}}
 \newcommand{\classSigma}[1]{\Sigma^0_{#1}}
+
+\newcommand{\citedHyps}[1]{\textrm{hyps}(#1)}
 
 % LC
 \newcommand{\tuple}[2]{\langle#1, #2\rangle}
