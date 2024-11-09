@@ -576,6 +576,7 @@ Vamos a enunciar diferentes versiones de la traducción de Friedman en orden de 
 \end{proof}
 
 \begin{corollary}[Instanciación de $\forall$]
+    \label{fri:cor:forall-inst-old}
     El \namedref{fri:thm:fri-pitwo} nos permite realizar la instanciación de las variables del $\forall$ eliminandolo e instanciando con el término que querramos. De esa forma, la demostración final es sobre un $\exists$, requerido para poder hacer la extracción sobre la demostración normalizada.
     Por ejemplo,
     \begin{prooftree}
@@ -781,6 +782,29 @@ Que en donde aprovechamos que la traducción de fórmulas atómicas es $\fNotR \
         \BinaryInfC{$\tdn{\ctx} \judgI \fNotR \tdn{\anyForm}$}
     \end{prooftree}
 \end{proof}
+
+\begin{corollary}[Traducción de Friedman con instanciación de $\forall$]
+    \label{fri:cor:forall-inst}
+    De la misma forma que el \namedref{fri:cor:forall-inst-old}, podemos usar el \namedref{fri:thm:fri-pitwo-general} para tener la \textbf{versión final de la traducción}, que deja las demostraciones listas para la extracción de testigos.
+
+    Sea $\someProof$ una demostración clásica de \(
+    \forall \varTwo_1 \dots \forall \varTwo_n .
+    \exists \var .
+    \anyForm(\var, \varTwo_1, \dots, \varTwo_n)
+    \). Si tenemos
+    \[
+        \ctx \judgC
+        \forall \varTwo_1 \dots \forall \varTwo_n .
+        \exists \var .
+        \anyForm(\var, \varTwo_1, \dots, \varTwo_n),
+    \]
+    podemos generar una demostración intuicionista de la misma fórmula instanciando las variables cuantificadas universalmente por términos $\term_1, \dots, \term_n$ cualquiera (a elección del usuario)
+    \[
+        \transDNeg{\ctx} \judgI
+        \exists \var .
+        \anyForm(\var, \term_1, \dots, \term_n).
+    \]
+\end{corollary}
 
 \subsection{Traducción de demostraciones}
 \label{fri:sec:proof-trans}
@@ -1498,9 +1522,109 @@ para los cuales no llegamos a una forma normal. Entonces no siempre podremos ext
 
 \section{Manteniendo el contexto}
 
-Problema con normalización: axiomas, hay que traducirlos para que la traducción de Friedman funcione. Solución? Dejar los axiomas originales y demostrar su traducción. No funciona siempre.
+Describimos todo el proceso de cómo a partir de una demostración en PPA, se certifica, traduce mediante Friedman, y reduce para extraer testigos de un existencial. Pero falta exponer un detalle fundamental. Cuando estábamos probando la integración de todas las partes, nos dimos cuenta de un problema. PPA implementa el resultado del \fullref{fri:cor:forall-inst}, que nos permite llevar las demostraciones a esta forma
+\[
+    \transDNeg{\ctx} \judgI
+    \exists \var .
+    \anyForm(\var, \term_1, \dots, \term_n).
+\]
+
+Pero si tenemos por ejemplo el programa de la \fullref{fri:prog:exists},
+
+\lstinputlisting{listings/extract/exists.ppa}
+
+Al certificarlo y traducirlo, la demostración resultante es válida \textbf{con el contexto traducido}. El contexto está conformado por los axiomas, entonces la demostración traducida es de
+\[
+    \fNotR \fNotR p(v) \judgI \exists x . p(x)
+\]
+que al reducirlo, queda
+\begin{prooftree}
+    \AxiomC{}
+    \RL{\ruleAx}
+    \UnaryInfC{\(
+        \fNotR \fNotR p(v) \judgI \fNotR \fNotR p(v)
+    \)}
+    \AxiomC{}
+    \RL{\ruleAx}
+    \UnaryInfC{\(
+        \fNotR \fNotR p(v), p(v) \judgI p(v)
+    \)}
+    \RL{\ruleExistsI}
+    \UnaryInfC{\(
+        \fNotR \fNotR p(v), p(v) \judgI R = \exists x . p(x)
+    \)}
+    \RL{\ruleImpI}
+    \UnaryInfC{\(
+        \fNotR \fNotR p(v) \judgI \fNotR p(v)
+    \)}
+    \RL{\ruleImpE}
+    \BinaryInfC{\(
+        \fNotR \fNotR p(v) \judgI \exists x . p(x)
+    \)}
+\end{prooftree}
+
+¡Nunca llega a la forma normal deseada! Conceptualmente, para que exista la forma normal debería poder comenzar con \ruleExistsI{} y demostrar de alguna forma $\fNotR \fNotR p(v) \judgI p(v)$, que no es posible. Otra forma más práctica de verlo es que con las reglas que definimos no se puede reducir, porque se elimina una implicación que se demuestra mediante \ruleAx{} de un axioma en vez de \ruleImpI{}, por lo que se traba.
+
+\duda{Qué intuición agregar del problema? Algo de que el contenido computacional de los axiomas es limitado?}
+
+La solución que implementamos fue \textbf{mantener los axiomas originales}, y demostrar la introducción de la traducción (\namedref{fri:lemma:trans-intro}, regla \ruleTransI{}): $p(v) \judgI \tdn{p(v)}$ y en la demostración traducida, reemplazar cada cita al axioma (que pretende encontrar el axioma traducido) por la demostración de la traducción a partir del axioma original.
+
+\begin{prooftree}
+    \AxiomC{}
+    \RL{\ruleTransI}
+    \admissibleRuleLine
+    \UnaryInfC{\(
+        p(v) \judgI \fNotR \fNotR p(v)
+    \)}
+    \AxiomC{}
+    \RL{\ruleAx}
+    \UnaryInfC{\(
+        p(v) \judgI p(v)
+    \)}
+    \RL{\ruleExistsI}
+    \UnaryInfC{\(
+        p(v) \judgI R = \exists x . p(x)
+    \)}
+    \RL{\ruleImpI}
+    \UnaryInfC{\(
+        p(v) \judgI \fNotR p(v)
+    \)}
+    \RL{\ruleImpE}
+    \BinaryInfC{\(
+        p(v) \judgI \exists x . p(x)
+    \)}
+\end{prooftree}
+
+
+De esa forma, como los axiomas se mantienen, existe la forma normal que buscamos y nuestra reducción llega a ella para este caso.
+
+\begin{prooftree}
+    \AxiomC{}
+    \RL{\ruleAx}
+    \UnaryInfC{\(
+        \fNotR \fNotR p(v) \judgI \fNotR \fNotR p(v)
+    \)}
+    \AxiomC{}
+    \RL{\ruleAx}
+    \UnaryInfC{\(
+        \fNotR \fNotR p(v), p(v) \judgI p(v)
+    \)}
+    \RL{\ruleExistsI}
+    \UnaryInfC{\(
+        \fNotR \fNotR p(v), p(v) \judgI R = \exists x . p(x)
+    \)}
+    \RL{\ruleImpI}
+    \UnaryInfC{\(
+        p(v) \judgI 
+    \)}
+    \RL{\ruleExistsI}
+    \BinaryInfC{\(
+        p(v) \judgI \exists x . p(x)
+    \)}
+\end{prooftree}
 
 \begin{lemma}[Introducción de la traducción $\fNot\fNot$]
+    \label{fri:lemma:trans-intro}
     Se reduce a transintro
 \end{lemma}
 
