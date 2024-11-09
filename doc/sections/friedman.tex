@@ -846,18 +846,163 @@ La conversión se efectúa por inducción estructural en la demostración. Para 
 
 \begin{lemma}[Traducción de \ruleExistsI{}]
     \label{fri:lemma:trad-exists-i}
-    \todo{Enunciar y demostrar}
+    Dada una aparición de la regla \ruleExistsI{},
+
+    \begin{prooftree}
+        \AxiomC{$\someProof$}
+        \noLine
+        \UnaryInfC{$\judg{\ctx}{\form\subst{\var}{\term}}$}
+        \RL{\ruleExistsI}
+        \UnaryInfC{$\judg{\ctx}{\exists \var. \form}$}
+    \end{prooftree}
+
+    es posible traducirla generando una demostración de $\tdn{\exists \var. \form} = \fNotR \forall \var . \fNotR \tdn{\form}$.
 \end{lemma}
+\begin{proof}
+    Por hipótesis inductiva, tenemos que
+    \(
+        \tdn{\someProof} \proves
+        \tdn{\ctx} \judgI
+        \tdn{(\form \subst{\var}{\term})}
+    \)
+
+    Luego, podemos generar una demostración de $\fNotR \forall \var . \fNotR \tdn{\form}$
+
+    \begin{prooftree}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{\(
+            \ctx_1 \judgI \fNotR \forall \var \tdn{\form}
+        \)}
+        \RL{\ruleForallE}
+        \UnaryInfC{\(
+            \ctx_1 \judgI \fNotR \tdn{\form \subst{\var}{\term}}
+        \)}
+        \AxiomC{$\tdn{\someProof}$}
+        \noLine
+        \UnaryInfC{\(
+            \ctx_1 \judgI \tdn{\form \subst{\var}{\term}}
+        \)}
+        \RL{\ruleImpE}
+        \BinaryInfC{\(
+            \ctx_1 = \tdn{\ctx}, \forall \var . \fNotR \tdn{\form} \judgI R
+        \)}
+        \RL{\ruleImpI}
+        \UnaryInfC{\(
+            \tdn{\ctx} \judgI \fNotR \forall \var . \fNotR \tdn{\form}
+        \)}
+    \end{prooftree}
+
+\end{proof}
 
 \begin{lemma}[Traducción de \ruleLEM{}]
     \label{fri:lemma:trad-lem}
-    \todo{Enunciar y demostrar}
-\end{lemma}
+    Dada una aparición de la regla \ruleLEM{},
 
+    \begin{prooftree}
+        \AxiomC{}
+        \RL{\ruleLEM}
+        \UnaryInfC{$\judg{\ctx}{\form \fOr \fNot \form}$}
+    \end{prooftree}
+
+    es posible traducirla generando una demostración de \[\tdn{\form \fOr \fNot \form} = \fNotR (\fNotR \tdn{\form} \fAnd \fNotR \fNotR \tdn{\form}).\]
+\end{lemma}
+\begin{proof}
+    Como no hay HI, podemos demostrarlo para cualquier contexto $\ctx$.
+    \begin{prooftree}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{\(
+            \ctx_1
+            \judgI \fNotR \tdn{\form} \fAnd \fNotR \fNotR \tdn{\form}
+        \)}
+        \RL{\ruleAndETwo}
+        \UnaryInfC{\(
+            \ctx_1
+            \judgI \fNotR \fNotR \tdn{\form}
+        \)}
+        %
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{\(
+            \ctx_1
+            \judgI \fNotR  \tdn{\form} \fAnd \fNotR \fNotR \tdn{\form}
+        \)}
+        \RL{\ruleAndEOne}
+        \UnaryInfC{\(
+            \ctx_1
+            \judgI \fNotR \tdn{\form}
+        \)}
+        \RL{\ruleImpE}
+        \BinaryInfC{\(
+            \ctx_1 = \ctx,
+            \fNotR \tdn{\form} \fAnd \fNotR \fNotR \tdn{\form}
+            \judgI R
+        \)}
+        \RL{\ruleImpI}
+        \UnaryInfC{\(
+            \ctx \judgI
+                \fNotR (\fNotR \tdn{\form} \fAnd \fNotR \fNotR \tdn{\form})
+        \)}
+    \end{prooftree}
+\end{proof}
 \begin{lemma}[Traducción de \ruleFalseE{}]
     \label{fri:lemma:trad-false-e}
-    \todo{Enunciar y demostrar}
+    Dada una aparición de la regla \ruleFalseE{},
+
+    \begin{prooftree}
+        \AxiomC{$\someProof_\fFalse$}
+        \noLine
+        \UnaryInfC{$\judg{\ctx}{\fFalse}$}
+        \RL{\ruleFalseE}
+        \UnaryInfC{$\judg{\ctx}{\anyForm}$}    
+    \end{prooftree}
+
+    es posible generar una demostración de $\tdn{\anyForm}$ a partir de $\tdn{\fFalse} = R$.
 \end{lemma}
+\begin{proof}
+    Por hipótesis inductiva (de inducción estructural sobre la demostración), tenemos que
+    \begin{gather*}
+        \tdn{\someProof_\fFalse} \proves \tdn{\ctx} \judgI \tdn{\fFalse}
+        \\
+        \verteq
+        \\
+        \someProof_R \proves \tdn{\ctx} \judgI R
+    \end{gather*}
+    Pero no es posible demostrar de forma directa $\tdn{\anyForm}$ a partir de $R$. Lo hacemos por inducción estructural en $\anyForm$. Todos los casos son parecidos. Por ejemplo, veamos un caso inductivo y uno base.
+    
+    \begin{itemize}
+    \item Dada una conjunción $\form \fAnd \formTwo$, su traducción es $\tdn{\form} \fAnd \tdn{\formTwo}$. Por HI (de inducción estructural sobre la fórmula) a partir de $\someProof_R$ podemos probar $\tdn{\form}$ al igual que $\tdn{\formTwo}$. Luego,
+
+    \begin{prooftree}
+        \AxiomC{(HI)}
+        \noLine
+        \UnaryInfC{$\tdn{\ctx} \judgI \tdn{\formTwo}$}
+        \AxiomC{(HI)}
+        \noLine
+        \UnaryInfC{$\tdn{\ctx} \judgI \tdn{\form}$}
+        \RL{\ruleAndI}
+        \BinaryInfC{$\tdn{\ctx} \judgI \tdn{\form} \fAnd \tdn{\formTwo}$}
+    \end{prooftree}
+    
+
+    \item Dada una disyunción $\form \fOr \formTwo$, su traducción es $\fNotR (\fNotR \tdn{\form} \fAnd \fNotR \tdn{\formTwo})$. Luego, podemos demostrarlo sin usar la HI.
+    
+    \begin{prooftree}
+        \AxiomC{$\someProof_R$}
+        \noLine
+        \UnaryInfC{\(
+            \tdn{\ctx}, \fNotR \tdn{\form} \fAnd \fNotR \tdn{\formTwo} \judgI R
+        \)}
+        \RL{\ruleImpI}
+        \UnaryInfC{\(
+            \tdn{\ctx} \judgI \fNotR (\fNotR \tdn{\form} \fAnd \fNotR \tdn{\formTwo})
+        \)}
+    \end{prooftree}
+    \end{itemize}
+
+    El resto de los casos son análogos.
+\end{proof}
 
 \begin{lemma}[Eliminación de doble negación relativizada (\ruleDnegRE{})]
     \label{fri:lemma:dnegr-e}
