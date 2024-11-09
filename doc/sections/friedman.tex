@@ -280,7 +280,7 @@ $\forall \varTwo_1 \dots \forall \varTwo_m . \exists \var_1 \dots \exists \var_k
     Este proceso está descrito en detalle en \fullref{fri:sec:proof-trans}
 \end{proof}
 
-Vamos a enunciar diferentes versiones de la traducción de Friedman en orden de sofisticación, según para qué clase de fórmulas funcionan. No solo ayuda a entenderla, sino que también fue el mismo enfoque con el que las implementamos.
+Vamos a enunciar diferentes versiones de la traducción de Friedman en orden de sofisticación, según para qué clase de fórmulas funcionan. No solo ayuda a entenderla, sino que también fue el mismo enfoque con el que las implementamos. Cada una incluye a la anterior, por lo que en PPA solo quedó implementada la última.
 
 
 \begin{definition}[Jerarquía aritmética de fórmulas]
@@ -511,20 +511,215 @@ Vamos a enunciar diferentes versiones de la traducción de Friedman en orden de 
     \]
 \end{theorem}
 \begin{proof}
-    \todo{proof}
+    Lo demostramos en deducción natural para un solo $\forall$. La demostración para una cantidad arbitraria es análoga y fácilmente generalizable a partir de esta. La estrategia consiste en primero introducir el $\forall$ reemplazando su variable por una fresca, para evitar conflictos con las variables usadas en la demostración original. Luego se procede a demostrar el $\exists$ de forma análoga al \namedref{fri:thm:fri-sigmaone}, usando la traducción de la demostración pero usando como $R$ no la fórmula original, sino el $\exists$ con la variable ligada por el $\forall$ reemplazada por la fresca.
+
+    Tomando $R = \exists \var . \form(\var, \varTwo_0)$ y aplicando la traducción, tenemos que 
+
+    \begin{gather*}
+        \transDNeg{\big(
+            \someProof \proves \ctx \judgC \forall \varTwo \exists \var . \form(\var, \varTwo)
+            \big)}\\
+        \verteq\\
+        \transDNeg{\someProof} \proves
+            \transDNeg{\ctx} \judgI
+                \forall \varTwo \fNotR \forall \var . \fNotR \fNotR \fNotR \form(\var, \varTwo)
+    \end{gather*}
+
+    Luego
+
+    \begin{prooftree}
+        \AxiomC{$\tdn{\someProof}$}
+        \noLine
+        \UnaryInfC{$\tdn{\ctx} \judgI \forall \varTwo \fNotR \forall \var . \fNotR \tdn{\form(\var, \varTwo_0)}$}
+        \RL{\ruleForallE}
+        \UnaryInfC{$\tdn{\ctx} \judgI \fNotR \forall \var . \fNotR \tdn{\form(\var, \varTwo_0)}$}
+        %
+        \AxiomC{$\someProof_\forall$}
+        \noLine
+        \UnaryInfC{$\tdn{\ctx} \judgI\forall \var . \fNotR \tdn{\form(\var, \varTwo_0)}$}
+        \RL{\ruleImpE}
+        \BinaryInfC{$\tdn{\ctx} \judgI \exists \var . \form(\var, \varTwo_0)$}
+        \RL{\ruleForallI}
+        \UnaryInfC{$\tdn{\ctx} \judgI \forall \varTwo \exists \var . \form(\var, \varTwo)$}
+    \end{prooftree}
+
+    donde
+
+    \begin{prooftree}
+        \AxiomC{}
+        \LL{\ruleTNegRI}
+        \admissibleRuleLine
+        \UnaryInfC{\(
+            \tdn{\ctx}, \fNotR \form(\var, \varTwo_0) \judgI
+                \fNotR \fNotR \fNotR \form(\var, \varTwo_0) 
+        \)}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{\(
+            \tdn{\ctx}, \form(\var, \varTwo_0) \judgI \form(\var, \varTwo_0)
+        \)}
+        \RL{\ruleExistsI}
+        \UnaryInfC{\(
+            \tdn{\ctx}, \form(\var, \varTwo_0) \judgI R = \exists \var . \form(\var, \varTwo_0)
+        \)}
+        \RL{\ruleImpI}
+        \UnaryInfC{\(
+            \tdn{\ctx} \judgI \fNotR \form(\var, \varTwo_0)
+        \)}
+        \RL{\ruleCut}
+        \admissibleRuleLine
+        \BinaryInfC{$\tdn{\ctx} \judgI \fNotR \fNotR \fNotR \form(\var, \varTwo_0)$}
+        \RL{\ruleForallI}
+        \LL{$\someProof_\forall =$}
+        \UnaryInfC{$\tdn{\ctx} \judgI\forall \var . \fNotR \tdn{\form(\var, \varTwo_0)}$}
+    \end{prooftree}
 \end{proof}
 
+\begin{corollary}[Instanciación de $\forall$]
+    El \namedref{fri:thm:fri-pitwo} nos permite realizar la instanciación de las variables del $\forall$ eliminandolo e instanciando con el término que querramos. De esa forma, la demostración final es sobre un $\exists$, requerido para poder hacer la extracción sobre la demostración normalizada.
+    Por ejemplo,
+    \begin{prooftree}
+        \AxiomC{(\ref{fri:thm:fri-pitwo})}
+        \noLine
+        \UnaryInfC{$\tdn{\ctx} \judgI \forall \varTwo \exists \var . \form(\var, \varTwo)$}
+        \RL{\ruleForallE}
+        \UnaryInfC{$\tdn{\ctx} \judgI \exists \var . \form(\var, \term)$}
+    \end{prooftree}
+\end{corollary}
+
 \subsubsection{Formulas no atómicas}
-Es igual al anterior, pero para una fórmula arbitraria. Queremos generalizar r intro. Lema
+
+Hasta ahora usamos la traducción de Friedman para traducir las demostraciones de una fórmula de clásica a intuicionista, manteniendo esa fórmula, siempre y cuando su sub-fórmula $\classSigma{0}$ sea \textbf{atómica}. Pero queremos generalizarlo a fórmulas como $\forall \varTwo \exists \var . \anyForm(\var, \varTwo)$ donde $\anyForm$ no sea atómica, por ejemplo $\form(\var) \fAnd \formTwo(\varTwo)$. Para ello, la única diferencia es en el uso de \ruleCut{}. Para fórmulas atómicas, tenemos
+
+\begin{prooftree}
+    \AxiomC{}
+        \LL{\ruleTNegRI}
+        \admissibleRuleLine
+        \UnaryInfC{\(
+            \tdn{\ctx}, \fNotR \form \judgI
+                \fNotR \fNotR \fNotR \form 
+        \)}
+        \AxiomC{$\vdots$}
+        \noLine
+        \UnaryInfC{\(
+            \tdn{\ctx} \judgI \fNotR \form
+        \)}
+        \RL{\ruleCut}
+        \admissibleRuleLine
+        \BinaryInfC{$\tdn{\ctx} \judgI \fNotR \tdn{\form} = \fNotR \fNotR \fNotR \tdn{\form}$}
+\end{prooftree}
+
+Que en donde aprovechamos que la traducción de fórmulas atómicas es $\fNotR \tdn{\form} = \fNotR \fNotR \fNotR \tdn{\form}$ y podemos llevarla a $\fNotR \form$ mediante la eliminación de la triple negación. Pero esto no es así para fórmulas que no sean atómicas. Para ello, enunciamos el \namedref{fri:lemma:notr-trans-intro}, el cual podemos usar para demostrar la traducción en el \namedref{fri:thm:fri-pitwo-general}.
+
+\begin{lemma}[Congruencia de $\fNotR\fNotR$]
+    \label{fri:lemma:dnegr-cong}
+    Si $\form \judgI \form'$, luego $\fNot \fNot \form \judgI \fNot \fNot \form'$.
+\end{lemma}
+
+\begin{lemma}[Distributividad del $\fNotR$ sobre $\fAnd$]
+    \label{fri:lemma:fnot-dist-over-and-right}
+    \(
+    \fNotR \form \fOr \fNotR \formTwo \judgI \fNotR(\form \fAnd \formTwo)
+    \)
+\end{lemma}
 
 \begin{lemma}[Introducción de $\fNotR$]
-    No vale siempre.
+    \label{fri:lemma:notr-trans-intro}
+    Para algunas fórmulas $\form$, vale $\fNotR \form \judgI \fNotR \tdn{\form}$ y lo notamos con la regla admisible \ruleNotRTransI{}.
+    
+    No vale siempre, ya que en ese caso podríamos usar la traducción de Friedman para todas las fórmulas. Lo demostramos para las fórmulas descritas por la siguiente gramática (conjunciones y fórmulas atómicas)
+    \[
+        \form, \formTwo ::=
+            \fFalse \mid \fTrue \mid \pred(\term_1, \dots, \term_n) 
+            \mid \form \fAnd \formTwo
+    \]
 \end{lemma}
+\begin{proof}
+    La demostración se hace por inducción estructural en la fórmula.
+    \begin{itemize}
+        \item $\fFalse, \fTrue$ son triviales. Predicados con \ruleTNegRI{}.
+        \item $\fNot, \fOr, \fImp, \exists, \forall$ no están demostradas. Debería ser posible para algunas, pero no es claro.
+        \item $\fAnd$ es cierta para sub-fórmulas que cumplan con la hipótesis inductiva. Tiene algunos trucos.
+    \end{itemize}
+
+    Veamos esquemáticamente la demostración del $\fAnd$. En la \namedref{fri:fig:rIntro-and-dn} se puede ver el esquema en deducción natural.
+    \begin{itemize}
+        \item Debemos probar $\fNotR (\form \fAnd \formTwo) \judgI \fNotR \tdn{(\form \fAnd \formTwo)}$
+        \item Intuitivamente, queremos llevarlo a $\fNotR (\form \fAnd \formTwo) \judgI \fNotR \tdn{\form} \fOr \fNotR \tdn{\formTwo}$. Pero esta demostración requiere el uso de \ruleDnegE{} para razonar por el absurdo, que no es cierto para lógica intuicionista (la demostración de esta equivalencia de De Morgan es clásica).
+        \item Pero podemos usar un truco para razonar por el absurdo.
+        \begin{itemize}
+        \item Tenemos que $\fNotR \tdn{(\form \fAnd \formTwo)}$ es siempre equivalente a $\fNotR \fNotR (\fNotR \tdn{(\form \fAnd \formTwo)})$ por eliminación de triple negación.
+        \item Podemos usar dos lemas auxiliares: $\fNotR \tdn{\form} \fOr \fNotR \tdn{\formTwo} \judgI \fNotR \tdn{(\form \fAnd \formTwo)}$ y la congruencia de la doble negación, que al ser doble es covariante: $\form \judgI \form' \Rightarrow \fNotR \fNotR \form \judgI \fNotR \fNotR \form'$ para demostrar 
+        \[
+            \fNotR \fNotR (\fNotR \tdn{\form} \fOr \fNotR \tdn{\formTwo})
+            \judgI
+            \fNotR \fNotR (\fNotR \tdn{(\form \fAnd \formTwo)})
+        \]
+        \end{itemize}
+        \item Esto nos permite llevar $\fNotR (\form \fAnd \formTwo) \judgI \fNotR \tdn{(\form \fAnd \formTwo)}$ a \[\fNotR (\form \fAnd \formTwo) \judgI \fNotR \fNotR (\fNotR \tdn{\form} \fOr \fNotR \tdn{\formTwo})\]
+        
+        que se puede demostrar por el absurdo de forma análoga a la demostración clásica bien conocida.
+    \end{itemize}
+
+    \begin{sidewaysfigure}[ht]
+        \begin{prooftree}
+            \AxiomC{$\someProof_1$}
+            \noLine
+            \UnaryInfC{\(
+                \fNotR (\form \fAnd \formTwo) \judgI
+                \fNotR \fNotR \fNotR \tdn{(\form \fAnd \formTwo)}
+            \)}
+            \AxiomC{}
+            \RL{\ruleTNegRE}
+            \admissibleRuleLine
+            \UnaryInfC{\(
+                \fNotR \fNotR \fNotR \tdn{(\form \fAnd \formTwo)}
+                \judgI \fNotR \tdn{(\form \fAnd \formTwo)}
+            \)}
+            \RL{\ruleCut}
+            \BinaryInfC{\(
+                \fNotR (\form \fAnd \formTwo) \judgI \fNotR \tdn{(\form \fAnd \formTwo)}
+            \)}
+        \end{prooftree}
+
+        Donde,
+        \begin{prooftree}
+            \AxiomC{}
+            \RL{(\namedref{fri:lemma:fnot-dist-over-and-right})}
+            \UnaryInfC{\(
+                \fNotR \tdn{\form} \fOr \fNotR \tdn{\formTwo}
+                \judgI
+                \fNotR \tdn{(\form \fAnd \formTwo)}
+            \)}
+            \RL{(\namedref{fri:lemma:dnegr-cong})}
+            \UnaryInfC{\(
+                \fNotR \fNotR (\fNotR \tdn{\form} \fOr \fNotR \tdn{\formTwo})
+                \judgI
+                \fNotR \fNotR \fNotR \tdn{(\form \fAnd \formTwo)}
+            \)}
+            \AxiomC{\textit{(demostración por el absurdo)}}
+            \noLine
+            \UnaryInfC{\(
+                \fNotR (\form \fAnd \formTwo) \judgI
+                \fNotR \fNotR (\fNotR \tdn{\form} \fOr \fNotR \tdn{\formTwo})
+            \)}
+            \RL{\ruleCut}
+            \admissibleRuleLine
+            \LL{$\someProof_1=$}
+            \BinaryInfC{\(
+                \fNotR (\form \fAnd \formTwo) \judgI
+                \fNotR \fNotR \fNotR \tdn{(\form \fAnd \formTwo)}
+            \)}
+        \end{prooftree}
+        \caption{Esquema de demostración de introducción de $\fNotR$ para el caso de $\fAnd$, ver \namedref{fri:lemma:notr-trans-intro}}.
+        \label{fri:fig:rIntro-and-dn}
+    \end{sidewaysfigure}
+\end{proof}
 
 \begin{theorem}[Traducción de Friedman para fórmulas $\classSigmaOne$ en general]
     \label{fri:thm:fri-pitwo-general}
 
-    Sea $\someProof$ una demostración clásica de\(
+    Sea $\someProof$ una demostración clásica de \(
     \forall \varTwo_1 \dots \forall \varTwo_n .
     \exists \var .
     \anyForm(\var, \varTwo_1, \dots, \varTwo_n)
@@ -546,13 +741,51 @@ Es igual al anterior, pero para una fórmula arbitraria. Queremos generalizar r 
     \]
 \end{theorem}
 \begin{proof}
-    \todo{}
+    Al igual que el \namedref{fri:thm:fri-pitwo} lo demostramos para un solo $\forall$. La demostración es análoga con la diferencia del uso del \namedref{fri:lemma:notr-trans-intro}: \ruleNotRTransI{}. En lugar de tener
+    
+\begin{prooftree}
+    \AxiomC{}
+        \LL{\ruleTNegRI}
+        \admissibleRuleLine
+        \UnaryInfC{\(
+            \tdn{\ctx}, \fNotR \form \judgI
+                \fNotR \fNotR \fNotR \form 
+        \)}
+        \AxiomC{$\vdots$}
+        \noLine
+        \UnaryInfC{\(
+            \tdn{\ctx} \judgI \fNotR \form
+        \)}
+        \RL{\ruleCut}
+        \admissibleRuleLine
+        \BinaryInfC{$\tdn{\ctx} \judgI \fNotR \tdn{\form} = \fNotR \fNotR \fNotR \tdn{\form}$}
+\end{prooftree}
+
+    tenemos
+
+    \begin{prooftree}
+        \AxiomC{}
+        \LL{\ruleNotRTransI}
+        \admissibleRuleLine
+        \UnaryInfC{\(
+            \tdn{\ctx}, \fNotR \anyForm \judgI
+                \fNotR \tdn{\anyForm}
+        \)}
+        \AxiomC{$\vdots$}
+        \noLine
+        \UnaryInfC{\(
+            \tdn{\ctx} \judgI \fNotR \anyForm
+        \)}
+        \RL{\ruleCut}
+        \admissibleRuleLine
+        \BinaryInfC{$\tdn{\ctx} \judgI \fNotR \tdn{\anyForm}$}
+    \end{prooftree}
 \end{proof}
 
 \subsection{Traducción de demostraciones}
 \label{fri:sec:proof-trans}
 
-En \fullref{fri:thm:dneg-trans-classic-int} se introduce la necesidad de extender la traducción de doble negación relativizada de fórmulas a demostraciones, para poder convertir una demostración clásica a intuicionista. En esta sección lo vemos más en detalle.
+Ya vimos como podemos usar la traducción de Friedman para, dada una traducción de la demostración, usarla para demostrar la misma fórmula. Pero aún no ahondamos en un detalle importante. En el \namedref{fri:thm:dneg-trans-classic-int} se introduce la necesidad de extender la traducción de doble negación relativizada de fórmulas a demostraciones, para poder traducir una demostración clásica a intuicionista. En esta sección lo vemos más en detalle.
 
 La conversión se efectúa por inducción estructural en la demostración. Para cada regla de inferencia que demuestra $\form$, se genera una demostración a partir de ella para demostrar $\transDNeg{\form}$. La estrategia para hacerlo es similar para todas: usar la hipótesis inductiva para convertir las sub-demostraciones, y usarlas para generar la nueva demostración. Pero hay algunas que requieren un truco. Solo mostramos las interesantes.
 
@@ -635,16 +868,6 @@ La conversión se efectúa por inducción estructural en la demostración. Para 
     \label{fri:lemma:trad-or-e}
     \todo{Enunciar y demostrar}
 \end{lemma}
-
-\subsection{Manteniendo el contexto}
-
-Problema con normalización: axiomas, hay que traducirlos para que la traducción de Friedman funcione. Solución? Dejar los axiomas originales y demostrar su traducción. No funciona siempre.
-
-\begin{lemma}[Introducción de la traducción $\fNot\fNot$]
-    Se reduce a transintro
-\end{lemma}
-
-\todo{Enunciar y demostrar}
 
 \section{Normalización (o reducción)}
 
@@ -801,7 +1024,6 @@ Además, para la reducción del $\exists$ y $\forall$, necesitaremos extender la
     \DisplayProof
     \right)\subst{\hypId_i}{\someProof_{\form_i}}
     \end{gather*}
-    \todo{Not, forall, exists.}
 
     \[\reductionNot\]
     \proofSpacing
@@ -952,6 +1174,16 @@ para los cuales no llegamos a una forma normal. Entonces no siempre podremos ext
     \caption{Ejemplo de demostración no normalizada}
     \label{fri:norm:fig:non-norm}
 \end{figure}
+
+\section{Manteniendo el contexto}
+
+Problema con normalización: axiomas, hay que traducirlos para que la traducción de Friedman funcione. Solución? Dejar los axiomas originales y demostrar su traducción. No funciona siempre.
+
+\begin{lemma}[Introducción de la traducción $\fNot\fNot$]
+    Se reduce a transintro
+\end{lemma}
+
+\todo{Enunciar y demostrar}
 
 \section{Otros métodos de extracción}
 

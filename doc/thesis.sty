@@ -23,7 +23,11 @@
 \usepackage{subcaption}
 
 % https://tex.stackexchange.com/questions/159988/sidewaysfigure-and-landscape
-% \usepackage{pdflscape}
+%\usepackage{pdflscape}
+
+% https://tex.stackexchange.com/questions/50070/landscape-figure-in-latex
+\usepackage{rotating}
+
 
 
 % Colores 
@@ -65,6 +69,9 @@
 
 \newtheorem{theorem}{Teorema}
 \newtheorem*{theorem*}{Teorema}
+
+\newtheorem{corollary}{Corolario}
+\newtheorem*{corollary*}{Corolario}
 
 \newtheorem{lemma}{Lema}
 \newtheorem*{lemma*}{Lema}
@@ -237,6 +244,7 @@
 
 % by
 \newcommand{\rewrite}{\rightsquigarrow}
+\newcommand{\vertrewrite}{\rotatebox{270}{$\rewrite$}}
 \newcommand{\dnf}[1]{#1_{\textrm{DNF}}}
 \newcommand{\unify}{\doteq}
 \newcommand{\metavar}[1]{\textrm{#1}}
@@ -307,5 +315,6 @@
 \newcommand{\ruleTNegRI}{\ruleI{$\fNotR\fNotR\fNotR$}}
 \newcommand{\ruleRE}{\ruleE{$R$}}
 \newcommand{\ruleDnegRE}{\ruleE{$\fNotR\fNotR$}}
+\newcommand{\ruleNotRTransI}{\ruleI{$(\tdn{\fNotR})$}}
 
 \newcommand{\verteq}{\rotatebox{90}{$=$}}
