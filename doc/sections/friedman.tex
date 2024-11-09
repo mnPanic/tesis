@@ -817,18 +817,14 @@ La conversión se efectúa por inducción estructural en la demostración. Para 
 \end{lemma}
 \begin{proof}
     Por hipótesis inductiva, tenemos que
-    \begin{itemize}
-        \item \(
-              \tdn{\someProof_\form} \proves
-              \tdn{\ctx} \judgI
-              \tdn{\form}
-              \) y
-        \item \(
-              \tdn{\someProof_\formTwo} \proves
-              \tdn{\ctx} \judgI
-              \tdn{\formTwo}
-              \)
-    \end{itemize}
+    \begin{align*}
+        \tdn{\someProof_\form} \proves
+        \tdn{\ctx} &\judgI
+        \tdn{\form}\\
+        \tdn{\someProof_\formTwo} \proves
+        \tdn{\ctx} &\judgI
+        \tdn{\formTwo}
+    \end{align*}
 
     Luego, podemos generar una demostración de $\tdn{\form} \fAnd \tdn{\formTwo}$
 
@@ -1004,15 +1000,205 @@ La conversión se efectúa por inducción estructural en la demostración. Para 
     El resto de los casos son análogos.
 \end{proof}
 
-\begin{lemma}[Eliminación de doble negación relativizada (\ruleDnegRE{})]
+\begin{lemma}[Eliminación de doble negación relativizada]
     \label{fri:lemma:dnegr-e}
-    \todo{Enunciar y demostrar}
+    Para toda fórmula $\form$, vale
+    \[
+        \fNotR \fNotR \tdn{\form} \judgI \tdn{\form}.
+    \]
+
+    Y se define como regla admisible \ruleDnegRE{}.
 \end{lemma}
+\begin{proof}
+    Se demuestra por inducción estructural en la estructura de $\form$ (sin traducir).
+    \begin{itemize}
+        \item $\fFalse, \fTrue$ son triviales.
+        \item Predicados, $\fNot, \exists, \fOr$ son todas iguales: como su traducción comienza por $\fNotR$, su doble negación es una triple negación, y se puede demostrar con el \fullref{fri:lemma:tnegr-elim}.
+        \item $\fAnd, \fImp, \forall$ mantienen su forma luego de la traducción, y su demostración usa la misma técnica. Veamos por ejemplo el caso de la conjunción $\form \fAnd \formTwo$. Por HI tenemos que
+        \begin{align*}
+            \fNotR \fNotR \tdn{\form} &\judgI \tdn{\form}\\
+            \fNotR \fNotR \tdn{\formTwo} &\judgI \tdn{\formTwo}
+        \end{align*}
+        Luego, introducimos la conjunción y usamos la hipótesis inductiva en cada una para razonar por el absurdo. Esto es análogo a como usamos \ruleDnegE{} para razonar por el absurdo en lógica clásica en el \fullref{ppa:sec:abs-reasoning}.
+        
+        \begin{prooftree}
+            \AxiomC{$\someProof_L$}
+            \noLine
+            \UnaryInfC{\(
+                \fNotR \fNotR \tdn{(\form \fAnd \formTwo)} \judgI \tdn{\form}
+            \)}
+            %
+            \AxiomC{$\someProof_R$}
+            \noLine
+            \UnaryInfC{\(
+                \fNotR \fNotR \tdn{(\form \fAnd \formTwo)} \judgI \tdn{\formTwo}
+            \)}
+            \BinaryInfC{\(
+                \fNotR \fNotR \tdn{(\form \fAnd \formTwo)} \judgI
+                \tdn{\form} \fAnd \tdn{\formTwo}
+            \)}
+        \end{prooftree}
+
+        donde $\someProof_L$ y $\someProof_R$ son simétricas, y
+
+        \begin{prooftree}
+            \AxiomC{(HI)}
+            \noLine
+            \UnaryInfC{\(
+                \fNotR \fNotR \tdn{(\form \fAnd \formTwo)},
+                \fNotR \fNotR \tdn{\form} \judgI \tdn{\form}
+            \)}
+            %
+            \AxiomC{$\someProof_{L_1}$}
+            \noLine
+            \UnaryInfC{\(
+                \fNotR \fNotR \tdn{(\form \fAnd \formTwo)} \judgI
+                    \fNotR \fNotR \tdn{\form}
+            \)}
+            \RL{\ruleCut}
+            \admissibleRuleLine
+            \LL{$\someProof_L=$}
+            \BinaryInfC{\(
+                \fNotR \fNotR \tdn{(\form \fAnd \formTwo)} \judgI \tdn{\form}
+            \)}
+        \end{prooftree}
+
+        con
+
+        \begin{prooftree}
+            \AxiomC{}
+            \RL{\ruleAx}
+            \UnaryInfC{\(
+                \ctx \judgI
+                \fNotR \fNotR \tdn{(\form \fAnd \formTwo)}
+            \)}
+            \AxiomC{}
+            \RL{\ruleAx}
+            \UnaryInfC{\(
+                \ctx_1 \judgI \fNotR \tdn{\form}
+            \)}
+            \AxiomC{}
+            \RL{\ruleAx}
+            \UnaryInfC{\(
+                \ctx_1 \judgI \tdn{\form} \fAnd \tdn{\formTwo}
+            \)}
+            \RL{\ruleAndEOne}
+            \UnaryInfC{\(
+                \ctx_1 \judgI \tdn{\form}
+            \)}
+            \RL{\ruleImpE}
+            \BinaryInfC{\(
+                \ctx_1 = \ctx, \tdn{(\form \fAnd \formTwo)} \judgI R
+            \)}
+            \RL{\ruleImpI}
+            \UnaryInfC{\(
+                \ctx \judgI \fNotR \tdn{(\form \fAnd \formTwo)}
+            \)}
+            \RL{\ruleImpE}
+            \BinaryInfC{\(
+                \ctx = \fNotR \fNotR \tdn{(\form \fAnd \formTwo)}, \fNotR \tdn{\form}
+                \judgI R
+            \)}
+            \RL{\ruleImpI}
+            \LL{$\someProof_{L_1}=$}
+            \UnaryInfC{\(
+                \fNotR \fNotR \tdn{(\form \fAnd \formTwo)} \judgI
+                    \fNotR \fNotR \tdn{\form}
+            \)}
+        \end{prooftree}
+    \end{itemize}
+\end{proof}
 
 \begin{lemma}[Traducción de \ruleOrE{}]
     \label{fri:lemma:trad-or-e}
-    \todo{Enunciar y demostrar}
+    Dada una aparición de la regla \ruleOrE{},
+
+    \begin{prooftree}
+        \AxiomC{$\someProof_\fOr$}
+        \noLine
+        \UnaryInfC{$\judg{\ctx}{\form \fOr \formTwo}$}
+        \AxiomC{$\someProof_L$}
+        \noLine
+        \UnaryInfC{$\judg{\ctx, \form}{\formThree}$}
+        \AxiomC{$\someProof_R$}
+        \noLine
+        \UnaryInfC{$\judg{\ctx, \formTwo}{\formThree}$}
+        \RL{\ruleOrE}
+        \TrinaryInfC{$\judg{\ctx}{\formThree}$}    
+    \end{prooftree}
+
+    podemos usarla para demostrar $\tdn{\formThree}$ a partir de las sub-demostraciones traducidas.
 \end{lemma}
+\begin{proof}
+    Por HI, tenemos
+    \begin{align*}
+        \tdn{\someProof_\fOr} \proves
+            \tdn{\ctx} &\judgI \tdn{(\form \fOr \formTwo)}
+            = \fNotR (\fNotR \tdn{\form} \fAnd \fNotR \tdn{\formTwo})
+            \\
+        \tdn{\someProof_L} \proves \tdn{(\ctx, \form)} &\judgI \tdn{\formThree}\\
+        \tdn{\someProof_R} \proves \tdn{(\ctx, \formTwo)} &\judgI \tdn{\formThree}
+    \end{align*}
+
+    Luego, podemos generar una demostración de $\tdn{\formThree}$ por el absurdo usando \ruleDnegRE{} (\namedref{fri:lemma:dnegr-e}).
+
+    \begin{prooftree}
+        \AxiomC{$\tdn{\someProof_\fOr}$}
+        \noLine
+        \UnaryInfC{\(
+            \tdn{\ctx}, \fNotR \tdn{\formThree} \judgI 
+            \fNotR (\fNotR \tdn{\form} \fAnd \fNotR \tdn{\formTwo})
+        \)}
+        \AxiomC{$...$}
+        \noLine
+        \UnaryInfC{\(
+            \tdn{\ctx}, \fNotR \tdn{\formThree}
+            \judgI \fNotR \tdn{\form} \fAnd \fNotR \tdn{\formTwo}
+        \)}
+        \RL{\ruleImpE}
+        \BinaryInfC{\(
+            \tdn{\ctx}, \fNotR \tdn{\formThree} \judgI R
+        \)}
+        \RL{\ruleImpI}
+        \UnaryInfC{\(
+            \tdn{\ctx} \judgI \fNotR \fNotR \tdn{\formThree} 
+        \)}
+        \RL{\ruleCut$+$\ruleDnegRE}
+        \admissibleRuleLine
+        \UnaryInfC{$\tdn{\ctx} \judgI \tdn{\formThree}$}
+    \end{prooftree}
+
+    \begin{prooftree}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{\(
+            \ctx_1 \judgI\fNotR \tdn{\formThree}
+        \)}
+        \AxiomC{$\tdn{\someProof_L}$}
+        \noLine
+        \UnaryInfC{\(
+            \ctx_1 \judgI \tdn{\formThree}
+        \)}
+        \RL{\ruleImpE}
+        \BinaryInfC{\(
+            \ctx_1 = \tdn{\ctx}, \fNotR \tdn{\formThree}, \tdn{\form} \judgI R
+        \)}
+        \RL{\ruleNotI}
+        \UnaryInfC{\(
+            \tdn{\ctx}, \fNotR \tdn{\formThree}
+            \judgI \fNotR \tdn{\form}
+        \)}
+        \AxiomC{\(
+            \tdn{\ctx}, \fNotR \tdn{\formThree}
+            \judgI \fNotR \tdn{\formTwo}
+        \)}
+        \RL{\ruleAndI}
+        \BinaryInfC{\(
+            \tdn{\ctx}, \fNotR \tdn{\formThree}
+            \judgI \fNotR \tdn{\form} \fAnd \fNotR \tdn{\formTwo}
+        \)}
+    \end{prooftree}
+\end{proof}
 
 \section{Normalización (o reducción)}
 

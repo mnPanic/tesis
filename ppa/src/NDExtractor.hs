@@ -1243,6 +1243,8 @@ por ej. para A & B. Si sabemos que vale
 tenemos que demostrar r sino A~~ & B~~.
 Por eso usamos el truco de dneg elim (HI) para pasar a demostrar ~r~r A~~,
 porque introduciendo, tenemos que demostrar r.
+
+Intuición más fácil: razonamos por el absurdo en cada sub-fórmula usando la HI.
 -}
 dNegRElim :: Form -> HypId -> Form -> Proof
 dNegRElim f h_dneg_f' r = case (f, translateF f r) of

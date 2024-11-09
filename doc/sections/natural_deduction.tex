@@ -77,6 +77,10 @@ Por ejemplo, la regla \ruleAndI{} nos va a permitir \textit{introducir} una conj
     Definimos,
     \begin{itemize}
         \item Los \textbf{contextos de demostración} $\ctx$ como un conjunto de fórmulas, compuesto por las hipótesis que se asumen a lo largo de una demostración.
+        \item \diffNew{Por practicidad, notamos la unión como}
+        \[
+            \ctx, \anyForm = \ctx \cup \{\anyForm\}
+        \]
         \item Para algunas reglas es necesario conocer las variables libres de un contexto, que se definen de la forma esperable:
         \[
             \fv{\ctx} = \bigcup_{\form \in \ctx} \fv{\form}
