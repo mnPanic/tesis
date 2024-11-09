@@ -81,7 +81,7 @@ inlineAxioms ctx p r = foldr inlineAxiom p ctx
         h
         ( PNamed
             (printf "axiom %s translation intro" h)
-            (cut f (PAx h) h (transIntro f h r))
+            (transIntro f h r)
         )
         proof
 
