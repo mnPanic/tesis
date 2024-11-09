@@ -662,59 +662,46 @@ Que en donde aprovechamos que la traducción de fórmulas atómicas es $\fNotR \
         que se puede demostrar por el absurdo de forma análoga a la demostración clásica bien conocida.
     \end{itemize}
 
-    \begin{sidewaysfigure}[ht]
+    \begin{figure}[H]
         \begin{prooftree}
-            \AxiomC{$\someProof_1$}
-            \noLine
-            \UnaryInfC{\(
-                \fNotR (\form \fAnd \formTwo) \judgI
-                \fNotR \fNotR \fNotR \tdn{(\form \fAnd \formTwo)}
-            \)}
+            \def\defaultHypSeparation{\hskip .05in}
             \AxiomC{}
-            \RL{\ruleTNegRE}
-            \admissibleRuleLine
-            \UnaryInfC{\(
-                \fNotR \fNotR \fNotR \tdn{(\form \fAnd \formTwo)}
-                \judgI \fNotR \tdn{(\form \fAnd \formTwo)}
-            \)}
-            \RL{\ruleCut}
-            \BinaryInfC{\(
-                \fNotR (\form \fAnd \formTwo) \judgI \fNotR \tdn{(\form \fAnd \formTwo)}
-            \)}
-        \end{prooftree}
-
-        Donde,
-        \begin{prooftree}
-            \AxiomC{}
-            \RL{(\namedref{fri:lemma:fnot-dist-over-and-right})}
+            \LL{(\namedref{fri:lemma:fnot-dist-over-and-right})}
             \UnaryInfC{\(
                 \fNotR \tdn{\form} \fOr \fNotR \tdn{\formTwo}
                 \judgI
                 \fNotR \tdn{(\form \fAnd \formTwo)}
             \)}
-            \RL{(\namedref{fri:lemma:dnegr-cong})}
+            \LL{(\namedref{fri:lemma:dnegr-cong})}
             \UnaryInfC{\(
                 \fNotR \fNotR (\fNotR \tdn{\form} \fOr \fNotR \tdn{\formTwo})
                 \judgI
                 \fNotR \fNotR \fNotR \tdn{(\form \fAnd \formTwo)}
             \)}
-            \AxiomC{\textit{(demostración por el absurdo)}}
+            \AxiomC{\(\begin{gathered}
+                \vdots\\
+                \text{\textit{(demostración por el absurdo)}}
+            \end{gathered}
+            \)}
             \noLine
             \UnaryInfC{\(
-                \fNotR (\form \fAnd \formTwo) \judgI
+                \ctx \judgI
                 \fNotR \fNotR (\fNotR \tdn{\form} \fOr \fNotR \tdn{\formTwo})
             \)}
             \RL{\ruleCut}
             \admissibleRuleLine
-            \LL{$\someProof_1=$}
             \BinaryInfC{\(
-                \fNotR (\form \fAnd \formTwo) \judgI
+                \ctx \judgI
                 \fNotR \fNotR \fNotR \tdn{(\form \fAnd \formTwo)}
             \)}
+            \RL{\ruleCutWith{\ruleTNegRE}}
+            \UnaryInfC{\(
+                \ctx = \fNotR (\form \fAnd \formTwo) \judgI \fNotR \tdn{(\form \fAnd \formTwo)}
+            \)}
         \end{prooftree}
-        \caption{Esquema de demostración de introducción de $\fNotR$ para el caso de $\fAnd$, ver \namedref{fri:lemma:notr-trans-intro}}.
+        \caption{Esquema de demostración de introducción de $\fNotR$ para el caso de $\fAnd$}
         \label{fri:fig:rIntro-and-dn}
-    \end{sidewaysfigure}
+    \end{figure}
 \end{proof}
 
 \begin{theorem}[Traducción de Friedman para fórmulas $\classSigmaOne$ en general]
@@ -1567,7 +1554,7 @@ que al reducirlo, queda
 
 \duda{Qué intuición agregar del problema? Algo de que el contenido computacional de los axiomas es limitado?}
 
-La solución que implementamos fue \textbf{mantener los axiomas originales}, y demostrar la introducción de la traducción (\namedref{fri:lemma:trans-intro}, regla \ruleTransI{}): $p(v) \judgI \tdn{p(v)}$ y en la demostración traducida, reemplazar cada cita al axioma (que pretende encontrar el axioma traducido) por la demostración de la traducción a partir del axioma original.
+La solución que implementamos fue \textbf{mantener los axiomas originales}, y demostrar la introducción de la traducción (\namedref{fri:lemma:trans-intro}, regla \ruleTransI{}): $p(v) \judgI \tdn{p(v)}$. En la demostración traducida, se reemplaza cada cita al axioma (que pretende encontrar el axioma traducido) por la demostración de la traducción a partir del axioma original.
 
 \begin{prooftree}
     \AxiomC{}
@@ -1602,38 +1589,130 @@ De esa forma, como los axiomas se mantienen, existe la forma normal que buscamos
     \AxiomC{}
     \RL{\ruleAx}
     \UnaryInfC{\(
-        \fNotR \fNotR p(v) \judgI \fNotR \fNotR p(v)
-    \)}
-    \AxiomC{}
-    \RL{\ruleAx}
-    \UnaryInfC{\(
-        \fNotR \fNotR p(v), p(v) \judgI p(v)
+        p(v) \judgI p(v)
     \)}
     \RL{\ruleExistsI}
     \UnaryInfC{\(
-        \fNotR \fNotR p(v), p(v) \judgI R = \exists x . p(x)
-    \)}
-    \RL{\ruleImpI}
-    \UnaryInfC{\(
-        p(v) \judgI 
-    \)}
-    \RL{\ruleExistsI}
-    \BinaryInfC{\(
         p(v) \judgI \exists x . p(x)
     \)}
 \end{prooftree}
 
 \begin{lemma}[Introducción de la traducción $\fNot\fNot$]
     \label{fri:lemma:trans-intro}
-    Se reduce a transintro
-\end{lemma}
+    Vale $\form \judgI \tdn{\form}$. Pero no para todas las fórmulas \cite{selinger-friedman}. Lo demostramos para las descritas por la siguiente gramática.
+    \begin{align*}
+        \form ::=\     & \fFalse \mid \fTrue \mid \pred(\term_1, \dots, \term_n) \mid \form \fAnd \form \\
+        \formTwo ::=\  & \pred(\term_1, \dots, \term_n) \mid \fFalse \mid \fTrue                        \\
+                       & \mid \formTwo \fAnd \formTwo \mid \formTwo \fOr \formTwo                       \\
+                       & \mid \forall \var . \formTwo \mid \exists \var . \formTwo                      \\
+                       & \mid \form \fImp \formTwo                                                      \\
+                       & \mid \fNot \form
+    \end{align*}
 
-\todo{Enunciar y demostrar}
+    Esto es suficientemente permisivo para los axiomas que se suelen definir. Veremos que $\form$ son las fórmulas que cumplen $\fNotR \form \judgI \fNotR \tdn{\form}$ y $\formTwo$ las que cumplen $\formTwo \judgI \tdn{\formTwo}$
+\end{lemma}
+\begin{proof}
+    Se demuestra por inducción estructural en la fórmula (sin traducir).
+    \begin{itemize}
+        \item Los casos de predicados, $\fTrue, \fFalse, \fOr, \fAnd, \forall, \exists$ salen directo.
+        \item $\fNot$ y $\fImp$ son las rebuscadas. Al ser contra variantes, no se pueden demostrar de forma directa porque no alcanza con la HI, sino que es necesario $\tdn{\form} \judgI \form$ que en general no vale. Pero si es posible reducirlo a $\fNotR \form \judgI \fNotR \tdn{\form}$.
+    \end{itemize}
+
+    La negación es la más sencilla
+
+    \begin{prooftree}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{$\fNot \form, \form \judgI \fNot \form$}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{$\fNot \form, \form \judgI \form$}
+        \RL{\ruleFalseE}
+        \BinaryInfC{$\fNot \form, \form \judgI R$}
+        \RL{\ruleImpI}
+        \UnaryInfC{$\fNot \form \judgI \fNotR \form$}
+        \RL{\ruleCutWith{\ruleNotRTransI}}
+        \UnaryInfC{$\fNot \form \judgI \fNotR \tdn{\form}$}
+    \end{prooftree}
+
+    La implicación no tanto. Veamos la estrategia.
+
+    \begin{itemize}
+        \item Debemos probar $\form \fImp \formTwo \judgI \tdn{\form} \fImp \tdn{\formTwo}$.
+        \item Lo vamos a reducir a demostrar los contrarecíprocos con \ruleCut{}
+        \[
+            \fNotR \formTwo \fImp \fNotR \form
+            \judgI
+            \fNotR \tdn{\formTwo} \fImp \fNotR \tdn{\form}
+        \]
+        Para ello necesitamos los siguientes lemas, sencillos de demostrar.
+        \begin{itemize}
+            \item $\form \fImp \formTwo \judgI \fNotR \formTwo \fImp \fNotR \form$
+            \item $\fNotR \tdn{\formTwo} \fImp \fNotR \tdn{\form} \judgI \tdn{\form} \fImp \tdn{\formTwo}$ (requiere \ruleDnegRE{})
+        \end{itemize}
+        \item Reducimos a $\fNotR \form \judgI \fNotR \tdn{\form}$ para el antecedente y usamos la HI para $\formTwo$ ($\formTwo \judgI \tdn{\formTwo}$) y concluimos.
+        
+        \begin{prooftree}
+            \AxiomC{}
+            \RL{\ruleAx{}}
+            \UnaryInfC{\(
+                \ctx_1
+                \judgI \fNotR \formTwo \fImp \fNotR \form
+            \)}
+            \AxiomC{}
+            \RL{\ruleAx}
+            \UnaryInfC{\(
+                \ctx_1, \formTwo \judgI \fNotR \tdn{\formTwo}
+            \)}
+            \AxiomC{(HI)}
+            \noLine
+            \UnaryInfC{\(
+                \ctx_1, \formTwo \judgI \tdn{\formTwo}
+            \)}
+            \RL{\ruleImpE}
+            \BinaryInfC{\(
+                \ctx_1, \formTwo \judgI R
+            \)}
+            \RL{\ruleImpI}
+            \UnaryInfC{\(
+                \ctx_1 \judgI \fNotR \formTwo
+            \)}
+            \RL{\ruleImpE}
+            \BinaryInfC{\(
+                \ctx_1
+                \judgI \fNotR \form
+            \)}
+            \RL{\ruleCutWith{\ruleNotRTransI}}
+            \admissibleRuleLine
+            \UnaryInfC{\(
+                \ctx_1 = \fNotR \formTwo \fImp \fNotR \form, \fNotR \tdn{\formTwo}
+                \judgI
+                \fNotR \tdn{\form}
+            \)}
+            \RL{\ruleImpI}
+            \UnaryInfC{\(
+                \fNotR \formTwo \fImp \fNotR \form
+                \judgI
+                \fNotR \tdn{\formTwo} \fImp \fNotR \tdn{\form}
+            \)}
+        \end{prooftree}
+    \end{itemize}
+\end{proof}
+
+\begin{corollary}[Completitud]
+    Vimos que el \fullref{fri:lemma:trans-intro}, $\form \judgI \tdn{\form}$, se reduce al \fullref{fri:lemma:notr-trans-intro}, $\fNotR \form \judgI \fNotR \tdn{\form}$. En \cite{selinger-friedman} se exhibe un contra ejemplo para $\form \judgI \tdn{\form}$ (en una versión distinta pero equivalente de la traducción de Friedman): $\fNot \fNot \form$.
+    
+    Como el primero se reduce al segundo, si el primero no vale, entonces el
+    segundo en general no puede valer. Y esto es consistente con nuestros
+    resultados, dado que tampoco pudimos demostrar $\fNot \fNot \form$ pues no
+    es generada por la gramática definida en el \namedref{fri:lemma:trans-intro}.
+\end{corollary}
 
 \section{Otros métodos de extracción}
 
 \todo{Hablar sobre y citar classical realizability, no tengo ni idea.}
 
+\duda{Qué opinás Pablo de esta intro? Cuál es el mínimo de cosas que habría que mencionar? Así sé qué investigar jeje}
 Buena intro acá https://www.degruyter.com/document/doi/10.1515/9783110324921.11/html?lang=en
 
 In the past years, many computational interpretations of Classical Arithmetic havebeen put forward.  Under a first classification, they fall into two large categories:directandindirectinterpretations.   Among  the  indirect  interpretations  one  findsthe  negative  translations  followed  either  by  Dialectica  interpretations  [13],  [30](see e.g.   Kohlenbach [19]) or by intuitionistic realizability interpretations com-bined with Friedman’s translation [13] (see e.g. Berger and Schwichtenberg [10]).Among the direct interpretations, there are different versions of Classical Realiz-ability (Krivine’s [22] and Avigad’s [6]), there is Coquand game semantics [11],
