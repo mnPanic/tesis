@@ -197,7 +197,7 @@
 % Reglas admisibles
 \newcommand{\admissibleRuleLine}{\doubleLine}
 \newcommand{\ruleCut}{cut}
-\newcommand{\ruleCutWith}[1]{\ruleCut$+$#1}
+\newcommand{\ruleCutWith}[1]{\ruleCut, #1}
 \newcommand{\ruleDnegE}{\ruleE{$\fNot\fNot$}}
 \newcommand{\ruleAndEProj}[1]{\ruleE{$\fAnd_{#1}$}}
 
@@ -319,7 +319,7 @@
 \newcommand{\ruleTNegRI}{\ruleI{$\fNotR\fNotR\fNotR$}}
 \newcommand{\ruleRE}{\ruleE{$R$}}
 \newcommand{\ruleDnegRE}{\ruleE{$\fNotR\fNotR$}}
-\newcommand{\ruleNotRTransI}{\ruleI{$(\tdn{\fNotR})$}}
+\newcommand{\ruleNotRTransI}{\ruleI{$(\fNotR \boldsymbol{\cdot} \neg\neg)$}}
 \newcommand{\ruleTransI}{\ruleI{$\tdn{}$}}
 
 \newcommand{\verteq}{\rotatebox{90}{$=$}}
