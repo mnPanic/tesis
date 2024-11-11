@@ -150,3 +150,71 @@
     \UnaryInfC{$\judg{\ctx, \form}{\form}$}
 \end{prooftree}
 }
+
+%% Reducciones
+\newcommand{\reductionAnd}{%
+\AxiomC{$\someProof_1$}
+    \noLine
+    \UnaryInfC{$\ctx \judG \form_1$}
+    \AxiomC{$\someProof_2$}
+    \noLine
+    \UnaryInfC{$\ctx \judG \form_2$}
+    \RL{\ruleAndI}
+    \BinaryInfC{$\ctx \judG \form_1 \fAnd \form_2$}
+    \RL{\ruleAndEProj{i}}
+    \UnaryInfC{$\ctx \judG \form_i$}
+    \DisplayProof
+    %
+    \quad \rewrite \quad
+    %
+    \AxiomC{$\someProof_i$}
+    \noLine
+    \UnaryInfC{$\ctx \judG \form_i$}
+    \DisplayProof
+}
+
+\newcommand{\reductionImp}{%
+    \AxiomC{$\someProof_\formTwo$}
+    \noLine
+    \UnaryInfC{$\ctx, \hypId: \form \judG \formTwo$}
+    \RL{\ruleImpIh{\hypId}}
+    \UnaryInfC{$\ctx \judG \form \fImp \formTwo$}
+    \AxiomC{$\someProof_\form$}
+    \noLine
+    \UnaryInfC{$\ctx \judG \form$}
+    \RL{\ruleImpE}
+    \BinaryInfC{$\ctx \judG \formTwo$}
+    \DisplayProof
+    %
+    \quad \rewrite \quad
+    %
+    \left(
+    \AxiomC{$\someProof_\formTwo$}
+    \noLine
+    \UnaryInfC{$\ctx, \hypId: \form \judG \formTwo$}
+    \DisplayProof
+    \right)\subst{\hypId}{\someProof_\form}
+}
+
+\newcommand{\reductionNot}{%
+\AxiomC{$\someProof_\fFalse$}
+\noLine
+\UnaryInfC{$\ctx, \hypId: \form \judG \fFalse$}
+\RL{\ruleNotI}
+\UnaryInfC{$\ctx \judG \fNot \form$}
+\AxiomC{$\someProof_\form$}
+\noLine
+\UnaryInfC{$\ctx \judG \form$}
+\RL{\ruleNotE}
+\BinaryInfC{$\ctx \judG \fFalse$}
+\DisplayProof
+%
+\quad \rewrite \quad
+%
+\left(
+\AxiomC{$\someProof_\fFalse$}
+\noLine
+\UnaryInfC{$\ctx, \hypId: \form \judG \fFalse$}
+\DisplayProof
+\right)\subst{\hypId}{\someProof_\form}
+}

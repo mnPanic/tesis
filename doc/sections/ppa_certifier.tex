@@ -315,7 +315,24 @@ Que es certificado como
 \end{prooftree}
 \end{ejemplo}
 
-\begin{lemma}[Razonamiento por el absurdo] Imaginemos que queremos demostrar
+
+\begin{notation*}
+    \diffNew{Notación nueva!}
+    En los casos en donde queramos continuar la demostración por la nueva y la demostración de la implicación sea omitida (por ejemplo por ser una regla admisible) lo notaremos de la siguiente forma más sucinta
+
+    \begin{prooftree}
+        \AxiomC{$\someProof_\formTwo$}
+        \noLine
+        \UnaryInfC{$\ctx \judG \formTwo$}
+        \RL{\ruleCutWith{$\someProof_{\formTwo \fImp \form}$}}
+        \admissibleRuleLine
+        \UnaryInfC{$\ctx \judG \form$}
+    \end{prooftree}
+\end{notation*}
+
+\begin{lemma}[Razonamiento por el absurdo]
+    \label{ppa:sec:abs-reasoning}
+    Imaginemos que queremos demostrar
 $\form$ por el absurdo. Podemos juntar con cut con la eliminación de la doble
 negación, pasando a demostrar $\fNot \fNot \form$, que para introducirla,
 debemos demostrar el juicio $\ctx, \fNot \form \judG \fFalse$. Es decir,
@@ -336,6 +353,20 @@ estábamos buscando para razonar por el absurdo.
     \admissibleRuleLine
     \BinaryInfC{$\ctx \judG \form$}
 \end{prooftree}
+
+\diffNew{Que también se puede notar de la siguiente forma}
+
+\begin{prooftree}
+    \AxiomC{$\vdots$}
+    \noLine
+    \UnaryInfC{$\ctx, \fNot \form \judG \fFalse$}
+    \RL{\ruleNotI}
+    \UnaryInfC{$\ctx \judG \fNot\fNot \form$}
+    \RL{\ruleCutWith{\ruleDnegE}}
+    \admissibleRuleLine
+    \UnaryInfC{$\ctx \judG \form$}
+\end{prooftree}
+
 \end{lemma}
 
 \begin{obs}
@@ -467,12 +498,14 @@ ida y la vuelta: para $\fNot(\formLit \fOr \formLitTwo) \rewrite
 \]
 
 \subsubsection{Algoritmo}
+\label{ppa:sec:dnf:algoritmo}
 
-Finalmente, el algoritmo para generar la demostración de la conversión de una
-fórmula en DNF se implementa de forma \textit{small-step}. La conversión es la
-clausura de hacer un ``paso'', que puede o bien ser un paso de reescritura, o
-uno de congruencia reescribiendo una sub-fórmula. En cada uno se usa una de las
-siguientes demostraciones.
+\diffNew{Finalmente, el algoritmo para generar la demostración de la conversión de una
+fórmula en DNF se implementa de forma \textit{small-step}. La conversión se
+implementa como la clausura reflexiva transitiva de la conversión de un paso (es
+decir, aplicarla 0 o más veces hasta que no cambie). Estos pasos pueden ser o
+bien ser un paso de reescritura, o uno de congruencia reescribiendo una
+sub-fórmula. En cada uno se usa una de las siguientes demostraciones.}
 
 \begin{figure}[H]
     \begin{align*}

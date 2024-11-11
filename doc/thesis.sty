@@ -19,8 +19,15 @@
 
 \usepackage{listings}
 
+\usepackage{caption}
+\usepackage{subcaption}
+
 % https://tex.stackexchange.com/questions/159988/sidewaysfigure-and-landscape
-% \usepackage{pdflscape}
+%\usepackage{pdflscape}
+
+% https://tex.stackexchange.com/questions/50070/landscape-figure-in-latex
+\usepackage{rotating}
+
 
 
 % Colores 
@@ -37,7 +44,11 @@
 
 % https://tex.stackexchange.com/questions/121865/nameref-how-to-display-section-name-and-its-number
 \newcommand*{\ejemploautorefname}{Ejemplo}
-\newcommand*{\fullref}[1]{\hyperref[{#1}]{\autoref*{#1} \nameref*{#1}}}
+\newcommand*{\corollaryautorefname}{Corolario}
+\newcommand*{\definitionautorefname}{Def.}
+\newcommand*{\lemmaautorefname}{Lema}
+\newcommand*{\obsautorefname}{Obs.}
+\newcommand*{\fullref}[1]{\hyperref[{#1}]{\autoref*{#1} (\nameref*{#1})}}
 \newcommand*{\namedref}[1]{\hyperref[{#1}]{\autoref*{#1}}}
 
 
@@ -60,6 +71,9 @@
 \newtheorem{theorem}{Teorema}
 \newtheorem*{theorem*}{Teorema}
 
+\newtheorem{corollary}{Corolario}
+\newtheorem*{corollary*}{Corolario}
+
 \newtheorem{lemma}{Lema}
 \newtheorem*{lemma*}{Lema}
 
@@ -68,6 +82,9 @@
 
 \newtheorem{definition}{Def.}
 \newtheorem*{definition*}{Def}
+
+\newtheorem{notation}{Notación.}
+\newtheorem*{notation*}{Notación}
 
 \newtheorem{obs}{Obs.}
 \newtheorem*{obs*}{Obs}
@@ -111,7 +128,23 @@
 \newcommand{\modChecker}{\texttt{Checker}}
 \newcommand{\modCertifier}{\texttt{Certifier}}
 
+% Ejemplo alumnos
+\newcommand{\reprueba}{X}
+\newcommand{\recursa}{R}
+\newcommand{\falta}{F}
+
+\newcommand{\predReprueba}{\textrm{reprueba}}
+\newcommand{\predRecursa}{\textrm{recursa}}
+\newcommand{\predFalta}{\textrm{falta}}
+\newcommand{\funFinal}{\textrm{final}}
+
+\newcommand{\vAlu}{a}
+\newcommand{\vMat}{m}
+\newcommand{\vEx}{e}
+
+
 % Demostraciones de ND
+\newcommand{\proves}{\vartriangleright}
 \newcommand{\LL}[1]{\LeftLabel{#1}}
 \newcommand{\RL}[1]{\RightLabel{#1}}
 
@@ -125,6 +158,8 @@
 \newcommand{\fFalse}{\bot}
 \newcommand{\fTrue}{\top}
 
+\newcommand{\proofSpacing}{\vspace*{0.2cm}}
+
 \newcommand{\ruleExistsI}{\ruleI{$\exists$}}
 \newcommand{\ruleExistsE}{\ruleE{$\exists$}}
 
@@ -133,6 +168,7 @@
 
 \newcommand{\ruleOrIOne}{\ruleI{$\fOr_1$}}
 \newcommand{\ruleOrITwo}{\ruleI{$\fOr_2$}}
+\newcommand{\ruleOrI}[1]{\ruleI{$\fOr_{#1}$}}
 \newcommand{\ruleOrE}{\ruleE{$\fOr$}}
 
 \newcommand{\ruleAndI}{\ruleI{$\fAnd$}}
@@ -151,9 +187,17 @@
 \newcommand{\ruleLEM}{LEM}
 \newcommand{\ruleAx}{Ax}
 
+% Reglas etiquetadas
+\newcommand{\ruleImpIh}[1]{\ruleI{$\fImp_{#1}$}}
+\newcommand{\ruleAxh}[1]{Ax$_{#1}$}
+\newcommand{\ruleNotIh}[1]{\ruleI{$\fNot_{#1}$}}
+\newcommand{\ruleExistsEh}[1]{\ruleE{$\exists_{#1}$}}
+\newcommand{\ruleOrEh}[1]{\ruleE{$\fOr_{#1}$}}
+
 % Reglas admisibles
 \newcommand{\admissibleRuleLine}{\doubleLine}
 \newcommand{\ruleCut}{cut}
+\newcommand{\ruleCutWith}[1]{\ruleCut, #1}
 \newcommand{\ruleDnegE}{\ruleE{$\fNot\fNot$}}
 \newcommand{\ruleAndEProj}[1]{\ruleE{$\fAnd_{#1}$}}
 
@@ -182,8 +226,8 @@
 \newcommand{\formTwo}{B}
 \newcommand{\formThree}{C}
 
-\newcommand{\anyForm}{\alpha}
-\newcommand{\anyFormTwo}{\beta}
+\newcommand{\anyForm}{\varphi}
+\newcommand{\anyFormTwo}{\psi}
 
 \newcommand{\formLit}{a}
 \newcommand{\formLitTwo}{b}
@@ -204,6 +248,7 @@
 
 % by
 \newcommand{\rewrite}{\rightsquigarrow}
+\newcommand{\vertrewrite}{\rotatebox{270}{$\rewrite$}}
 \newcommand{\dnf}[1]{#1_{\textrm{DNF}}}
 \newcommand{\unify}{\doteq}
 \newcommand{\metavar}[1]{\textrm{#1}}
@@ -247,10 +292,34 @@
 
 %% Friedman
 \newcommand{\someProof}{\Pi}
+\newcommand{\someProofTwo}{\Sigma}
 \newcommand{\transDNeg}[1]{#1^{\neg\neg}}
-\newcommand{\negR}{\neg_R}
+\newcommand{\tdn}[1]{\transDNeg{#1}}
+\newcommand{\gN}[1]{#1^{\text{N}}}
+\newcommand{\fNotR}{\fNot_R}
 \newcommand{\judgC}{\vdash_C}
 \newcommand{\judgI}{\vdash_I}
 
-\newcommand{\sigmaZeroOne}{\Sigma^0_1}
-\newcommand{\piZeroTwo}{\Pi^0_2}
+\newcommand{\classSigmaOne}{\classSigma{1}}
+\newcommand{\classPiTwo}{\classPi{2}}
+
+\newcommand{\classPi}[1]{\Pi^0_{#1}}
+\newcommand{\classSigma}[1]{\Sigma^0_{#1}}
+
+\newcommand{\citedHyps}[1]{\textrm{hyps}(#1)}
+
+% LC
+\newcommand{\tuple}[2]{\langle#1, #2\rangle}
+\newcommand{\projectOne}[1]{\pi_1(#1)}
+\newcommand{\projectTwo}[1]{\pi_2(#1)}
+\newcommand{\lTerm}{M}
+
+% Reglas
+\newcommand{\ruleTNegRE}{\ruleE{$\fNotR\fNotR\fNotR$}}
+\newcommand{\ruleTNegRI}{\ruleI{$\fNotR\fNotR\fNotR$}}
+\newcommand{\ruleRE}{\ruleE{$R$}}
+\newcommand{\ruleDnegRE}{\ruleE{$\fNotR\fNotR$}}
+\newcommand{\ruleNotRTransI}{\ruleI{$(\fNotR \boldsymbol{\cdot} \neg\neg)$}}
+\newcommand{\ruleTransI}{\ruleI{$\tdn{}$}}
+
+\newcommand{\verteq}{\rotatebox{90}{$=$}}
