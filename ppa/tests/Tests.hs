@@ -14,6 +14,7 @@ import Test.HUnit (
 import Test.HUnit.Text (runTestText)
 
 import System.IO (stdout)
+import TestArgs (testArgs)
 import TestCertifier (testCertifier)
 import TestND (testND)
 import TestNDExtractor (testExtractor)
@@ -34,4 +35,5 @@ tests =
         , "natural deduction" ~: testND
         , "natural deduction translations" ~: testExtractor
         , "certifier" ~: testCertifier
+        , "args" ~: testArgs
         ]

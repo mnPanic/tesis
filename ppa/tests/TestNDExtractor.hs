@@ -6,8 +6,6 @@ import Text.RawString.QQ
 
 import Certifier (certify, checkContext)
 import Data.Either (fromRight, isRight)
-import Data.Text.IO (putStrLn)
-import GHC.Prelude (print)
 import ND (Env (EEmpty, EExtend), Form (..), HypId, Proof (..), Term (..), fPred0, fPred1, fPredVar, tFun0, tFun1)
 import NDChecker (CheckResult (CheckOK), check)
 import NDExtractor (dNegRElim, extractWitnessCtx, fromPi02, inlineAxioms, rElim, rIntro, toPi02, transIntro, translateF, translateFriedman, translateP)

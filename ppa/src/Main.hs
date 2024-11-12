@@ -4,10 +4,11 @@ import Certifier (certify, checkContext)
 import NDExtractor (extractWitnessCtx)
 
 import GHC.Stack (HasCallStack)
-import ND (HypId)
 import NDProofs (Result)
 import PPA (Context)
 import System.Environment (getArgs)
+
+import Args (Args (..), Path (..), parseArgs)
 
 import Parser (parseProgram', parseTerm)
 import PrettyShow (PrettyShow (prettyShow))
@@ -17,21 +18,6 @@ import Text.Pretty.Simple (
 import Text.Printf (printf)
 
 -- import Text.RawString.QQ
-
-data Args
-    = ArgsCheck {input :: Path, output :: Maybe Path}
-    | ArgsExtract
-        { input :: Path
-        , output :: Maybe Path
-        , theorem :: HypId
-        , terms :: [String]
-        }
-
-data Path = Std | File FilePath
-
-instance Show Path where
-    show Std = "<std>"
-    show (File p) = p
 
 main :: (HasCallStack) => IO ()
 main = do
@@ -114,45 +100,9 @@ writeResult (Just p) ctxOriginal ctxReduced = do
             writeFile file_reduced (prettyShow ctxReduced)
             putStrLn ("Wrote translated+reduced to " ++ file_reduced)
 
--- prettyShow :: (Show a) => a -> String
--- prettyShow s = unpack $ pShowOpt opts s
---   where
---     opts =
---         defaultOutputOptionsNoColor
---             { outputOptionsCompact = True
---             -- , outputOptionsCompactParens = True
---             }
-
 parseAndCheck :: String -> String -> Result Context
 parseAndCheck path rawProgram = do
     prog <- parseProgram' path rawProgram
     ctx <- certify prog
     checkContext ctx
     return ctx
-
-parseArgs :: [String] -> Result Args
-parseArgs [] = Left "empty args"
-parseArgs (cmd : args) = case cmd of
-    "check" -> parseCheckArgs args
-    "extract" -> parseExtractArgs args
-    c -> Left $ printf "invalid command '%s', do 'check' or 'extract'" c
-
--- https://hackage.haskell.org/package/cmdargs-0.10.22/docs/System-Console-CmdArgs-Implicit.html#v:modes
-
-parseExtractArgs :: [String] -> Result Args
-parseExtractArgs args = case args of
-    [] -> Left "empty translate args"
-    [t] -> Right ArgsExtract{theorem = t, input = Std, output = Nothing, terms = []}
-    [t, f] -> Right ArgsExtract{theorem = t, input = parsePath f, output = Nothing, terms = []}
-    t : f : o : ts -> Right ArgsExtract{theorem = t, input = parsePath f, output = Just $ parsePath o, terms = ts}
-
-parseCheckArgs :: [String] -> Result Args
-parseCheckArgs args = case args of
-    [] -> Right ArgsCheck{input = Std, output = Nothing}
-    [f] -> Right ArgsCheck{input = parsePath f, output = Nothing}
-    [f, o] -> Right ArgsCheck{input = parsePath f, output = Just $ parsePath o}
-    _ -> Left "just two args supported for command check"
-
-parsePath :: String -> Path
-parsePath "-" = Std
-parsePath s = File s
