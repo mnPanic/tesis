@@ -24,6 +24,7 @@ main = do
         Right args -> case args of
             ArgsCheck{} -> runCheck args
             ArgsExtract{} -> runExtract args
+            ArgsVersion{} -> putStrLn "ppa version 0.1.0.0"
 
 runCheck :: Args -> IO ()
 runCheck (ArgsCheck inPath outPath) = do
