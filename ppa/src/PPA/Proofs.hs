@@ -35,13 +35,9 @@ import ND.ND (
     dneg,
  )
 
+import Result (Result, wrapR)
+
 import Text.Printf (printf)
-
-type Result a = Either String a
-
-wrapR :: String -> Result a -> Result a
-wrapR _ r@(Right _) = r
-wrapR msg (Left err) = Left (msg ++ ": " ++ err)
 
 -- (x: A) es un elemento del entorno de una demostración.
 -- Usado por todas las funciones que generan demostraciones del estilo

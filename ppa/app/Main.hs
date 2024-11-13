@@ -5,7 +5,7 @@ import Extractor.Extractor (extractWitnessCtx)
 import PPA.Certifier (certify, checkContext)
 import PPA.PPA (Context)
 import PPA.Parser (parseProgram', parseTerm)
-import PPA.Proofs (Result)
+import Result (Result)
 import PrettyShow (PrettyShow (prettyShow))
 
 import System.Environment (getArgs)

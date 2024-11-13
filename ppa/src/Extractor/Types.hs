@@ -7,7 +7,7 @@ module Extractor.Types (
 ) where
 
 import ND.ND (Form (FExists, FForall), VarId)
-import PPA.Proofs (Result)
+import Result (Result)
 
 import Text.Printf (printf)
 

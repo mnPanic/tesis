@@ -20,7 +20,7 @@ import ND.ND (Env (EEmpty, EExtend), Form (..), HypId, Proof (..), Term (..), fP
 import PPA.Certifier (certify, checkContext)
 import PPA.PPA (Hypothesis (HAxiom))
 import PPA.Parser (parseProgram')
-import PPA.Proofs (Result)
+import Result (Result)
 import Test.HUnit (
     Assertion,
     Counts,

@@ -37,8 +37,8 @@ import PPA.Certifier (
     fromClause,
     solveContradiction,
  )
+import Result (Result)
 import PPA.Proofs (
-    Result,
     cut,
     doubleNegElim,
     hypForm,

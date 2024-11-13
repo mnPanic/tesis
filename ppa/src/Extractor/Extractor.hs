@@ -13,7 +13,7 @@ import ND.ND (Form (..), HypId, Proof (..), Term (TVar), proofName)
 import ND.Subst (subst, substHyp)
 import PPA.Certifier (checkContext)
 import PPA.PPA (Context, Hypothesis (HAxiom, HTheorem), axioms, findHyp, removeHyp)
-import PPA.Proofs (Result, wrapR)
+import Result (Result, wrapR)
 import Text.Printf (printf)
 
 {-

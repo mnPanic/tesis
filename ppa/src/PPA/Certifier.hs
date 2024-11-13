@@ -30,7 +30,6 @@ import PPA.PPA (
 
 import PPA.Proofs (
     EnvItem,
-    Result,
     cut,
     doubleNegElim,
     hypAndForm,
@@ -52,8 +51,8 @@ import PPA.Proofs (
     proofOrAssoc,
     proofOrCongruence1,
     proofOrCongruence2,
-    wrapR,
  )
+import Result (Result, wrapR)
 
 import ND.ND (
     Env (..),

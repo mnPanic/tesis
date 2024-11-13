@@ -2,7 +2,7 @@ module Args where
 
 import Data.List (isPrefixOf)
 import ND.ND (HypId)
-import PPA.Proofs (Result)
+import Result (Result)
 import Text.Printf (printf)
 
 data Args

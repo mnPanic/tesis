@@ -27,7 +27,7 @@ import ND.ND (
   fv,
  )
 
-import PPA.Proofs (Result)
+import Result (Result)
 import Text.Printf (printf)
 
 import Data.Set qualified as Set
