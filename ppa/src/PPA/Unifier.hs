@@ -1,11 +1,11 @@
-module Unifier (
+module PPA.Unifier (
     unifyF,
     unifyT,
     Substitution,
     showSubstitution,
 ) where
 
-import ND (
+import ND.ND (
     Form (..),
     Metavar,
     Term (..),
@@ -14,7 +14,7 @@ import ND (
     varN,
  )
 
-import NDProofs (
+import PPA.Proofs (
     Result,
  )
 

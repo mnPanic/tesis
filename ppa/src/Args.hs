@@ -1,8 +1,8 @@
 module Args where
 
 import Data.List (isPrefixOf)
-import ND (HypId)
-import NDProofs (Result)
+import ND.ND (HypId)
+import PPA.Proofs (Result)
 import Text.Printf (printf)
 
 data Args

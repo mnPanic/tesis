@@ -1,13 +1,13 @@
 -- Implementa diferentes sustituciones para ND, tanto fórmulas como
 -- demostraciones.
-module NDSubst (
+module ND.Subst (
   subst,
   substHyp,
   substVar,
   freshWRT,
 ) where
 
-import ND (
+import ND.ND (
   Form (..),
   HypId,
   Proof (..),

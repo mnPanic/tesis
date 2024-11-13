@@ -1,5 +1,5 @@
 {
-module Lexer(
+module PPA.Lexer(
     Token(..)
     , TokenClass(..)
     , unLex

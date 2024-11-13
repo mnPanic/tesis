@@ -1,5 +1,5 @@
 -- Contains proof macros / generators
-module NDProofs (
+module PPA.Proofs (
     proofAndEProjection,
     cut,
     proofImpElim,
@@ -28,7 +28,7 @@ module NDProofs (
     EnvItem,
 ) where
 
-import ND (
+import ND.ND (
     Form (..),
     HypId,
     Proof (..),

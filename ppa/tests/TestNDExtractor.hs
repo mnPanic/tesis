@@ -4,15 +4,23 @@ module TestNDExtractor (testExtractor) where
 
 import Text.RawString.QQ
 
-import Certifier (certify, checkContext)
 import Data.Either (fromRight, isRight)
-import ND (Env (EEmpty, EExtend), Form (..), HypId, Proof (..), Term (..), fPred0, fPred1, fPredVar, tFun0, tFun1)
-import NDChecker (CheckResult (CheckOK), check)
-import NDExtractor (dNegRElim, extractWitnessCtx, fromPi02, inlineAxioms, rElim, rIntro, toPi02, transIntro, translateF, translateFriedman, translateP)
-import NDProofs (Result)
-import NDReducer (reduce)
-import PPA (Hypothesis (HAxiom))
-import Parser (parseProgram')
+import Extractor.Extractor (extractWitnessCtx, inlineAxioms)
+import Extractor.RProofs (
+    dNegRElim,
+    rElim,
+    rIntro,
+    transIntro,
+ )
+import Extractor.Reducer (reduce)
+import Extractor.Translator.Proof (translateF, translateFriedman, translateP)
+import Extractor.Types (fromPi02, toPi02)
+import ND.Checker (CheckResult (CheckOK), check)
+import ND.ND (Env (EEmpty, EExtend), Form (..), HypId, Proof (..), Term (..), fPred0, fPred1, fPredVar, tFun0, tFun1)
+import PPA.Certifier (certify, checkContext)
+import PPA.PPA (Hypothesis (HAxiom))
+import PPA.Parser (parseProgram')
+import PPA.Proofs (Result)
 import Test.HUnit (
     Assertion,
     Counts,

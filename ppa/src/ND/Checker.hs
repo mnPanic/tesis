@@ -1,12 +1,12 @@
 -- NDChecker contiene lo necesario para poder `check`ear una ND.Proof
-module NDChecker (
+module ND.Checker (
     check,
     CheckResult (..),
     rootCause,
     checkResultIsErr,
 ) where
 
-import ND (
+import ND.ND (
     Env (..),
     Form (..),
     Proof (..),
@@ -19,7 +19,7 @@ import ND (
     proofName,
  )
 
-import NDSubst (subst)
+import ND.Subst (subst)
 
 import Data.List
 import Text.Printf (printf)

@@ -22,7 +22,7 @@ main: lexer-parser
 # redirect compilation output
 
 lexer-parser:
-	alex src/Lexer.x && happy src/Parser.y
+	alex src/PPA/Lexer.x && happy src/PPA/Parser.y
 
 parser-debug:
 	happy src/Parser.y -i

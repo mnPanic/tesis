@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -fno-warn-unused-binds -fno-warn-missing-signatures #-}
 {-# LANGUAGE CPP #-}
-{-# LINE 1 "src/Lexer.x" #-}
-module Lexer(
+{-# LINE 1 "src/PPA/Lexer.x" #-}
+module PPA.Lexer(
     Token(..)
     , TokenClass(..)
     , unLex
@@ -25035,7 +25035,7 @@ alexRightContext IBOX(sc) user__ _ _ input__ =
         -- match when checking the right context, just
         -- the first match will do.
 #endif
-{-# LINE 68 "src/Lexer.x" #-}
+{-# LINE 68 "src/PPA/Lexer.x" #-}
 -- To improve error messages, We keep the path of the file we are
 -- lexing in our own state.
 data AlexUserState = AlexUserState { filePath :: FilePath }

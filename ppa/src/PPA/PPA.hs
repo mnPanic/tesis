@@ -1,4 +1,4 @@
-module PPA (
+module PPA.PPA (
   TProof,
   ProofStep (..),
   Program,
@@ -18,7 +18,7 @@ module PPA (
 ) where
 
 import Data.List (find)
-import ND (
+import ND.ND (
   Form (..),
   HypId,
   Proof (..),
@@ -27,7 +27,7 @@ import ND (
   fv,
  )
 
-import NDProofs (Result)
+import PPA.Proofs (Result)
 import Text.Printf (printf)
 
 import Data.Set qualified as Set

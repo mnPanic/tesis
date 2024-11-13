@@ -1,9 +1,9 @@
 {-# OPTIONS_GHC -w #-}
-module Parser(parseProgram, parseProgram', parseTerm) where
+module PPA.Parser(parseProgram, parseProgram', parseTerm) where
 
-import ND ( Form(..), Term(..) )
-import PPA ( TProof, ProofStep(..), Program(..), Decl(..), Justification, Case )
-import Lexer
+import ND.ND ( Form(..), Term(..) )
+import PPA.PPA ( TProof, ProofStep(..), Program(..), Decl(..), Justification, Case )
+import PPA.Lexer
 import Data.List (intercalate)
 import Debug.Trace (trace)
 import qualified Data.Array as Happy_Data_Array

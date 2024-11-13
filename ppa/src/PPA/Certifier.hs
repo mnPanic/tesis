@@ -1,4 +1,4 @@
-module Certifier (
+module PPA.Certifier (
     dnf,
     solveContradiction,
     toClause,
@@ -12,7 +12,7 @@ module Certifier (
     partitionForalls,
 ) where
 
-import PPA (
+import PPA.PPA (
     Case,
     Context,
     Decl (..),
@@ -28,7 +28,7 @@ import PPA (
     psName,
  )
 
-import NDProofs (
+import PPA.Proofs (
     EnvItem,
     Result,
     cut,
@@ -55,7 +55,7 @@ import NDProofs (
     wrapR,
  )
 
-import ND (
+import ND.ND (
     Env (..),
     Form (..),
     HypId,
@@ -68,10 +68,10 @@ import ND (
     isForall,
  )
 
-import Unifier (Substitution, showSubstitution, unifyF)
+import PPA.Unifier (Substitution, showSubstitution, unifyF)
 
-import NDChecker (CheckResult (CheckOK), check, checkResultIsErr)
-import NDSubst (subst)
+import ND.Checker (CheckResult (CheckOK), check, checkResultIsErr)
+import ND.Subst (subst)
 
 import Data.List (find, intercalate, nub, (\\))
 import Data.Map qualified as Map
@@ -79,7 +79,7 @@ import Data.Set (Set)
 import Text.Printf (printf)
 
 import Data.Either (fromLeft, isLeft, isRight, lefts, rights)
-import NDReducer (reduce)
+import Extractor.Reducer (reduce)
 
 reduceContext :: Context -> Context
 reduceContext = map reduceHyp

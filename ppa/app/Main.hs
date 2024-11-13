@@ -1,23 +1,20 @@
 module Main where
 
-import Certifier (certify, checkContext)
-import NDExtractor (extractWitnessCtx)
+import Args (Args (..), Path (..), parseArgs)
+import Extractor.Extractor (extractWitnessCtx)
+import PPA.Certifier (certify, checkContext)
+import PPA.PPA (Context)
+import PPA.Parser (parseProgram', parseTerm)
+import PPA.Proofs (Result)
+import PrettyShow (PrettyShow (prettyShow))
 
-import GHC.Stack (HasCallStack)
-import NDProofs (Result)
-import PPA (Context)
 import System.Environment (getArgs)
 
-import Args (Args (..), Path (..), parseArgs)
-
-import Parser (parseProgram', parseTerm)
-import PrettyShow (PrettyShow (prettyShow))
+import GHC.Stack (HasCallStack)
 import Text.Pretty.Simple (
     pPrint,
  )
 import Text.Printf (printf)
-
--- import Text.RawString.QQ
 
 main :: (HasCallStack) => IO ()
 main = do

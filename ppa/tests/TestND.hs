@@ -1,6 +1,13 @@
 module TestND (testND) where
 
-import ND (
+import Extractor.Reducer (reduce)
+import Extractor.Translator.Proof (translateE, translateP)
+import ND.Checker (
+    CheckResult (CheckError, CheckErrorN, CheckOK),
+    check,
+    rootCause,
+ )
+import ND.ND (
     Env (..),
     Form (..),
     HypId,
@@ -21,25 +28,16 @@ import ND (
     tFun0,
     tFun1,
  )
-
-import Certifier (
+import ND.Subst (
+    subst,
+    substHyp,
+ )
+import PPA.Certifier (
     dnf,
     fromClause,
     solveContradiction,
  )
-
-import NDChecker (
-    CheckResult (CheckError, CheckErrorN, CheckOK),
-    check,
-    rootCause,
- )
-
-import NDSubst (
-    subst,
-    substHyp,
- )
-
-import NDProofs (
+import PPA.Proofs (
     Result,
     cut,
     doubleNegElim,
@@ -64,8 +62,7 @@ import NDProofs (
     proofOrCongruence1,
     proofOrCongruence2,
  )
-
-import NDReducer (reduce)
+import PPA.Unifier (Substitution, unifyF, unifyT)
 
 import Test.HUnit (
     Assertion,
@@ -84,8 +81,6 @@ import Test.HUnit (
 
 import Data.Map qualified as Map
 import Data.Set qualified as Set
-import NDExtractor (translateE, translateP)
-import Unifier (Substitution, unifyF, unifyT)
 
 main :: IO Counts
 main = do runTestTT testND

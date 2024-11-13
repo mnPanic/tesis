@@ -1,11 +1,9 @@
 module TestParser (testParserLexer) where
 
-import Lexer (Alex (Alex), Token (..), TokenClass (..), alexInitUserState, runAlex, runAlex')
-
-import PPA (Decl (..), Program, ProofStep (PSSuppose, PSThusBy))
-
-import ND (Form (..), Term (..), predVar, propVar)
-import Parser (parseProgram)
+import ND.ND (Form (..), Term (..), predVar, propVar)
+import PPA.Lexer (Alex (Alex), Token (..), TokenClass (..), alexInitUserState, runAlex, runAlex')
+import PPA.PPA (Decl (..), Program, ProofStep (PSSuppose, PSThusBy))
+import PPA.Parser (parseProgram)
 
 import Test.HUnit (
     Counts,

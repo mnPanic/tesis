@@ -1,8 +1,8 @@
 module PrettyShow where
 
 import Data.List (intercalate)
-import ND (Form, Proof (..), Term)
-import PPA (Context, Hypothesis (HAxiom, HTheorem))
+import ND.ND (Form, Proof (..), Term)
+import PPA.PPA (Context, Hypothesis (HAxiom, HTheorem))
 import Text.Printf (printf)
 
 class PrettyShow a where

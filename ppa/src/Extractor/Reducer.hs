@@ -1,9 +1,9 @@
 -- NDReducer contiene lo necesario para poder reducir una ND.Proof
 -- a una equivalente más chica.
-module NDReducer (reduce) where
+module Extractor.Reducer (reduce) where
 
-import ND (Proof (..))
-import NDSubst (substHyp, substVar)
+import ND.ND (Proof (..))
+import ND.Subst (substHyp, substVar)
 
 -- Reduce una demostración hasta que sea irreducible (big step).
 -- Asume que chequea.

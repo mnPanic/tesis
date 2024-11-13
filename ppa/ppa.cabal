@@ -60,6 +60,32 @@ common warnings
         -Wno-incomplete-patterns
         -Wno-incomplete-uni-patterns
 
+library ppa-lib
+    import: warnings
+    hs-source-dirs: src
+    build-depends: base ^>=4.17.2.0, containers, array, deepseq, raw-strings-qq, pretty-simple, text,
+    exposed-modules:
+        Extractor.Extractor
+        Extractor.Reducer
+        Extractor.RProofs
+        Extractor.Translator.Proof
+        Extractor.Translator.Form
+        Extractor.Types
+        ND.Checker
+        ND.ND
+        ND.Subst
+        PPA.Certifier
+        PPA.Parser
+        PPA.Lexer
+        PPA.PPA
+        PPA.Unifier
+        PPA.Proofs
+        PrettyShow
+        Args
+
+    -- Base language which the package is written in.
+    default-language: GHC2021
+
 executable ppa
     -- Import common warning flags.
     import:           warnings
@@ -68,16 +94,16 @@ executable ppa
     main-is:          Main.hs
 
     -- Modules included in this executable, other than Main.
-    other-modules: Certifier, Lexer, ND, NDChecker, NDExtractor, NDProofs, NDReducer, NDSubst, PPA, Parser, PrettyShow, Unifier, Args
+    -- other-modules: Certifier, Lexer, ND, NDChecker, NDExtractor, NDProofs, NDReducer, NDSubst, PPA, Parser, PrettyShow, Unifier, Args
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
 
     -- Other library packages from which modules are imported.
-    build-depends:    base ^>=4.17.2.0, containers, array, deepseq, raw-strings-qq, pretty-simple, text
+    build-depends:    base ^>=4.17.2.0, containers, array, deepseq, raw-strings-qq, pretty-simple, text, ppa-lib
 
     -- Directories containing source files.
-    hs-source-dirs:   src
+    hs-source-dirs: app
 
     -- Base language which the package is written in.
     default-language: GHC2021
@@ -95,9 +121,10 @@ executable ppa
             -- -fprof-cafs
 
 test-suite tests
+    --import: warnings
     type: exitcode-stdio-1.0
     main-is: Tests.hs
-    other-modules: Args, Certifier, Lexer, ND, NDChecker, NDExtractor, NDProofs, NDReducer, NDSubst, PPA, Parser, PrettyShow, Unifier, TestParser, TestNDExtractor, TestND, TestCertifier
-    build-depends: base ^>=4.17.2.0, containers, array, HUnit, raw-strings-qq, deepseq
-    hs-source-dirs: tests, src
+    other-modules: TestParser, TestNDExtractor, TestND, TestCertifier, TestArgs
+    build-depends: base ^>=4.17.2.0, containers, array, HUnit, raw-strings-qq, deepseq, ppa-lib
+    hs-source-dirs: tests
     default-language: GHC2021

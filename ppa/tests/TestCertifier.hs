@@ -6,7 +6,7 @@ module TestCertifier (testCertifier) where
 -- https://hackage.haskell.org/package/raw-strings-qq
 import Text.RawString.QQ
 
-import Certifier (
+import PPA.Certifier (
     certify,
     certifyBy,
     checkContext,
@@ -20,21 +20,21 @@ import Certifier (
     toClause,
  )
 
-import NDExtractor (translateContext)
+import Extractor.Translator.Proof (translateContext)
 
-import Parser (parseProgram')
+import PPA.Parser (parseProgram')
 
-import NDProofs (
+import PPA.Proofs (
     EnvItem,
     hypForm,
  )
 
-import NDChecker (
+import ND.Checker (
     CheckResult (..),
     check,
  )
 
-import ND (
+import ND.ND (
     Env (..),
     Form (..),
     Proof (..),
@@ -45,10 +45,9 @@ import ND (
     predVar,
     propVar,
     tFun0,
-    tFun1,
  )
 
-import PPA (Hypothesis (HAxiom))
+import PPA.PPA (Hypothesis (HAxiom))
 
 import Test.HUnit (
     Assertion,
