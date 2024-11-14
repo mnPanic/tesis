@@ -82,6 +82,7 @@ library ppa-lib
         PPA.Proofs
         PrettyShow
         Args
+        Result
 
     -- Base language which the package is written in.
     default-language: GHC2021

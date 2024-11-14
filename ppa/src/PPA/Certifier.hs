@@ -8,7 +8,6 @@ module PPA.Certifier (
     certify,
     checkContext,
     findContradiction,
-    reduceContext,
     partitionForalls,
 ) where
 
@@ -30,7 +29,6 @@ import PPA.PPA (
 
 import PPA.Proofs (
     EnvItem,
-    Result,
     cut,
     doubleNegElim,
     hypAndForm,
@@ -52,8 +50,8 @@ import PPA.Proofs (
     proofOrAssoc,
     proofOrCongruence1,
     proofOrCongruence2,
-    wrapR,
  )
+import Result (Result, wrapR)
 
 import ND.ND (
     Env (..),
@@ -79,14 +77,6 @@ import Data.Set (Set)
 import Text.Printf (printf)
 
 import Data.Either (fromLeft, isLeft, isRight, lefts, rights)
-import Extractor.Reducer (reduce)
-
-reduceContext :: Context -> Context
-reduceContext = map reduceHyp
-
-reduceHyp :: Hypothesis -> Hypothesis
-reduceHyp (HAxiom h f) = HAxiom h f
-reduceHyp (HTheorem h f p) = HTheorem h f (reduce p)
 
 -- En un contexto cada demostración de teorema es válida en el contexto que
 -- contiene el prefijo estricto anterior a él.

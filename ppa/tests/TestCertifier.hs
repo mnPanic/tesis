@@ -6,6 +6,7 @@ module TestCertifier (testCertifier) where
 -- https://hackage.haskell.org/package/raw-strings-qq
 import Text.RawString.QQ
 
+import Extractor.Reducer (reduceContext)
 import PPA.Certifier (
     certify,
     certifyBy,
@@ -15,7 +16,6 @@ import PPA.Certifier (
     fromClause,
     fromDNF,
     partitionForalls,
-    reduceContext,
     solveContradiction,
     toClause,
  )

@@ -14,7 +14,7 @@ import ND.ND (
     varN,
  )
 
-import PPA.Proofs (
+import Result (
     Result,
  )
 

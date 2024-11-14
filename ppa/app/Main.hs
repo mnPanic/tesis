@@ -5,7 +5,7 @@ import Extractor.Extractor (extractWitnessCtx)
 import PPA.Certifier (certify, checkContext)
 import PPA.PPA (Context)
 import PPA.Parser (parseProgram', parseTerm)
-import PPA.Proofs (Result)
+import Result (Result)
 import PrettyShow (PrettyShow (prettyShow))
 
 import System.Environment (getArgs)
@@ -24,6 +24,7 @@ main = do
         Right args -> case args of
             ArgsCheck{} -> runCheck args
             ArgsExtract{} -> runExtract args
+            ArgsVersion{} -> putStrLn "ppa version 0.1.0.0"
 
 runCheck :: Args -> IO ()
 runCheck (ArgsCheck inPath outPath) = do

@@ -2,11 +2,12 @@ module Args where
 
 import Data.List (isPrefixOf)
 import ND.ND (HypId)
-import PPA.Proofs (Result)
+import Result (Result)
 import Text.Printf (printf)
 
 data Args
-    = ArgsCheck {input :: Path, output :: Maybe Path}
+    = ArgsVersion
+    | ArgsCheck {input :: Path, output :: Maybe Path}
     | ArgsExtract
         { input :: Path
         , output :: Maybe Path
@@ -34,6 +35,7 @@ parseArgs [] = Left "empty args"
 parseArgs (cmd : args) = case cmd of
     "check" -> parseCheckArgs args
     "extract" -> parseExtractArgs args
+    "version" -> Right ArgsVersion
     c -> Left $ printf "invalid command '%s', supported: check, extract" c
 
 parseCheckArgs :: [String] -> Result Args
@@ -75,11 +77,13 @@ parseExtractArgs' (a : as) args = case a of
 
 parseTheorem :: [String] -> Args -> Result Args
 parseTheorem _ ArgsCheck{} = undefined
+parseTheorem _ ArgsVersion{} = undefined
 parseTheorem (t : as) args =
     parseExtractArgs' as (args{theorem = t})
 
 parseTerms :: [String] -> Args -> Result Args
 parseTerms _ ArgsCheck{} = undefined
+parseTerms _ ArgsVersion{} = undefined
 parseTerms [] args = Right args
 parseTerms (t : ts) args@ArgsExtract{terms = terms} =
     if isCommand t
@@ -87,6 +91,7 @@ parseTerms (t : ts) args@ArgsExtract{terms = terms} =
         else parseTerms ts args{terms = terms ++ [t]}
 
 parseOut :: [String] -> Args -> Result Args
+parseOut _ ArgsVersion{} = undefined
 parseOut (o : as) args =
     parseExtractArgs' as (args{output = Just $ parsePath o})
 
