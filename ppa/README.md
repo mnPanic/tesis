@@ -98,7 +98,6 @@ Extracted witness: v
 of formula: p(v, x, y)
 ```
 
-
 ## Desarrollo
 
 Para correr los tests individualmente, como no están en el mismo directorio hay
@@ -108,6 +107,13 @@ que incluir `src` con `-i`.
 ghci tests/TestCertifier.hs -isrc
 ```
 
+### Grafo de módulos
+
+Usando https://github.com/yav/graphmod
+
+```bash
+find src/ -name '*.hs' | xargs graphmod -i src -d 15,10 | tred | dot -Tpng > modules.png
+```
 
 ## Cabal
 

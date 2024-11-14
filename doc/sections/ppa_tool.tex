@@ -126,54 +126,264 @@ En esta sección contamos algunos detalles relevantes sobre la implementación,
 que deberían permitir navegar los fuentes para ver cómo fue implementado.
 Comencemos por la arquitectura de los módulos.
 
+\begin{figure}[h]
+    \centering
+    \includegraphics[scale=0.38]{img/modules.png}
+    \caption{Grafo de módulos del programa \ppaTool{} generado con \href{https://github.com/yav/graphmod}{\texttt{graphmod}}}
+\end{figure}
+
+Los más relevantes son,
+
+\begin{itemize}
+    \item \texttt{ND}: Contiene el modelo central de deducción natural usado para los
+    certificados. Fórmulas, términos y demostraciones. Tiene 3 sub módulos:
+    \texttt{ND.Checker} (chequeador de demostraciones), \texttt{ND.Subst}
+    (sustituciones sobre fórmulas y demostraciones) y \texttt{ND.ND} (el modelo
+    en si). Ver \fullref{ppa-tool:sec:nd}.
+    \item \texttt{PPA}: Contiene la implementación del lenguaje \ppaLang{} por
+    sobre deducción natural.
+    \begin{itemize}
+        \item \texttt{PPA.Parser} y \texttt{PPA.Lexer} son el lexer y el parser
+        respectivamente. Ver \fullref{ppa-tool:sec:parser-lexer}.
+        \item \texttt{PPA.Certifier} implementa el certificador, que genera
+        demostraciones de deducción natural a partir de programas de PPA. Usa
+        \texttt{PPA.Unifier} para unificación (usado en eliminación de $\forall$) y \texttt{PPA.Proofs} para
+        demostraciones de equivalencias en ND (usado en DNF).
+    \end{itemize}
+    \item \texttt{Extractor}: Contiene la lógica de extracción de testigos.
+    Tiene varios sub módulos
+    \begin{itemize}
+        \item \texttt{Extractor.Translator} implementa la traducción de Friedman
+        en sus dos sub-módulos, \texttt{Extractor.Translator.Proof} para
+        demostraciones y\\\texttt{Extractor.Translator.Form} para fórmulas.
+        \item \texttt{Extractor.Reducer} implementa la normalización.
+        \item \texttt{Extractor.Extractor} combina todo lo anterior para hacer
+        la extracción de testigos de principio a fin, certificando, traduciendo
+        y reduciendo. Usa \\\texttt{Extractor.RProofs} que es análogo a
+        \texttt{PPA.Proofs} e implementa los lemas necesarios sobre
+        demostraciones intuicionistas con negación relativizada.
+    \end{itemize}
+\end{itemize}
+
+
 \subsection{Parser y Lexer}
+\label{ppa-tool:sec:parser-lexer}
 
-Una parte esencial de \ppaTool{} es el compilador, que tiene dos etapas que
-permiten interpretar un programa desde un archivo de texto hacia una
-representación de un tipo abstracto de datos que puede ser manipulado.
+Una parte esencial de \ppaTool{} es el compilador, que permite tomar un programa
+desde un archivo de texto y llevarlo a una representación estructurada, como un
+un tipo abstracto de datos, para el uso en el resto del programa. Se implementa
+en dos etapas.
 
-Para el parsing teníamos dos opciones. O bien hacerlo a mano con alguna
-biblioteca de \textit{parser combinators} como
+\begin{itemize}
+    \item La primera es el análisis léxico o \textit{lexer}, que convierte el
+    texto plano en una lista de \textit{lexemas} o \textit{tokens}. Se puede
+    implementar con expresiones regulares.
+    \item Una vez que el programa ya fue convertido en \textit{lexemas}, es
+    procesado por el parser, que interpreta las estructuras sintácticas del
+    lenguaje. Puede generar una representación intermedia como un tipo abstracto
+    de datos.
+\end{itemize}
+
+Para el parsing en general hay dos caminos bien conocidos. O bien hacerlo a mano
+con alguna biblioteca de \textit{parser combinators} como
 \href{https://hackage.haskell.org/package/parsec}{parsec}, o usar un
 \textit{parser generator}: un programa que genere un parser automáticamente a
 partir de una gramática en algún formato como EBNF. Nosotros decidimos, por
 familiaridad con el proceso, usar un parser generator. Los más conocidos
 históricamente son Lex (para el lexer) y Yacc (para el parser, \textit{yet
-another compiler compiler}). En Haskell existen versiones análogas
+another compiler compiler}). En Haskell existen dos paquetes análogos: \href{https://hackage.haskell.org/package/alex}{Alex} para el
+lexer y \href{https://hackage.haskell.org/package/happy}{Happy} para el parser.
+Estos generan un lexer a partir de expresiones regulares y un parser
+respectivamente a partir de una gramática en un formato similar a EBNF.
 
-\begin{figure}[H]
-\begin{multicols}{2}
-\begin{minted}{haskell}
-type VarId = String
-type FunId = String
-type PredId = String
-type HypId = String
+En la \namedref{ppa-tool:fig:lexer} se puede ver un extracto del archivo de
+input de Alex y en \namedref{ppa-tool:fig:parser} uno del de Happy de
+\ppaTool{}. La implementación del parser solo construye términos de programas
+(definidos en \texttt{PPA.PPA}) y fórmulas (\texttt{ND.ND}) a partir de los
+cuales el programa opera.
 
-data Term
-    = TVar VarId
-    | TMetavar Metavar
-    | TFun FunId [Term]
+\begin{figure}[p]
+    \begin{minted}{text}
+tokens :-
+    $white+                         ;
+    "//".*                          ; -- comments
+    "/*"(.|(\r\n|\r|\n))*"*/"       ; -- block comments
+    \.              { literal TokenDot }
+    \,              { literal TokenComma }
+    \&              { literal TokenAnd }
+    \|              { literal TokenOr }
+    true            { literal TokenTrue }
+    false           { literal TokenFalse }
+    \-\>            { literal TokenImp }
+    \<\-\>          { literal TokenIff }
+    \~              { literal TokenNot }
+    exists          { literal TokenExists }
+    forall          { literal TokenForall }
+    \(              { literal TokenParenOpen }
+    \)              { literal TokenParenClose }
+    axiom           { literal TokenAxiom }
+    theorem         { literal TokenTheorem }
+    proof           { literal TokenProof }
+    end             { literal TokenEnd }
+    \;              { literal TokenSemicolon }
+    \:              { literal TokenDoubleColon }
+    suppose         { literal TokenSuppose }
+    thus            { literal TokenThus }
+    hence           { literal TokenHence }
+    have            { literal TokenHave }
+    then            { literal TokenThen }
+    by              { literal TokenBy }
+    equivalently    { literal TokenEquivalently }
+    claim           { literal TokenClaim }
+    cases           { literal TokenCases }
+    case            { literal TokenCase }
+    take            { literal TokenTake }
+    \:\=            { literal TokenAssign }
+    st              { literal TokenSuchThat }
+    consider        { literal TokenConsider }
+    let             { literal TokenLet }
 
-data Form
-    = FPred PredId [Term]
-    | FAnd Form Form
-    | FOr Form Form
-    | FImp Form Form
-    | FNot Form
-    | FTrue
-    | FFalse
-    | FForall VarId Form
-    | FExists VarId Form
-\end{minted}
-\end{multicols}
-\caption{Modelado de fórmulas y términos de LPO}
+    \"[^\"]*\"          { lex (TokenQuotedName . firstLast) }
+
+    (\_|[A-Z])[a-zA-Z0-9\_\-]*(\')*                     { lex TokenVar }
+    [a-zA-Z0-9\_\-\?!#\$\%\*\+\<\>\=\?\@\^]+(\')*       { lex TokenId }
+    \end{minted}
+    \caption{Extracto del lexer de \ppaTool{}}
+    \label{ppa-tool:fig:lexer}
 \end{figure}
 
-Las meta-variables se usan para unificación, que es parte del solver de PPA. Ver
-más en \fullref{ppa:sec:by:forall-elim}
+\begin{figure}[p]
+    \centering
+    \begin{minted}{text}
+%token
+    -- Enumeración de tokens del lexer
 
-\begin{figure}[H]
+Prog    : Declarations
+
+Declarations : Declaration Declarations
+                | Declaration
+
+Declaration : Axiom
+            | Theorem
+
+Axiom : axiom Name ':' Form
+
+Theorem : theorem Name ':' Form proof Proof end
+
+Proof   : ProofStep Proof
+        | {- empty -}
+
+ProofStep : suppose Name ':' Form
+            | thus Form OptionalBy
+            | hence Form OptionalBy
+            | have Name ':' Form OptionalBy
+            | then Name ':' Form OptionalBy
+            | equivalently Form
+            | claim Name ':' Form proof Proof end
+            | cases OptionalBy Cases end
+            | take var ':=' Term
+            | let var
+            | consider var st Name ':' Form by Justification
+
+Cases   : Case Cases
+        | {- empty -}
+
+Case    : case Form Proof
+        | case Name ':' Form Proof
+
+OptionalBy : by Justification
+OptionalBy : {- empty -}
+
+Justification : Name ',' Justification
+                | Name
+
+Name    : id
+        | name
+
+    \end{minted}
+    \caption{Extracto del parser de \ppaTool{} (programas)}
+    \label{ppa-tool:fig:parser}
+\end{figure}
+
+\begin{figure}[p]
+    \begin{minted}{text}
+-- Resolución automática de conflictos shift/reduce
+%right exists forall dot
+%right imp iff
+%left and or
+%nonassoc not
+%%
+
+Form    : id TermArgs
+        | Form and Form
+        | Form or Form
+        | Form imp Form
+        | Form iff Form
+        | not Form
+        | exists var dot Form
+        | forall var dot Form
+        | true
+        | false
+        | '(' Form ')'
+
+Term    : var
+        | id TermArgs
+
+TermArgs : {- empty -}
+            | '(' Terms ')'
+
+Terms   : Term
+        | Term ',' Terms
+    \end{minted}
+    \caption{Extracto del parser de \ppaTool{} (lógica de primer orden)}
+    \label{ppa-tool:fig:parser-forms}
+\end{figure}
+
+\subsection{Modelado de deducción natural}
+\label{ppa-tool:sec:nd}
+
+La parte más interesante del modelado son las demostraciones de deducción
+natural, que se pueden ver en la \namedref{ppa-tool:fig:nd-proofs}. Una
+demostración está compuesta por la aplicación recursiva de reglas de inferencia,
+y su modelo omite todos los detalles que se pueden inferir durante su chequeo.
+De esa forma las demostraciones son más fáciles de escribir y generar, al costo
+de ser un poco más costosas de leer por un humano, cosa que de todas formas no
+deberíamos hacer. Por ejemplo, la introducción de la implicación, \ruleImpI{},
+modelada por \texttt{PImpI} no especifica cuál es la implicación que se está
+introduciendo, dado que durante el chequeo debería ser la fórmula actual a
+demostrar. Tampoco se explicita en cada regla, cual es el contexto de
+demostración. Se genera de forma dinámica.
+
+\begin{figure}[p]
+    \begin{multicols}{2}
+    \begin{minted}{haskell}
+    type VarId = String
+    type FunId = String
+    type PredId = String
+    type HypId = String
     
+    data Term
+        = TVar VarId
+        | TMetavar Metavar
+        | TFun FunId [Term]
+    
+    data Form
+        = FPred PredId [Term]
+        | FAnd Form Form
+        | FOr Form Form
+        | FImp Form Form
+        | FNot Form
+        | FTrue
+        | FFalse
+        | FForall VarId Form
+        | FExists VarId Form
+    \end{minted}
+    \end{multicols}
+    \caption{Modelado de fórmulas y términos de LPO}
+    \end{figure}
+    
+
+\begin{figure}[p]
 \begin{multicols}{2}
 \begin{minted}{haskell}
 data Proof =
@@ -252,20 +462,5 @@ data Proof =
 \end{minted}        
 \end{multicols}
 \caption{Modelado de reglas de inferencia para demostraciones}
+\label{ppa-tool:fig:nd-proofs}
 \end{figure}
-
-
-El modelado de las reglas de inferencia omite varios detalles que están
-implícitos y serán inferidos por el algoritmo de chequeo. De esa forma las
-demostraciones son más fáciles de escribir y generar. Por ejemplo,
-\texttt{PImpI} no especifica en su modelo cuál es la implicación que se está
-introduciendo, dado que durante el chequeo debería ser la fórmula actual a
-demostrar
-
-\section{Compiladores}
-\begin{itemize}
-    \item Primer de compiladores en general y sus frontends
-    \item Parser generators en general. LR/LALR
-    \item Happy. Alex.
-    \item Sintaxis BNF en apéndice (el archivo). Incluir el archivo Alex/happy? Es cortito
-\end{itemize}

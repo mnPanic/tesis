@@ -23,8 +23,6 @@ module PPA.Proofs (
     proofImpCongruence1,
     proofImpCongruence2,
     proofAndIList,
-    Result,
-    wrapR,
     EnvItem,
 ) where
 
@@ -35,7 +33,7 @@ import ND.ND (
     dneg,
  )
 
-import Result (Result, wrapR)
+import Result (Result)
 
 import Text.Printf (printf)
 

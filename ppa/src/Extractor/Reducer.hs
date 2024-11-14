@@ -1,9 +1,17 @@
 -- NDReducer contiene lo necesario para poder reducir una ND.Proof
 -- a una equivalente más chica.
-module Extractor.Reducer (reduce) where
+module Extractor.Reducer (reduce, reduceContext) where
 
 import ND.ND (Proof (..))
 import ND.Subst (substHyp, substVar)
+import PPA.PPA (Context, Hypothesis (..))
+
+reduceContext :: Context -> Context
+reduceContext = map reduceHyp
+
+reduceHyp :: Hypothesis -> Hypothesis
+reduceHyp (HAxiom h f) = HAxiom h f
+reduceHyp (HTheorem h f p) = HTheorem h f (reduce p)
 
 -- Reduce una demostración hasta que sea irreducible (big step).
 -- Asume que chequea.
