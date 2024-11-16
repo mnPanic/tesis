@@ -4,8 +4,33 @@
 %\vspace{1cm}
 \chapter*{\runtitulo}
 
-\noindent La princesa Leia, líder del movimiento rebelde que desea reinstaurar la República en la galaxia en los tiempos ominosos del Imperio, es capturada por las malévolas Fuerzas Imperiales, capitaneadas por el implacable Darth Vader. El intrépido Luke Skywalker, ayudado por Han Solo, capitán de la nave espacial ``El Halcón Milenario'', y los androides, R2D2 y C3PO, serán los encargados de luchar contra el enemigo y rescatar a la princesa para volver a instaurar la justicia en el seno de la Galaxia (aprox. 200 palabras).
+\noindent Los \textit{asistentes de demostración} son programas que facilitan la
+escritura de demostraciones matemáticas, que pueden ser usados para
+facilitar la colaboración masiva o hacer verificación formal de programas. Existen muchos asistentes como Mizar, Coq e Isabelle, basados en distintas teorías. Un criterio deseable que pueden cumplir es el de De Bruijn: a partir de demostraciones en su lenguaje se pueden extraer otras más elementales, que puedan ser chequeados por un programa independiente.
+
+En esta tesis se presenta PPA, un asistente de demostración para lógica clásica
+de primer orden. Cumple con el criterio de De Bruijn, generando
+demostraciones en el sistema lógico de \textit{deducción natural} a partir de
+demostraciones escritas en un lenguaje de alto nivel, cuyo objetivo es ser
+similar a cómo serían escritas en lenguaje natural. Tiene un mecanismo principal
+de demostración, el by, que por debajo cuenta con un \textit{solver} heurístico
+para lógica de primer orden que facilita la escritura de demostraciones. Está
+inspirado en el mecanismo análogo en Mizar.
+
+Algunos asistentes implementan la \textit{extracción de testigos de
+existencial}. Dada una demostración de $\exists \var . \pred(\var)$, se extrae
+un \textit{testigo} $\term$ tal que cumpla $\pred(\term)$. Es sencillo hacerlo sobre lógica intuicionista, pues es constructiva, pero un desafío sobre lógica clásica, que no lo es. Para ello hay dos grandes categorías: directas (mediante semántica operacional de cálculos $\lambda$ clásicos, como realizabilidad clásica) o indirectas (mediante traducciones a lógica intuicionista o similares).
+
+PPA implementa la extracción de forma indirecta usando la traducción de
+Friedman, que permite traducir demostraciones clásicas de fórmulas $\classPiTwo$
+de la forma $\forall \varTwo_0 \dots \forall \varTwo_n . \exists \var .
+\anyForm$ a intuicionistas. Se describe cómo pueden ser normalizadas usando
+reglas de reducción bien conocidas, isomorfas a la semántica operacional del cálculo lambda vistas desde el isomorfismo Curry-Howard. Finalmente, de una demostración normalizada se podrá extraer un testigo.
+Identificamos algunos detalles en la implementación práctica de la traducción,
+que limitan las fórmulas para las cuales se puede usar (más allá de la
+limitación teórica de $\classPiTwo$) y también limitan las axiomatizaciones de
+las teorías que se pueden hacer.
 
 \bigskip
 
-\noindent\textbf{Palabras claves:} Guerra, Rebelión, Wookie, Jedi, Fuerza, Imperio (no menos de 5).
+\noindent\textbf{Palabras claves:} asistente de demostración, lógica de primer orden, deducción natural, lógica clásica, lógica intuicionista, extracción de testigos, traducción de Friedman.
