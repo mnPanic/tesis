@@ -1,25 +1,27 @@
-Los asistentes de demostración son herramientas que facilitan la escritura y chequeo de demostraciones en una computadora. Pueden ser usados para formalizar teoremas, realizar verificación formal de programas, entre otros. A diferencia de escribir demostraciones y chequearlas manualmente, facilitan la colaboración a gran escala: no es necesario confiar ni revisar a detalle las demostraciones que hace el resto del equipo, alcanza con que el asistente las considere válidas. También permiten generar al menos partes de demostraciones mediante LLMs, apoyándose en el asistente para que las chequee por nosotros.
+Los asistentes de demostración son herramientas que facilitan la escritura y chequeo de demostraciones en una computadora. Pueden ser usados para formalizar teoremas, realizar verificación formal de programas, entre otros. A diferencia de escribir demostraciones y chequearlas manualmente, el uso de asistentes permite la colaboración a gran escala: no es necesario confiar ni revisar a detalle las demostraciones que hace el resto del equipo, alcanza con que el asistente las considere válidas. También facilitan el proceso de generar demostraciones mediante LLMs, que muchas veces generan razonamientos lógicos erróneos, lo cual sería inviable chequear a mano. Pero podemos delegar su verificación al asistente.
 
 Trabajan con distintas \textit{teorías}. Por ejemplo, el asistente Mizar con lógica de primer orden, Coq con teoría de tipos (cálculo de construcciones o CoC) y Agda también (teoría unificada de tipos dependientes, basada en teoría de tipos de Martin-Löf).
 
 Una propiedad deseable cumplida por muchos asistentes es el \textbf{criterio de De Bruijn}. En principio, para estar seguros de que una demostración es correcta sería necesario confiar en la implementación del asistente, que puede ser muy compleja. Un asistente se dice que cumple con el criterio si construye una demostración en un formato elemental, sencillo, que pueda ser chequeada por un programa independiente, escrito por cualquiera que desconfíe de la implementación original del asistente. De esa forma no es necesario confiar en ella.
 
-En este trabajo implementamos una asistente de demostración ``PPA''
+En este trabajo implementamos una asistente de demostración \textit{PPA}
 (\textit{Pani's proof assistant}) inspirado en Mizar. Trabaja sobre teorías de
 lógica clásica de primer orden. Cumple con el criterio de De Bruijn porque
 \textit{certifica} las demostraciones en el lenguaje de alto nivel \ppaLang{},
 generando demostraciones de bajo nivel de deducción natural: un sistema lógico
 que permite escribir demostraciones mediante reglas de inferencia. Además,
-permite extraer testigos de existenciales. Su sintaxis está inspirada en el
-\textit{mathematical vernacular} introducido por Freek Wiedijk en
+implementa extracción de testigos de existenciales. Su sintaxis está inspirada
+en el \textit{mathematical vernacular} introducido por Freek Wiedijk en
 \cite{freek-mv}, que tiene por objetivo ser lo más parecido posible al lenguaje
-natural. No es un demostrador automático de teoremas, pero incluye un pequeño demostrador heurístico para lógica de primer orden y completo para proposicional, que simplifica la escritura de demostraciones.
+natural. No es un demostrador automático de teoremas, pero incluye un pequeño
+demostrador heurístico para lógica de primer orden y completo para
+proposicional, que simplifica la escritura de demostraciones.
 
 Para la extracción de testigos, es deseable que las demostraciones sean
 \textbf{constructivas}: una demostración de $\exists \var . \pred(\var)$ nos
 debe decir cómo encontrar a un objeto $\term$ que cumpla con $\pred(\term)$. PPA
 usa lógica clásica, que no siempre es constructiva por los principios de
-razonamiento clásicos equivalentes como LEM. Siempre vale $\form \fOr \fNot
+razonamiento clásicos como LEM. Siempre vale $\form \fOr \fNot
 \form$, y podemos demostrar usando eso sin determinar exactamente cual de las
 dos vale. Los asistentes como Coq lo aseguran mediante el uso de \textbf{lógica
 intuicionista}, que siempre es constructiva.
@@ -124,9 +126,10 @@ A lo largo del trabajo, usaremos ``PPA'' para referirnos a dos cosas separadas: 
     \item Luego, si es una demostración de un existencial, el usuario puede optar por \textit{extraer un testigo}: primero se \textbf{traduce} la demostración de clásica a intuicionista, y luego se reduce hacia su formal normal de la cual se puede tomar el testigo.
 \end{itemize}
 
-Las funciones principales son las siguientes
+Las definiciones principales son las siguientes
 
 \begin{itemize}
+    \item El tipo \mintinline{haskell}{type Result a = Either String a} es la mónada principal que se usa para permitir devolver resultados correctos o errores.
     \item \mintinline{haskell}{certify :: Program -> Result Context}. Implementada por el módulo \texttt{PPA.Certifier}. Certifica un \textit{programa} (axiomas y teoremas) generando un \textit{contexto} (una demostración en deducción natural para cada teorema).
     \item \mintinline{haskell}{check :: Env -> Proof -> Form -> CheckResult}.
     Implementada por el módulo \texttt{ND.Checker}. Chequea una demostración de una fórmula asumiendo un entorno o contexto de demostración.
