@@ -15,9 +15,24 @@ permite extraer testigos de existenciales. Su sintaxis está inspirada en el
 \cite{freek-mv}, que tiene por objetivo ser lo más parecido posible al lenguaje
 natural. No es un demostrador automático de teoremas, pero incluye un pequeño demostrador heurístico para lógica de primer orden y completo para proposicional, que simplifica la escritura de demostraciones.
 
-Para la extracción de testigos, las demostraciones deben ser \textbf{constructivas}: una demostración de $\exists \var . \pred(\var)$ nos debe decir cómo encontrar a un objeto $\term$ que cumpla con $\pred(\term)$. PPA usa lógica clásica, que no siempre es constructiva por los principios de razonamiento clásicos equivalentes como LEM. Siempre vale $\form \fOr \fNot \form$, y podemos demostrar usando eso sin determinar exactamente cual de las dos vale. Los asistentes como Coq lo aseguran mediante el uso de \textbf{lógica intuicionista}, que siempre es constructiva.
+Para la extracción de testigos, es deseable que las demostraciones sean
+\textbf{constructivas}: una demostración de $\exists \var . \pred(\var)$ nos
+debe decir cómo encontrar a un objeto $\term$ que cumpla con $\pred(\term)$. PPA
+usa lógica clásica, que no siempre es constructiva por los principios de
+razonamiento clásicos equivalentes como LEM. Siempre vale $\form \fOr \fNot
+\form$, y podemos demostrar usando eso sin determinar exactamente cual de las
+dos vale. Los asistentes como Coq lo aseguran mediante el uso de \textbf{lógica
+intuicionista}, que siempre es constructiva.
 
-En este trabajo, la extracción se hace en dos pasos. Primero hacemos uso de la \textbf{traducción de Friedman} \cite{miquel-friedman}, que permite traducir una demostración clásica a una intuicionista para cierta clase de fórmulas: las $\classPiTwo$, de la pinta $\forall \var_1 \dots \forall \var_n . \exists \varTwo . \anyForm$. Luego, \textit{normalizamos} la demostración intuicionista, y de su forma normal extraemos el testigo del existencial. No conocemos un asistente de demostración de lógica clásica que implemente la traducción de Friedman original para extraer testigos. Este es el aporte principal de este trabajo.
+En este trabajo, la extracción se hace de forma \textit{indirecta} en dos pasos.
+Primero hacemos uso de la \textbf{traducción de Friedman}
+\cite{miquel-friedman}, que permite traducir una demostración clásica a una
+intuicionista para cierta clase de fórmulas: las $\classPiTwo$, de la pinta
+$\forall \var_1 \dots \forall \var_n . \exists \varTwo . \anyForm$. Luego,
+\textit{normalizamos} la demostración intuicionista, y de su forma normal
+extraemos el testigo del existencial. No conocemos un asistente de demostración
+de lógica clásica que implemente la traducción de Friedman original para extraer
+testigos. La implementación de un mecanismo de extracción indirecto es el aporte principal de este trabajo.
 
 \section{Lógica de primer orden}
 
@@ -128,10 +143,10 @@ Las funciones principales son las siguientes
 
 \section{Estructura del escrito}
 
-El trabajo se divide en 5 capítulos principales además de la introducción y la conclusión. Comenzamos por el \fullref{chap:nd} en el que se presenta de forma completa el sistema de deducción natural usado para los certificados. Se introducen las reglas de inferencia junto con sus intuiciones, el concepto de \textit{reglas admisibles}, demostraciones de ejemplo y algunos algoritmos implementados (chequeo, alfa equivalencia de fórmulas y sustitución sin capturas).
+El trabajo se divide en 5 capítulos principales además de la introducción y la conclusión. Comenzamos por el \fullref{chap:nd} en el que se presenta de forma completa el sistema de deducción natural usado para los certificados. Se introducen las reglas de inferencia junto con sus intuiciones, el concepto de \textit{reglas admisibles}, demostraciones de ejemplo y algunos algoritmos implementados: chequeo (función \mintinline{haskell}{check}), alfa equivalencia de fórmulas y sustitución sin capturas.
 
-En el \fullref{chap:ppa} introducimos el lenguaje desde el punto de vista de un usuario: cómo están compuestos los programas, cómo usar el pequeño demostrador (\lstinline{by}) para facilitar la escritura de demostraciones, y una descripción exhaustiva de todos los comandos soportados. En \fullref{chap:ppa-certifier} se muestra la implementación interna del \textit{certificador} de PPA, cómo se generan demostraciones en deducción natural a partir de programas. De forma central se explica el funcionamiento del \lstinline{by}, que es el corazón del certificador.
+En el \fullref{chap:ppa} introducimos el lenguaje desde el punto de vista de un usuario: cómo están compuestos los programas, cómo usar el pequeño demostrador (\lstinline{by}) para facilitar la escritura de demostraciones, y una descripción exhaustiva de todos los comandos soportados. En \fullref{chap:ppa-certifier} se muestra la implementación interna del \textit{certificador} de PPA, cómo se generan demostraciones en deducción natural a partir de programas (la función \mintinline{haskell}{certify}). De forma central se explica el funcionamiento del \lstinline{by}, que es el corazón del certificador.
 
-En el \fullref{chap:witness-extraction} se muestra el proceso completo de extracción de testigos, comenzando por la traducción de Friedman y luego la normalización de demostraciones intuicionistas.
+En el \fullref{chap:witness-extraction} se muestra el proceso completo de extracción de testigos, comenzando por la traducción de Friedman y luego la normalización de demostraciones intuicionistas (\mintinline{haskell}{translateFriedman} y \mintinline{haskell}{reduce}).
 
-Finalmente, en el \fullref{chap:ppa-tool} se detallan los pasos para instalar y usar la herramienta \ppaTool{}, y se mencionan algunos detalles de implementación como el compilador y el modelado de deducción natural.
+Finalmente, en el \fullref{chap:ppa-tool} se detallan los pasos para instalar y usar la herramienta \ppaTool{}, y se mencionan algunos detalles de implementación como la arquitectura del programa a nivel módulos y dependencias entre ellos, el compilador y el modelado de deducción natural.

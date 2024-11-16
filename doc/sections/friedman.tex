@@ -1222,7 +1222,7 @@ Este proceso es análogo a las reducciones de cálculo $\lambda$. Y no solo
 análogo, sino que existe un \textit{isomorfismo} entre demostraciones en
 deducción natural y términos de cálculo $\lambda$: El isomorfismo Curry-Howard
 \cite{curry-howard-isomorphism}. Con él, la normalización de demostraciones es
-el isomorfismo de las reducciones en cálculo $\lambda$, su semántica. Por
+el isomorfismo de las reducciones en cálculo $\lambda$, su semántica operacional. Por
 ejemplo, el isomorfismo nos permite pensar en una conjunción como una tupla, y
 las eliminaciones como proyecciones. Luego, podemos ver cómo la regla de
 normalización de la conjunción es isomorfa a la regla de reducción de las
@@ -1419,6 +1419,7 @@ reducción, al mismo tiempo reduciríamos $\form \fAnd \formTwo \rewrite \form^{
 \duda{Probablemente falta rigurosidad en esta sección.}
 
 \subsection{Limitaciones}
+\label{fri:norm:sec:limitations}
 
 Implementamos una reducción sencilla, que solamente reduce eliminaciones de introducciones de la misma regla. Pero hay otros patrones que dejamos afuera, 
 que si ocurren, no nos permitirán llegar a una forma normal. Entonces no siempre podremos extraer un testigo. Por ejemplo, en \fullref{fri:norm:fig:non-norm}, se puede observar una demostración sencilla que usa \lstinline{cases}. Pero al certificarla, traducirla y reducirla, no queda en una forma normal. Se repite dos veces \ruleExistsI{}, cuando se podría mover hacia la raíz del árbol y evitar repetirlo en cada rama del \ruleOrE{}. Esto hace que al intentar de extraer un testigo, el programa reporte una falla al no poder normalizar la demostración. Para soportar estos casos es necesario sofisticar la reducción, agregando otro tipo de reglas, que quedó fuera del alcance del trabajo.
@@ -1697,9 +1698,6 @@ De esa forma, como los axiomas se mantienen, existe la forma normal que buscamos
 
 \section{Otros métodos de extracción}
 
-\todo{Hablar sobre y citar classical realizability, no tengo ni idea.}
+Hay dos categorías a grandes rasgos de extracción testigos de demostraciones en lógica clásica, o en realidad, de formas de interpretarla computacionalmente: directas e indirectas \cite{miquel-friedman}. Las indirectas traducen las demostraciones clásicas de un subconjunto de fórmulas a otras lógicas como lineal o intuicionista, aprovechando el hecho de que la intuicionista es constructiva y tiene una interpretación computable a través del isomorfismo Curry-Howard. Esta traducción se puede hacer con diferentes tipos de traducciones negativas, como la traducción de Friedman, que es lo que hicimos en este trabajo.
 
-\duda{Qué opinás Pablo de esta intro? Cuál es el mínimo de cosas que habría que mencionar? Así sé qué investigar jeje}
-Buena intro acá https://www.degruyter.com/document/doi/10.1515/9783110324921.11/html?lang=en
-
-In the past years, many computational interpretations of Classical Arithmetic havebeen put forward.  Under a first classification, they fall into two large categories:directandindirectinterpretations.   Among  the  indirect  interpretations  one  findsthe  negative  translations  followed  either  by  Dialectica  interpretations  [13],  [30](see e.g.   Kohlenbach [19]) or by intuitionistic realizability interpretations com-bined with Friedman’s translation [13] (see e.g. Berger and Schwichtenberg [10]).Among the direct interpretations, there are different versions of Classical Realiz-ability (Krivine’s [22] and Avigad’s [6]), there is Coquand game semantics [11],
+Por otro lado, también se puede hacer de forma directa, dando una interpretación computable de la lógica clásica. A esto se le llama \textit{realizabilidad clásica}, que consiste en dar una semántica operacional para cálculos $\lambda$ clásicos.
