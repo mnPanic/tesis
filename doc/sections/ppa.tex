@@ -1,41 +1,13 @@
-% \begin{itemize}
-%     \item Interfaz de PPA. Acá tienen que quedar claras todas las intuiciones
-%     desde el punto de vista de un usuario. Mencionar que es un buen momento para
-%     que vayan y prueben el programa (comando \texttt{check} nada más) \ok
-%     \begin{itemize}
-%         \item Programas, teoremas, demostraciones como listas de pasos que
-%         reducen la tesis hasta agotarla. \ok
-%         \item Comandos 1 por 1. Similar al README que ya existe pero más facha \ok
-%         \item Ejemplos de demostraciones. \ok
-%     \end{itemize}
-%     \item Certificador: componente de PPA que "certifica" las demostraciones,
-%     generando un certificado en deducción natural. Implicó escribir muchos
-%     meta-teoremas.
-%     \begin{itemize}
-%         \item Formalización de muchos teoremas y axiomas: contextos (vale en el prefijo)
-%         \item Proof y proof steps, simplificación de la interfaz y mapeo de
-%         comandos a steps
-%         \item Implementación de cada comando
-%         \item By y solver para resolver varios. DNF. Extensión con foralls
-%         consecutivos. Demostración / justificación de que es correcto y completo
-%         para LP, pero heurístico para LPO (mostrar un caso en el que no funcione)
-%         \item Descarga de conjunciones
-%         \item Uso de dneg elim como razonamiento por el absurdo para demostrar
-%         deMorgan y equivalencias.
-%     \end{itemize}
-% \end{itemize}
-
 El lenguaje PPA (\textit{Pani's Proof Assistant}) se construye sobre las
 fundaciones de deducción natural. Es un asistente de demostración que permite
 escribir de una forma práctica demostraciones de cualquier teoría de lógica
 clásica de primer orden. En este capítulo nos vamos a centrar en el lenguaje
-\ppaLang{}, la interfaz del programa \ppaTool{}, vista desde el punto de vista
-de un usuario que busca escribir demostraciones. Los detalles teóricos de cómo
-está implementado son abordados en el \namedref{chap:ppa-certifier}, y los de
-implementación y su instalación en el \namedref{chap:ppa-tool}. Para
-introducirlo veamos un ejemplo: en la \namedref{ppa:prog:alumnos} representamos
-el mismo de alumnos del \namedref{nd:ex:exam-nd-lpo} pero con un poco más de
-sofisticación.
+\ppaLang{}, implementado por \ppaTool{}, con un enfoque de referencia del
+lenguaje. Los detalles teóricos de cómo está implementado son abordados en el
+\namedref{chap:ppa-certifier}, y los de implementación y su instalación en el
+\namedref{chap:ppa-tool}. Para introducirlo veamos un ejemplo: en la
+\namedref{ppa:prog:alumnos} representamos el mismo de alumnos del
+\namedref{nd:ex:exam-nd-lpo} pero con un poco más de sofisticación.
 
 \begin{figure}
     \lstinputlisting[firstline=12,lastline=61,language=PPA,name=Alumnos]{listings/interfaz/alumnos.ppa}
@@ -43,11 +15,11 @@ sofisticación.
     \label{ppa:prog:alumnos}
 \end{figure}
 
-Diseccionemos parte por parte. La primera de todo programa en PPA es definir
+Vayamos parte por parte. La primera de todo programa en PPA es definir
 los axiomas de la \textit{teoría de primer orden} con la que se está trabajando.
 Como no se chequean tipos, no es necesario definir explícitamente los símbolos
 de predicados y de función. Pero se pueden agregar a modo informativo como un
-comentario. Consisten en fórmulas que son siempre consideradas como válidas.
+comentario. Los axiomas son fórmulas que siempre son consideradas como válidas.
 Definimos,
 \begin{itemize}
     \item \lstinline{axiom reprueba_recu_parcial_recursa}: si un alumno reprueba el
@@ -61,12 +33,10 @@ Definimos,
 \lstset{firstnumber=last}
 \lstinputlisting[firstline=1,lastline=23,name=Alumnos]{listings/interfaz/alumnos.ppa}
 
-En base a eso demostramos dos teoremas. El primero,
-\lstinline{theorem reprueba_recu_recursa}, nos permite concluir que un alumno recursa
-solo a partir de que reprueba el recuperatorio. Esto es porque a partir de esto,
-con el resto de los axiomas, podemos deducir que también reprobó el parcial: si
-reprueba el recuperatorio es porque lo rindió, y si rindió el recuperatorio, es
-porque reprobó el parcial.
+En base a eso demostramos dos teoremas. El primero, \lstinline{theorem reprueba_recu_recursa}, nos permite concluir que un alumno recursa solo a partir
+de que reprueba el recuperatorio. Con el resto de los axiomas, podemos deducir
+que también reprobó el parcial: si reprueba el recuperatorio es porque lo
+rindió, y si rindió el recuperatorio, es porque reprobó el parcial.
 
 \begin{figure}[H]
     \lstinputlisting[firstnumber=last,firstline=25,lastline=46,name=Alumnos]{listings/interfaz/alumnos.ppa}
@@ -78,13 +48,12 @@ los pasos son lógicamente correctos, y luego de ejecutarlos todos, la tesis se
 reduce por completo.
 
 \begin{itemize}
-    \item \cmdLet{} permite demostrar un \lstinline{forall}, asignando un nombre
-    a la variable general, y \textit{reduce} la tesis a su fórmula.
+    \item \cmdLet{} permite demostrar un \lstinline{forall}, asignando un nombre general a la variable, y \textit{reduce} la tesis a su fórmula.
     \item \cmdSuppose{} permite demostrar una implicación. Agrega como
     hipótesis al contexto el antecedente, permitiendo nombrarlo, y reduce la
     tesis al consecuente.
-    \item \cmdClaim{} permite agregar una sub-demostración, cuya fórmula se
-    agrega como hipótesis.
+    \item \cmdClaim{} inserta una sub-demostración auxiliar, cuya fórmula se
+    agrega como hipótesis. No reduce la tesis.
     \item \cmdHave{} agrega una hipótesis auxiliar, sin reducir la tesis.
     \item \cmdBy{} es el mecanismo principal de demostración. Permite deducir
     fórmulas a partir de otras. Es completo para lógica proposicional, y
@@ -127,8 +96,8 @@ teoremas, que se leen en orden el inicio hasta el final.
 axiom <name> : <form>
     \end{lstlisting}
 
-    \item Los teoremas deben ser demostrados, y se pueden citar todas las
-    hipótesis previas, que consideran ciertas.
+    \item Los teoremas deben ser demostrados. En ella pueden citar
+    todas las hipótesis definidas previamente.
 
     \begin{lstlisting}[numbers=none]
 theorem <name> : <form>
@@ -227,7 +196,7 @@ En general, \lstinline{<form> by <justification>} se interpreta como que
 las hipótesis de \lstinline{<justification>}, que deben estar declaradas
 anteriormente y ser parte del contexto. Ya sea por axiomas o teoremas, u otros
 comandos que agreguen hipótesis (como \lstinline{suppose}). Puede usarse de dos
-formas principales, \lstinline{thus} y \lstinline{have}
+formas principales, \lstinline{thus} y \lstinline{have}.
 
 \begin{itemize}
     \item \lstinline{thus <form> by <justification>}.
@@ -248,7 +217,7 @@ formas principales, \lstinline{thus} y \lstinline{have}
     
     Igual a \lstinline{thus}, pero permite introducir afirmaciones
     \textit{auxiliares} que no son parte de la tesis, sin reducirla, y las
-    agrega a las hipótesis para usar luego. Por ejemplo, la demostración
+    agrega a las hipótesis del contexto para su uso posterior. Por ejemplo, la demostración
     anterior la hicimos en un solo paso con el \lstinline{thus}, pero podríamos
     haberla hecho en más de uno con una afirmación auxiliar intermedia.
 
@@ -285,8 +254,8 @@ Por ejemplo,
 \end{multicols}
 
 
-En todos, el \lstinline{by} es opcional. En caso de no especificarlo, debe ser
-una tautología.
+En todos, el \lstinline{by} es opcional. En caso de no especificarlo en
+\lstinline{thus} o \lstinline{have}, la fórmula debe ser una tautología. Por ejemplo,
 
 \lstinputlisting{listings/interfaz/by-taut.ppa}
 
@@ -350,7 +319,7 @@ natural resuelve automáticamente con el uso \lstinline{by}.
     \lstinputlisting[firstline=1, lastline=11]{listings/interfaz/cases.ppa}
 
     No es necesario que los casos sean exactamente iguales a como están
-    presentados en la hipótesis, solo debe valer que la disyunción de ellos sea
+    presentados en las hipótesis, solo debe valer que la disyunción de ellos sea
     consecuencia de ella. Es decir, para poder usar
 
     \begin{lstlisting}[numbers=none]
@@ -394,7 +363,7 @@ end
     Permite demostrar un cuantificador universal. Si se tiene
     \lstinline{forall X. p(X)}, luego de \lstinline{let X} la tesis se reduce a
     \lstinline{p(X)} con un \lstinline{X} genérico. Puede ser el mismo nombre de
-    variable o uno diferente.
+    variable o uno diferente, por ejemplo \lstinline{let Y}.
 
 \end{itemize}
 
