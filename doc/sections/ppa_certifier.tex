@@ -20,13 +20,16 @@ escritas por el usuario?
 
 \section{Certificados}
 
-Los programas de PPA se \textbf{certifican}, generando una demostración en
-deducción natural. ¿Por qué? El lenguaje es complejo, la implementación no es
-trivial. Si se programa una demostración, para confiar en que es correcta hay
-que confiar en la implementación de PPA. Si generara una demostración de bajo
-nivel, que use las reglas de un sistema lógico simple y conocido, entonces
-cualquiera que desconfíe podría fácilmente escribir un chequeador, o usar uno
-confiable. Al generar demostraciones en deducción natural, cumple con esto, que se llama \textbf{criterio de de Bruijn}.
+Los programas de PPA se \textbf{certifican}, generando un certificado: una
+demostración en deducción natural. ¿Por qué? El lenguaje es complejo, la
+implementación no es trivial. Si se programa una demostración, para confiar en
+que es correcta hay que confiar también en la implementación de PPA. Pero si
+generara una demostración de bajo nivel, que use las reglas de un sistema lógico
+simple y conocido, entonces cualquiera que desconfíe podría fácilmente escribir
+un chequeador independiente, o usar uno confiable. Decimos que un asistente de
+demostración que cuenta con esta propiedad cumple con el
+\textbf{criterio de de Bruijn}. \ppaTool{} lo cumple al generar demostraciones
+en deducción natural.
 
 \begin{definition}[Criterio de de Bruijn \cite{freek-bruijn}] Un asistente de
     demostración que satisface que sus demostraciones puedan ser chequeadas por
@@ -34,20 +37,20 @@ confiable. Al generar demostraciones en deducción natural, cumple con esto, que
     criterio de de Bruijn.
 \end{definition}
 
-El módulo de PPA que \textit{certifica} las demostraciones de alto nivel de PPA
-generando una demostración en deducción natural es el \modCertifier{}. Si
-bien toda demostración que genere debería ser correcta, para atajar posibles
-errores siempre se chequean con el \modChecker{} de DN.
-
 
 \duda{Para pablo: pero si emite certificados que no corresponden a la demo original y chequean siempre, por ej. siempre el mismo, no estaría mal igual? Tenés que confiar también en la parte que emite el certificado.}
 
-\section{Certificador}
+El módulo de PPA que certifica las demostraciones de alto nivel de PPA
+generando una demostración en deducción natural es el \modCertifier{}. Si
+bien toda demostración que genere debería ser correcta, para atajar posibles
+errores siempre se chequean con el \modChecker{}, el pequeño módulo que implementa el chequeo de los certificados.
 
-El \modCertifier{} en realidad no genera una sola demostración de deducción
-natural, sino que al poder haber más de un teorema en un archivo PPA, el
-certificado en realidad es un \textbf{contexto} compuesto por una lista ordenada
-de \textbf{hipótesis} de dos tipos:
+\section{Contextos}
+
+Durante el proceso de certificación, en realidad no se genera una sola
+demostración, sino que al poder haber más de un teorema en
+un programa de PPA, el certificado es un \textbf{contexto} compuesto por una
+lista ordenada de \textbf{hipótesis} de dos tipos:
 
 \begin{itemize}
     \item \textbf{Teoremas}: son fórmulas con demostraciones de deducción natural
@@ -56,7 +59,7 @@ de \textbf{hipótesis} de dos tipos:
     modelar una teoría)
 \end{itemize}
 
-\begin{figure}[H]
+\begin{figure}[h]
     \centering
     \begin{multicols}{2}
         \begin{tabular}{c}
@@ -65,45 +68,89 @@ de \textbf{hipótesis} de dos tipos:
         \includegraphics[scale=0.5]{img/ppa-context.png}
     \end{multicols}
     \caption{Contexto resultante de certificar de un programa}
+    \label{ppa-cert:fig:context}
 \end{figure}
 
 
-Por lo tanto, en vez de chequear demostraciones, se chequean contextos: Una
-demostración será válida en el \textit{prefijo estricto del contexto} que la
-contiene. Es decir, a la hora de chequear la demostración de un teorema, se
-deben asumir como ciertas todas las hipótesis que fueron definidas antes que él.
+Se puede ver un ejemplo en la \namedref{ppa-cert:fig:context}. También se puede ver
+en el tipo de la función principal del módulo: \mintinline{haskell}{certify ::
+Program -> Result Context}. Como para un programa generamos muchas
+demostraciones, debemos extender el chequeo a contextos: Cada demostración será
+válida en el \textit{prefijo estricto del contexto} que la contiene. Es decir, a
+la hora de chequear la demostración de un teorema, se deben asumir como ciertas
+todas las hipótesis que fueron definidas antes que él. En el ejemplo, cuando
+chequeamos la demostración de \lstinline{t1}, debemos asumir como válidos los
+axiomas \lstinline{ax1, ax2, ax3}.
+
+\subsection{Contexto local}
 
 Pero no solo los axiomas y teoremas declarados en el programa se agregan al
 contexto. Cada demostración de un teorema tendrá además un \textit{contexto
-local} que extiende al anterior, solo al alcance de su demostración (y se omiten
-en el certificado). Las afirmaciones auxiliares que no afectan la tesis
-(\lstinline{have}, \lstinline{claim}, \lstinline{consider}, etc.) se agregan
-como teoremas. Por lo tanto, cuando se citen, se pegan sus demostraciones. Por
-otro lado, algunos comandos agregan axiomas, los mismos que en deducción natural
+local} que extiende al anterior, solo válido durante el alcance de su
+demostración (se omiten en el certificado).
+
+En él, las afirmaciones auxiliares que no afectan la tesis como
+\lstinline{have}, \lstinline{claim} y \lstinline{consider}, etc. se agregan como
+teoremas. Por lo tanto, cuando se citen, se pueden copiar sus demostraciones tomándolas del contexto local. Por otro
+lado, algunos comandos agregan axiomas, los mismos que en deducción natural
 agregan fórmulas al contexto (\lstinline{suppose} y \lstinline{consider}). Es
 correcto asumir como ciertas esas hipótesis, porque lo mismo se hará durante el
-chequeo de la demostración generada de deducción natural.
+chequeo de la demostración generada de deducción natural. Se puede ver un
+ejemplo en la \fullref{ppa-cert:fig:local-context}.
 
-\begin{figure}[H]
+\begin{figure}[h]
     \centering
     \begin{multicols}{2}
         \begin{tabular}{c}
             \lstinputlisting{listings/certifier/local-context.ppa}
         \end{tabular}
+        \vfill\null
+        \columnbreak
         \includegraphics[scale=0.5]{img/ppa-local-context.png}
     \end{multicols}
     \caption{Contexto local}
+    \label{ppa-cert:fig:local-context}
 \end{figure}
 
-\section{Funcionamiento del by}
+\section{Certificado de demostraciones}
+
+Ya vimos cómo las hipótesis se agregan al contexto. Pero ¿cómo generamos una demostración de deducción natural a partir de una demostración de un teorema de \ppaLang{}? Para cada comando introducido en el \namedref{chap:ppa}, deberemos \textit{certificarlo} generando una demostración, y el resto del programa debería demostrar sus premisas. En la \namedref{ppa-cert:certify:ex} se puede ver un ejemplo, en donde \lstinline{take} se certifica como \ruleExistsI{}, y la demostración de su premisa está dada por el certificado del resto del programa, \lstinline{thus p(v) by ax}, que se certifica como \ruleAx.
+
+\begin{figure}[H]
+    \begin{multicols}{2}
+        \begin{tabular}{c}
+            \lstinputlisting{listings/extract/exists.ppa}
+        \end{tabular}
+        \begin{prooftree}
+            \AxiomC{}
+            \RL{\ruleAx}
+            \UnaryInfC{$p(v) \judG p(v)$}
+            \RL{\ruleExistsI}
+            \UnaryInfC{$p(v) \judG \exists x . p(X)$}
+        \end{prooftree}
+    \end{multicols}
+    \caption{Ejemplo de certificado generado para un programa}
+    \label{ppa-cert:certify:ex}
+\end{figure}
+
+En el resto del capítulo presentamos cómo cada comando de \ppaLang{} puede ser certificado.
+
+\begin{itemize}
+    \item Comenzamos con describir el \textit{solver} que se usa por debajo del \lstinline{by}, que es central al funcionamiento de todo el certificador. Aquí veremos que la demostración generada para \ref{ppa-cert:certify:ex} no es exactamente como se presenta.
+    \item Vemos cómo podemos usarlo para facilitar la descarga de conjunciones en un orden arbitrario.
+    \item También la traducción de los comandos que corresponden a reglas de inferencia de forma directa: \lstinline{take} (\ruleExistsI), \lstinline{consider} (\ruleExistsE), \lstinline{let} (\ruleForallI), \lstinline{cases} (\ruleOrE) y \lstinline{suppose} (\ruleImpI, \ruleNotI).
+    \item Y finalmente los comandos adicionales: \lstinline{equivalently} y \lstinline{claim}.
+\end{itemize}
+
+\section{Implementación del by}
 
 El \lstinline{by} es el mecanismo principal de demostración en PPA, y el corazón
 del \modCertifier. Muchas funcionalidades están implementadas a su alrededor.
 Genera \textbf{automáticamente} una demostración de que una fórmula es
-consecuencia lógica de una lista de hipótesis. Es un \textit{solver heurístico} para lógica de primer orden.
+consecuencia lógica de una lista de hipótesis. Es un \textit{solver heurístico} para lógica de primer orden. Está basado en la implementación del mecanismo análogo en el \texttt{Checker} de Mizar \cite{freek-by}.
 
 Sea $A$ una fórmula. Supongamos que queremos demostrar \lstinline{thus A by h1, ..., hn} y que en el contexto tenemos que las hipótesis $h_i$ corresponden a
-fórmulas $\formTwo_i$, con $i \in \{1, ..., n\}, n \in \setNaturals$. Primero
+fórmulas $\formTwo_i$, con $i \in \{1, ..., n\}$ y $n \in \setNaturals$. Primero
 veamos la idea general de la estrategia y luego profundizamos en cada paso. Los pasos para certificar un \lstinline{by} son los siguientes. 
 \begin{itemize}
     \item Queremos demostrar la implicación de las hipótesis a la fórmula.
@@ -111,13 +158,13 @@ veamos la idea general de la estrategia y luego profundizamos en cada paso. Los 
         \formTwo_1 \fAnd \dots \fAnd \formTwo_n \fImp \form
     \]
     A esta fórmula la llamamos \textbf{tesis}.
-    \item Razonamos por el absurdo: asumiendo la negación de la tesis encontramos una contradicción
+    \item \textbf{Razonamos por el absurdo}: asumiendo la negación de la tesis encontramos una contradicción
     \begin{align*}
         \fNot (\formTwo_1 \fAnd \dots \fAnd \formTwo_n \fImp \form)
         &\equiv \fNot (\fNot (\formTwo_1 \fAnd \dots \fAnd \formTwo_n) \fOr \form)\\
         &\equiv \formTwo_1 \fAnd \dots \fAnd \formTwo_n \fAnd \fNot \form
     \end{align*}
-    \item Convertimos la negación de la tesis a forma normal disyuntiva (DNF),
+    \item Convertimos la negación de la tesis a forma normal disyuntiva (\textbf{DNF}),
     una disyunción de conjunciones de literales (``cláusulas'').
     \[
         (\formLit^1_{1} \fAnd \dots \fAnd \formLit^1_{n_1})
@@ -134,7 +181,7 @@ veamos la idea general de la estrategia y luego profundizamos en cada paso. Los 
         \fOr \dots \fOr
         (\formLitTwo_1 \fAnd \dots \fAnd \formLitTwo_m)
     \)?}
-    \item Buscamos una contradicción refutando cada cláusula individualmente.
+    \item Buscamos una \textbf{contradicción} refutando cada cláusula individualmente.
     Una cláusula $\formLit_1 \fAnd \dots \fAnd \formLit_n$ será refutable si
     cumple una de las siguientes condiciones.
     \begin{itemize}
@@ -194,15 +241,27 @@ eliminar existenciales.
     \end{enumerate}
 \end{ejemplo}
 
+\subsection{Certificado del by}
+
+En el resto de la sección, entramos en detalle de cómo generar una demostración para cada paso del by.
+
+\begin{enumerate}
+    \item \fullref{ppa-cert:sec:abs-reasoning}: primero necesitamos una forma de razonar por el absurdo, que nos permita deducir la fórmula original asumiendo su negación y demostrando $\fFalse$. Esto lo hacemos mediante dos reglas admisibles: la eliminación de doble negación (\ruleDnegE{}), equivalente a \ruleLEM{}, y \ruleCut{} que nos permite juntar demostraciones.
+    \item \fullref{ppa-cert:sec:dnf}: luego vemos cómo demostrar de forma automática que una fórmula es equivalente a su versión en DNF, que se realiza a partir de un sistema de reescritura.
+    \item \fullref{ppa-cert:sec:contradictions}: una vez que la fórmula está en DNF, tenemos que demostrar a partir de ella una contradicción. 
+    \item \fullref{ppa:sec:by:forall-elim}: si no se encuentra una contradicción de forma simple, se procede a eliminar $\forall$ consecutivos y reiniciar el proceso pero con unificación de fórmulas en lugar de igualdad, para así instanciar las variables cuantificadas universalmente.
+    \item \fullref{ppa-cert:sec:expressiveness}: finalmente evaluamos el poder expresivo del \textit{solver} implementado, que resulta completo para proposicional y heurístico para primer orden.
+\end{enumerate}
+
 
 \subsection{Razonamiento por el absurdo}
 \label{ppa-cert:sec:abs-reasoning}
 
 Queremos asumir que no vale la fórmula original, es decir $\fNot (\formTwo_1
 \fAnd \dots \fAnd \formTwo_n \fImp \form)$, y llegar a una contradicción. Pero
-en la demostración que estamos generando de deducción natural, tenemos que
-demostrar $(\formTwo_1 \fAnd \dots \fAnd \formTwo_n \fImp \form)$. ¿Cómo se
-puede razonar por el absurdo?
+en la demostración que estamos generando, tenemos que demostrar $(\formTwo_1
+\fAnd \dots \fAnd \formTwo_n \fImp \form)$. ¿Cómo se puede razonar por el
+absurdo?
 
 De la misma forma que en la \namedref{nd:sec:admissible-rules} se introduce
 \textit{modus tollens} como una regla admisible, para razonar por el absurdo
@@ -317,8 +376,7 @@ Que es certificado como
 
 
 \begin{notation*}
-    \diffNew{Notación nueva!}
-    En los casos en donde queramos continuar la demostración por la nueva y la demostración de la implicación sea omitida (por ejemplo por ser una regla admisible) lo notaremos de la siguiente forma más sucinta
+    En los casos en donde queramos continuar la demostración por la nueva y la demostración de la implicación sea omitida (por ejemplo por ser una regla admisible) lo notaremos de una forma más sucinta:
 
     \begin{prooftree}
         \AxiomC{$\someProof_\formTwo$}
@@ -334,10 +392,9 @@ Que es certificado como
     \label{ppa:sec:abs-reasoning}
     Imaginemos que queremos demostrar
 $\form$ por el absurdo. Podemos juntar con cut con la eliminación de la doble
-negación, pasando a demostrar $\fNot \fNot \form$, que para introducirla,
-debemos demostrar el juicio $\ctx, \fNot \form \judG \fFalse$. Es decir,
-asumiendo que no es cierta la fórmula, deducimos una contradicción. Justo lo que
-estábamos buscando para razonar por el absurdo.
+negación, pasando a demostrar $\fNot \fNot \form$. Al introducirla,
+debemos demostrar el juicio $\ctx, \fNot \form \judG \fFalse$:
+asumiendo que no es cierta la fórmula, deducimos una contradicción.
 
 \begin{prooftree}
     \AxiomC{}
@@ -354,7 +411,7 @@ estábamos buscando para razonar por el absurdo.
     \BinaryInfC{$\ctx \judG \form$}
 \end{prooftree}
 
-\diffNew{Que también se puede notar de la siguiente forma}
+Que también se puede notar de la siguiente forma
 
 \begin{prooftree}
     \AxiomC{$\vdots$}
@@ -369,17 +426,18 @@ estábamos buscando para razonar por el absurdo.
 
 \end{lemma}
 
-\begin{obs}
+\begin{obs*}
     A \ruleDnegE{} La formulamos como $\fNot \fNot \form \judG \form$ y la usamos con
     \textbf{cut}, pero otra alternativa equivalente, levemente más tediosa para
     generar demostraciones, hubiera sido demostrarla como $\fNot \fNot \form
     \fImp \form$ y usarla con \ruleImpE{} directamente.
-\end{obs}
+\end{obs*}
 
-\subsection{DNF}
+\subsection{Conversión a DNF}
+\label{ppa-cert:sec:dnf}
 
 Tenemos que generar una demostración de que la negación de la tesis genera una
-contradicción, pero lo queremos hacer a partir de la tesis en DNF. ¿Cómo la convertimos?
+contradicción, pero lo queremos hacer a partir de la tesis en DNF. ¿Cómo la convertimos?. Más aún, ¿Cómo generamos una demostración para la conversión?.
 
 \begin{definition}[DNF]
     Una fórmula está en \textbf{forma normal disyuntiva} o DNF
@@ -388,15 +446,19 @@ contradicción, pero lo queremos hacer a partir de la tesis en DNF. ¿Cómo la c
     componen. Un literal será un predicado, una negación de un predicado o una
     fórmula cualquiera que comienza con un cuantificador. Ejemplos:
     
+    Sean $\formLit, \formLitTwo, \formLitThree$ predicados 0-arios. Luego,
     \begin{itemize}
-        \item $\formLit \fAnd \formLitTwo$ está en DNF
-        \item $(\formLit \fAnd \formLitThree) \fOr (\formLit \fAnd \formLitTwo)$ también
-        \item $(\formLit \fImp \formLitTwo) \fOr (\formLit \fAnd \formLitTwo)$ no lo está
+        \item $\formLit \fAnd \formLitTwo$ está en DNF.
+        \item $(\formLit \fAnd \formLitThree) \fOr (\formLit \fAnd \formLitTwo)$ también.
+        \item $(\formLit \fImp \formLitTwo) \fOr (\formLit \fAnd \formLitTwo)$ no lo está.
         \item $\big(\forall \var . (\formLit \fImp \formLitTwo)\big) \fOr (\formLit \fAnd \formLitTwo)$ si.
     \end{itemize}
 \end{definition}
 
-\begin{theorem}[Conversión a DNF] Para toda fórmula $\form$, existe
+\begin{theorem}[Conversión a DNF]
+    \label{ppa-cert:thm:dnf}
+    
+    Para toda fórmula $\form$, existe
     $\dnf{\form}$ su equivalente en DNF. Y vale $\form \judG \dnf{\form}$.
 \end{theorem}
 
@@ -407,10 +469,10 @@ el uso de cut.
 \begin{prooftree}
     \AxiomC{\vdots}
     \noLine
-    \UnaryInfC{$\ctx, \form, \dnf{\form} \judG \fFalse$}
+    \UnaryInfC{$\ctx, \form \judG \dnf{\form}$}
     \AxiomC{\vdots}
     \noLine
-    \UnaryInfC{$\ctx, \form \judG \dnf{\form}$}
+    \UnaryInfC{$\ctx, \form, \dnf{\form} \judG \fFalse$}
     \RL{\ruleCut}
     \admissibleRuleLine
     \BinaryInfC{$\ctx, \form \judG \fFalse$}
@@ -419,7 +481,7 @@ el uso de cut.
 
 
 Para convertir una fórmula cualquiera a DNF, vamos a implementar una traducción
-\textit{small-step} implementando el siguiente sistema de reescritura.
+\textit{small-step} mediante el siguiente sistema de reescritura.
 
 \begin{figure}[H]
     \begin{align*}
@@ -456,11 +518,11 @@ Para convertir una fórmula cualquiera a DNF, vamos a implementar una traducció
 \end{figure}
 
 Pero no podemos hacerlo meramente de forma sintáctica, sino que tenemos
-\textit{generar una demostración} para cada equivalencia.
+\textit{generar una demostración} para cada equivalencia. Cada una será una regla admisible.
 
 \subsubsection{Congruencias}
 
-Hay casos en donde tenemos que reemplazar una sub-fórmula por una equivalente.  Por ejemplo para reescribir
+Hay pasos de la traducción a DNF en donde tenemos que reemplazar una sub-fórmula por una equivalente.  Por ejemplo para reescribir
 \(
     \formLit \fOr \bm{\fNot (\formLitTwo \fOr \formLitThree)}
     \rewrite
@@ -484,7 +546,7 @@ sumamente importante observar que $\fNot$ es \textit{contravariante}, para
 demostrar $\fNot \form \judG \fNot \form'$ no necesitamos una demostración
 de $\form \judG \form'$, sino de $\form' \judG \form$. Esto quiere decir que
 para todas las equivalencias, incluso las congruencias, no nos alcanza con
-demostrarlas en un solo sentido, sino que vamos a necesitar ambos, la
+demostrarlas en un solo sentido, ya que si se usan dentro de un $\fNot$, necesitaremos el otro. Vamos a necesitar demostrar la
 ida y la vuelta: para $\fNot(\formLit \fOr \formLitTwo) \rewrite
 \fNot \formLit \fAnd \fNot \formLitTwo$ necesitamos
 \(
@@ -492,7 +554,7 @@ ida y la vuelta: para $\fNot(\formLit \fOr \formLitTwo) \rewrite
         \judG \fNot \formLit \fAnd \fNot \formLitTwo
 \) y \(
     \fNot \formLit \fAnd \fNot \formLitTwo \judG \fNot(\formLit \fOr \formLitTwo)
-\). lo notamos como \[
+\). Lo notamos como \[
     \fNot(\formLit \fOr \formLitTwo)
         \judgEquiv \fNot \formLit \fAnd \fNot \formLitTwo
 \]
@@ -500,13 +562,12 @@ ida y la vuelta: para $\fNot(\formLit \fOr \formLitTwo) \rewrite
 \subsubsection{Algoritmo}
 \label{ppa:sec:dnf:algoritmo}
 
-\diffNew{Finalmente, el algoritmo para generar la demostración de la conversión de una
-fórmula en DNF se implementa de forma \textit{small-step}. La conversión se
-implementa como la clausura reflexiva transitiva de la conversión de un paso (es
-decir, aplicarla 0 o más veces hasta que no cambie). Estos pasos pueden ser o
-bien ser un paso de reescritura, o uno de congruencia reescribiendo una
-sub-fórmula. En cada uno se usa una de las siguientes demostraciones.}
-
+Finalmente, el algoritmo para generar la demostración de la conversión de una
+fórmula en DNF se implementa en dos partes. Por un lado, contamos con una
+conversión \textit{small-step} que hace un paso de reescritura. Con él, podemos
+implementar la conversión como su \textit{clausura reflexiva transitiva}:
+aplicarla 0 o más veces hasta que ya no cambie. Los pasos pueden ser o bien ser
+un paso de reescritura, o muchos recursivos de congruencia para reescribir una sub-fórmula anidada. En cada uno se usa una de las demostraciones de la \namedref{ppa-cert:dnf-rules}. En total son 26 demostraciones. Nos ahorramos los detalles porque son sencillas y bien conocidas, por ejemplo leyes de De Morgan.
 \begin{figure}[H]
     \begin{align*}
         \intertext{Pasos base}
@@ -542,29 +603,26 @@ sub-fórmula. En cada uno se usa una de las siguientes demostraciones.}
         \form \fOr \formTwo &\judgEquiv \form' \fOr \formTwo\\
         \fNot \form &\judgEquiv \fNot \form'
     \end{align*}
-    \caption{Pasos de conversión a DNF}
+    \caption{Reglas de conversión a DNF}
+    \label{ppa-cert:dnf-rules}
 \end{figure}
-
-
-En total son 26 demostraciones. Nos ahorramos los detalles porque son bien
-conocidas (por ej. DeMorgan).
 
 \duda{Demostración de que termina? De que es correcto? Al menos una cita para que sea más confiable el sistema de reescritura? O se asume como bien conocido?}
 
 \subsection{Contradicciones}
+\label{ppa-cert:sec:contradictions}
 
 Tenemos la fórmula traducida a DNF. Debemos demostrar una contradicción a partir
 de ella. Si tenemos las cláusulas $\clause_1 \fOr \clause_2$, podemos demostrar
-$\clause_1 \fOr \clause_2 \judG \fFalse$ usando \ruleOrE{} y asumiendo cada
-una, llegar a una contradicción. Esto se generaliza a N cláusulas mediante el
-uso de \ruleOrE{} anidados. Por esto decimos que hay que \textit{``refutar cada
-cláusula''}. El método tiene tres formas de refutarlas
+$\clause_1 \fOr \clause_2 \judG \fFalse$ usando \ruleOrE{} y deducir una contradicción asumiendo cada una. Esto se generaliza a N cláusulas mediante el
+uso de \ruleOrE{} anidados. Por lo tanto hay que \textit{``refutar cada
+cláusula''}. El método lo hace de tres formas distintas
 
 \begin{itemize}
     \item Contienen fórmulas opuestas: $\form \fAnd \fNot \form$ (con
     \ruleNotE{})
     \item Contienen $\fFalse$
-    \item Eliminando cuantificadores universales consecutivos (próxima sección)
+    \item Eliminando cuantificadores universales consecutivos (\namedref{ppa:sec:by:forall-elim})
 \end{itemize}
 
 Para los primeros dos, es necesario demostrar a partir de la cláusula una
@@ -573,13 +631,13 @@ asociado el $\fAnd$, una demostración a mano de
 \(
     \form_1 \fAnd \dots \fAnd \form_i \fAnd \dots \fAnd \form_n \judG \form_i,
 \)
-puede ser muy laboriosa. Como las reglas son binarias, hay que
-usar \ruleAndEOne{} y \ruleAndETwo{} anidados. Para simplificarlo demostramos
-otra regla admisible, la proyección de un elemento \ruleAndEProj{\anyForm}.
+puede ser muy laboriosa, dado que las reglas son binarias y habría que usar
+\ruleAndEOne{} y \ruleAndETwo{} anidados. Para simplificarlo demostramos otra
+regla admisible, la proyección de un elemento \ruleAndEProj{\anyForm}.
 
 \begin{theorem}[Regla admisible \ruleAndEProj{\anyForm}]
     Sea $\anyForm$ alguna fórmula de la conjunción $\anyForm_1 \fAnd \dots \fAnd
-    \anyForm_i$. Notamos por \ruleAndEProj{\anyForm} a la proyección \textit{de
+    \anyForm_n$. Notamos por \ruleAndEProj{\anyForm} a la proyección \textit{de
     la fórmula}, sin importar en qué posición de la conjunción está.
 
     \begin{prooftree}
@@ -661,10 +719,10 @@ para representar demostraciones (ej. $\someProof_L$).}
 
 Hasta ahora logramos razonar por el absurdo, convertir la fórmula a DNF, y
 encontrar una contradicción siempre que no haya que eliminar cuantificadores
-universales. Pero es usual que en una teoría de primer orden, los axiomas
-contengan cuantificadores universales y sea necesario eliminarlos para poder
-demostrar un \lstinline{by}. Al eliminarlos, vamos a reemplazar las ocurrencias
-de su variable por \textit{meta-variables}: aquellas que pueden ser unificadas.
+universales. Pero es usual que en una teoría de primer orden, los axiomas los
+usen y sea necesario eliminarlos para poder demostrar un \lstinline{by}. Al
+hacerlo, vamos a reemplazar las ocurrencias de su variable por
+\textit{meta-variables}: aquellas que pueden ser unificadas.
     
 \begin{definition}[Unificación]
     Sean $\form$, $\formTwo$ dos fórmulas. Decimos que \textit{unifican} y lo
@@ -756,7 +814,7 @@ de su variable por \textit{meta-variables}: aquellas que pueden ser unificadas.
         \item Buscamos una contradicción refutando cada cláusula. Esta vez, no
         podemos volver a eliminar un forall (por motivos de eficiencia) y los
         literales opuestos tienen que \textit{unificar} en lugar de ser iguales.
-        Las sustituciones tienen que ser compatible entre todas las cláusulas
+        Las sustituciones tienen que ser compatibles entre todas las cláusulas
         (no pueden asignar valores diferentes a la misma meta-variable)
         \begin{itemize}
             \item $\fNot p(\metavar{u}) \fAnd p(a) \fAnd \fNot q(a)$ tenemos $p(\metavar{u}) \unify p(a)$ con $\subst{\metavar{u}}{a}$
@@ -767,11 +825,11 @@ de su variable por \textit{meta-variables}: aquellas que pueden ser unificadas.
 
 \subsubsection{Algoritmo}
 \begin{enumerate}
-    \item Si la cláusula no puede ser refutada por contener $\fFalse$ ni literales opuestos
+    \item Si la cláusula no puede ser refutada por contener $\fFalse$ ni literales opuestos,
     \item Para cada fórmula, si comienza con $\forall$ (ej. $\forall \var_0 . \forall x_1 \dots \forall \var_n . p(\var_0, \dots, \var_n)$) se busca una refutación sin generar la demostración.
     \begin{itemize}
-        \item Para combinación de prefijos de $\forall$ consecutivos, se
-        reemplaza su variable por una meta-variable fresca, se re-convierte a
+        \item Para cada combinación de prefijos de $\forall$ consecutivos, se
+        reemplazan sus variables por meta-variables frescas, se re-convierte a
         DNF y se intenta encontrar una refutación (unificando con $\alpha-$equivalencia)
         \begin{itemize}
             \item $\forall \var_1 \dots \forall \var_n . p(u_0, \dots, \var_n)$
@@ -808,48 +866,45 @@ es necesario eliminar solamente $\forall x$. Y la unificación será capaz de te
 
 \subsubsection{Compatibilidad de sustituciones}
 
-Como cada cláusula se refuta por separado, hay que asegurar que las sustituciones de cada una sean compatibles entre sí. Es decir, que no asignen términos diferentes a las mismas meta-variables. Por ejemplo, en
-
-Esto quiere decir que debemos probar con todas las sustituciones posibles, porque puede haber combinaciones que la hagan incompatible. Por ejemplo, en las siguientes cláusulas hay más de una sustitución candidata para cada una.
+Como cada cláusula se refuta por separado, hay que asegurar que las sustituciones de cada una sean compatibles entre sí. Es decir, que no asignen términos diferentes a las mismas meta-variables. Debemos probar con todas las sustituciones posibles, porque puede haber algunas combinaciones incompatibles y otras no. Por ejemplo, en las siguientes cláusulas hay más de una sustitución candidata para cada una.
 
 \begin{itemize}
     \item $f(u_0) \fAnd \fNot f(a) \fAnd \fNot f(b)$ tenemos $\subst{u_0}{a}$, $\subst{u_0}{b}$
     \item $f(u_0) \fAnd \fNot f(b)$ solo $\subst{u_0}{b}$
 \end{itemize}
 
-Si en la primera nos quedamos con $\subst{u_0}{a}$, no podríamos refutar la 2da.
+Pero si en la primera nos quedamos con $\subst{u_0}{a}$, no podríamos refutar la 2da. Por lo tanto la correcta es $\subst{u_0}{b}$.
 
 \subsection{Poder expresivo}
 \label{ppa-cert:sec:expressiveness}
 
 \duda{Está bien decir poder expresivo?}
 
-El solver implementado es \textbf{completo para lógica proposicional}, pero heurístico para lógica de primer orden. Esto es aceptable, puesto que la satisfacibilidad de lógica de primer orden es indecidible (por el teorema de Church \cite{church}), y además el objetivo del trabajo no fue dar el mejor solver, sino dar alguno que se pueda certificar. 
+El solver implementado es \textbf{completo para lógica proposicional}, pero heurístico para lógica de primer orden. Esto es aceptable, puesto que la satisfacibilidad de lógica de primer orden es indecidible (por el teorema de Church \cite{church}), y el objetivo del trabajo no fue dar un solver innovador, sino alguno que se pueda certificar.
 
 \begin{theorem}
-    El solver es \textbf{completo} para lógica proposicional.
+    El solver es \textbf{completo} para lógica proposicional. Sea $\anyForm$ una fórmula cualquiera. Si es universalmente válida, $\judG \anyForm$, entonces el solver encuentra una demostración.
 \end{theorem}
 \begin{proof}
     \duda{Citar Hilbert 1950?}
-Lo hacemos semánticamente. Sea $\anyForm$ una fórmula proposicional cualquiera, supongamos que es válida ($\judG \anyForm$). Queremos argumentar que el solver va a poder generar una demostración para ello. Esto es cierto $\iff \fNot \anyForm$ es insatisfactible.
+Lo hacemos semánticamente. Sea $\anyForm$ una fórmula proposicional cualquiera, supongamos que es válida. Queremos argumentar que el solver va a poder generar una demostración para ello. Sabemos que es válida si y solo si su negación es insatisfactible
 
-Siempre vamos a poder convertir $\fNot \anyForm$ a DNF, por lo que tenemos
-\(
-    (\formLit_1 \fAnd \dots \fAnd \formLit_n)
+\[\judG \anyForm \iff \not\judG \fNot \anyForm,\]
+por lo que es correcto buscar una refutación de la negación. Además, siempre vamos a poder convertir $\fNot \anyForm$ a DNF (\namedref{ppa-cert:thm:dnf}), por lo que tenemos
+\[
+    \not\judG\fNot \anyForm \iff
+    \not\judG (\formLit_1 \fAnd \dots \fAnd \formLit_n)
     \fOr \dots \fOr
     (\formLitTwo_1 \fAnd \dots \fAnd \formLitTwo_m).
-\)
-Para que sea insatisfactible, por definición sobre $\fOr$ todas las cláusulas
-tienen que serlo. Para que una claúsula lo sea, no tiene que haber una valuación
-que la haga verdadera. Supongamos que lo es y existe una valuación $v$. Esta
-valuación está unívocamente determinada, al ser una conjunción, tiene que
-asignar a cada literal $p_1$ un 1 si es positivo o un 0 si es negativo. Para que
-no sea verdadera, necesariamente debe aparecer la misma variable dos veces, una
-vez negada y la otra sin negar, o bien debe aparecer false.
+\]
+Para que sea insatisfactible, por definición de la semántica de $\fOr$ todas las
+cláusulas tienen que serlo. Para que una claúsula lo sea, no tiene que haber una
+valuación que la haga verdadera. Supongamos que existe una valuación
+$v$ que satisface $a_1 \fAnd \dots \fAnd a_n$. Está unívocamente determinada: al ser una conjunción, tiene
+que asignar a cada literal $a_i$ un 1 si es positivo o un 0 si es negativo. Luego, no será verdadera si y solo si aparece la misma variable y su opuesta, o si aparece $\fFalse$. Como esto es exactamente lo que busca el solver, concluimos que si es refutable, siempre va a poder refutarla.
+Por lo tanto es completo para lógica proposicional.
 
-Esto es exactamente lo que busca el solver, por lo que si es refutable, siempre va a poder refutarla.
-
-\duda{Está suficientemente bien escrito esto? Supongo que no. En la intro hay que agregar las definiciones de la semántica de LPO.}
+\duda{Está suficientemente bien escrito esto? Supongo que no. En la intro hay que agregar las definiciones de la semántica de LPO? Solo se usan acá}
 \end{proof}
 
 \begin{theorem}
@@ -873,11 +928,11 @@ Pero esto no es lo único que le falta para ser completo. También se podría da
 
 \subsection{Azúcar sintáctico}
 
-Antes mencionamos que se puede usar \lstinline{hence} en lugar de \lstinline{thus} referenciando automáticamente a la hipótesis anterior, y análogamente lo mismo para \lstinline{have} y \lstinline{then}. Esto se implementa desde el \textit{parser}, todo se compila como los comandos base, y se agrega la hipótesis anterior (\lstinline{-}) cuando es necesario. Esto simplifica al certificador permitiendo que solo conozca a \lstinline{have} y \lstinline{thus}.
+La última parte de la certificación del \lstinline{by} es su azúcar sintáctico. Antes mencionamos que se puede usar \lstinline{hence} en lugar de \lstinline{thus} referenciando automáticamente a la hipótesis anterior, y análogamente lo mismo para \lstinline{have} y \lstinline{then}. Esto se implementa desde el \textit{parser}. Son solamente una construcción sintáctica que se genera directamente como \lstinline{have} o \lstinline{thus}, y se agrega la hipótesis anterior (\lstinline{-}) a cada uno. Esto simplifica al certificador, permitiendo que solo opere con ellos dos.
 
 \section{Descarga de conjunciones}
 
-¿Cómo podemos certificar el siguiente programa?
+Veamos la certificación de la \textit{descarga de conjunciones}: si la tesis es una conjunción \lstinline{a_1 & ... & a_n}, debemos poder \textit{descargar cualquier subconjunto} de ella con el \lstinline{thus}. Por ejemplo ¿cómo podemos certificar el siguiente programa?
 
 \lstinputlisting{listings/interfaz/discharge-complex.ppa}
 
@@ -943,14 +998,14 @@ Finalmente, queda certificado como
 
 \section{Comandos correspondientes a reglas de inferencia}
 
-Como se puede ver en \fullref{ppa:tab:inference-rules-to-commands}, el resto de los comandos se corresponden directamente con reglas de inferencia,
+Como se puede ver en \fullref{ppa:tab:inference-rules-to-commands}, muchos de los comandos se corresponden directamente con reglas de inferencia,
 por lo que su traducción es directa.
 
 \begin{itemize}
     \item \lstinline{take} (\ruleExistsI)
 
     Si la tesis es \lstinline{exists X . a}, el comando \lstinline{take X := t}
-    la reduce a \lstinline{a} con $x$ reemplazado por $t$ y la certifica como
+    la reduce a \lstinline{a} con \lstinline{X} reemplazado por \lstinline{t} y la certifica como
     
     \proofTreeExistsI
 

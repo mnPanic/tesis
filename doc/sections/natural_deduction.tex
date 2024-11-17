@@ -1,48 +1,29 @@
-% \begin{itemize}
-%     \item Ejemplo de demostración en lenguaje natural \ok
-%     \item Necesitamos una forma estructural de representar demostraciones \ok
-%     \item Proof calculus / proof system enmarcado en Proof theory. Cómo están
-%     compuestos en general \ok
-%     \item Natural deduction \ok
-%     \item Reglas de introducción y eliminación \ok
-%     \item Formalización del ejemplo \ok
-%     \item Ejemplo con cuantificadores \ok
-%     \item Cut como meta-teorema (y meta teoremas en general) \ok
-%     \item Implementación de data types principales \ok
-%     \item Algoritmo de chequeo \ok
-%     \item Algoritmos adicionales: alfa igualdad, variables libres, sust sin capturas \ok
-% \end{itemize}
-
 Comencemos por las fundaciones: queremos armar un programa que permita escribir
 teoremas y demostraciones, pero, ¿cómo se representa una demostración en la
-computadora? No alcanza con hacerlo de la misma forma que escribimos demostraciones en papel (como en el \namedref{nd:ex:exam}). Debe ser una representación más precisa.
-
-En el área de estudio de \textit{teoría de pruebas}, en la cuál las
-demostraciones son un objeto matemático formal que puede ser estudiado, aparecen
-los \textit{sistemas de inferencia} o \textit{deductivos}: sistemas lógicos formales que
-permiten demostrar sentencias. Nos son útiles pues pueden ser modelados como un
-tipo abstracto de datos, por lo que son representables en la computadora.
-
-Por ejemplo, supongamos que tenemos la siguiente \textit{teoría} sobre exámenes
-en la facultad, que iremos iterando a lo largo de la tesis. Por ahora, en su
-versión proposicional. Si un alumno reprueba un final, entonces recursa. Si un
-alumno falta, entonces reprueba. Con estas dos, podríamos demostrar que si un
-alumno falta a un final, entonces recursa. Veamos cómo podría ser una
-demostración en lenguaje natural.
+computadora? Veamos un ejemplo. Supongamos que tenemos la
+siguiente \textit{teoría} sobre exámenes en la facultad, que iremos iterando a
+lo largo de la tesis. Por ahora, en su versión proposicional. Si un alumno
+reprueba un final, entonces recursa. Si un alumno falta, entonces reprueba. Con
+estas dos, podríamos demostrar que si un alumno falta a un final, entonces
+recursa. A continuación mostramos una posible demostración en lenguaje natural.
 
 \begin{ejemplo}\label{nd:ex:exam}
-    Si ((falta entonces reprueba) y (reprueba entonces recursa)) y falta, entonces recursa.
-
-    Demostración:
+    Si ((falta entonces reprueba) y (reprueba entonces recursa)) y falta, entonces recursa. Demostración:
 \begin{itemize}
     \item Asumo que falta. Quiero ver que recursa.
     \item Sabemos que si falta, entonces reprueba. Por lo tanto reprobó.
-    \item Sabemos que si reprueba, entonces recursa.
-    \item Por lo tanto recursó. \qed
+    \item Sabemos que si reprueba, entonces recursa. Por lo tanto recursó. \qed
 \end{itemize}
 \end{ejemplo}
 
-¿Cómo podrá ser formalizada en un \textit{sistema de inferencia}?
+Como se puede ver, es poco precisa. No es claro cómo se podría representar
+rigurosamente. Existen áreas dedicadas a estudiarlo, como la de \textit{teoría
+de pruebas}, en la cuál las demostraciones son un objeto matemático formal. En
+ellas se describen los \textit{sistemas de inferencia} o \textit{deductivos}:
+sistemas lógicos formales que permiten demostrar sentencias. Nos son útiles pues
+pueden ser modelados como un tipo abstracto de datos, por lo que son
+representables en la computadora. ¿Cómo podrá ser formalizada la demostración
+del \namedref{nd:ex:exam} en uno?
 
 \section{El sistema de deducción natural}
 
@@ -74,27 +55,30 @@ $\dots$) y cuantificador ($\forall$, $\exists$), que nos permite razonar de dos 
 Por ejemplo, la regla \ruleAndI{} nos va a permitir \textit{introducir} una conjunción, demostrarla. \ruleOrE{} \textit{eliminar} una disyunción, usarla para demostrar otra fórmula. Primero vemos algunas definiciones preliminares, luego las reglas de inferencia, un ejemplo de una demostración, y finalmente explicamos cada regla en detalle.
 
 \begin{definition}[Contexto de demostración]
+    \label{nd:def:ctx}
     Definimos,
     \begin{itemize}
         \item Los \textbf{contextos de demostración} $\ctx$ como un conjunto de fórmulas, compuesto por las hipótesis que se asumen a lo largo de una demostración.
-        \item \diffNew{Por practicidad, notamos la unión como}
+        \item Notamos la unión como
         \[
             \ctx, \anyForm = \ctx \cup \{\anyForm\}
         \]
         \item Para algunas reglas es necesario conocer las variables libres de un contexto, que se definen de la forma esperable:
         \[
-            \fv{\ctx} = \bigcup_{\form \in \ctx} \fv{\form}
+            \fv{\ctx} = \bigcup_{\anyForm \in \ctx} \fv{\anyForm}
         \]
     \end{itemize}
 \end{definition}
 
-\begin{definition}[\diffNew{Relación de consecuencia}]
-    Las reglas de inferencia de la \namedref{nd:inference-rules} definen la relación de consecuencia $\judG$, que nos permite escribir \textit{juicios} $\ctx \judG \form$. Intuitivamente pueden ser interpretados como ``$\form$ es una consecuencia de las suposiciones de $\ctx$''
-
-    Más precisamente, el juicio será cierto si en una cantidad finita de pasos
-    podemos, a partir de las fórmulas de $\ctx$, los axiomas y las reglas de
-    inferencia, concluir $\form$. En ese caso decimos que $\form$ es
-    \textit{derivable} a partir de $\ctx$.
+\begin{definition}[Relación de consecuencia]
+    Las reglas de inferencia de la \namedref{nd:inference-rules} definen la
+    relación de consecuencia $\judG$, que nos permite escribir \textit{juicios}
+    $\ctx \judG \form$. Intuitivamente interpretarse como ``$\form$ es una
+    consecuencia de las suposiciones de $\ctx$''. Dicho de forma más precisa, el
+    juicio será cierto si en una cantidad finita de pasos podemos, a partir de
+    las fórmulas de $\ctx$, los axiomas y las reglas de inferencia, concluir
+    $\form$. En ese caso decimos que $\form$ es \textit{derivable} a partir de
+    $\ctx$.
     
     Cuando el contexto es omitido, $\judG \form$ se usa como abreviación de
     $\emptyset \judG \form$.
@@ -167,8 +151,6 @@ Por ejemplo, la regla \ruleAndI{} nos va a permitir \textit{introducir} una conj
     \caption{Reglas de inferencia para deducción natural de lógica clásica de primer orden}
     \label{nd:inference-rules}
 \end{figure}
-
-\subsection{Ejemplo introductorio}
 
 \begin{ejemplo}\label{nd:ex:exam-nd}
     Demostración de \namedref{nd:ex:exam} en deducción natural. Lo modelamos para un solo alumno y materia, sin cuantificadores. Notamos
@@ -291,7 +273,7 @@ A continuación se explican brevemente las reglas de inferencia listadas en \nam
     \item \ruleLEM: el \textit{principio del tercero excluido} que vale en
     lógica clásica. Incluir este axioma es lo que hace que este sistema sea
     clásico.
-    \item \ruleAx: como ya vimos en el \fullref{nd:ex:exam-nd}, lo usamos para
+    \item \ruleAx: como ya vimos en el \namedref{nd:ex:exam-nd}, lo usamos para
     deducir fórmulas que ya tenemos como hipótesis.
 \end{itemize}
 
@@ -376,10 +358,10 @@ elemento por cada uno del dominio sobre el cual se cuantifica, y análogamente u
 
 \begin{ejemplo}
     \label{nd:ex:exam-nd-lpo}
-    Para ejemplificar el uso de las reglas de cuantificadores, extendemos el \namedref{nd:ex:exam-nd} para usar cuantificadores. Usamos
+    Para ejemplificar el uso de las reglas de cuantificadores, extendemos el \namedref{nd:ex:exam-nd}. Usamos
 
     \begin{itemize}
-        \item Usamos las siguientes funciones 0-arias: $\vAlu$ representa un
+        \item Las siguientes funciones 0-arias: $\vAlu$ representa un
         alumno, $\vMat$ una materia y $\vEx$ un examen.
         \item $\reprueba(\vAlu, \vEx) \equiv \predReprueba(\vAlu, \vEx)$
         \item $\recursa(\vAlu, \vMat) \equiv \predRecursa(\vAlu, \vMat)$
@@ -506,14 +488,12 @@ elemento por cada uno del dominio sobre el cual se cuantifica, y análogamente u
 
 \section{Ajustes para generación de demostraciones}
 
-PPA genera demostraciones en deducción natural, pero no usa exactamente el sistema descrito en la \namedref{nd:inference-rules}, sino que tiene algunos ajustes.
+PPA genera demostraciones en deducción natural, pero no usa exactamente el sistema descrito en la \namedref{nd:inference-rules}, sino que tuvimos que hacer algunos ajustes, que describimos a continuación.
 
-\subsection{\diffNew{Hipótesis etiquetadas}}
+\subsection{Hipótesis etiquetadas}
 \label{nd:sec:hyp-labels}
 
-\diffNew{Sección re-redactada!}
-
-En las secciones anteriores presentamos a los contextos $\ctx$ como \textit{conjuntos} de fórmulas. Pero en realidad vamos a querer que las hipótesis estén nombradas para proveer mayor claridad en las demostraciones. Para permitirlo, cada regla que introduce una hipótesis tiene que darle nombre, y cada regla que la usa, tiene que explicitar qué nombre tiene.
+En la \fullref{nd:def:ctx} presentamos a los contextos $\ctx$ como \textit{conjuntos} de fórmulas. Pero en realidad, para proveer mayor claridad en las demostraciones, vamos a querer que las hipótesis estén nombradas. Entonces cada regla que introduce una hipótesis tendrá que darle nombre, y cada regla que la use, tiene que explicitar qué nombre tiene.
 
 \begin{itemize}
     \item Los contextos $\ctx$ se redefinen como conjuntos de \textit{pares}
@@ -558,22 +538,20 @@ En las secciones anteriores presentamos a los contextos $\ctx$ como \textit{conj
 \end{itemize}
 
 \begin{notation*}
-    Como abuso de notación, nos vamos a permitir la libertad de usar ambas versiones a lo largo del documento. En casos en donde no sea relevante usar etiquetas, no las usaremos, y en los casos en donde sí lo haremos explícitamente.
+    Como abuso de notación, nos vamos a permitir la libertad de usar ambas versiones a lo largo del documento. En casos en donde no sea relevante usar etiquetas, no las usaremos, y en los casos en donde sí, lo haremos explícitamente.
 \end{notation*}
 
 \begin{obs*}
-    Las reglas están decoradas con el nombre de la hipótesis porque esto hace que según cual se use, el uso de la regla y por lo tanto la demostración sea diferente. Por lo que si por ejemplo demostramos $\form \fImp \form \fImp \form$, con etiquetas hay dos demostraciones distintas (dependiendo de si se usa la primera o segunda asunción) y sin habría una sola (como el contexto es un conjunto, se combinan ambas hipótesis en una).
+    Las reglas están decoradas con el nombre de la hipótesis porque esto hace que según cual se use, el uso de la regla y por lo tanto la demostración sea diferente. Por ejemplo, si demostramos $\form \fImp \form \fImp \form$, con etiquetas hay dos demostraciones distintas (dependiendo de si se usa la primera o segunda hipótesis para demostrar la tercera) y sin etiquetas hay únicamente una (como el contexto es un conjunto, la primera y segunda hipótesis se combinan).
 \end{obs*}
 
-\subsection{\diffNew{Variables libres en contexto}}
-\diffNew{Re-redactado!}
+\subsection{Variables libres en contexto}
 
-Las reglas \ruleForallI{} y \ruleExistsE{} validan que la variable del cuantificador no esté libre en el contexto. Cuando sí aparece, el algoritmo de chequeo debe reportar un error. El usuario debería re-escribir la demostración para corregir el uso de variables evitando conflictos.
+Las reglas \ruleForallI{} y \ruleExistsE{} validan que la variable del cuantificador no esté libre en el contexto. Cuando sí aparece, el algoritmo de chequeo debe reportar un error. Para corregirlo, el usuario debería re-escribir la demostración cambiando los nombres de las variables evitando conflictos.
 
-Pero esto representó un problema para la generación de demostraciones, pues se daban conflictos en casos inofensivos: si tenemos una demostración de un teorema que usa las variables $x, y$, y lo citamos en otro que también las usa, el conflicto sería accidental, no estamos queriendo razonar de forma inválida. Al chequear la demostración citada, ya se usaron las variables en el anterior, llevando a un error. Para evitarlo manteniendo las reglas como están, habría que renombrar con cuidado las variables de forma automática.
+Esto representó un problema para la generación de demostraciones, pues se daban conflictos en casos inofensivos: si tenemos una demostración de un teorema que usa las variables $x, y$, y lo citamos en otro que también las usa, ál chequearlo se generaría un conflicto: cuando estamos chequeando la segunda demostración se incluyen las variables al contexto, y cuando recursivamente chequeamos la primera en donde se cita, aparece. En este caso sería accidental, no estamos queriendo razonar de forma inválida.
 
-La reformulamos para evitarlo de una forma más simple: en lugar de validar que la variable no esté no esté, directamente se remueve del contexto todas las hipótesis que contengan libre esa variable en la sub-demostración. Cada sub-demostración tiene un contexto ``limpio``. Esto permite que si el conflicto era accidental, la demostración siga chequeando (porque no se usaban las hipótesis que generaban conflicto). Pero si se usaban, seguiría fallando pero con un error diferente (hipótesis inexistente).
-
+Para evitarlo manteniendo las reglas como están, habría que renombrar con cuidado las variables de forma automática. En su lugar, las reformulamos para que no suceda: en lugar de validar que la variable no esté no esté, directamente se remueve del contexto todas las hipótesis que contengan libre esa variable en la sub-demostración. Cada sub-demostración tiene un \textit{contexto limpio}. Esto permite que si el conflicto era accidental, la demostración siga chequeando (porque no se usaban las hipótesis que generaban conflicto). Pero si se usaban, seguiría fallando pero con un error diferente (hipótesis inexistente).
 
 Definimos
 \[
@@ -602,11 +580,11 @@ Luego, las reglas son re-definidas como
 
 \section{Reglas admisibles}\label{nd:sec:admissible-rules}
 
-Antes mencionamos \textit{modus tollens} como regla de inferencia, pero no aparece en la \namedref{nd:inference-rules}. Esto es porque nos va a interesar tener un sistema
+Antes mencionamos \textit{modus tollens} como regla de inferencia, pero no aparece en las reglas de la \namedref{nd:inference-rules}. Esto es porque nos va a interesar tener un sistema
 lógico minimal: no vamos a agregar reglas de inferencia que se puedan deducir a
 partir de otras, es decir, \textit{reglas admisibles}. Nos va a servir para
 simplificar el resto de PPA, dado que vamos a generar demostraciones en
-deducción natural y operar sobre ellas. Mientras más sencillas sean las partes con las que se componen, mejor. Las reglas admisibles las podemos demostrar para cualquier fórmula, así luego podemos usarlas como \textit{macros}.
+deducción natural y operar sobre ellas. Mientras más sencillos sean las partes con las que se componen, mejor. Las reglas admisibles las podemos demostrar para cualquier fórmula, así luego podemos usarlas como \textit{macros}.
 
 \begin{ejemplo}[\textit{Modus tollens}] Se puede demostrar como regla admisible.
     
@@ -654,20 +632,14 @@ deducción natural y operar sobre ellas. Mientras más sencillas sean las partes
 
 A continuación describimos los algoritmos que son necesarios para la implementación de deducción natural. El chequeo de las demostraciones, alfa equivalencia de fórmulas, sustitución sin capturas, y variables libres
 
-\subsection{\diffNew{Chequeador}}
+\subsection{Chequeador}
 \label{nd:sec:checker}
-\diffNew{Sección reescrita!}
 
 El algoritmo de chequeo de una demostración en deducción natural consiste en recorrer recursivamente el árbol de demostración, asegurando que todas las inferencias sean válidas y manteniendo un contexto $\ctx$ en el camino.
-Se chequea que cada regla se use con el conectivo que le corresponde (no un \ruleAndI{} para un $\fOr$) y que cumple con las condiciones impuestas.
+Se chequea que cada regla se use con el conectivo que le corresponde (no un \ruleAndI{} para un $\fOr$) y que cumpla con las condiciones impuestas.
 
-El módulo que se encarga de implementarlo es el \modChecker, su función principal es
-
-\begin{minted}{haskell}
-    check :: Env -> Proof -> Form
-\end{minted}
-
-donde \mintinline{haskell}{Env} es el contexto $\ctx$, \mintinline{haskell}{Proof} es el término de demostración en deducción natural y \mintinline{haskell}{Form} es la fórmula que demuestra.
+El módulo que se encarga de implementarlo es el \modChecker, con su función principal \mintinline{haskell}{check :: Env -> Proof -> Form},
+donde \mintinline{haskell}{Env} es el contexto $\ctx$, \mintinline{haskell}{Proof} es la demostración en deducción natural y \mintinline{haskell}{Form} es la fórmula que demuestra.
 
 \subsection{Alfa equivalencia}
 
@@ -691,9 +663,10 @@ Si tenemos una hipótesis $\exists \var . \fun(\var)$, sería ideal poder usarla
 Para implementarlo, un algoritmo naíf podría ser cuadrático: chequeamos recursivamente la igualdad estructural de ambas fórmulas. Si nos encontramos con un cuantificador con variables con nombres distintos, digamos $\var$ e $\varTwo$, elegimos una nueva variable \textit{fresca} (para evitar capturas) y lo renombramos recursivamente en ambos. Luego continuamos con el algoritmo. Si en la base nos encontramos con dos variables, tienen que ser iguales.
 
 Para hacerlo un poco más eficiente, se implementó un algoritmo lineal en la estructura de la fórmula. Mantenemos dos sustituciones de variables, una para cada fórmula. Si nos encontramos con $\exists \var . \fun(\var)$ y $\exists \varTwo . \fun(\varTwo)$, vamos a elegir una variable fresca igual que antes (por ejemplo $\varThree$), pero en vez de renombrar recursivamente, que lo hace cuadrático, insertamos en cada sustitución los renombres $\var \mapsto \varThree$ y $\varTwo \mapsto \varThree$. Luego, cuando estemos comparando dos variables libres, chequeamos que \textit{sus renombres} sean iguales. En este ejemplo son alfa equivalentes, pues
-
 \begin{align*}
-    (\exists \var . \fun(\var)) \alphaEq (\exists \varTwo . \fun(\varTwo))
+    (\exists \var . \fun(\var)) &\alphaEq (\exists \varTwo . \fun(\varTwo))
+    &&\{\}, \{\}
+    \\
     &\iff \fun(\var) \alphaEq \fun(\varTwo)
         &&\{\var \mapsto \varThree\}, \{\varTwo \mapsto \varThree\}\\
     &\iff \var \alphaEq \varTwo
@@ -717,7 +690,7 @@ Pero queremos evitar \textbf{captura de variables}. Por ejemplo, en
     \forall \varTwo . \pred(\var)\subst{\var}{\varTwo},
 \]
 
-si sustituimos sin más, estaríamos involuntariamente ``capturando'' a $\varTwo$. Si hiciéramos que falle, tener que escribir las demostraciones con estos cuidados puede ser muy frágil y propenso a errores, por lo que es deseable que se resuelva \textit{automáticamente}: cuando nos encontramos con una captura, sustituimos la variable ligada de forma que no ocurra.
+si sustituimos sin más, estaríamos involuntariamente ``capturando'' a $\varTwo$: originalmente estaba libre, pero luego de la sustitución estaría ligada. Si hiciéramos que falle, tener que escribir las demostraciones con estos cuidados puede ser muy frágil y propenso a errores, por lo que es deseable que se resuelva \textit{automáticamente}: cuando nos encontramos con una captura, sustituimos la variable ligada de forma que no ocurra.
 
 \[
     \forall \varTwo . \pred(\var)\subst{\var}{\varTwo} =
@@ -726,9 +699,8 @@ si sustituimos sin más, estaríamos involuntariamente ``capturando'' a $\varTwo
 
 donde $\varThree$ es una variable \textit{fresca}.
 
-\begin{definition}[\diffNew{Sustitución sin capturas}]
+\begin{definition}[Sustitución sin capturas]
     \label{nd:def:subst}
-    \diffNew{Corregido!}
     Se define por inducción estructural.
     \begin{itemize}
         \item Términos

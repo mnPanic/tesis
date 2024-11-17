@@ -4,8 +4,21 @@
 %\vspace{1cm}
 \chapter*{\runtitle}
 
-\noindent In a galaxy far, far away, a psychopathic emperor and his most trusted servant -- a former Jedi Knight known as Darth Vader -- are ruling a universe with fear. They have built a horrifying weapon known as the Death Star, a giant battle station capable of annihilating a world in less than a second. When the Death Star's master plans are captured by the fledgling Rebel Alliance, Vader starts a pursuit of the ship carrying them. A young dissident Senator, Leia Organa, is aboard the ship \& puts the plans into a maintenance robot named R2-D2. Although she is captured, the Death Star plans cannot be found, as R2 \& his companion, a tall robot named C-3PO, have escaped to the desert world of Tatooine below. Through a series of mishaps, the robots end up in the hands of a farm boy named Luke Skywalker, who lives with his Uncle Owen \& Aunt Beru. Owen \& Beru are viciously murdered by the Empire's stormtroopers who are trying to recover the plans, and Luke \& the robots meet with former Jedi Knight Obi-Wan Kenobi to try to return the plans to Leia Organa's home, Alderaan. After contracting a pilot named Han Solo \& his Wookiee companion Chewbacca, they escape an Imperial blockade. But when they reach Alderaan's coordinates, they find it destroyed - by the Death Star. They soon find themselves caught in a tractor beam \& pulled into the Death Star. Although they rescue Leia Organa from the Death Star after a series of narrow escapes, Kenobi becomes one with the Force after being killed by his former pupil - Darth Vader. They reach the Alliance's base on Yavin's fourth moon, but the Imperials are in hot pursuit with the Death Star, and plan to annihilate the Rebel base. The Rebels must quickly find a way to eliminate the Death Star before it destroys them as it did Alderaan (aprox. 200 palabras).
+\noindent \textit{Proof assistants} are programs that simplify the writing of
+mathematical proofs, enabling large-scale collaboration or the formal
+verification of programs. There are many proof assistants such as Mizar, Coq,
+and Isabelle, based on different theories. A desirable property they may have is
+described by the De Bruijn criterion: from proofs written in their language,
+more elementary ones can be extracted. This eliminates the need to trust their
+implementation, as the extracted proofs can be verified by an independent
+program.
+
+This thesis presents \textit{PPA}, a proof assistant for classical first-order logic. It fulfills De Bruijn's criterion by generating proofs in the natural deduction proof system from high-level proofs, designed to resemble natural language as closely as possible. Its main proof mechanism, \textit{by}, features an underlying heuristic solver for first-order logic, inspired by Mizar's analogous mechanism.
+
+Some proof assistants implement \textit{existential witness extraction}. Given a proof of $\exists \var . \pred(\var)$, they extract a *witness* \( \term \) such that \( \pred(\var) \) holds. While this is straightforward in intuitionistic logic due to its constructive nature, it is challenging in classical logic, which lacks constructiveness. There are two main approaches: direct (using operational semantics of classical lambda calculi, like classical realizability) or indirect (via translations to another logic, such as intuitionistic).
+
+The main contribution of this work is a practical implementation of witness extraction. PPA achieves this indirectly by using Friedman's translation, which allows converting classical proofs of \( \classPiTwo \) formulas of the form \( \forall y_0 \dots \forall y_n . \exists x . \phi \) into intuitionistic ones. We describes how, once translated, these proofs can be normalized using well-known reduction rules, isomorphic to the operational semantics of lambda calculus viewed through the Curry-Howard isomorphism. Finally, a normalized proof enables the extraction of a witness. We identify some practical implementation details of the translation, which limit the formulas for which it can be used (beyond the theoretical \( \classPiTwo \) restriction) and also constrain the axiomatizations of theories that can be made.
 
 \bigskip
 
-\noindent\textbf{Keywords:} War, Rebellion, Wookie, Jedi, The Force, Empire (no menos de 5).
+\noindent\textbf{Keywords:} proof assistant, first-order logic, natural deduction, classical logic, intuitionistic logic, witness extraction, Friedman's translation.

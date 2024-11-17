@@ -56,8 +56,7 @@ Ahora vamos a introducir una nueva funcionalidad: la \textbf{extracción de test
 \end{multicols}
 
 Por ejemplo, en el programa \fullref{fri:prog:exists} la extracción nos
-permitirá encontrar un término $t$ que sea testigo de $\exists x. p(x)$, es
-decir que cumpla $p(t)$. En este caso es fácil encontrarlo a ojo sobre la
+permitirá encontrar un término $t$ que sea \textit{testigo} de $\exists x. p(x)$: que cumpla $p(t)$. En este caso es fácil encontrarlo a ojo sobre la
 demostración de PPA, sería \lstinline{v}. Pero puede haber casos en donde no sea
 tan trivial, como en el programa \fullref{fri:prog:indirect}, en donde en el
 \lstinline{theorem t2} se instancia la variable en un término de forma
@@ -75,8 +74,7 @@ El objetivo es extraer el testigo de las demostraciones generadas por el
 certificador, pero estas son en lógica clásica, que tiene el gran problema de
 que en general \textbf{no es constructiva}. ¿Qué quiere decir? Puede suceder que
 una demostración de $\exists x . p(x)$ no diga explícitamente quien es $x$, y
-por lo tanto no podamos extraer un testigo. Esto sucede dado que en la lógica
-clásica vale el \textit{principio del tercero excluido} o LEM
+por lo tanto no podamos extraer un testigo. Esto sucede porque vale el \textit{principio del tercero excluido} o LEM
 
 \begin{prop}[LEM] Para toda fórmula $\form$, es verdadera ella o su negación
     \[ \form \fOr \fNot \form \]
@@ -86,7 +84,7 @@ Las demostraciones que usan este principio suelen dejar aspectos sin
 concretizar, como muestra el siguiente ejemplo bien conocido:
 
 \begin{theorem}\label{fri:thm:irrat}
-    Existen dos números irracionales, $a, b$ tales que $a^b$ es irracional
+    Existen dos números irracionales $a$ y $b$ tales que $a^b$ es irracional
 \end{theorem}
 \begin{proof}
     Considerar el número $\sqrt{2}^{\sqrt{2}}$. Por LEM, es o bien racional o
@@ -114,16 +112,16 @@ concretizar, como muestra el siguiente ejemplo bien conocido:
 La prueba no nos da forma de saber cuales son $a$ y $b$. Es por eso que en
 general, en lógica clásica, tener una demostración de un teorema que afirma la
 existencia de un objeto que cumpla cierta propiedad, no necesariamente nos da
-una forma de encontrar tal objeto. De esta demostración nunca podríamos extraer un testigo. Pero se podría haber demostrado de otra forma que sí sea constructiva, y omita el uso de \ruleLEM{}. En particular tomando $a = \sqrt{2}$ y $b = 2 \log_2{3}$ (ver \cite{andrej-constructive}) ¿Es este el caso con todas las demostraciones?
+una forma de encontrarlo. De esta demostración nunca podríamos extraer un testigo. Pero se podría haber demostrado de otra manera que sí sea constructiva, y omita el uso de \ruleLEM{}. En particular tomando $a = \sqrt{2}$ y $b = 2 \log_2{3}$ (ver \cite{andrej-constructive}) ¿Es este el caso con todas las demostraciones?
 
-\begin{ejemplo}[Demostración no constructiva]
+\begin{ejemplo}[Fórmula sin demostración constructiva]
     Si consideramos la fórmula
     \[
         \exists x . ((x = 1 \fAnd C) \fOr (x = 0 \fAnd \fNot C))
     \]
     y pensamos en $C$ como algo indecidible, por ejemplo \texttt{HALT},
     trivialmente podemos demostrarlo de forma no constructiva (LEM con $C \fOr
-        \fNot C$) pero nunca de forma constructiva.
+        \fNot C$) pero \textbf{nunca} de forma constructiva.
 \end{ejemplo}
 
 \section{Lógica intuicionista}
@@ -136,7 +134,7 @@ principio, las demostraciones siempre son constructivas. Esto permite por un
 lado tener interpretaciones computacionales (como la \textit{BHK}) y además que
 exista la noción de \textit{forma normal} de una demostración. Existen métodos
 bien conocidos para reducir pruebas hacia su forma normal con un proceso análogo
-a una reducción de cálculo $\lambda$.
+a una reducción de cálculo $\lambda$. Vemos esto más en detalle en la \fullref{fri:sec:reduction}.
 
 Esto permite usar como estrategia de extracción la siguiente: normalizar la
 demostración y obtener el testigo de la forma normal. En ella, se esperaría que
@@ -150,13 +148,15 @@ PPA, pero son en lógica clásica. Sabemos que podemos hacerlo para lógica
 intuicionista. ¿Cómo conciliamos ambos mundos? Existen métodos que permiten
 \textit{embeber} la lógica clásica en la intuicionista. Uno de ellos es la
 \textbf{traducción de Friedman} que se aborda en la siguiente sección (\ref{fri:sec:fri}). La
-estrategia general entonces es la siguiente (esquematizada en la \namedref{fri:fig:strat}), dada una demostración en PPA como
+estrategia general entonces es la siguiente (esquematizada en la \namedref{fri:fig:strat}), dado un programa en PPA como
 por ejemplo de \namedref{fri:prog:exists}:
 \begin{enumerate}
     \item La certificamos generando una demostración clásica en deducción
           natural, usando el \modCertifier{}. Nos da un contexto con una demostración
           por teorema.
-    \item Generamos una única demostración haciendo \textit{inline} de las demostraciones de otros teoremas citados, así cuando se reduce, se reduce la demostración completa y no una parte.
+
+          \textbf{Limitación}: No vamos a poder axiomatizar cualquier teoría.
+    \item Queremos extraer un testigo de un teorema, que puede citar a los anteriores. Generamos una única demostración haciendo \textit{inline} de las demostraciones de otros teoremas citados, así cuando se reduce, se reduce la demostración completa y no una parte.
     \item Usamos la traducción de Friedman para obtener una demostración
           intuicionista de la misma fórmula.
 
@@ -176,7 +176,7 @@ por ejemplo de \namedref{fri:prog:exists}:
 \end{enumerate}
 
 En las siguientes secciones vemos en detalle la traducción de Friedman
-(\namedref{fri:sec:fri}) y la normalización (o reducción) de demostraciones (\namedref{fri:sec:reduction}). Al final vemos un detalle técnico de la traducción para permitir la reducción que debe limitar la forma de los axiomas (\namedref{fri:sec:context}).
+(\namedref{fri:sec:fri}) y la normalización (o reducción) de demostraciones (\namedref{fri:sec:reduction}). Al final vemos un detalle técnico de la traducción, necesario para permitir la reducción, que limita la forma de los axiomas (\namedref{fri:sec:context}).
 
 \begin{figure}
     \includegraphics[scale=0.35]{img/fri-extract-strategy.png}
@@ -187,8 +187,6 @@ En las siguientes secciones vemos en detalle la traducción de Friedman
 
 \section{Traducción de Friedman}
 \label{fri:sec:fri}
-
-\subsection{Traducción de doble negación}
 
 Existen muchos métodos que permiten embeber la lógica clásica en la
 intuicionista. Un mecanismo general es la traducción de
@@ -255,9 +253,9 @@ Gödel-Gentzen reemplazando la negación intuicionista $\fNot \form \equiv A
 permitir, con una elección inteligente de $R$, traducir una demostración clásica
 de una fórmula a una intuicionista, y usarla para generar una demostración de
 \textbf{la fórmula original}. Esto nos permite reducirla y hacer la extracción.
-No va a ser posible para cualquier fórmula, sino las de una clase particular (de
+No va a ser posible para cualquier fórmula, sino las de una clase particular que definimos más adelante (de
 la forma $\forall \varTwo_1 \dots \forall \varTwo_m . \exists \var_1 \dots
-\exists \var_k . \form$ o $\classPiTwo$)
+\exists \var_k . \anyForm$).
 
 \begin{definition}[Traducción de doble negación relativizada]
     \begin{align*}
@@ -282,7 +280,7 @@ la forma $\forall \varTwo_1 \dots \forall \varTwo_m . \exists \var_1 \dots
     Este proceso está descrito en detalle en \fullref{fri:sec:proof-trans}
 \end{proof}
 
-Vamos a enunciar diferentes versiones de la traducción de Friedman en orden de sofisticación, según para qué clase de fórmulas funcionan. No solo ayuda a entenderla, sino que también fue el mismo enfoque con el que las implementamos. Cada una incluye a la anterior, por lo que en PPA solo quedó implementada la última. Todas emplean la misma estrategia. Usando el \namedref{fri:thm:dneg-trans-classic-int}, se traduce la demostración clásica a una intuicionista para la fórmula traducida, que se usa para probar la fórmula original.
+Vamos a enunciar diferentes versiones de la traducción de Friedman en orden de sofisticación, según para qué clase de fórmulas funcionan. No solo ayuda a entenderla, sino que también fue el mismo enfoque con el que las implementamos. Cada una incluye a la anterior, por lo que en \ppaTool{} solo quedó implementada la última. Todas emplean la misma estrategia. Usando el \namedref{fri:thm:dneg-trans-classic-int}, se traduce la demostración clásica a una intuicionista para la fórmula traducida, que se usa para probar la fórmula original.
 
 
 \begin{definition}[Jerarquía aritmética de fórmulas]
@@ -338,7 +336,7 @@ Podremos probar una fórmula en lógica intuicionista a partir de una demostraci
               \forall \varTwo_1 \dots \forall \varTwo_n . \exists \var . \form(\var, \varTwo_1, \dots, \varTwo_n) \text{ con } \form \text{ atómica}.
           \]
 
-    \item \textbf{Fórmulas $\classPiTwo$ no atómicas} (\namedref{fri:thm:fri-pitwo-general}):
+    \item \textbf{Fórmulas $\classPiTwo$ no atómicas} (\namedref{fri:thm:fri-pitwo-general} usando \namedref{fri:lemma:notr-trans-intro}):
 
           \[
               \forall \varTwo_1 \dots \forall \varTwo_n . \exists \var . \anyForm(\var, \varTwo_1, \dots, \varTwo_n) \text{ con } \anyForm \text{ no atómica}.
@@ -476,7 +474,7 @@ Podremos probar una fórmula en lógica intuicionista a partir de una demostraci
 \end{proof}
 
 \begin{obs*}
-    En la demostración del \namedref{fri:thm:fri-sigmaone} y las de esta sección, luego de aplicar la traducción de Friedman, todas las demostraciones generadas deben ser intuicionistas para que sigan siendo constructivas.
+    En la demostración del \namedref{fri:thm:fri-sigmaone} y las de esta sección, luego de aplicar la traducción de Friedman, todas las demostraciones generadas deben ser intuicionistas para que sigan siendo constructivas. No podemos usar \ruleLEM{}.
 \end{obs*}
 
 \begin{obs}\label{fri:obs:forall-exists}
@@ -493,7 +491,7 @@ Podremos probar una fórmula en lógica intuicionista a partir de una demostraci
     \exists \var .
     \form(\var, \varTwo_1, \dots, \varTwo_n)
     \)
-    y $\form(\dots)$ una fórmula atómica
+    y $\form$ una fórmula atómica
 
     Si tenemos
     \[
@@ -511,7 +509,7 @@ Podremos probar una fórmula en lógica intuicionista a partir de una demostraci
     \]
 \end{theorem}
 \begin{proof}
-    Lo demostramos en deducción natural para un solo $\forall$. Para una cantidad arbitraria es análoga y fácilmente generalizable a partir de esta. La estrategia consiste en primero introducir el $\forall$ reemplazando su variable por una fresca, para evitar conflictos con las variables usadas en la demostración original. Luego se procede a demostrar el $\exists$ de forma análoga al \namedref{fri:thm:fri-sigmaone}, usando traduciendo la demostración original pero tomando $R$ como el $\exists$ con la variable ligada por el $\forall$ reemplazada por la fresca en lugar de la fórmula original.
+    Lo demostramos en deducción natural para un solo $\forall$. Para una cantidad arbitraria es análoga y fácilmente generalizable a partir de esta. La estrategia consiste en primero introducir el $\forall$ reemplazando su variable por una fresca, para evitar conflictos con las variables usadas en la demostración original. Luego se procede a demostrar el $\exists$ de forma análoga al \namedref{fri:thm:fri-sigmaone}, usando la demostración original traducida pero tomando $R$ como el $\exists$ con la variable ligada por el $\forall$ reemplazada por la fresca en lugar de la fórmula original.
 
     Tomando $R = \exists \var . \form(\var, \varTwo_0)$ y aplicando la traducción, tenemos que 
 
@@ -572,7 +570,7 @@ Podremos probar una fórmula en lógica intuicionista a partir de una demostraci
     \end{prooftree}
 \end{corollary}
 
-\subsubsection{Formulas no atómicas}
+\subsection{Traducción de Friedman para formulas no atómicas}
 
 Hasta ahora usamos la traducción de Friedman para traducir las demostraciones de una fórmula de clásica a intuicionista, manteniendo esa fórmula, siempre y cuando su sub-fórmula $\classSigma{0}$ sea \textbf{atómica}. Pero queremos generalizarlo a fórmulas como $\forall \varTwo \exists \var . \anyForm(\var, \varTwo)$ donde $\anyForm$ no sea atómica, por ejemplo $\form(\var) \fAnd \formTwo(\varTwo)$. Para ello, la única diferencia es en el uso de \ruleCut{}. Para fórmulas atómicas, tenemos
 
@@ -605,7 +603,7 @@ En donde aprovechamos que la traducción de fórmulas atómicas es $\fNotR \tdn{
     \label{fri:lemma:notr-trans-intro}
     Para algunas fórmulas $\form$, vale $\fNotR \form \judgI \fNotR \tdn{\form}$ y lo notamos con la regla admisible \ruleNotRTransI{}.
     
-    No vale siempre, ya que en ese caso podríamos usar la traducción de Friedman para todas las fórmulas. Lo demostramos para las fórmulas descritas por la siguiente gramática (conjunciones y fórmulas atómicas)
+    No vale siempre, ya que en ese caso podríamos usar la traducción de Friedman para todas las fórmulas, y sabemos que no es posible. Lo demostramos para las fórmulas descritas por la siguiente gramática (conjunciones y fórmulas atómicas)
     \[
         \form ::=
             \fFalse \mid \fTrue \mid \pred(\term_1, \dots, \term_n)
@@ -625,7 +623,7 @@ En donde aprovechamos que la traducción de fórmulas atómicas es $\fNotR \tdn{
     Veamos esquemáticamente la demostración del $\fAnd$.
     \begin{itemize}
         \item Debemos probar $\fNotR (\form \fAnd \formTwo) \judgI \fNotR \tdn{(\form \fAnd \formTwo)}$
-        \item Intuitivamente, queremos llevarlo a $\fNotR (\form \fAnd \formTwo) \judgI \fNotR \tdn{\form} \fOr \fNotR \tdn{\formTwo}$. Pero esta demostración requiere el uso de \ruleDnegE{} para razonar por el absurdo, que no es cierto para lógica intuicionista (la demostración de esta equivalencia de De Morgan es clásica).
+        \item Intuitivamente, queremos llevarlo a $\fNotR (\form \fAnd \formTwo) \judgI \fNotR \tdn{\form} \fOr \fNotR \tdn{\formTwo}$. En lógica clásica esta demostración requiere el uso de LEM, en particular  \ruleDnegE{} para razonar por el absurdo, que no vale para lógica intuicionista.
         \item Pero podemos usar un truco para razonar por el absurdo.
         \begin{itemize}
         \item Tenemos que $\fNotR \tdn{(\form \fAnd \formTwo)}$ es siempre equivalente a $\fNotR \fNotR (\fNotR \tdn{(\form \fAnd \formTwo)})$ por eliminación de triple negación.
@@ -753,7 +751,7 @@ En donde aprovechamos que la traducción de fórmulas atómicas es $\fNotR \tdn{
         \exists \var .
         \anyForm(\var, \varTwo_1, \dots, \varTwo_n),
     \]
-    podemos generar una demostración intuicionista de la misma fórmula instanciando las variables cuantificadas universalmente por términos $\term_1, \dots, \term_n$ cualquiera (a elección del usuario)
+    podemos generar una demostración intuicionista de la misma fórmula, instanciando las variables cuantificadas universalmente por términos $\term_1, \dots, \term_n$ cualesquiera (a elección del usuario)
     \[
         \transDNeg{\ctx} \judgI
         \exists \var .
@@ -764,9 +762,9 @@ En donde aprovechamos que la traducción de fórmulas atómicas es $\fNotR \tdn{
 \subsection{Traducción de demostraciones}
 \label{fri:sec:proof-trans}
 
-Ya vimos como podemos usar la traducción de Friedman para, dada una traducción de la demostración, usarla para demostrar la misma fórmula en lógica intuicionista. Pero aún no ahondamos en un detalle importante. En el \namedref{fri:thm:dneg-trans-classic-int} se introduce la necesidad de extender la traducción de doble negación relativizada de fórmulas a demostraciones, para poder realizar la traducción de una demostración clásica a intuicionista. En esta sección lo vemos más en detalle.
+Ya vimos como podemos usar la traducción de Friedman para, dada una traducción de la demostración clásica original, usarla para demostrar la misma fórmula de forma intuicionista. Pero aún no ahondamos en un detalle importante. En el \namedref{fri:thm:dneg-trans-classic-int} se introduce la necesidad de extender la traducción de doble negación relativizada de fórmulas a demostraciones, para poder realizar la traducción de una demostración clásica a intuicionista. En esta sección lo vemos más en detalle.
 
-La conversión se efectúa por inducción estructural en la demostración. Para cada regla de inferencia que demuestra $\form$, se genera una demostración a partir de ella para demostrar $\transDNeg{\form}$. La estrategia para hacerlo es similar para todas: usar la hipótesis inductiva para convertir las sub-demostraciones, y usarlas para generar la nueva demostración. Pero hay algunas un poco rebuscadas.
+La conversión se efectúa por inducción estructural en la demostración. Para cada regla de inferencia que demuestra $\form$, se genera una demostración a partir de ella para demostrar $\transDNeg{\form}$. La estrategia para hacerlo es similar para todas: recursivamente convertir las sub-demostraciones, y usarlas para generar la nueva. Pero hay algunas un poco rebuscadas.
 
 \begin{itemize}
     \item \ruleAndI{} (\namedref{fri:lemma:trad-and-i}), \ruleAndEOne{}, \ruleAndETwo{}, \ruleImpI{}, \ruleImpE{},
@@ -1221,8 +1219,7 @@ Todos los desvíos que normalizamos se ven de esta forma: una \textbf{eliminaci�
 Este proceso es análogo a las reducciones de cálculo $\lambda$. Y no solo
 análogo, sino que existe un \textit{isomorfismo} entre demostraciones en
 deducción natural y términos de cálculo $\lambda$: El isomorfismo Curry-Howard
-\cite{curry-howard-isomorphism}. Con él, la normalización de demostraciones es
-el isomorfismo de las reducciones en cálculo $\lambda$, su semántica. Por
+\cite{curry-howard-isomorphism}. Con él, la normalización de demostraciones isomorfa a las reducciones en cálculo $\lambda$, su semántica operacional. Por
 ejemplo, el isomorfismo nos permite pensar en una conjunción como una tupla, y
 las eliminaciones como proyecciones. Luego, podemos ver cómo la regla de
 normalización de la conjunción es isomorfa a la regla de reducción de las
@@ -1241,7 +1238,7 @@ proyecciones.
 \end{figure}
 
 De acá en adelante presentamos las reducciones directamente en deducción
-natural, dado que es lo implementado en PPA. Usamos de forma intercambiable
+natural, dado que es lo implementado en \ppaTool{}. Usamos de forma intercambiable
 \textit{reducción} y \textit{normalización}, pues en el fondo, son lo mismo.
 
 \begin{obs*}
@@ -1284,7 +1281,7 @@ Para eliminar el desvío, uno podría estar tentado a hacer directamente $\someP
 \begin{definition}[Sustitución de hipótesis]
     Notamos como \(\someProof \subst{\hypId}{\someProof'}\) a la sustitución sin capturas de todas las ocurrencias libres de una hipótesis $\hypId$ por una demostración $\someProofTwo$ en otra demostración $\someProof$. Una \textit{captura} ocurriría si en alguna sub-demostración de $\someProof$ se liga una hipótesis $\hypId_2 \neq \hypId$ tal que $\hypId_2 \in \citedHyps{\someProofTwo}$ (se cite en $\someProofTwo$).
     
-    Para evitar la captura, al igual que en la sustitución de variables, no podemos renombrar en $\someProofTwo$ (porque la hipótesis está ``libre''), sino que en la sub-demostración de $\someProof$ que liga $\hypId_2$ introduciendo el conflicto la renombramos por una fresca $\hypId_2'$.
+    Para evitar la captura, al igual que en la sustitución de variables, no podemos renombrar en $\someProofTwo$ (porque la hipótesis está libre), sino que en la sub-demostración de $\someProof$ que liga $\hypId_2$ introduciendo el conflicto la renombramos por una fresca $\hypId_2'$.
 \end{definition}
 
 \duda{Pensamiento: Si no tuvieramos etiquetas, esta sustitución sería más fácil, no? Porque en lugar de reemplazar por ocurrencias de la etiqueta, reemplazas por veces que citas en un axioma una \textit{fórmula}, entonces si lo estás capturando te da igual, total es la misma fórmula. O se podrá romper?}
@@ -1384,28 +1381,32 @@ una pasada de forma lineal.
     \label{fri:fig:reduction-rules}
 \end{figure}
 
-A partir de todas las reglas de reducción (\namedref{fri:fig:reduction-rules}), dado que son \textit{pasos} que acercan la demostración sucesivamente a su versión normalizada, podemos implementarlo de forma análoga a DNF (\namedref{ppa:sec:dnf:algoritmo}) como la clausura reflexiva transitiva de la reducción en un paso: aplicarla 0 o más veces hasta que esté en forma normal. Al igual que DNF, también necesitaremos reglas de congruencia: si no hay una eliminación de una introducción para simplificar, se trata de reducir recursivamente las sub-demostraciones.
+A partir de todas las reglas de reducción (\namedref{fri:fig:reduction-rules}), dado que son \textit{pasos} que acercan la demostración sucesivamente a su versión normalizada, podemos implementarlo de forma análoga a la conversión a DNF (\namedref{ppa:sec:dnf:algoritmo}) como la clausura reflexiva transitiva de la reducción en un paso: aplicarla 0 o más veces hasta que esté en forma normal. Al igual que DNF, también necesitaremos reglas de congruencia: si no hay una eliminación de una introducción para simplificar, se trata de reducir recursivamente las sub-demostraciones.
 
-En una primera implementación las sub-demostraciones las reducíamos en un paso, de izquierda a derecha. Por ejemplo, si teníamos una introducción de una conjunción, reducíamos de a un paso a la vez $\form \rewrite \form_1 \rewrite \form_2 \rewrite \dots \rewrite \form^{*}$ hasta llegar a $\form^{*}$ irreducible y luego, lo mismo para $\formTwo$.
+En una primera implementación las sub-demostraciones las reducíamos en un paso, de izquierda a derecha. Por ejemplo, si teníamos una introducción de una conjunción,
 
 \proofTreeAndI
 
-Esto resultó demasiado lento, dado que las demostraciones que reducimos son muy
-grandes (al ser generadas automáticamente), y si por ejemplo la sub-demostración
-que había que reducir estaba muy anidada, había que recorrerla toda para
-efectuar cada paso.
+reducíamos de a un paso a la vez $\form \rewrite \form_1 \rewrite \form_2
+\rewrite \dots \rewrite \form^{*}$ hasta llegar a $\form^{*}$ irreducible y
+recién ahí aplicamos mismo para $\formTwo$, paso por paso. Esto resultó
+excesivamente lento, dado que las demostraciones a reducir son muy grandes,
+porque son generadas automáticamente. Además, si la sub-demostración que había
+que reducir estaba muy anidada, había que recorrerla toda cada vez para efectuar
+cada paso.
 
 \begin{prooftree}
     \AxiomC{$\judg{\ctx}{\form}$}
     \AxiomC{$\judg{\ctx}{\formTwo}$}
     \RL{\ruleAndI}
     \BinaryInfC{$\judg{\ctx}{\form \wedge \formTwo}$}
+    \noLine
     \UnaryInfC{$\vdots$}
     \noLine
     \UnaryInfC{$\someProof$}
 \end{prooftree}
 
-Además, las demostraciones eran de mayor profundidad por una mayor cantidad de iteraciones del algoritmo, lo que hacía que realizar sustituciones también sea costoso (pues hay que recorrer el árbol entero para ver las hipótesis citadas y realizar la sustitución).
+Las sustituciones también eran más costosas, porque tenían que recorrer demostraciones de una profundidad mayor, y hay que recorrer el árbol entero para ver las hipótesis citadas y efectuar la sustitución en si.
 
 Para solucionar este problema, implementamos una reducción en muchos pasos. En
 la literatura se pueden encontrar muchas \textit{estrategias de reducción}
@@ -1413,15 +1414,16 @@ alternativas, que se clasifican en si reducen en un paso o muchos para cada
 iteración de la clausura. Dentro de las de muchos, la que implementamos fue
 \textbf{Gross-Knuth}, que reduce en muchos pasos todos los sub-términos posibles
 al mismo tiempo. Aplicado a demostraciones, quiere decir que en un único paso de
-reducción, al mismo tiempo reduciríamos $\form \fAnd \formTwo \rewrite \form^{*}
+reducción, reduciríamos $\form \fAnd \formTwo \rewrite \form^{*}
 \fAnd \formTwo^{*}$. Esto hace que la convergencia sea mucho más rápida.
 
 \duda{Probablemente falta rigurosidad en esta sección.}
 
 \subsection{Limitaciones}
+\label{fri:norm:sec:limitations}
 
 Implementamos una reducción sencilla, que solamente reduce eliminaciones de introducciones de la misma regla. Pero hay otros patrones que dejamos afuera, 
-que si ocurren, no nos permitirán llegar a una forma normal. Entonces no siempre podremos extraer un testigo. Por ejemplo, en \fullref{fri:norm:fig:non-norm}, se puede observar una demostración sencilla que usa \lstinline{cases}. Pero al certificarla, traducirla y reducirla, no queda en una forma normal. Se repite dos veces \ruleExistsI{}, cuando se podría mover hacia la raíz del árbol y evitar repetirlo en cada rama del \ruleOrE{}. Esto hace que al intentar de extraer un testigo, el programa reporte una falla al no poder normalizar la demostración. Para soportar estos casos es necesario sofisticar la reducción, agregando otro tipo de reglas, que quedó fuera del alcance del trabajo.
+que si ocurren, no nos permitirán llegar a una forma normal. Entonces no siempre podremos extraer un testigo. Por ejemplo, en \fullref{fri:norm:fig:non-norm}, se puede observar una demostración sencilla que usa \lstinline{cases}. Pero al certificarla, traducirla y reducirla, no queda en una forma normal. Se repite dos veces \ruleExistsI{}, cuando se podría mover hacia la raíz del árbol y evitar repetirlo en cada rama del \ruleOrE{}. Esto hace que al intentar extraer un testigo, el programa reporte una falla. Para soportar estos casos sería necesario sofisticar la reducción, agregando otro tipo de reglas, que quedó fuera del alcance del trabajo.
 
 \begin{figure}[H]
     \centering
@@ -1431,7 +1433,7 @@ que si ocurren, no nos permitirán llegar a una forma normal. Entonces no siempr
     \end{subfigure}
     \par\bigskip
     \begin{subfigure}[b]{1\textwidth}
-        \caption{Demostración certificada, traducida y reducida (generada por PPA)}
+        \caption{Demostración certificada, traducida y reducida (generada por \ppaTool{})}
         \begin{prooftree}
             \AxiomC{}
             \RL{\ruleAx}
@@ -1494,7 +1496,7 @@ que si ocurren, no nos permitirán llegar a una forma normal. Entonces no siempr
 \section{Manteniendo el contexto}
 \label{fri:sec:context}
 
-Describimos todo el proceso de cómo a partir de una demostración en PPA, se certifica, se traduce mediante Friedman y se reduce para extraer testigos de un existencial. Pero falta exponer un detalle fundamental. Cuando estábamos probando la integración de todas las partes, nos dimos cuenta de un problema. PPA implementa el resultado del \fullref{fri:cor:forall-inst}, que nos permite llevar las demostraciones a esta forma
+Describimos todo el proceso de cómo a partir de una demostración en PPA, se certifica, se traduce mediante Friedman y se reduce para extraer testigos de un existencial. Pero falta exponer un detalle fundamental. Cuando estábamos probando la integración de todas las partes, nos dimos cuenta de un problema. \ppaTool{} implementa el resultado del \fullref{fri:cor:forall-inst}, que nos permite llevar las demostraciones a esta forma
 \[
     \bm{\transDNeg{\ctx}} \judgI
     \exists \var .
@@ -1541,7 +1543,7 @@ Esto es análogo al problema que tendríamos si intentamos normalizar la demostr
 
 \duda{Qué intuición agregar del problema? Algo de que el contenido computacional de los axiomas es limitado?}
 
-La solución que implementamos fue \textbf{mantener los axiomas originales}, y demostrar la introducción de la traducción (\namedref{fri:lemma:trans-intro}, regla \ruleTransI{}): $p(v) \judgI \tdn{p(v)}$. En la demostración traducida, se reemplaza cada cita al axioma (que pretende encontrar el axioma traducido) por la demostración de la traducción a partir del axioma original.
+La solución que implementamos fue \textbf{mantener los axiomas originales}, y demostrar la introducción de la traducción (\namedref{fri:lemma:trans-intro}, regla \ruleTransI{}): $p(v) \judgI \tdn{p(v)}$. Una vez generada la demostración de Friedman para la traducción se efectúa un paso más: por cada axioma, reemplazar cada lugar en donde se cita (que pretende encontrarlo traducido) por la demostración de la traducción \textit{a partir del axioma original}.
 
 \begin{prooftree}
     \AxiomC{}
@@ -1596,13 +1598,13 @@ De esa forma, como los axiomas se mantienen, existe la forma normal que buscamos
                        & \mid \fNot \form
     \end{align*}
 
-    Esto es suficientemente permisivo para los axiomas que se suelen definir. Veremos que $\formTwo$ son las fórmulas que cumplen $\formTwo \judgI \tdn{\formTwo}$ (este lema) y $\formTwo$ las que cumplen $\fNotR \form \judgI \fNotR \tdn{\form}$ (\namedref{fri:lemma:notr-trans-intro}) 
+    Esto es suficientemente permisivo para los axiomas que se suelen definir. Veremos que $\formTwo$ son las fórmulas que cumplen $\formTwo \judgI \tdn{\formTwo}$ (este lema) y $\form$ las que cumplen $\fNotR \form \judgI \fNotR \tdn{\form}$ (\namedref{fri:lemma:notr-trans-intro}) 
 \end{lemma}
 \begin{proof}
     Se demuestra por inducción estructural en la fórmula (sin traducir).
     \begin{itemize}
         \item Los casos de predicados, $\fTrue, \fFalse, \fOr, \fAnd, \forall, \exists$ salen directo.
-        \item $\fNot$ y $\fImp$ son las rebuscadas. Al ser contra variantes, no se pueden demostrar de forma directa porque no alcanza con la HI, sino que es necesario $\tdn{\form} \judgI \form$ que en general no vale. Pero si es posible reducirlo a $\fNotR \form \judgI \fNotR \tdn{\form}$ (\namedref{fri:lemma:notr-trans-intro}).
+        \item $\fNot$ y $\fImp$ son las rebuscadas. Al ser contra variantes, no se pueden demostrar de forma directa porque no alcanza con la HI, sino que es necesario $\tdn{\form} \judgI \form$ que en general no vale. Pero sí es posible reducirlo a $\fNotR \form \judgI \fNotR \tdn{\form}$ (\namedref{fri:lemma:notr-trans-intro}, \ruleNotRTransI{}).
     \end{itemize}
 
     La negación es la más sencilla
@@ -1697,9 +1699,9 @@ De esa forma, como los axiomas se mantienen, existe la forma normal que buscamos
 
 \section{Otros métodos de extracción}
 
-\todo{Hablar sobre y citar classical realizability, no tengo ni idea.}
+A lo largo de este capítulo presentamos nuestra estrategia para extracción de testigos de demostraciones de lógica clásica, que tienen el desafío de no siempre ser constructivas por la existencia del principio de razonamiento clásico \ruleLEM{}. Pero hay más formas de hacerlo.
+Vimos que las reglas de reducción en lógica intuicionista en realidad no son más que una semántica operacional del cálculo $\lambda$, por Curry-Howard. Muchas veces se usan isomorfismos como este, por ser más fácil pensar en semánticas operacionales que normalización de demostraciones. El problema con la lógica clásica es que no es sencillo dar esa interpretación computable, de una forma tal que permita hacer la extracción. Los métodos para hacerlo se dividen en dos categorías a grandes rasgos: directos e indirectos \cite{miquel-friedman}.
 
-\duda{Qué opinás Pablo de esta intro? Cuál es el mínimo de cosas que habría que mencionar? Así sé qué investigar jeje}
-Buena intro acá https://www.degruyter.com/document/doi/10.1515/9783110324921.11/html?lang=en
+Los \textbf{indirectos} traducen las demostraciones clásicas de un subconjunto de fórmulas a otras lógicas que se porten mejor, como la intuicionista. Aprovechan el hecho de que es constructiva y tiene una interpretación computable bien conocida. Se puede efectuar con diferentes tipos de traducciones negativas, como la traducción de Friedman, que es lo que hicimos en este trabajo.
 
-In the past years, many computational interpretations of Classical Arithmetic havebeen put forward.  Under a first classification, they fall into two large categories:directandindirectinterpretations.   Among  the  indirect  interpretations  one  findsthe  negative  translations  followed  either  by  Dialectica  interpretations  [13],  [30](see e.g.   Kohlenbach [19]) or by intuitionistic realizability interpretations com-bined with Friedman’s translation [13] (see e.g. Berger and Schwichtenberg [10]).Among the direct interpretations, there are different versions of Classical Realiz-ability (Krivine’s [22] and Avigad’s [6]), there is Coquand game semantics [11],
+Por otro lado, también se puede hacer de forma \textbf{directa}, dando una interpretación computable de la lógica clásica. A esto se le llama \textit{realizabilidad clásica}, que consiste en dar una semántica operacional para cálculos $\lambda$ clásicos.
