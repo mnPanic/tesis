@@ -1,16 +1,13 @@
 En este trabajo presentamos el lenguaje \ppaLang{} junto con los detalles de su
 implementación en \ppaTool{}. Primero dimos una definición completa del sistema
 lógico de deducción natural, junto con ejemplos de demostraciones de una
-teoría de estudiantes. Se presentan también algunos ajustes que tuvimos que
-hacer al sistema para implementarlo: etiquetado de hipótesis (y cómo afecta eso
-a las reglas de inferencia) y relajamiento de restricciones sobre variables
-libres en el contexto. Describimos cómo implementamos los algoritmos de chequeo,
+teoría de estudiantes. Describimos cómo implementamos los algoritmos de chequeo,
 alfa equivalencia de forma lineal y sustitución sin capturas de forma lineal.
 
 Dimos un manual de usuario para el lenguaje \ppaLang{}, explicando como
 escribir demostraciones y cómo usar el mecanismo de demostración principal
-\lstinline{by}. Damos una demostración completa que extiende el ejemplo de
-estudiantes y muestra diferentes capacidades del lenguaje. También se listan
+\lstinline{by}. Dimos una demostración completa que extiende el ejemplo de
+estudiantes y muestra diferentes capacidades del lenguaje. También se listaron
 todos los comandos, ejemplos funcionales para cada uno, y su relación con las
 reglas de inferencia de deducción natural. Profundizamos en la implementación
 del certificador y cómo están implementadas cada una de las partes de la
@@ -28,7 +25,7 @@ forma normal) y requirió cambios en la estrategia de reducción de una sencilla
 una más sofisticada (Gross-Knuth) debido al tamaño de las demostraciones.
 
 El principal aporte del trabajo es la implementación práctica de un método de
-extracción directo mediante el uso de la traducción de Friedman y la
+extracción indirecto mediante el uso de la traducción de Friedman y la
 normalización usual de la lógica intuicionista.
 
 \section{Trabajo futuro}
@@ -36,14 +33,11 @@ normalización usual de la lógica intuicionista.
 Surgieron varias líneas de trabajo futuro, que quedaron fuera del alcance de la
 tesis. Las listamos a continuación.
 
-% TODO: Tipos?
-% TODO: Extender la traducción de Friedman a más de un existencial
-
 \begin{itemize}
-    \item \textbf{Modelar de forma nativa inducción e igualdad}: las teorías que se pueden axiomatizar están limitadas al no poder
-    representar inducción de forma nativa (como predica sobre predicados, es
-    lógica de segundo orden). Si se puede axiomatizar de forma adhoc, como
-    predicados escritos a mano en cada programa, pero sería más amigable de
+    \item \textbf{Modelar de forma nativa inducción e igualdad}: las teorías que
+    se pueden axiomatizar están limitadas al no poder representar inducción de
+    forma nativa (como predica sobre predicados, es lógica de segundo orden). Si
+    bien sí se puede axiomatizar de forma \textit{adhoc}, sería más amigable de
     estar como regla de inferencia y a lo largo de todo el programa. También se
     podría agregar de forma nativa la noción de \textit{igualdad}.
     \item \textbf{Sofisticar \textit{solver} del by}: en
@@ -58,14 +52,22 @@ tesis. Las listamos a continuación.
     muchas funcionalidades que mejorarían la calidad de vida del desarrollador
     como permitir importar archivos o módulos e implementar una biblioteca
     estándar de teorías y teoremas.
+    \item \textbf{Extender PPA con tipos}: el lenguaje no permite ni especificar
+    ni chequear tipos. Se podría agregar para permitir escribir programas más
+    sofisticados y con garantías estáticas más fuertes.
     \item \textbf{Refinar demostración usada para traducción}: en la traducción de Friedman introducimos dos lemas centrales:
     $\formTwo \judgI \tdn{\formTwo}$ \fullref{fri:lemma:trans-intro}, y
     $\fNotR \form \judgI \fNotR \tdn{\form}$
     \fullref{fri:lemma:notr-trans-intro}. El primero se reduce al segundo.
     El segundo no vale siempre, pero demostramos un subconjunto de todas las
     fórmulas válidas. Podríamos refinarlo aún más, lo que permitiría usar
-    más tipos de axiomas para las demostraciones que se quiera extraer
-    testigos.
+    más tipos de axiomas.
+    \item \textbf{Extender traducción de Friedman a más de un existencial}: en
+    su versión final, lo máximo que llega a convertir son fórmulas de la pinta
+    $\forall \varTwo_1 \dots \forall \varTwo_n . \exists \var .
+    \anyForm(\dots)$. Se debería poder extender a fórmulas de la pinta $\forall
+    \varTwo_1 \dots \forall \varTwo_n . \exists \var_1 \dots \exists \var_m .
+    \anyForm(\dots)$.
     \item \textbf{Implementar versión completa de reducción de demostraciones}:
     en \fullref{fri:norm:sec:limitations} vimos una demostración para la que no
     se puede llegar a una forma normal, evitando la extracción de testigos en un
@@ -76,3 +78,6 @@ tesis. Las listamos a continuación.
     podrían hacer más amigables y accionables, ayudando a resolver problemas sin
     saber cómo funciona internamente la herramienta.
 \end{itemize}
+
+% TODO: Tipos?
+% TODO: Extender la traducción de Friedman a más de un existencial
