@@ -2,20 +2,20 @@ En el \fullref{chap:ppa} vimos a \ppaLang{} como un lenguaje, desde el punto de
 vista de un usuario. En \fullref{chap:ppa-certifier} abordamos el funcionamiento
 interno, que expandimos en \fullref{chap:witness-extraction} con extracción de
 testigos. En este capítulo presentamos la herramienta de línea de comandos
-\ppaTool{}, que permite procesar programas del lenguaje. Está implementada en Haskell.
+\ppaTool{}, que permite ejecutar programas del lenguaje. Está implementada en Haskell.
 
 \section{Instalación}
 
 Para instalar \ppaTool{} a partir de los fuentes, seguir los siguientes pasos.
 
 \begin{enumerate}
-    \item Instalar \href{https://www.haskell.org/}{Haskell}, \href{https://www.haskell.org/cabal/}{Cabal}
-    \item Clonar el repositorio de \ppaTool{} o descargarlo \url{https://github.com/mnPanic/tesis}
-    \item Instalar la herramienta con cabal
+    \item Instalar \href{https://www.haskell.org/}{Haskell} y \href{https://www.haskell.org/cabal/}{Cabal}.
+    \item Clonar el repositorio de \ppaTool{} o descargarlo \url{https://github.com/mnPanic/tesis}.
+    \item Instalar la herramienta con cabal.
     \begin{minted}{bash}
 tesis/ppa:~$ cabal install ppa
     \end{minted}
-    \item Verificar la instalación
+    \item Verificar la correcta instalación.
     \begin{minted}{bash}
 tesis/ppa:~$ ppa version
 ppa version 0.1.0.0
@@ -41,10 +41,10 @@ Argumentos:
 
 \begin{itemize}
     \item El primer argumento posicional es el archivo que contiene el programa
-    a certificar. Puede ser \texttt{-} para leer de \textit{stdin}.
+    a certificar. Puede ser \texttt{-} para leer de la entrada estándar \textit{stdin}.
     \item \texttt{--out}, \texttt{-o} (\textit{opcional}): Path para el archivo
     al cual escribir el certificado (con el sufijo \texttt{\_raw.nk}) o
-    \texttt{-} para usar \textit{stdout}.
+    \texttt{-} para usar la salida estándar \textit{stdout}.
 \end{itemize}
 
 
@@ -78,7 +78,7 @@ Argumentos:
 
 \begin{itemize}
     \item El primer argumento posicional es el archivo de entrada que contiene
-    el programa. Puede ser \texttt{-} para leer de \textit{stdin}.
+    el programa. Puede ser \texttt{-} para leer de la entrada estándar \textit{stdin}.
     \item \texttt{--theorem}, \texttt{-t} (\textit{obligatorio}): el nombre del
     teorema para el cual extraer el testigo
     \item \texttt{--terms}, \texttt{ts}: la lista de términos que indica cómo
@@ -86,10 +86,10 @@ Argumentos:
     misma cantidad de términos que variables.
     \item \texttt{--out}, \texttt{-o} (\textit{opcional}): Path para el archivo
     al cual escribir los certificados (con los sufijos \texttt{\_raw.nk} y
-    \texttt{.nj}) o \texttt{-} para usar \textit{stdout}.
+    \texttt{.nj}) o \texttt{-} para usar la salida estándar \textit{stdout}.
 \end{itemize}
 
-Primero lee y certifica, y chequea el programa. Luego, lo traduce con la
+Primero lee, certifica y chequea el programa. Luego, lo traduce con la
 traducción de Friedman, normaliza la demostración e intenta extraer un testigo,
 reportando cual fue el testigo extraído y cómo queda el término final con el
 testigo y los términos proporcionados para instanciar las variables
@@ -123,7 +123,7 @@ of formula: p(x, v)
 \section{Detalles de implementación}
 
 En esta sección contamos algunos detalles relevantes sobre la implementación,
-que deberían permitir navegar los fuentes para ver cómo fue implementado.
+que deberían facilitar la navegación de los archivos fuente.
 Comencemos por la arquitectura de los módulos.
 
 \begin{figure}[h]
@@ -140,8 +140,7 @@ Los más relevantes son,
     \texttt{ND.Checker} (chequeador de demostraciones), \texttt{ND.Subst}
     (sustituciones sobre fórmulas y demostraciones) y \texttt{ND.ND} (el modelo
     en si). Ver \fullref{ppa-tool:sec:nd}.
-    \item \texttt{PPA}: Contiene la implementación del lenguaje \ppaLang{} por
-    sobre deducción natural.
+    \item \texttt{PPA}: Contiene la implementación del lenguaje \ppaLang{}.
     \begin{itemize}
         \item \texttt{PPA.Parser} y \texttt{PPA.Lexer} son el lexer y el parser
         respectivamente. Ver \fullref{ppa-tool:sec:parser-lexer}.
@@ -187,9 +186,9 @@ en dos etapas.
 Para el parsing en general hay dos caminos bien conocidos. O bien hacerlo a mano
 con alguna biblioteca de \textit{parser combinators} como
 \href{https://hackage.haskell.org/package/parsec}{parsec}, o usar un
-\textit{parser generator}: un programa que genere un parser automáticamente a
-partir de una gramática en algún formato como EBNF. Nosotros decidimos, por
-familiaridad con el proceso, usar un parser generator. Los más conocidos
+\textit{parser generator}: un programa que genere el código de un \textit{parser} automáticamente a
+partir de una gramática en algún formato, como EBNF. Nosotros decidimos, por
+familiaridad con el proceso, usar un \textit{parser generator}. Los más conocidos
 históricamente son Lex (para el lexer) y Yacc (para el parser, \textit{yet
 another compiler compiler}). En Haskell existen dos paquetes análogos: \href{https://hackage.haskell.org/package/alex}{Alex} para el
 lexer y \href{https://hackage.haskell.org/package/happy}{Happy} para el parser.
@@ -348,10 +347,10 @@ demostración está compuesta por la aplicación recursiva de reglas de inferenc
 y su modelo omite todos los detalles que se pueden inferir durante su chequeo.
 De esa forma las demostraciones son más fáciles de escribir y generar, al costo
 de ser un poco más costosas de leer por un humano, cosa que de todas formas no
-deberíamos hacer. Por ejemplo, la introducción de la implicación, \ruleImpI{},
+debería ser usual. Por ejemplo, la introducción de la implicación, \ruleImpI{},
 modelada por \texttt{PImpI} no especifica cuál es la implicación que se está
 introduciendo, dado que durante el chequeo debería ser la fórmula actual a
-demostrar. Tampoco se explicita en cada regla, cual es el contexto de
+demostrar. Tampoco se explicita cual es el contexto de
 demostración. Se genera de forma dinámica.
 
 \begin{figure}[p]
