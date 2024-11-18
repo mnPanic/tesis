@@ -15,7 +15,7 @@
 %     \end{itemize}
 
 En la sección anterior vimos cómo usar PPA para demostrar teoremas. Pero, ¿cómo
-funciona por detrás? ¿Como asegura la validez lógica de las demostraciones
+funciona por detrás? ¿Cómo asegura la validez lógica de las demostraciones
 escritas por el usuario?
 
 \section{Certificados}
@@ -31,14 +31,14 @@ demostración que cuenta con esta propiedad cumple con el
 \textbf{criterio de de Bruijn}. \ppaTool{} lo cumple al generar demostraciones
 en deducción natural.
 
-\begin{definition}[Criterio de de Bruijn \cite{freek-bruijn}] Un asistente de
+\begin{prop*}[Criterio de de Bruijn \cite{freek-bruijn}] Un asistente de
     demostración que satisface que sus demostraciones puedan ser chequeadas por
     un programa independiente, pequeño y confiable se dice que cumple con el
     criterio de de Bruijn.
-\end{definition}
+\end{prop*}
 
-
-\duda{Para pablo: pero si emite certificados que no corresponden a la demo original y chequean siempre, por ej. siempre el mismo, no estaría mal igual? Tenés que confiar también en la parte que emite el certificado.}
+%\duda{Para pablo: pero si emite certificados que no corresponden a la demo original y chequean siempre, por ej. siempre el mismo, no estaría mal igual? Tenés que confiar también en la parte que emite el certificado.}
+% RTA: Sí, o tendrías que poder mirar qué es lo que se está demostrando. Ese es un problema insalvable.
 
 El módulo de PPA que certifica las demostraciones de alto nivel de PPA
 generando una demostración en deducción natural es el \modCertifier{}. Si
@@ -84,7 +84,7 @@ axiomas \lstinline{ax1, ax2, ax3}.
 
 \subsection{Contexto local}
 
-Pero no solo los axiomas y teoremas declarados en el programa se agregan al
+No solo los axiomas y teoremas declarados en el programa se agregan al
 contexto. Cada demostración de un teorema tendrá además un \textit{contexto
 local} que extiende al anterior, solo válido durante el alcance de su
 demostración (se omiten en el certificado).
@@ -135,37 +135,116 @@ Ya vimos cómo las hipótesis se agregan al contexto. Pero ¿cómo generamos una
 
 En el resto del capítulo presentamos cómo cada comando de \ppaLang{} puede ser certificado.
 
-\begin{itemize}
-    \item Comenzamos con describir el \textit{solver} que se usa por debajo del \lstinline{by}, que es central al funcionamiento de todo el certificador. Aquí veremos que la demostración generada para \ref{ppa-cert:certify:ex} no es exactamente como se presenta.
-    \item Vemos cómo podemos usarlo para facilitar la descarga de conjunciones en un orden arbitrario.
-    \item También la traducción de los comandos que corresponden a reglas de inferencia de forma directa: \lstinline{take} (\ruleExistsI), \lstinline{consider} (\ruleExistsE), \lstinline{let} (\ruleForallI), \lstinline{cases} (\ruleOrE) y \lstinline{suppose} (\ruleImpI, \ruleNotI).
-    \item Y finalmente los comandos adicionales: \lstinline{equivalently} y \lstinline{claim}.
+\begin{itemize} 
+    \item Comenzamos por ver cómo se certifican los comandos que corresponden a reglas de inferencia de forma directa, que ayuda a entender el funcionamiento de \ppaTool{}: \lstinline{take} (\ruleExistsI), \lstinline{consider} (\ruleExistsE), \lstinline{let} (\ruleForallI), \lstinline{cases} (\ruleOrE) y \lstinline{suppose} (\ruleImpI, \ruleNotI). También los comandos adicionales: \lstinline{equivalently} y \lstinline{claim}.
+    \item Luego, describimos el \textit{solver} que se usa por debajo del \lstinline{by}, que es central al funcionamiento de todo el certificador. Aquí veremos que la demostración generada para \ref{ppa-cert:certify:ex} no es exactamente como se presenta.
+    \item Concluimos por cómo podemos usarlo para facilitar la descarga de conjunciones en un orden arbitrario.
 \end{itemize}
+
+\section{Comandos correspondientes a reglas de inferencia}
+
+Como se puede ver en \fullref{ppa:tab:inference-rules-to-commands}, muchos de los comandos se corresponden directamente con reglas de inferencia,
+por lo que su traducción es directa.
+
+\begin{itemize}
+    \item \lstinline{take} (\ruleExistsI)
+
+    Si la tesis es \lstinline{exists X . a}, el comando \lstinline{take X := t}
+    la reduce a \lstinline{a} con \lstinline{X} reemplazado por \lstinline{t} y la certifica como
+    
+    \proofTreeExistsI
+
+    insertando la demostración certificada del resto en en $\ctx \judG \form \subst{\var}{\term}$
+
+    \item \lstinline{consider} (\ruleExistsE)
+    
+    El comando \lstinline{consider X st h: a by h1, ... hn} se certifica como
+    
+    \proofTreeExistsE
+
+    \begin{itemize}
+        \item $\ctx \judG \exists \var . \form$ se demuestra mediante el by.
+        \item Se agrega la hipótesis \lstinline{h: a} al contexto como axioma, se continúa la certificación y se inserta la demostración resultante en $\ctx, \form \judG \formTwo$.
+    \end{itemize}
+
+    \item \lstinline{let} (\ruleForallI)
+    
+    Si la tesis es \lstinline{forall X. a}, el comando \lstinline{let X} reduce la tesis a \lstinline{a} y continúa la certificación, insertando el resultado en la demostración de $\ctx \judG \form$
+
+    \proofTreeForallI
+
+    \item \lstinline{cases} (\ruleOrE)
+    
+    El comando
+    \begin{lstlisting}[numbers=none]
+        cases by h1, ..., hn
+            case c1
+            ...
+            case cm
+        end
+    \end{lstlisting}
+
+    se certifica como varios \ruleOrE{} anidados, en donde el primer $\fOr$ se certifica mediante by. Cada rama certifica la sub-demostración agregando la hipótesis del caso al contexto como axioma.
+
+    \proofTreeOrE
+
+    \item \lstinline{suppose} (\ruleImpI, \ruleNotI)
+    
+    Si la tesis es \lstinline{a -> b}, el comando \lstinline{suppose h: a} reduce la tesis a \lstinline{b} y agrega al contexto la hipótesis \lstinline{h: a} como axioma. La certifica como
+
+    \proofTreeImpI
+
+    insertando el resto de la demostración certificada en su sub-demostración.
+
+    Si la tesis es \lstinline{~a}, es análogo pero interpretándolo como \lstinline{a -> false}.
+
+\end{itemize}
+
+\section{Comandos adicionales}
+
+\begin{itemize}
+    \item \lstinline{equivalently}
+    
+    Si la tesis es $a$, el comando \lstinline{equivalently a'} usa el mismo solver que el by para demostrar $a' \fImp a$ y reduce la tesis a $a'$.
+
+    \item \lstinline{claim}
+    
+    La certificación del comando
+    \begin{lstlisting}[numbers=none]
+claim h: f
+proof
+    ...
+end
+    \end{lstlisting}
+    
+    Consiste en certificar la sub-demostración y agregar la hipótesis \lstinline{h: f} como teorema al contexto.
+
+\end{itemize}
+
 
 \section{Implementación del by}
 
 El \lstinline{by} es el mecanismo principal de demostración en PPA, y el corazón
 del \modCertifier. Muchas funcionalidades están implementadas a su alrededor.
 Genera \textbf{automáticamente} una demostración de que una fórmula es
-consecuencia lógica de una lista de hipótesis. Es un \textit{solver heurístico} para lógica de primer orden. Está basado en la implementación del mecanismo análogo en el \texttt{Checker} de Mizar \cite{freek-by}.
+consecuencia lógica de una lista de hipótesis. Es un \textit{solver heurístico} para lógica de primer orden. Esto es aceptable, puesto que la validez de lógica de primer orden es indecidible (por el teorema de Church \cite{church}), y el objetivo del trabajo no fue dar un solver innovador, sino alguno que se pueda certificar. Está basado en la implementación del mecanismo análogo en el \texttt{Checker} de Mizar \cite{freek-by}.
 
-Sea $A$ una fórmula. Supongamos que queremos demostrar \lstinline{thus A by h1, ..., hn} y que en el contexto tenemos que las hipótesis $h_i$ corresponden a
+Sea $A$ una fórmula. Supongamos que queremos certificar \lstinline{thus A by h1, ..., hn} y que en el contexto tenemos que las hipótesis $h_i$ corresponden a
 fórmulas $\formTwo_i$, con $i \in \{1, ..., n\}$ y $n \in \setNaturals$. Primero
-veamos la idea general de la estrategia y luego profundizamos en cada paso. Los pasos para certificar un \lstinline{by} son los siguientes. 
+vemos la idea general de la estrategia y luego profundizamos en cada paso. Los pasos para certificar un \lstinline{by} son los siguientes. 
 \begin{itemize}
     \item Queremos demostrar la implicación de las hipótesis a la fórmula.
     \[
         \formTwo_1 \fAnd \dots \fAnd \formTwo_n \fImp \form
     \]
     A esta fórmula la llamamos \textbf{tesis}.
-    \item \textbf{Razonamos por el absurdo}: asumiendo la negación de la tesis encontramos una contradicción
+    \item \textbf{Razonamos por el absurdo}: asumiendo la negación de la tesis buscamos encontrar una contradicción
     \begin{align*}
         \fNot (\formTwo_1 \fAnd \dots \fAnd \formTwo_n \fImp \form)
         &\equiv \fNot (\fNot (\formTwo_1 \fAnd \dots \fAnd \formTwo_n) \fOr \form)\\
         &\equiv \formTwo_1 \fAnd \dots \fAnd \formTwo_n \fAnd \fNot \form
     \end{align*}
-    \item Convertimos la negación de la tesis a forma normal disyuntiva (\textbf{DNF}),
-    una disyunción de conjunciones de literales (``cláusulas'').
+    \item Convertimos la negación de la tesis a forma normal disyuntiva (\textbf{DNF}), una disyunción de cláusulas, cada una de las cuales es una conjunción de literales (fórmulas atómicas afirmadas o negadas, y fórmulas iniciadas por cuantificadores).
     \[
         (\formLit^1_{1} \fAnd \dots \fAnd \formLit^1_{n_1})
         \fOr \dots \fOr
@@ -358,7 +437,7 @@ de $\formTwo$ (la continuación). Podemos usar cut de la siguiente manera.
     \BinaryInfC{$\ctx \judG \form$}
 \end{prooftree}
 
-Que es certificado como
+Se certifica como
 
 \begin{prooftree}
     \AxiomC{$\someProof_{\formTwo \fImp \form}$}
@@ -391,8 +470,8 @@ Que es certificado como
 \begin{lemma}[Razonamiento por el absurdo]
     \label{ppa:sec:abs-reasoning}
     Imaginemos que queremos demostrar
-$\form$ por el absurdo. Podemos juntar con cut con la eliminación de la doble
-negación, pasando a demostrar $\fNot \fNot \form$. Al introducirla,
+$\form$ por el absurdo. Podemos usar cut y la eliminación de la doble
+negación para continuar la demostración por $\fNot \fNot \form$. Al introducirla,
 debemos demostrar el juicio $\ctx, \fNot \form \judG \fFalse$:
 asumiendo que no es cierta la fórmula, deducimos una contradicción.
 
@@ -427,7 +506,7 @@ Que también se puede notar de la siguiente forma
 \end{lemma}
 
 \begin{obs*}
-    A \ruleDnegE{} La formulamos como $\fNot \fNot \form \judG \form$ y la usamos con
+    A \ruleDnegE{} la formulamos como $\fNot \fNot \form \judG \form$ y la usamos con
     \textbf{cut}, pero otra alternativa equivalente, levemente más tediosa para
     generar demostraciones, hubiera sido demostrarla como $\fNot \fNot \form
     \fImp \form$ y usarla con \ruleImpE{} directamente.
@@ -437,7 +516,7 @@ Que también se puede notar de la siguiente forma
 \label{ppa-cert:sec:dnf}
 
 Tenemos que generar una demostración de que la negación de la tesis genera una
-contradicción, pero lo queremos hacer a partir de la tesis en DNF. ¿Cómo la convertimos?. Más aún, ¿Cómo generamos una demostración para la conversión?.
+contradicción, pero lo queremos hacer a partir de la tesis en DNF. ¿Cómo la convertimos?. Más aún, ¿Cómo generamos una demostración para la conversión?. Este es un resultado estándar, que adaptamos mínimamente para su uso en el contexto de \ppaTool{}.
 
 \begin{definition}[DNF]
     Una fórmula está en \textbf{forma normal disyuntiva} o DNF
@@ -450,7 +529,7 @@ contradicción, pero lo queremos hacer a partir de la tesis en DNF. ¿Cómo la c
     \begin{itemize}
         \item $\formLit \fAnd \formLitTwo$ está en DNF.
         \item $(\formLit \fAnd \formLitThree) \fOr (\formLit \fAnd \formLitTwo)$ también.
-        \item $(\formLit \fImp \formLitTwo) \fOr (\formLit \fAnd \formLitTwo)$ no lo está.
+        \item $(\formLit \fImp \formLitTwo) \fOr (\formLit \fAnd \formLitTwo)$ no lo está, porque $(\formLit \fImp \formLitTwo)$ no es una conjunción de literales.
         \item $\big(\forall \var . (\formLit \fImp \formLitTwo)\big) \fOr (\formLit \fAnd \formLitTwo)$ si.
     \end{itemize}
 \end{definition}
@@ -461,6 +540,9 @@ contradicción, pero lo queremos hacer a partir de la tesis en DNF. ¿Cómo la c
     Para toda fórmula $\form$, existe
     $\dnf{\form}$ su equivalente en DNF. Y vale $\form \judG \dnf{\form}$.
 \end{theorem}
+\begin{proof}
+    La demostración se basa en el algoritmo que presentamos a continuación en la \namedref{ppa:sec:dnf:algoritmo}.
+\end{proof}
 
 \begin{obs}
     Continuamos la demostración por la refutación de la fórmula en DNF mediante
@@ -481,7 +563,7 @@ el uso de cut.
 
 
 Para convertir una fórmula cualquiera a DNF, vamos a implementar una traducción
-\textit{small-step} mediante el siguiente sistema de reescritura.
+\textit{small-step} mediante el siguiente sistema de reescritura bien conocido.
 
 \begin{figure}[H]
     \begin{align*}
@@ -607,16 +689,13 @@ un paso de reescritura, o muchos recursivos de congruencia para reescribir una s
     \label{ppa-cert:dnf-rules}
 \end{figure}
 
-\duda{Demostración de que termina? De que es correcto? Al menos una cita para que sea más confiable el sistema de reescritura? O se asume como bien conocido?}
-
 \subsection{Contradicciones}
 \label{ppa-cert:sec:contradictions}
 
 Tenemos la fórmula traducida a DNF. Debemos demostrar una contradicción a partir
 de ella. Si tenemos las cláusulas $\clause_1 \fOr \clause_2$, podemos demostrar
 $\clause_1 \fOr \clause_2 \judG \fFalse$ usando \ruleOrE{} y deducir una contradicción asumiendo cada una. Esto se generaliza a N cláusulas mediante el
-uso de \ruleOrE{} anidados. Por lo tanto hay que \textit{``refutar cada
-cláusula''}. El método lo hace de tres formas distintas
+uso de \ruleOrE{} anidados. Por lo tanto, para refutar la disyunción de las cláusulas alcanza con refutar cada una de ellas. Para refutar una cláusula en particular, el método usa tres técnicas distintas:
 
 \begin{itemize}
     \item Contienen fórmulas opuestas: $\form \fAnd \fNot \form$ (con
@@ -625,17 +704,16 @@ cláusula''}. El método lo hace de tres formas distintas
     \item Eliminando cuantificadores universales consecutivos (\namedref{ppa:sec:by:forall-elim})
 \end{itemize}
 
-Para los primeros dos, es necesario demostrar a partir de la cláusula una
-fórmula. Pero como pueden tener una cantidad arbitraria, según cómo esté
-asociado el $\fAnd$, una demostración a mano de
-\(
-    \form_1 \fAnd \dots \fAnd \form_i \fAnd \dots \fAnd \form_n \judG \form_i,
-\)
-puede ser muy laboriosa, dado que las reglas son binarias y habría que usar
-\ruleAndEOne{} y \ruleAndETwo{} anidados. Para simplificarlo demostramos otra
-regla admisible, la proyección de un elemento \ruleAndEProj{\anyForm}.
+Supongamos que queremos refutar la cláusula $\neg \formLit \fAnd \dots \fAnd
+\formLit \fAnd \dots \fAnd \formLit_n$. Tenemos que usar \ruleNotE{} y demostrar
+a partir de ella $\formLit$ y $\neg \formLit$. Pero cómo \ruleAndEOne{} y
+\ruleAndETwo{} son reglas binarias, hay que usarlas de forma anidada para llegar
+a cada fórmula. Este anidamiento va a depender de cómo esté asociada la
+conjunción. Hacerlo a mano cada vez sería muy laborioso. Para
+simplificarlo demostraremos otra regla admisible: la proyección de un elemento
+\ruleAndEProj{\anyForm}.
 
-\begin{theorem}[Regla admisible \ruleAndEProj{\anyForm}]
+\begin{lemma*}[Regla admisible \ruleAndEProj{\anyForm}]
     Sea $\anyForm$ alguna fórmula de la conjunción $\anyForm_1 \fAnd \dots \fAnd
     \anyForm_n$. Notamos por \ruleAndEProj{\anyForm} a la proyección \textit{de
     la fórmula}, sin importar en qué posición de la conjunción está.
@@ -647,7 +725,7 @@ regla admisible, la proyección de un elemento \ruleAndEProj{\anyForm}.
         \RL{\ruleAndEProj{\anyForm_{i}}}
         \BinaryInfC{$\ctx \judG \anyForm_i$}
     \end{prooftree}
-\end{theorem}
+\end{lemma*}
 \begin{proof}
     Para generar la demostración correspondiente usando \ruleAndEOne{} y
     \ruleAndETwo{}, basta con identificar el camino hacia $\anyForm_i$, y luego
@@ -710,24 +788,32 @@ donde
 \end{prooftree}
 \end{ejemplo}
 
-\duda{No se si me convence la notación \ruleAndEProj{\alpha}, después de todo es
-una proyección y se suele notar con $\Pi$, pero ese símbolo lo estamos usando
-para representar demostraciones (ej. $\someProof_L$).}
-
 \subsection{Eliminación de cuantificadores universales}
 \label{ppa:sec:by:forall-elim}
 
 Hasta ahora logramos razonar por el absurdo, convertir la fórmula a DNF, y
 encontrar una contradicción siempre que no haya que eliminar cuantificadores
 universales. Pero es usual que en una teoría de primer orden, los axiomas los
-usen y sea necesario eliminarlos para poder demostrar un \lstinline{by}. Al
+usen y sea necesario eliminarlos para poder certificar un \lstinline{by}. Al
 hacerlo, vamos a reemplazar las ocurrencias de su variable por
 \textit{meta-variables}: aquellas que pueden ser unificadas.
+
+\begin{definition}[Términos con meta-variables]
+    Extendemos la gramática de los términos (\namedref{intro:def:term}) para que un término pueda ser una meta-variable ($\metavar{u}, \metavar{v},\dots$)
+
+    \[
+    \term ::= \dotso \mid \metavar{u}.
+    \]
+\end{definition}
+
+\begin{definition}[Sustitución]
+    Una sustitución es una función que asigna un término a cada metavariable. Se pueden aplicar a términos y fórmulas de la manera usual.
+\end{definition}
     
 \begin{definition}[Unificación]
     Sean $\form$, $\formTwo$ dos fórmulas. Decimos que \textit{unifican} y lo
-    notamos $\form \unify \formTwo$ si existe una sustitución de
-    meta-variables tal que $\form = \formTwo$. Veamos algunos ejemplos. Sean $\metavar{u}, \metavar{v}$ meta-variables.
+    notamos $\form \unify \formTwo$ si existe una sustitución $\theta$ de
+    meta-variables tal que $\form\theta = \formTwo\theta$. Veamos algunos ejemplos. Sean $\metavar{u}, \metavar{v}$ meta-variables.
 
     \begin{itemize}
     \item $p(\metavar{u}) \unify p(a)$ con $\subst{\metavar{u}}{a}$
@@ -735,10 +821,12 @@ hacerlo, vamos a reemplazar las ocurrencias de su variable por
         \item $p(\metavar{u}) \fAnd q(b) \unify p(a) \fAnd q(\metavar{v})$
         con $\substTwo{\metavar{u}}{a}{\metavar{v}}{b}$
         \item $p(\metavar{u}) \fImp q(b) \not\unify p(a) \fAnd q(\metavar{v})$
-    \end{itemize}
-    
-    \duda{Hace falta agregar el algoritmo de unificación que implementamos?}
+    \end{itemize}    
 \end{definition}
+
+\begin{obs*}
+    El problema de unificación que nos encontramos aquí es el problema estándar de unificación de primer orden. El algoritmo que usa \ppaTool{} es una variante del algoritmo de Martelli-Montanari \cite{martelli-montanari-unification}.
+\end{obs*}
 
 \begin{ejemplo}[Ejemplo de by con cuantificadores]
     Tenemos el siguiente programa
@@ -811,8 +899,8 @@ hacerlo, vamos a reemplazar las ocurrencias de su variable por
             \end{aligned}
             &&((\form \fOr \formTwo) \fAnd \formThree \equiv (\form \fAnd \formThree) \fOr (\form \fAnd \formThree))
         \end{align*}
-        \item Buscamos una contradicción refutando cada cláusula. Esta vez, no
-        podemos volver a eliminar un forall (por motivos de eficiencia) y los
+        \item Buscamos una contradicción refutando cada cláusula. Esta vez, por diseño, no
+        podemos volver a eliminar un cuantificador universal. Los
         literales opuestos tienen que \textit{unificar} en lugar de ser iguales.
         Las sustituciones tienen que ser compatibles entre todas las cláusulas
         (no pueden asignar valores diferentes a la misma meta-variable)
@@ -824,13 +912,15 @@ hacerlo, vamos a reemplazar las ocurrencias de su variable por
 \end{ejemplo}
 
 \subsubsection{Algoritmo}
+
+Si la cláusula no puede ser refutada por contener $\fFalse$ ni literales opuestos, procedemos a ejecutar la eliminación de cuantificadores universales:
+
 \begin{enumerate}
-    \item Si la cláusula no puede ser refutada por contener $\fFalse$ ni literales opuestos,
     \item Para cada fórmula, si comienza con $\forall$ (ej. $\forall \var_0 . \forall x_1 \dots \forall \var_n . p(\var_0, \dots, \var_n)$) se busca una refutación sin generar la demostración.
     \begin{itemize}
         \item Para cada combinación de prefijos de $\forall$ consecutivos, se
         reemplazan sus variables por meta-variables frescas, se re-convierte a
-        DNF y se intenta encontrar una refutación (unificando con $\alpha-$equivalencia)
+        DNF y se intenta encontrar una refutación (unificando con $\alpha$-equivalencia)
         \begin{itemize}
             \item $\forall \var_1 \dots \forall \var_n . p(u_0, \dots, \var_n)$
             \item $\dotso$
@@ -853,7 +943,7 @@ se reemplazarían tanto $x$ como $y$ por meta-variables frescas $u_0$ y $u_1$, q
     (\forall x. \forall y . p(x) \fAnd q(y)) \fAnd \fNot (\forall z. p(a) \fAnd q(z))
 \]
 
-es necesario eliminar solamente $\forall x$. Y la unificación será capaz de tener en cuenta la alpha equivalencia, así puede unificar $\forall y . p(u_0) \fAnd q(y) \unify \forall z. p(a) \fAnd q(z)$.
+es necesario eliminar solamente $\forall x$. Y la unificación será capaz de tener en cuenta la $\alpha$-equivalencia, así puede unificar $\forall y . p(u_0) \fAnd q(y) \unify \forall z. p(a) \fAnd q(z)$.
 \end{ejemplo}
 
 \begin{ejemplo}[Eliminación de una sola fórmula]
@@ -880,7 +970,7 @@ Pero si en la primera nos quedamos con $\subst{u_0}{a}$, no podríamos refutar l
 
 \duda{Está bien decir poder expresivo?}
 
-El solver implementado es \textbf{completo para lógica proposicional}, pero heurístico para lógica de primer orden. Esto es aceptable, puesto que la satisfacibilidad de lógica de primer orden es indecidible (por el teorema de Church \cite{church}), y el objetivo del trabajo no fue dar un solver innovador, sino alguno que se pueda certificar.
+El solver implementado es \textbf{completo para lógica proposicional}, pero heurístico para lógica de primer orden.
 
 \begin{theorem}
     El solver es \textbf{completo} para lógica proposicional. Sea $\anyForm$ una fórmula cualquiera. Si es universalmente válida, $\judG \anyForm$, entonces el solver encuentra una demostración.
@@ -996,82 +1086,3 @@ Finalmente, queda certificado como
     \BinaryInfC{$\ctx \judG (a \fAnd b) \fAnd ((c \fAnd d) \fAnd e)$}
 \end{prooftree}
 
-\section{Comandos correspondientes a reglas de inferencia}
-
-Como se puede ver en \fullref{ppa:tab:inference-rules-to-commands}, muchos de los comandos se corresponden directamente con reglas de inferencia,
-por lo que su traducción es directa.
-
-\begin{itemize}
-    \item \lstinline{take} (\ruleExistsI)
-
-    Si la tesis es \lstinline{exists X . a}, el comando \lstinline{take X := t}
-    la reduce a \lstinline{a} con \lstinline{X} reemplazado por \lstinline{t} y la certifica como
-    
-    \proofTreeExistsI
-
-    insertando la demostración certificada del resto en en $\ctx \judG \form \subst{\var}{\term}$
-
-    \item \lstinline{consider} (\ruleExistsE)
-    
-    El comando \lstinline{consider X st h: a by h1, ... hn} se certifica como
-    
-    \proofTreeExistsE
-
-    \begin{itemize}
-        \item $\ctx \judG \exists \var . \form$ se demuestra mediante el by.
-        \item Se agrega la hipótesis \lstinline{h: a} al contexto como axioma, se continúa la certificación y se inserta la demostración resultante en $\ctx, \form \judG \formTwo$.
-    \end{itemize}
-
-    \item \lstinline{let} (\ruleForallI)
-    
-    Si la tesis es \lstinline{forall X. a}, el comando \lstinline{let X} reduce la tesis a \lstinline{a} y continúa la certificación, insertando el resultado en la demostración de $\ctx \judG \form$
-
-    \proofTreeForallI
-
-    \item \lstinline{cases} (\ruleOrE)
-    
-    El comando
-    \begin{lstlisting}[numbers=none]
-        cases by h1, ..., hn
-            case c1
-            ...
-            case cm
-        end
-    \end{lstlisting}
-
-    se certifica como varios \ruleOrE{} anidados, en donde el primer $\fOr$ se certifica mediante by. Cada rama certifica la sub-demostración agregando la hipótesis del caso al contexto como axioma.
-
-    \proofTreeOrE
-
-    \item \lstinline{suppose} (\ruleImpI, \ruleNotI)
-    
-    Si la tesis es \lstinline{a -> b}, el comando \lstinline{suppose h: a} reduce la tesis a \lstinline{b} y agrega al contexto la hipótesis \lstinline{h: a} como axioma. La certifica como
-
-    \proofTreeImpI
-
-    insertando el resto de la demostración certificada en su sub-demostración.
-
-    Si la tesis es \lstinline{~a}, es análogo pero interpretándolo como \lstinline{a -> false}.
-
-\end{itemize}
-
-\section{Comandos adicionales}
-
-\begin{itemize}
-    \item \lstinline{equivalently}
-    
-    Si la tesis es $a$, el comando \lstinline{equivalently a'} usa el mismo solver que el by para demostrar $a' \fImp a$ y reduce la tesis a $a'$.
-
-    \item \lstinline{claim}
-    
-    La certificación del comando
-    \begin{lstlisting}[numbers=none]
-claim h: f
-proof
-    ...
-end
-    \end{lstlisting}
-    
-    Consiste en certificar la sub-demostración y agregar la hipótesis \lstinline{h: f} como teorema al contexto.
-
-\end{itemize}

@@ -1,9 +1,8 @@
-El lenguaje PPA (\textit{Pani's Proof Assistant}) se construye sobre las
-fundaciones de deducción natural. Es un asistente de demostración que permite
+El lenguaje PPA (\textit{Pani's Proof Assistant}) se construye sobre deducción natural. Es un asistente de demostración que permite
 escribir de una forma práctica demostraciones de cualquier teoría de lógica
 clásica de primer orden. En este capítulo nos vamos a centrar en el lenguaje
 \ppaLang{}, implementado por \ppaTool{}, con un enfoque de referencia del
-lenguaje. Los detalles teóricos de cómo está implementado son abordados en el
+lenguaje. Los detalles teóricos de cómo está implementado se abordan en el
 \namedref{chap:ppa-certifier}, y los de implementación y su instalación en el
 \namedref{chap:ppa-tool}. Para introducirlo veamos un ejemplo: en la
 \namedref{ppa:prog:alumnos} representamos el mismo de alumnos del
@@ -28,7 +27,7 @@ Definimos,
     rindió.
     \item \lstinline{axiom rinde_recu_reprobo_parcial}: si un alumno rinde el recu de
     un parcial, es porque reprobó la primer instancia.
-    \item \lstinline{axiom falta_reprueba}: si un alumno falta a un exámen, lo reprueba.
+    \item \lstinline{axiom falta_reprueba}: si un alumno falta a un examen, lo reprueba.
 \end{itemize}
 \lstset{firstnumber=last}
 \lstinputlisting[firstline=1,lastline=23,name=Alumnos]{listings/interfaz/alumnos.ppa}
@@ -80,8 +79,7 @@ el error. No debería fallar nunca el chequeo sobre el certificado.
 \section{Interfaz}
 
 PPA es un lenguaje que permite escribir demostraciones de cualquier teoría de
-lógica de primer orden. Está inspirado en el \textit{mathematical vernacular}
-introducido por Freek Wiedijk \cite{freek-mv}. En esta sección nos
+lógica de primer orden. Su sintaxis busca ser lo más parecida posible al lenguaje natural, inspirada en el trabajo de Markus Wenzel con Isar \cite{wenzel-isar} que luego fue combinado con otros lenguajes de demostración (como el de Mizar) y simplificado por Freek Wiedijk en su \textit{mathematical vernacular} \cite{freek-mv}. En esta sección nos
 concentramos en la interfaz de usuario, sin entrar en detalle en cómo está
 implementada.
 
@@ -112,13 +110,25 @@ end
 Los identificadores se dividen en tres tipos:
 
 \begin{itemize}
-    \item \textbf{Variables} (\lstinline{<var>}). Son descritas por la siguiente
-    expresión regular
+    \item \textbf{Variables} (\lstinline{<var>}).
+    Son una secuencia de uno o más símbolos, que pueden ser alfanuméricos o  \verb/"-"/, \verb/"_"/. Deben comenzar por \verb/"_"/ o una letra
+    mayúscula, y pueden estar seguidas de cero o más apóstrofes
+    \verb/"'"/.
+
+    También pueden ser descritas
+    por la siguiente expresión regular del estilo PCRE (\textit{Perl Compatible
+    Regular Expressions}):
     \begin{center}
         \verb/(\_|[A-Z])[a-zA-Z0-9\_\-]*(\')*/
     \end{center}
-    \item \textbf{Identificadores} (\lstinline{<id>}). Son descritos por la
-    siguiente expresión regular
+    \item \textbf{Identificadores} (\lstinline{<id>}).
+    Son una secuencia de uno o más simbolos, que pueden ser alfanuméricos o 
+    \verb/"_"/, \verb/"-"/, \verb/"?"/, \verb/"!"/, \verb/"#"/, \verb/"$"/,
+    \verb/"%"/, \verb/"*"/, \verb/"+"/, \verb/"<"/, \verb/">"/, \verb/"="/, \verb/"?"/, \verb/"@"/, \verb/"^"/. Pueden estar seguidas de cero o más apóstrofes
+    \verb/"'"/.
+
+    También pueden ser
+    descritas por la siguiente expresión regular:
     \begin{center}
         \verb/[a-zA-Z0-9\_\-\?!#\$\%\*\+\<\>\=\?\@\^]+(\')*/
     \end{center}
@@ -171,7 +181,7 @@ Las fórmulas están compuestas por,
 
 \section{Demostraciones}
 
-Las demostraciones consisten en una lista de \textit{proof steps} o comandos que
+Las demostraciones consisten de una lista de \textit{proof steps} o comandos que
 pueden reducir sucesivamente la \textit{tesis} (fórmula a demostrar) hasta
 agotarla por completo. Corresponden aproximadamente a reglas de inferencia de
 deducción natural.
@@ -187,8 +197,8 @@ como sub-teoremas y otros comandos que agregan hipótesis a él.
 El mecanismo principal de demostración directa o \textit{modus ponens} es el
 \lstinline{by}, que afirma que un hecho es consecuencia de una lista de
 hipótesis (su ``justificación''). Esto permite eliminar universales e implicaciones. Por detrás hay un
-solver completo para lógica proposicional pero heurístico para primer
-orden (elimina todos los foralls de a lo sumo una hipótesis, no intenta con más
+\textit{solver} completo para lógica proposicional pero heurístico para primer
+orden (elimina todos los cuantificadores universales de a lo sumo una hipótesis, no intenta con más
 de una). Exploramos las limitaciones en \fullref{ppa-cert:sec:expressiveness}.
 
 En general, \lstinline{<form> by <justification>} se interpreta como que
@@ -202,8 +212,8 @@ formas principales, \lstinline{thus} y \lstinline{have}.
     \item \lstinline{thus <form> by <justification>}.
     
     Si \lstinline{<form>} es \textit{parte} de la tesis (ver
-    \fullref{ppa:sec:and-intro}), y es consecuencia lógica de las
-    justificaciones, lo demuestra automáticamente y lo descarga de la tesis.
+    \fullref{ppa:sec:and-intro}), y el \textit{solver} heurístico puede
+    demostrar que es consecuencia lógica de las justificaciones, lo demuestra automáticamente y lo descarga de la tesis.
 
     Por ejemplo, para eliminación de implicaciones
 
@@ -233,7 +243,7 @@ puede referir con guión medio (\lstinline{-}).
 \begin{tabular}{l|l|l}
 Comando             & Alternativo             & ¿Reduce la tesis? \\
 \hline
-\lstinline|thus|    & \lstinline|hence|       & Si               \\
+\lstinline|thus|    & \lstinline|hence|       & Sí               \\
 \lstinline|have|    & \lstinline|then|        & No              
 \end{tabular}
 \end{table}
@@ -255,7 +265,9 @@ Por ejemplo,
 
 
 En todos, el \lstinline{by} es opcional. En caso de no especificarlo en
-\lstinline{thus} o \lstinline{have}, la fórmula debe ser una tautología. Por ejemplo,
+\lstinline{thus} o \lstinline{have}, la fórmula debe ser demostrable por el
+\textit{solver} heurístico sin partir de ninguna hipótesis, lo cual en
+particular vale para todas las tautologías proposicionales. Por ejemplo,
 
 \lstinputlisting{listings/interfaz/by-taut.ppa}
 
@@ -404,12 +416,13 @@ Esto puede ser prácticamente en cualquier orden.
     en \fullref{ppa:prog:alumnos}
 
     \begin{lstlisting}[numbers=none]
-theorem t: <form>
+theorem t: <form1>
 proof
-    claim <name>: <form>
+    claim <name>: <form2>
     proof
-        <proof>
+        // Demostración de <form2>.
     end
+    // Demostración de <form1> refiriéndose a <name>.
 end
     \end{lstlisting}
 \end{itemize}

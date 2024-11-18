@@ -8,10 +8,7 @@ En este trabajo diseñamos e implementamos un asistente de demostración \textit
 (\textit{Pani's proof assistant}). Trabaja sobre teorías de lógica clásica de
 primer orden. Cumple con el criterio de De Bruijn porque \textit{certifica} las
 demostraciones en el lenguaje de alto nivel \ppaLang{}, generando demostraciones
-de bajo nivel en el sistema de deducción natural de Gentzen \cite{gentzen-1935}. Su sintaxis está inspirada en el
-\textit{mathematical vernacular} introducido por Freek Wiedijk
-\cite{freek-mv} \cite{wenzel-isar}, que tiene por objetivo ser lo más parecido posible al lenguaje
-natural. No es un demostrador automático de teoremas, pero su mecanismo de
+de bajo nivel en el sistema de deducción natural de Gentzen \cite{gentzen-1935}. Su sintaxis busca ser lo más parecida posible al lenguaje natural, inspirada en el trabajo de Markus Wenzel con Isar \cite{wenzel-isar} que luego fue combinado con otros lenguajes de demostración (como el de Mizar) y simplificado por Freek Wiedijk en su \textit{mathematical vernacular} \cite{freek-mv}. No es un demostrador automático de teoremas, pero su mecanismo de
 demostración principal, el \textbf{by}, incluye un pequeño demostrador
 heurístico para lógica de primer orden y completo para proposicional, que
 simplifica la escritura de demostraciones. Está inspirado en el mecanismo análogo de Mizar \cite{freek-by}.
@@ -56,6 +53,7 @@ A continuación se presentan definiciones preliminares de lógica de primer orde
 \end{itemize}
 
 \begin{definition}[Términos]
+    \label{intro:def:term}
     Los términos están dados por la gramática
     \begin{align*}
         \term ::= &\ \var                               &\text{(variables)} \\
