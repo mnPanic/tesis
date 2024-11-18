@@ -8,29 +8,27 @@
 la escritura de demostraciones matemáticas, permitiendo la colaboración masiva o
 la verificación formal de programas. Existen muchos asistentes como Mizar, Coq e
 Isabelle, basados en distintas teorías. Un criterio deseable que pueden cumplir
-es el de De Bruijn: a partir de demostraciones en su lenguaje se pueden extraer
-otras más elementales. Esto elimina la necesidad de tener que confiar en la implementación del asistente, ya que las demostraciones pueden ser verificadas por un programa independiente.
+es el de De Bruijn: a partir de demostraciones en un lenguaje de alto nivel se pueden extraer demostraciones en un lenguaje núcleo fácilmente verificable. Esto elimina la necesidad de tener que confiar en la implementación del asistente, ya que las demostraciones pueden ser verificadas por un programa independiente.
 
 En esta tesis se presenta PPA, un asistente de demostración para lógica clásica
 de primer orden. Cumple con el criterio de De Bruijn, generando demostraciones
 en el sistema lógico de \textit{deducción natural} a partir de programas
 escritos en un lenguaje de alto nivel, cuyo objetivo es ser similar a cómo
-serían en lenguaje natural. Tiene un mecanismo principal de demostración, el by,
+serían en lenguaje natural. Tiene un mecanismo principal de demostración, el \texttt{by},
 que por debajo cuenta con un \textit{solver} heurístico para lógica de primer
 orden que facilita la escritura de demostraciones. Está inspirado en el
 mecanismo análogo en Mizar.
 
 Algunos asistentes implementan la \textit{extracción de testigos de
 existencial}. Dada una demostración de $\exists \var . \pred(\var)$, se extrae
-un \textit{testigo} $\term$ tal que cumpla $\pred(\term)$. Es sencillo hacerlo sobre lógica intuicionista por su naturaleza constructiva, pero un desafío sobre lógica clásica, que no lo es. Para ello hay dos grandes categorías: directas (mediante semántica operacional de cálculos $\lambda$ clásicos, como realizabilidad clásica) o indirectas (mediante traducciones a otra lógica, como intuicionista).
+un \textit{testigo} $\term$ tal que cumpla $\pred(\term)$. Es sencillo hacerlo sobre lógica intuicionista por su naturaleza constructiva, pero un desafío sobre lógica clásica, que no lo es. Para ello hay dos grandes categorías: directas (mediante técnicas semánticas como realizabilidad clásica \cite{miquel-friedman}) o indirectas (mediante traducciones a otra lógica, como intuicionista).
 
 El aporte principal del trabajo es una implementación práctica de la extracción
 de testigos. PPA la implementa de forma indirecta usando la traducción de
 Friedman, que permite convertir  demostraciones clásicas de fórmulas
 $\classPiTwo$ de la forma $\forall \varTwo_0 \dots \forall \varTwo_n . \exists
-\var . \anyForm$ a intuicionistas. Se describe cómo una vez traducidas pueden
-ser normalizadas usando reglas de reducción bien conocidas, isomorfas a la
-semántica operacional del cálculo lambda vistas desde el isomorfismo
+\var . \anyForm$ a demostraciones intuicionistas. Se describe cómo una vez traducidas pueden
+ser normalizadas usando reglas de reducción bien conocidas, que se corresponden con las reglas de reducción del cálculo lambda vistas desde el isomorfismo
 Curry-Howard. Finalmente, de una demostración normalizada se podrá extraer un
 testigo. Identificamos algunos detalles en la implementación práctica de la
 traducción, que limitan las fórmulas para las cuales se puede usar (más allá de

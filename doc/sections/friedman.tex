@@ -64,7 +64,7 @@ indirecta. Además, también querríamos poder extraer en casos donde haya
 cuantificadores universales, como en \fullref{fri:prog:forall}. Aquí, ya que vale para todo \lstinline{Y}, querremos poder instanciarlo en un término cualquiera. Por ejemplo \lstinline{p(v, f(v))}.
 
 Buscamos un mecanismo general, que nos permita a partir de cualquier
-demostración una fórmula de la pinta $\forall \var_0 \dots \forall \var_n
+demostración una fórmula de la forma $\forall \var_0 \dots \forall \var_n
 \exists \varTwo . \anyForm(\var_0, \dots, \var_n, \varTwo)$ extraer un testigo $\termTwo$ tal que, para $\term_0, \dots, \term_n$ cuales quiera, valga $\anyForm(\term_0, \dots, \term_n, \termTwo)$. Vamos a hacerlo a partir
 de los certificados de deducción natural.
 
@@ -307,9 +307,9 @@ Vamos a enunciar diferentes versiones de la traducción de Friedman en orden de 
     universales y existenciales. Mientras que una $\classPi{n}$ es análoga pero
     comenzando con universales. Las dos relevantes son:
     \begin{itemize}
-        \item $\classSigmaOne$: fórmulas de la pinta $\exists \var_1 \dots
+        \item $\classSigmaOne$: fórmulas de la forma $\exists \var_1 \dots
                   \exists \var_k . \anyForm$.
-        \item $\classPiTwo$: fórmulas de la pinta $\forall \varTwo_1 \dots \forall \varTwo_m . \exists \var_1 \dots \exists \var_k . \anyForm$
+        \item $\classPiTwo$: fórmulas de la forma $\forall \varTwo_1 \dots \forall \varTwo_m . \exists \var_1 \dots \exists \var_k . \anyForm$
     \end{itemize}
 \end{definition}
 \begin{obs*}[Intuición detrás de $\Sigma$ y $\Pi$]
