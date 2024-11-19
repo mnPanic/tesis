@@ -329,7 +329,7 @@ En el resto de la sección, entramos en detalle de cómo generar una demostraci�
     \item \fullref{ppa-cert:sec:dnf}: luego vemos cómo demostrar de forma automática que una fórmula es equivalente a su versión en DNF, que se realiza a partir de un sistema de reescritura.
     \item \fullref{ppa-cert:sec:contradictions}: una vez que la fórmula está en DNF, tenemos que demostrar a partir de ella una contradicción. 
     \item \fullref{ppa:sec:by:forall-elim}: si no se encuentra una contradicción de forma simple, se procede a eliminar $\forall$ consecutivos y reiniciar el proceso pero con unificación de fórmulas en lugar de igualdad, para así instanciar las variables cuantificadas universalmente.
-    \item \fullref{ppa-cert:sec:expressiveness}: finalmente evaluamos el poder expresivo del \textit{solver} implementado, que resulta completo para proposicional y heurístico para primer orden.
+    \item \fullref{ppa-cert:sec:expressiveness}: finalmente evaluamos el alcance y limitaciones del \textit{solver} implementado, que resulta completo para proposicional y heurístico para primer orden.
 \end{enumerate}
 
 
@@ -918,32 +918,35 @@ Si la cláusula no puede ser refutada por contener $\fFalse$ ni literales opuest
 \begin{enumerate}
     \item Para cada fórmula, si comienza con $\forall$ (ej. $\forall \var_0 . \forall x_1 \dots \forall \var_n . p(\var_0, \dots, \var_n)$) se busca una refutación sin generar la demostración.
     \begin{itemize}
-        \item Para cada combinación de prefijos de $\forall$ consecutivos, se
-        reemplazan sus variables por meta-variables frescas, se re-convierte a
-        DNF y se intenta encontrar una refutación (unificando con $\alpha$-equivalencia)
+        \item Para cada combinación de prefijos de $\forall$ consecutivos, se intenta eliminarlos reemplazando sus variables por meta-variables frescas, re-convirtiendo a DNF y buscando una refutación (unificando con $\alpha$-equivalencia). Por ejemplo, se probaría con las fórmulas:
         \begin{itemize}
-            \item $\forall \var_1 \dots \forall \var_n . p(u_0, \dots, \var_n)$
+            \item $\forall \var_1 \forall \var_2 \dots \forall \var_n . p(u_0, \var_1, \var_2, \dots, \var_n)$
+            \item $\forall \var_2 \dots \forall \var_n . p(u_0, u_1, \var_2, \dots, \var_n)$
             \item $\dotso$
             \item $p(u_0, \dots, u_n)$
         \end{itemize}
-        \item Se usa la menor cantidad de eliminaciones posibles.
-        \item Si puede ser refutada, nos da como resultado una sustitución que asigna a cada meta-variable $u_i$ un término $t_i$.
+        \item Nos quedamos con el primero que logra una refutación, así solo eliminamos los cuantificadores necesarios y no todos. Esto nos da como resultado una sustitución que asigna a cada meta-variable $u_i$ un término $t_i$.
     \end{itemize}
-    \item Se usa \ruleForallE{} reemplazando cada variable por el término asignado a la meta-variable correspondiente, para obtener la fórmula con los $\forall$ eliminados, y luego se genera la demostración de la refutación de la forma usual.
+    \item A partir de la sustitución, sabemos cuales $\forall$ hay que eliminar. Para cada uno, se usa \ruleForallE{} instanciando cada variable por el término asignado a su meta-variable correspondiente en la sustitución. Con ello podemos demostrar a partir de la fórmula original, la fórmula con los $\forall$ eliminados y las variables instanciadas en los términos que logran la refutación.
+    \item A partir de la fórmula instanciada se genera la refutación de la forma previa.
 \end{enumerate}
 
 \begin{ejemplo}[Eliminación consecutiva minimal]
-Si se tiene
-\[
+Veamos dos ejemplos que muestran cómo sólo se eliminan los $\forall$ necesarios para lograr la refutación.
+
+\begin{itemize}
+    \item \(
     (\forall x. \forall y . p(x) \fOr q(y)) \fAnd \fNot p(a) \fAnd \fNot q(b)
-\]
+    \)
 
-se reemplazarían tanto $x$ como $y$ por meta-variables frescas $u_0$ y $u_1$, quedando así $(p(u_0) \fOr q(u_1)) \fAnd \fNot p(a) \fAnd \fNot q(b)$ que se podrá refutar. En cambio, en
-\[
-    (\forall x. \forall y . p(x) \fAnd q(y)) \fAnd \fNot (\forall z. p(a) \fAnd q(z))
-\]
+    Se eliminarían ambos $\forall$, reemplazando tanto $x$ como $y$ por meta-variables frescas $u_0$ y $u_1$, quedando así $(p(u_0) \fOr q(u_1)) \fAnd \fNot p(a) \fAnd \fNot q(b)$ que se podrá refutar.
 
-es necesario eliminar solamente $\forall x$. Y la unificación será capaz de tener en cuenta la $\alpha$-equivalencia, así puede unificar $\forall y . p(u_0) \fAnd q(y) \unify \forall z. p(a) \fAnd q(z)$.
+    \item \(
+        (\forall x. \forall y . p(x) \fAnd q(y)) \fAnd \fNot (\forall z. p(a) \fAnd q(z))
+    \)
+
+    Es necesario eliminar solamente $\forall x$. Y la unificación será capaz de tener en cuenta la $\alpha$-equivalencia, así puede unificar $\forall y . p(u_0) \fAnd q(y) \unify \forall z. p(a) \fAnd q(z)$.
+\end{itemize}
 \end{ejemplo}
 
 \begin{ejemplo}[Eliminación de una sola fórmula]
@@ -963,44 +966,52 @@ Como cada cláusula se refuta por separado, hay que asegurar que las sustitucion
     \item $f(u_0) \fAnd \fNot f(b)$ solo $\subst{u_0}{b}$
 \end{itemize}
 
-Pero si en la primera nos quedamos con $\subst{u_0}{a}$, no podríamos refutar la 2da. Por lo tanto la correcta es $\subst{u_0}{b}$.
+Pero si en la primera nos quedamos con $\subst{u_0}{a}$, no podríamos refutar la segunda. Por lo tanto la correcta es $\subst{u_0}{b}$.
 
-\subsection{Poder expresivo}
+\subsection{Alcance y limitaciones}
 \label{ppa-cert:sec:expressiveness}
 
-\duda{Está bien decir poder expresivo?}
+El solver implementado es \textbf{completo para lógica proposicional}, pero heurístico para lógica de primer orden. Para la demostración de completitud, usaremos la noción de \textbf{semántica} de lógica de primer orden que aún no definimos. En síntesis,
 
-El solver implementado es \textbf{completo para lógica proposicional}, pero heurístico para lógica de primer orden.
+\begin{itemize}
+    \item Una \textit{valuación} $v$ es una función que asigna un valor de verdad a cada variable proposicional.
+    \item Sean $\anyForm$ una fórmula proposicional y $v$ una valuación. Notamos $v \vDash \anyForm$ si la valuación hace verdadera a la fórmula.
+    \item Si todas las valuaciones hacen verdaderas a $\anyForm$, lo notamos como $\vDash \anyForm$.
+\end{itemize}
 
 \begin{theorem}
-    El solver es \textbf{completo} para lógica proposicional. Sea $\anyForm$ una fórmula cualquiera. Si es universalmente válida, $\judG \anyForm$, entonces el solver encuentra una demostración.
+    El solver es \textbf{completo} para lógica proposicional. Sea $\anyForm$ una fórmula proposicional, sin ocurrencias de cuantificadores. Si es universalmente válida, $\judG \anyForm$, entonces el solver encuentra una demostración.
 \end{theorem}
 \begin{proof}
-    \duda{Citar Hilbert 1950?}
-Lo hacemos semánticamente. Sea $\anyForm$ una fórmula proposicional cualquiera, supongamos que es válida. Queremos argumentar que el solver va a poder generar una demostración para ello. Sabemos que es válida si y solo si su negación es insatisfactible
+Este es un resultado bien conocido, con adaptaciones mínimas para el marco puntual que estamos usando.
 
-\[\judG \anyForm \iff \not\judG \fNot \anyForm,\]
+Lo vamos a demostrar semánticamente. Sea $\anyForm$ una fórmula proposicional cualquiera, supongamos que es válida. Queremos argumentar que el solver va a poder generar una demostración para ello. Sabemos que es válida si y solo si su negación es insatisfactible
+
+\[
+    \judG \anyForm
+    \iff 
+    \vDash \anyForm
+    \iff
+    \not\vDash \fNot \anyForm,
+\]
 por lo que es correcto buscar una refutación de la negación. Además, siempre vamos a poder convertir $\fNot \anyForm$ a DNF (\namedref{ppa-cert:thm:dnf}), por lo que tenemos
 \[
-    \not\judG\fNot \anyForm \iff
-    \not\judG (\formLit_1 \fAnd \dots \fAnd \formLit_n)
+    \not\vDash\fNot \anyForm \iff
+    \not\vDash (\formLit_1 \fAnd \dots \fAnd \formLit_n)
     \fOr \dots \fOr
     (\formLitTwo_1 \fAnd \dots \fAnd \formLitTwo_m).
 \]
 Para que sea insatisfactible, por definición de la semántica de $\fOr$ todas las
 cláusulas tienen que serlo. Para que una claúsula lo sea, no tiene que haber una
 valuación que la haga verdadera. Supongamos que existe una valuación
-$v$ que satisface $a_1 \fAnd \dots \fAnd a_n$. Está unívocamente determinada: al ser una conjunción, tiene
-que asignar a cada literal $a_i$ un 1 si es positivo o un 0 si es negativo. Luego, no será verdadera si y solo si aparece la misma variable y su opuesta, o si aparece $\fFalse$. Como esto es exactamente lo que busca el solver, concluimos que si es refutable, siempre va a poder refutarla.
+$v$ que satisface $a_1 \fAnd \dots \fAnd a_n$. Los valores que asigna a $a_1, \dots, a_n$ están unívocamente determinados: al ser una conjunción, tiene
+que asignar a cada literal $a_i$ un 1 si es positivo o un 0 si es negativo. Luego, será una contradicción si y solo si aparece la misma variable y su opuesta, o si aparece $\fFalse$. Como esto es exactamente lo que busca el solver, concluimos que si es refutable, siempre va a poder refutarla.
 Por lo tanto es completo para lógica proposicional.
 
-\duda{Está suficientemente bien escrito esto? Supongo que no. En la intro hay que agregar las definiciones de la semántica de LPO? Solo se usan acá}
 \end{proof}
 
-\begin{theorem}
-    El solver es \textbf{incompleto} para lógica de primer orden.
-\end{theorem}
-\begin{proof}
+\begin{obs*}
+El solver es \textbf{incompleto} para lógica de primer orden.
 El siguiente es un contra ejemplo, que no encuentra la refutación porque para
 ello debería eliminar ambos $\forall$, pero elimina a lo sumo los de una
 fórmula.
@@ -1013,8 +1024,8 @@ proof
 end
 \end{lstlisting}
 
-Pero esto no es lo único que le falta para ser completo. También se podría dar un contra ejemplo más burdo que requiera un \textit{SAT solver} completo.
-\end{proof}
+Pero esto no es lo único que le falta para ser completo. También se podría dar un contra ejemplo más burdo que requiera un \textit{SAT solver}.
+\end{obs*}
 
 \subsection{Azúcar sintáctico}
 
