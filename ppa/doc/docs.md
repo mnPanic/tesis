@@ -204,7 +204,7 @@ end
 #### DNF
 
 Una fórmula está en DNF (Disjuntive Normal Form) si es una disyunción de
-conjunciones, i.e
+conjunciones, i.e.
 
 ```text
 (a_11 & ... & a_1n) | (a_21 & ... & a_2n) | ... | (a_m1 & ... & a_mn)

@@ -1,19 +1,18 @@
 En este trabajo presentamos el lenguaje \ppaLang{} junto con los detalles de su
 implementación en \ppaTool{}. Primero dimos una definición completa del sistema
-lógico de deducción natural, junto con ejemplos de demostraciones de una
-teoría de estudiantes. Describimos cómo implementamos los algoritmos de chequeo,
-alfa equivalencia de forma lineal y sustitución sin capturas de forma lineal.
+lógico de deducción natural, junto con ejemplos de demostraciones. Describimos
+cómo implementamos el algoritmo de chequeo, y por otro lado los de
+alfa equivalencia y sustitución sin capturas de forma cuasilineal.
 
 Dimos un manual de usuario para el lenguaje \ppaLang{}, explicando como
 escribir demostraciones y cómo usar el mecanismo de demostración principal
-\lstinline{by}. Dimos una demostración completa que extiende el ejemplo de
-estudiantes y muestra diferentes capacidades del lenguaje. También se listaron
+\lstinline{by}. Dimos una demostración completa que muestra diferentes capacidades del lenguaje. También se listaron
 todos los comandos, ejemplos funcionales para cada uno, y su relación con las
 reglas de inferencia de deducción natural. Profundizamos en la implementación
 del certificador y cómo están implementadas cada una de las partes de la
 interfaz. Centralmente el \textit{solver} usado por debajo del \lstinline{by}.
 
-Finalmente vimos una implementación posible de eliminación de testigos
+Finalmente vimos una implementación posible de extracción de testigos
 existenciales. Mencionamos las limitaciones al tratar de hacerlo de forma
 directa sobre lógica clásica, las distintas versiones de la traducción de
 Friedman según el tipo de fórmula a demostrar, y las limitaciones que se
@@ -53,15 +52,17 @@ tesis. Las listamos a continuación.
     como permitir importar archivos o módulos e implementar una biblioteca
     estándar de teorías y teoremas.
     \item \textbf{Extender PPA con tipos}: el lenguaje no permite ni especificar
-    ni chequear tipos. Se podría agregar para permitir escribir programas más
-    sofisticados y con garantías estáticas más fuertes.
-    \item \textbf{Refinar demostración usada para traducción}: en la traducción de Friedman introducimos dos lemas centrales:
-    $\formTwo \judgI \tdn{\formTwo}$ \fullref{fri:lemma:trans-intro}, y
-    $\fNotR \form \judgI \fNotR \tdn{\form}$
-    \fullref{fri:lemma:notr-trans-intro}. El primero se reduce al segundo.
-    El segundo no vale siempre, pero demostramos un subconjunto de todas las
-    fórmulas válidas. Podríamos refinarlo aún más, lo que permitiría usar
-    más tipos de axiomas.
+    ni chequear tipos. Se podría implementar una versión tipada, basada en
+    lógica de primer orden \textit{many sorted} (con varios géneros) que
+    facilitaría la escritura de programas más sofisticados.
+    \item \textbf{Refinar fórmulas \textit{conjuntivas}}: en la traducción de
+    Friedman introducimos dos lemas centrales: $\formTwo \judgI \tdn{\formTwo}$
+    \fullref{fri:lemma:trans-intro}, que vale para fórmulas con
+    \textit{traducción introducible} y restringe las axiomatizaciones, y $\fNotR
+    \form \judgI \fNotR \tdn{\form}$ \fullref{fri:lemma:notr-trans-intro}, que
+    vale para fórmulas \textit{conjuntivas}. Como el primero se reduce al
+    segundo, podríamos refinar las fórmulas \textit{conjuntivas}, lo que
+    permitiría usar más tipos de axiomas.
     \item \textbf{Extender traducción de Friedman a más de un existencial}: en
     su versión final, lo máximo que llega a convertir son fórmulas de la forma
     $\forall \varTwo_1 \dots \forall \varTwo_n . \exists \var .
@@ -70,9 +71,11 @@ tesis. Las listamos a continuación.
     \anyForm(\dots)$.
     \item \textbf{Implementar versión completa de reducción de demostraciones}:
     en \fullref{fri:norm:sec:limitations} vimos una demostración para la que no
-    se puede llegar a una forma normal, evitando la extracción de testigos en un
-    caso en el que debería ser posible. Se podría extender la implementación de
-    la reducción para incluir más tipos de reglas, así haciendo que sea completa.
+    se puede llegar a una forma normal útil, evitando la extracción de testigos
+    en un caso en el que debería ser posible. Se podría extender la
+    implementación de la reducción para incluir reducciones permutativas, así
+    haciendo que sea completa.
+    \item \textbf{}
     \item \textbf{Mejorar reporte de errores}: los errores reportados por la
     herramienta en general son muy rústicos, implementativos y de bajo nivel. Se
     podrían hacer más amigables y accionables, ayudando a resolver problemas sin
