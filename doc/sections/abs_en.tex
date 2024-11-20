@@ -8,16 +8,31 @@
 mathematical proofs, enabling large-scale collaboration or the formal
 verification of programs. There are many proof assistants such as Mizar, Coq,
 and Isabelle, based on different theories. A desirable property they may have is
-described by the De Bruijn criterion: from proofs written in their language,
-more elementary ones can be extracted. This eliminates the need to trust their
-implementation, as the extracted proofs can be verified by an independent
-program.
+described by the De Bruijn criterion: from proofs written in a high level
+language, one can extract proofs in a core, easily verifiable language. This
+eliminates the need to trust their implementation, as the extracted proofs can
+be verified by an independent program.
 
-This thesis presents \textit{PPA}, a proof assistant for classical first-order logic. It fulfills De Bruijn's criterion by generating proofs in the natural deduction proof system from high-level proofs, designed to resemble natural language as closely as possible. Its main proof mechanism, \textit{by}, features an underlying heuristic solver for first-order logic, inspired by Mizar's analogous mechanism.
+This thesis presents \textit{PPA}, a proof assistant for classical first-order logic. It fulfills De Bruijn's criterion by generating proofs in the natural deduction proof system from high-level proofs, designed to resemble natural language as closely as possible. Its main proof mechanism, \texttt{by}, features an underlying heuristic solver for first-order logic, inspired by Mizar's analogous mechanism.
 
-Some proof assistants implement \textit{existential witness extraction}. Given a proof of $\exists \var . \pred(\var)$, they extract a *witness* \( \term \) such that \( \pred(\var) \) holds. While this is straightforward in intuitionistic logic due to its constructive nature, it is challenging in classical logic, which lacks constructiveness. There are two main approaches: direct (using operational semantics of classical lambda calculi, like classical realizability) or indirect (via translations to another logic, such as intuitionistic).
+Some proof assistants implement \textit{existential witness extraction}. Given a
+proof of $\exists \var . \pred(\var)$, they extract a *witness* \( \term \) such
+that \( \pred(\var) \) holds. While this is straightforward in intuitionistic
+logic due to its constructive nature, it is challenging in classical logic,
+which lacks constructiveness. There are two main approaches: direct (using
+semantic techniques such as classical realizability \cite{miquel-friedman}) or indirect
+(via translations to another logic, such as intuitionistic).
 
-The main contribution of this work is a practical implementation of witness extraction. PPA achieves this indirectly by using Friedman's translation, which allows converting classical proofs of \( \classPiTwo \) formulas of the form \( \forall y_0 \dots \forall y_n . \exists x . \phi \) into intuitionistic ones. We describes how, once translated, these proofs can be normalized using well-known reduction rules, isomorphic to the operational semantics of lambda calculus viewed through the Curry-Howard isomorphism. Finally, a normalized proof enables the extraction of a witness. We identify some practical implementation details of the translation, which limit the formulas for which it can be used (beyond the theoretical \( \classPiTwo \) restriction) and also constrain the axiomatizations of theories that can be made.
+The main contribution of this work is a practical implementation of witness
+extraction. PPA achieves this indirectly by using Friedman's translation, which
+allows converting classical proofs of \( \classPiTwo \) formulas of the form \(
+\forall y_0 \dots \forall y_n . \exists x . \phi \) into intuitionistic ones. We
+describes how, once translated, these proofs can be normalized using well-known
+reduction rules, which correspond to the reduction rules of lambda calculus viewed through the Curry-Howard isomorphism. Finally, a
+normalized proof enables the extraction of a witness. We identify some practical
+implementation details of the translation, which limit the formulas for which it
+can be used (beyond the theoretical \( \classPiTwo \) restriction) and also
+constrain the axiomatizations of theories that can be made.
 
 \bigskip
 
