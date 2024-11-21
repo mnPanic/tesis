@@ -1559,7 +1559,7 @@ Esto no valdrá para todas las fórmulas, lo que restringirá las axiomatizacion
 
 \begin{lemma}[Introducción de la traducción $\fNot\fNot$]
     \label{fri:lemma:trans-intro}
-    Si $\formTwo$ es de \textit{traducción introducible}, vale
+    Si $\formTwo$ es una \textit{F-fórmula}, vale
     $\formTwo \judgI \tdn{\formTwo}$.
 \end{lemma}
 \begin{proof}
@@ -1651,13 +1651,12 @@ Esto no valdrá para todas las fórmulas, lo que restringirá las axiomatizacion
 \end{proof}
 
 \begin{obs*}[Completitud]
-    Vimos que el \fullref{fri:lemma:trans-intro}, $\form \judgI \tdn{\form}$, se reduce al \fullref{fri:lemma:notr-trans-intro}, que cumplen $\fNotR \form \judgI \fNotR \tdn{\form}$. Las fórmulas de \textit{traducción introducible} se ven restringidas por las \textit{conjuntivas}.
+    Vimos que el \fullref{fri:lemma:trans-intro}, $\form \judgI \tdn{\form}$, se reduce al \fullref{fri:lemma:notr-trans-intro}, que cumplen $\fNotR \form \judgI \fNotR \tdn{\form}$. Las \textit{F-fórmulas} se ven restringidas por las \textit{conjuntivas}.
     
     Por otro lado, en \cite{selinger-friedman}, se exhibe el contra ejemplo $\fNot \fNot \formLit$ para $\form \judgI \tdn{\form}$ (en una versión distinta pero equivalente de la traducción de Friedman). En nuestro caso, como el \namedref{fri:lemma:trans-intro} se reduce a
     \namedref{fri:lemma:notr-trans-intro}, si el primero no vale en general
     (por el contra ejemplo) entonces el segundo tampoco podría. Esto es consistente con nuestros resultados, tampoco
-    podemos demostrar $\fNot \fNot \formLit \judgI \tdn{(\fNot \fNot \formLit)}$ pues no la consideramos con
-    \textit{traducción introducible}.
+    podemos demostrar $\fNot \fNot \formLit \judgI \tdn{(\fNot \fNot \formLit)}$ pues no la consideramos como \textit{F-fórmula}.
 
     Esto resultó suficientemente permisivo para los axiomas que se suelen definir.
 \end{obs*}
@@ -1678,6 +1677,8 @@ Esto no valdrá para todas las fórmulas, lo que restringirá las axiomatizacion
                        & \mid G \fImp A
     \end{align*}
     Donde $A$ son fórmulas atómicas, $G$ son \textit{G-fórmulas} (similares a las F-fórmulas) y $H$ son fórmulas \textit{Harrop Hereditarias} (similares a las conjuntivas). Habría que estudiar este posible vínculo más en profundidad en el futuro.
+
+    Sería llamativo que sean iguales, pues las fórmulas \textit{conjuntivas} que definimos no incluyen $\forall$ y las hereditarias sí. Por cómo son usadas en el \namedref{fri:thm:fri-pitwo-general}, que incluyan $\forall$ implicaría que podríamos usar la traducción de Friedman para fórmulas $\classPi{3}$ de la forma $\forall \var. \exists \varTwo . \forall \varThree . \anyForm$ con $\anyForm$ sin cuantificadores.
 \end{obs}
 
 \section{Otros métodos de extracción}
