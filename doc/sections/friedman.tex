@@ -22,12 +22,20 @@ Ahora vamos a introducir una nueva funcionalidad: la \textbf{extracción de test
     \end{figure}
 \end{multicols}
 
+\begin{figure}[h]
+    \lstinputlisting{listings/extract/abs.ppa}
+    \caption{Extracción via razonamiento por el absurdo}
+    \label{fri:prog:indirect-abs}
+\end{figure}
+
 Por ejemplo, en el programa \fullref{fri:prog:exists} la extracción nos
 permitirá encontrar un término $t$ que sea \textit{testigo} de $\exists x. p(x)$: que cumpla $p(t)$. En este caso es fácil encontrarlo a ojo sobre la
 demostración de PPA, sería \lstinline{v}. Pero puede haber casos en donde no sea
 tan trivial, como en el programa \fullref{fri:prog:indirect}, en donde en el
 \lstinline{theorem t2} se instancia la variable en un término de forma
-indirecta. Además, también querríamos poder extraer en casos donde haya
+indirecta. Incluso casos como \fullref{fri:prog:indirect-abs} en donde al razonar por el absurdo con la negación de un universal, la instanciación de la variable en un término no es con \lstinline{take} sino la unificación del \lstinline{by}.
+
+También vamos a querer poder extraer en casos donde haya
 cuantificadores universales, como en \fullref{fri:prog:forall}. Aquí, ya que vale para todo \lstinline{Y}, querremos poder instanciarlo en un término cualquiera. Por ejemplo \lstinline{p(v, f(v))}.
 
 Buscamos un mecanismo general, que nos permita a partir de cualquier

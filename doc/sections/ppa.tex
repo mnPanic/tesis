@@ -354,6 +354,9 @@ end
     incluso si la hipótesis fuera \lstinline{~((~a | ~b) & (~c | ~a))}, pues es
     equivalente a \lstinline{(a & b) | (c & a)}.
 
+    Además, se puede omitir el \lstinline{by} para razonar mediante LEM, donde
+    los casos son $\anyForm$ y $\fNot \anyForm$.
+
     \item \lstinline{take} (\ruleExistsI)
     
     Introduce un existencial instanciando su variable y reemplazándola por un
@@ -416,6 +419,19 @@ Esto puede ser prácticamente en cualquier orden.
     equivalente. Útil para usar descarga de conjunciones.
     
     \lstinputlisting{listings/interfaz/equivalently.ppa}
+
+    O también para razonar por el absurdo mediante la eliminación de la doble
+    negación,
+    
+    \begin{lstlisting}[numbers=none]
+theorem t: <form>
+proof
+    equivalently ~~<form>
+    suppose <name>: ~<form>
+    // Demostración de <form> por el absurdo, asumiendo ~<form>
+    // y llegando a una contradicción (false).
+end
+    \end{lstlisting}
 
     \item \lstinline{claim}: permite demostrar una afirmación auxiliar. Útil
     para ordenar las demostraciones sin tener que definir otro teorema. Ejemplo

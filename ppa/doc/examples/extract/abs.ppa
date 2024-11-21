@@ -1,47 +1,56 @@
 axiom juanEsBajo : bajo(juan)
 
-// Este axioma no es F-Fórmula por la vuelta
-axiom losBajosNoSonAltos : forall X. bajo(X) <-> ~alto(X)
-
-theorem noTodoElMundoEsAlto : ~forall X. alto(X)
+theorem noTodoElMundoEsAlto : ~forall X. ~bajo(X)
 proof
-    have juanNoEsAlto : ~alto(juan) by juanEsBajo, losBajosNoSonAltos
-    suppose todosSonAltos: forall X. alto(X)
-    thus false by juanNoEsAlto, todosSonAltos
+  suppose todosSonAltos: forall X. ~bajo(X)
+  thus false by juanEsBajo, todosSonAltos
 end
 
-// No funciona para la extracción porque ~alto(X) no es conjuntiva.
-theorem hayAlguienQueNoEsAlto : exists X. ~alto(X)
+// Razonamiento por el absurdo con eliminación de doble negación
+theorem hayAlguienBajo_DNegE : exists X. bajo(X)
 proof
-    cases
-        case exists X. ~alto(X)
-            hence exists X. ~alto(X)
-        case h1: ~exists X. ~alto(X)
-            claim h2: forall X. alto(X)
-            proof
-                let X
-                cases
-                    case alto(X)
-                        hence alto(X)
-                    case h3: ~alto(X)
-                        claim h4: exists Y. ~alto(Y)
-                        proof
-                            take Y := X
-                            hence ~alto(X) by h3
-                        end
-                        have -: false by h1,h4
-                        hence alto(X)
-                end
-            end
-            have -: false by h2, noTodoElMundoEsAlto
-            hence exists X. ~alto(X)
+    equivalently ~~exists X. bajo(X)
+    suppose h1: ~exists X. bajo(X)
+
+    claim h2: forall X. ~bajo(X)
+    proof
+        let X
+        suppose h3: bajo(X)
+        claim h4: exists Y. bajo(Y)
+        proof
+            take Y := X
+            hence bajo(X) by h3
+        end
+        hence false by h1
     end
+
+    hence false by noTodoElMundoEsAlto
 end
 
-// No funciona para la extracción porque el axioma losBajosNoSonAltos no es F-fórmula
-theorem hayAlguienQueEsBajo : exists X. bajo(X)
+// Razonamiento por el absurdo mediante LEM
+theorem hayAlguienBajo_LEM : exists X. bajo(X)
 proof
-    consider X st xEsBajo: ~alto(X) by hayAlguienQueNoEsAlto
-    take X := X
-    thus bajo(X) by xEsBajo, losBajosNoSonAltos
+  cases
+    case exists X. bajo(X)
+      hence exists X. bajo(X)
+    case h1: ~exists X. bajo(X)
+      claim h2: forall X. ~bajo(X)
+      proof
+        let X
+        cases
+          case ~bajo(X)
+            hence ~bajo(X)
+          case h3: bajo(X)
+            claim h4: exists Y. bajo(Y)
+            proof
+              take Y := X
+              hence bajo(X) by h3
+            end
+            have -: false by h1, h4
+            hence ~bajo(X)
+        end
+      end
+      have -: false by h2, noTodoElMundoEsAlto
+      hence exists X. bajo(X)
+  end
 end
