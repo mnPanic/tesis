@@ -132,7 +132,7 @@ por ejemplo de \namedref{fri:prog:exists}:
           natural, usando el \modCertifier{}. Nos da un contexto con una demostración
           por teorema.
 
-          \textbf{Limitación}: No vamos a poder axiomatizar cualquier teoría. Los axiomas deben ser \textit{con traducción introducible} (ver \namedref{fri:sec:context}).
+          \textbf{Limitación}: No vamos a poder axiomatizar cualquier teoría. Los axiomas deben ser \textit{F-fórmulas} (ver \namedref{fri:sec:context}).
     \item Queremos extraer un testigo de un teorema, que puede citar a los anteriores. Generamos una única demostración haciendo \textit{inline} de las demostraciones de otros teoremas citados, así cuando se reduce, se reduce la demostración completa y no una parte.
     \item Usamos la traducción de Friedman para obtener una demostración
           intuicionista de la misma fórmula.
@@ -1338,7 +1338,9 @@ una pasada de forma lineal.
     \label{fri:fig:reduction-rules}
 \end{figure}
 
-A partir de todas las reglas de reducción (\namedref{fri:fig:reduction-rules}), implementamos un algoritmo de reducción simple. dado que son \textit{pasos} que acercan la demostración sucesivamente a su versión normalizada, podemos implementarlo de forma análoga a la conversión a DNF (\namedref{ppa:sec:dnf:algoritmo}) como la clausura reflexiva transitiva de la reducción en un paso: aplicarla 0 o más veces hasta que esté en forma normal. Al igual que DNF, también necesitaremos reglas de congruencia: si no hay una eliminación de una introducción para simplificar, se trata de reducir recursivamente las sub-demostraciones.
+A partir de todas las reglas de reducción (\namedref{fri:fig:reduction-rules}) podemos implementar el algoritmo. Para acotar el alcance del trabajo, implementamos un mecanismo sencillo e ingenuo, que tiene algunas limitaciones que exploraremos en la siguiente \namedref{fri:norm:sec:limitations}.
+
+Como las reglas son \textit{pasos} que acercan la demostración sucesivamente a su versión normalizada, podemos implementarlo de forma análoga a la conversión a DNF (\namedref{ppa:sec:dnf:algoritmo}) como la clausura reflexiva transitiva de la reducción en un paso: aplicarla 0 o más veces hasta que esté en forma normal. Al igual que DNF, también necesitaremos reglas de congruencia: si no hay una eliminación de una introducción para simplificar, se trata de reducir recursivamente las sub-demostraciones.
 
 En una primera implementación las sub-demostraciones las reducíamos en un paso, de izquierda a derecha. Por ejemplo, si teníamos una introducción de una conjunción,
 
@@ -1377,9 +1379,11 @@ reducción, reduciríamos $\form \fAnd \formTwo \rewrite \form^{*}
 \subsection{Limitaciones}
 \label{fri:norm:sec:limitations}
 
-Implementamos una reducción sencilla, que solamente reduce eliminaciones de introducciones de la misma regla. Pero no contempla las que se conocen como ``reducciones permutativas'', que mezclan introducciones y eliminaciones de conectivos distintos. Si estos patrones ocurren, no nos permitirán llegar a una forma normal útil. Entonces no siempre podremos extraer un testigo. Por ejemplo, en \fullref{fri:norm:fig:non-norm}, se puede observar una demostración sencilla que usa \lstinline{cases}. Pero al certificarla, traducirla y reducirla, no queda en una forma normal útil: aparece dos veces \ruleExistsI{}, cuando se podría mover hacia la raíz del árbol y evitar repetirlo en cada rama del \ruleOrE{}. Esto hace que al intentar extraer un testigo, el programa reporte una falla. Para soportar estos casos sería necesario sofisticar la reducción agregando reducciones permutativas, que quedó fuera del alcance del trabajo.
+El mecanismo sencillo de reducción que implementamos tiene dos desventajas: no contempla todas las reglas de reducción posible, y es ineficiente. Comencemos por la primera. Como solamente reduce eliminaciones de introducciones de la misma regla, no contempla las ``reducciones permutativas'', que mezclan introducciones y eliminaciones de conectivos distintos. Si estos patrones ocurren, no nos permitirán llegar a una forma normal útil. Entonces no siempre podremos extraer un testigo. Por ejemplo, en la \fullref{fri:norm:fig:non-norm}, se puede observar una demostración sencilla que usa \lstinline{cases}. Pero al certificarla, traducirla y reducirla, no queda en una forma normal útil: aparece dos veces \ruleExistsI{}, cuando se podría mover hacia la raíz del árbol y evitar repetirlo en cada rama del \ruleOrE{}. Esto hace que al intentar extraer un testigo, el programa reporte una falla. Para soportar estos casos sería necesario sofisticar la reducción agregando reducciones permutativas, que quedó fuera del alcance del trabajo.
 
-\begin{figure}[H]
+Por otro lado, también es ineficiente: en cada paso reinicia la búsqueda de todos los focos de evaluación. Se podría mejorar usando una máquina abstracta que implemente reducción a forma normal, inspirada por ejemplo en la máquina de Crégut para reducción \textit{call-by-name} fuerte \cite{cregut-call-by-name} o la máquina de Biernacka para reducción \textit{call-by-need} fuerte \cite{biernacka-call-by-need}.
+
+\begin{figure}[h]
     \centering
     \begin{subfigure}[b]{0.4\textwidth}
         \caption{Programa de PPA}
@@ -1538,10 +1542,10 @@ De esa forma, como los axiomas se mantienen, existe la forma normal que buscamos
     \)}
 \end{prooftree}
 
-Esto no valdrá para todas las fórmulas, lo que restringirá las axiomatizaciones. Solo para las que llamaremos \textit{con traducción introducible}.
+Esto no valdrá para todas las fórmulas, lo que restringirá las axiomatizaciones. Solo para las que llamaremos \textit{F-fórmulas}
 
-\begin{definition}[Fórmulas con traducción introducible]
-    Decimos que $\formTwo$ tiene \textit{traducción introducible} si está generada por la siguiente gramática:
+\begin{definition}[F-fórmulas]
+    Decimos que $\formTwo$ es una \textit{F-fórmula} si está generada por la siguiente gramática:
     \begin{align*}
         \formTwo ::=\  & \pred(\term_1, \dots, \term_n) \mid \fFalse \mid \fTrue                        \\
                        & \mid \formTwo \fAnd \formTwo \mid \formTwo \fOr \formTwo                       \\
@@ -1551,6 +1555,24 @@ Esto no valdrá para todas las fórmulas, lo que restringirá las axiomatizacion
     \end{align*}
     Donde $\form$ son fórmulas \textit{conjuntivas} (\namedref{fri:def:conjuntive}).
 \end{definition}
+
+\begin{obs}[Similitud con fórmulas de Harrop]
+    \label{fi:obs:harrop}
+
+    Aparentemente, la noción de F-fórmulas a la que llegamos se vincula con las fórmulas hereditarias de Harrop \cite{harrop}, definidas por la siguiente gramática:
+    \begin{align*}
+        A ::=\ & \pred(\term_1, \dots, \term_n) \mid \fFalse \mid \fTrue \\
+        G ::=\ & A \\
+            &\mid G \fAnd G \mid G \fOr G \\
+            &\mid \forall x . G \mid \exists x. G \\
+            &\mid H \fImp G\\
+        H ::=\ & A \\
+                       & \mid H \fAnd H                    \\
+                       & \mid \forall \var . H\\
+                       & \mid G \fImp A
+    \end{align*}
+    Donde $A$ son fórmulas atómicas, $G$ son \textit{G-fórmulas} (similares a las F-fórmulas) y $H$ son fórmulas \textit{Harrop Hereditarias} (similares a las conjuntivas). Habría que estudiar este posible vínculo más en profundidad en el futuro.
+\end{obs}
 
 \begin{lemma}[Introducción de la traducción $\fNot\fNot$]
     \label{fri:lemma:trans-intro}

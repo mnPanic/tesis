@@ -1,0 +1,36 @@
+axiom juanEsBajo : bajo(juan)
+
+axiom losBajosNoSonAltos : forall X. bajo(X) -> ~alto(X)
+
+theorem noTodoElMundoEsAlto : ~forall X. alto(X)
+proof
+have juanNoEsAlto : ~alto(juan) by juanEsBajo, losBajosNoSonAltos
+suppose todosSonAltos: forall X. alto(X)
+hence false by juanNoEsAlto, todosSonAltos
+end
+
+theorem hayAlguienQueNoEsAlto : exists X. ~alto(X)
+cases
+    case exists X. ~alto(X)
+    hence exists X. ~alto(X)
+    case h1: ~exists X. ~alto(X)
+    claim h2: forall X. alto(X)
+    proof
+        let X
+        cases
+        case alto(X)
+            hence alto(X)
+        case h3: ~alto(X)
+            claim h4: exists Y. ~alto(Y)
+            proof
+            take Y := X
+            hence ~alto(X) by h3
+            end
+            have false by h1,h4
+            hence forall X. alto(X)
+        end
+    end
+    have false by h2, noTodoElMundoEsAlto
+    hence exists X. ~alto(X)
+end
+end

@@ -1033,10 +1033,23 @@ Veamos la certificación de la \textit{descarga de conjunciones}: si la tesis es
 
 \lstinputlisting{listings/interfaz/discharge-complex.ppa}
 
-Veamos en particular el primer comando de la demostración. La tesis es una conjunción que está asociada de una forma particular, y se quiere demostrar $a \fAnd e$ que es parte de la tesis.
+Veamos en particular el primer comando de la demostración. La tesis es una conjunción que está asociada de una forma particular, y se quiere demostrar $a \fAnd e$ que es parte de la tesis. Aprovecharemos que las conjunciones se pueden representar como conjuntos para simplificar el proceso.
+
+\begin{prop*}[Conjunciones como conjuntos]
+    La conjunción es un conectivo asociativo, conmutativo e idempotente si se lo considera módulo equivalencia lógica. Es decir,
+
+    \begin{align*}
+        \form \fAnd (\formTwo \fAnd \formThree)
+            &\iff (\form \fAnd \formTwo) \fAnd \formThree\\
+        \form \fAnd \formTwo &\iff \formTwo \fAnd \form\\
+        \form \fAnd \form &\iff \form
+    \end{align*}
+
+    Esto nos permite representar a una fórmula construida como un árbol binario de conjunciones a través del conjunto de sus hojas.
+\end{prop*}
 
 \begin{enumerate}
-    \item Se convierte la conjunción y lo que se demuestra en conjuntos
+    \item Representamos la tesis y lo que se busca demostrar como conjuntos
     \begin{align*}
         (a \fAnd b) \fAnd ((c \fAnd d) \fAnd e)
         &\rewrite
@@ -1060,7 +1073,7 @@ Veamos en particular el primer comando de la demostración. La tesis es una conj
     la tesis a $b \fAnd c \fAnd d$ continuando la certificación por allí,
     insertando la demostración resultante en $\ctx \judG \formTwo$.
 
-    \item Para demostrar la equivalencia entre la tesis vieja y su versión re-ordenada se usa el mismo solver que el by. Al ser completo para proposicional, también puede resolver equivalencias por asociatividad y re-orden.
+    \item Para demostrar la equivalencia entre la tesis vieja y su versión re-ordenada se usa el mismo solver que el by. Al ser completo para proposicional, también puede resolver equivalencias por asociatividad, conmutatividad e idempotencia.
 \end{enumerate}
 
 Finalmente, queda certificado como
