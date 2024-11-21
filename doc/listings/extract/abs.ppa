@@ -1,0 +1,27 @@
+axiom juanEsBajo: bajo(juan)
+
+theorem noTodoElMundoEsAlto: ~forall X. ~bajo(X)
+proof
+    suppose todosSonAltos: forall X. ~bajo(X)
+    thus false by juanEsBajo, todosSonAltos
+end
+
+theorem hayAlguienBajo : exists X. bajo(X)
+proof
+    equivalently ~~exists X. bajo(X)
+    suppose h1: ~exists X. bajo(X)
+
+    claim h2: forall X. ~bajo(X)
+    proof
+        let X
+        suppose h3: bajo(X)
+        claim h4: exists Y. bajo(Y)
+        proof
+            take Y := X
+            hence bajo(X) by h3
+        end
+        hence false by h1
+    end
+
+    hence false by noTodoElMundoEsAlto
+end

@@ -10,6 +10,7 @@ module Extractor.RProofs (
 
 import Extractor.Translator.Form (translateF)
 import Extractor.Types (R)
+import GHC.Stack (HasCallStack)
 import ND.ND (Form (..), HypId, Proof (..), Term (TVar))
 import PPA.Proofs (cut, hypAndForm, hypForm)
 import Text.Printf (printf)
@@ -246,7 +247,7 @@ tNegRElim f h_tneg r =
 --
 -- Como no vale siempre A |- A~~ (ver Peter Selinger), y para los casos de not e
 -- imp en transIntro se usa este lema, no puede valer siempre tampoco.
-rIntro :: Form -> HypId -> R -> Proof
+rIntro :: (HasCallStack) => Form -> HypId -> R -> Proof
 rIntro f h_notr_f r = case (f, translateF f r) of
     (FFalse, _) ->
         PImpI
@@ -427,7 +428,7 @@ proofNotRDistOverAndRL a b hyp_or r =
             }
 
 {- Demuestra A |- A~~ por inducción estructural en A -}
-transIntro :: Form -> HypId -> R -> Proof
+transIntro :: (HasCallStack) => Form -> HypId -> R -> Proof
 transIntro f h_f r = case (f, translateF f r) of
     (FFalse, _) -> PFalseE (PAx h_f)
     (FTrue, FTrue) -> PTrueI

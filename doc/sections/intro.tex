@@ -4,14 +4,23 @@ Trabajan con distintas \textit{teorías}. Por ejemplo, el asistente Mizar \cite{
 
 Una propiedad deseable cumplida por muchos asistentes es el \textbf{criterio de De Bruijn} \cite{freek-bruijn}. En principio, para estar seguros de que una demostración es correcta sería necesario confiar en la implementación del asistente, que puede ser muy compleja. Un asistente se dice que cumple con el criterio si construye una demostración en un formato elemental, sencillo, que pueda ser chequeada por un programa independiente, escrito por cualquiera que desconfíe de la implementación original del asistente.
 
-En este trabajo diseñamos e implementamos un asistente de demostración \textit{PPA}
-(\textit{Pani's proof assistant}). Trabaja sobre teorías de lógica clásica de
-primer orden. Cumple con el criterio de De Bruijn porque \textit{certifica} las
-demostraciones en el lenguaje de alto nivel \ppaLang{}, generando demostraciones
-de bajo nivel en el sistema de deducción natural de Gentzen \cite{gentzen-1935}. Su sintaxis busca ser lo más parecida posible al lenguaje natural, inspirada en el trabajo de Markus Wenzel con Isar \cite{wenzel-isar} que luego fue combinado con otros lenguajes de demostración (como el de Mizar) y simplificado por Freek Wiedijk en su \textit{mathematical vernacular} \cite{freek-mv}. No es un demostrador automático de teoremas, pero su mecanismo de
-demostración principal, el \textbf{by}, incluye un pequeño demostrador
-heurístico para lógica de primer orden y completo para proposicional, que
-simplifica la escritura de demostraciones. Está inspirado en el mecanismo análogo de Mizar \cite{freek-by}.
+En este trabajo diseñamos e implementamos un asistente de demostración
+\textit{PPA} (\textit{Pani's proof assistant}). Trabaja sobre teorías de lógica
+clásica de primer orden. Cumple con el criterio de De Bruijn porque
+\textit{certifica} las demostraciones en el lenguaje de alto nivel \ppaLang{},
+generando demostraciones de bajo nivel en el sistema de deducción natural de
+Gentzen \cite{gentzen-1935}. Su sintaxis busca ser lo más parecida posible al
+lenguaje natural, inspirada en el \textit{mathematical vernacular} de Freek
+Wiedijk \cite{freek-mv}. En él, Wiedijk compara y combina la sintaxis de Mizar e
+Isar \cite{wenzel-isar} generando un lenguaje núcleo más simple. La sintaxis de PPA también se puede entender como una notación de deducción
+natural en el estilo de Fitch \cite{sep-natural-deduction}, en donde las
+demostraciones son esencialmente listas de fórmulas, con las que aparecen más
+adelante siendo consecuencia de las que aparecieron antes.
+
+No es un demostrador automático de teoremas, pero su mecanismo de demostración
+principal, el \textbf{by}, incluye un pequeño demostrador heurístico para lógica
+de primer orden y completo para proposicional, que simplifica la escritura de
+demostraciones. Está inspirado en el mecanismo análogo de Mizar \cite{freek-by}.
 
 Algunos asistentes de demostración implementan la \textit{extracción de testigos
 de existenciales}. Dada una demostración de $\exists \var . \pred(\var)$,
@@ -29,7 +38,7 @@ En este trabajo, la extracción se hace de forma \textit{indirecta} en dos pasos
 Primero hacemos uso de la \textbf{traducción de Friedman}
 \cite{selinger-friedman}, que permite traducir una demostración clásica a una
 intuicionista para cierta clase de fórmulas: las $\classPiTwo$, de la forma
-$\forall \var_1 \dots \forall \var_n . \exists \varTwo . \anyForm$. Luego,
+$\forall \var_1 \dots \forall \var_n . \exists \varTwo . \anyForm$ donde $\anyForm$ es una fórmula sin cuantificadores. Luego,
 \textit{normalizamos} la demostración intuicionista, y de su forma normal
 extraemos el testigo del existencial. Hasta donde sabemos, no hay asistentes de demostración para lógica clásica que implementen la extracción de testigos basándose en estas técnicas. Este es el aporte principal del trabajo.
 
@@ -148,7 +157,7 @@ Describimos los tipos de las principales funciones que implementan las distintas
 
 \section{Estructura del escrito}
 
-El trabajo se divide en 5 capítulos principales además de la introducción y la conclusión. Comenzamos por el \fullref{chap:nd} en el que se presenta de forma completa el sistema de deducción natural usado para los certificados. Se introducen las reglas de inferencia junto con sus intuiciones, el concepto de \textit{reglas admisibles}, demostraciones de ejemplo y algunos algoritmos implementados: chequeo (función \mintinline{haskell}{check}), alfa equivalencia de fórmulas y sustitución sin capturas.
+El trabajo se divide en 5 capítulos principales además de la introducción y la conclusión. Comenzamos por el \fullref{chap:nd} en el que se presenta de forma completa el bien conocido sistema de deducción natural que se usa para los certificados. Se introducen las reglas de inferencia junto con sus intuiciones, el concepto de \textit{reglas admisibles}, demostraciones de ejemplo y algunos algoritmos implementados: chequeo (función \mintinline{haskell}{check}), alfa equivalencia de fórmulas y sustitución sin capturas.
 
 En el \fullref{chap:ppa} introducimos el lenguaje desde el punto de vista de un usuario: cómo están compuestos los programas, cómo usar el pequeño demostrador (\lstinline{by}) para facilitar la escritura de demostraciones, y una descripción exhaustiva de todos los comandos soportados. En \fullref{chap:ppa-certifier} se muestra la implementación interna del \textit{certificador} de PPA, cómo genera demostraciones en deducción natural a partir de programas (la función \mintinline{haskell}{certify}). De forma central se explica el funcionamiento del \lstinline{by}, que es el corazón del certificador.
 

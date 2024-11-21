@@ -2,7 +2,7 @@ En este trabajo presentamos el lenguaje \ppaLang{} junto con los detalles de su
 implementación en \ppaTool{}. Primero dimos una definición completa del sistema
 lógico de deducción natural, junto con ejemplos de demostraciones. Describimos
 cómo implementamos el algoritmo de chequeo, y por otro lado los de
-alfa equivalencia y sustitución sin capturas de forma cuasilineal.
+alfa equivalencia y sustitución sin capturas en tiempo cuasilineal en peor caso.
 
 Dimos un manual de usuario para el lenguaje \ppaLang{}, explicando como
 escribir demostraciones y cómo usar el mecanismo de demostración principal
@@ -57,12 +57,13 @@ tesis. Las listamos a continuación.
     facilitaría la escritura de programas más sofisticados.
     \item \textbf{Refinar fórmulas \textit{conjuntivas}}: en la traducción de
     Friedman introducimos dos lemas centrales: $\formTwo \judgI \tdn{\formTwo}$
-    \fullref{fri:lemma:trans-intro}, que vale para fórmulas con
-    \textit{traducción introducible} y restringe las axiomatizaciones, y $\fNotR
+    \fullref{fri:lemma:trans-intro}, que vale para \textit{F-fórmulas}
+    y restringe las axiomatizaciones, y $\fNotR
     \form \judgI \fNotR \tdn{\form}$ \fullref{fri:lemma:notr-trans-intro}, que
     vale para fórmulas \textit{conjuntivas}. Como el primero se reduce al
     segundo, podríamos refinar las fórmulas \textit{conjuntivas}, lo que
-    permitiría usar más tipos de axiomas.
+    permitiría usar más tipos de axiomas. También se podría profundizar en el
+    vínculo con las fórmulas de Harrop mencionado en \namedref{fi:obs:harrop}.
     \item \textbf{Extender traducción de Friedman a más de un existencial}: en
     su versión final, lo máximo que llega a convertir son fórmulas de la forma
     $\forall \varTwo_1 \dots \forall \varTwo_n . \exists \var .
@@ -70,11 +71,12 @@ tesis. Las listamos a continuación.
     \varTwo_1 \dots \forall \varTwo_n . \exists \var_1 \dots \exists \var_m .
     \anyForm(\dots)$.
     \item \textbf{Implementar versión completa de reducción de demostraciones}:
-    en \fullref{fri:norm:sec:limitations} vimos una demostración para la que no
-    se puede llegar a una forma normal útil, evitando la extracción de testigos
-    en un caso en el que debería ser posible. Se podría extender la
-    implementación de la reducción para incluir reducciones permutativas, así
-    haciendo que sea completa.
+    en \fullref{fri:norm:sec:limitations} vimos las limitaciones del mecanismo
+    de reducción implementado. Es ineficiente, y no se puede llegar a una forma
+    normal útil para todas las demostraciones, evitando la extracción de
+    testigos en casos donde debería ser posible. Se podrían extender para
+    incluir reducciones permutativas e implementar una máquina abstracta para
+    reducción \textit{call-by-need} o \textit{call-by-name}.
     \item \textbf{Mejorar reporte de errores}: los errores reportados por la
     herramienta en general son muy rústicos, implementativos y de bajo nivel. Se
     podrían hacer más amigables y accionables, ayudando a resolver problemas sin

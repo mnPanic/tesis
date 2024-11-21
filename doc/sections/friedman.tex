@@ -22,12 +22,20 @@ Ahora vamos a introducir una nueva funcionalidad: la \textbf{extracción de test
     \end{figure}
 \end{multicols}
 
+\begin{figure}[h]
+    \lstinputlisting{listings/extract/abs.ppa}
+    \caption{Extracción via razonamiento por el absurdo}
+    \label{fri:prog:indirect-abs}
+\end{figure}
+
 Por ejemplo, en el programa \fullref{fri:prog:exists} la extracción nos
 permitirá encontrar un término $t$ que sea \textit{testigo} de $\exists x. p(x)$: que cumpla $p(t)$. En este caso es fácil encontrarlo a ojo sobre la
 demostración de PPA, sería \lstinline{v}. Pero puede haber casos en donde no sea
 tan trivial, como en el programa \fullref{fri:prog:indirect}, en donde en el
 \lstinline{theorem t2} se instancia la variable en un término de forma
-indirecta. Además, también querríamos poder extraer en casos donde haya
+indirecta. Incluso casos como \fullref{fri:prog:indirect-abs} en donde al razonar por el absurdo con la negación de un universal, la instanciación de la variable en un término no es con \lstinline{take} sino la unificación del \lstinline{by}.
+
+También vamos a querer poder extraer en casos donde haya
 cuantificadores universales, como en \fullref{fri:prog:forall}. Aquí, ya que vale para todo \lstinline{Y}, querremos poder instanciarlo en un término cualquiera. Por ejemplo \lstinline{p(v, f(v))}.
 
 Buscamos un mecanismo general, que nos permita a partir de cualquier
@@ -132,7 +140,7 @@ por ejemplo de \namedref{fri:prog:exists}:
           natural, usando el \modCertifier{}. Nos da un contexto con una demostración
           por teorema.
 
-          \textbf{Limitación}: No vamos a poder axiomatizar cualquier teoría. Los axiomas deben ser \textit{con traducción introducible} (ver \namedref{fri:sec:context}).
+          \textbf{Limitación}: No vamos a poder axiomatizar cualquier teoría. Los axiomas deben ser \textit{F-fórmulas} (ver \namedref{fri:sec:context}).
     \item Queremos extraer un testigo de un teorema, que puede citar a los anteriores. Generamos una única demostración haciendo \textit{inline} de las demostraciones de otros teoremas citados, así cuando se reduce, se reduce la demostración completa y no una parte.
     \item Usamos la traducción de Friedman para obtener una demostración
           intuicionista de la misma fórmula.
@@ -1338,7 +1346,9 @@ una pasada de forma lineal.
     \label{fri:fig:reduction-rules}
 \end{figure}
 
-A partir de todas las reglas de reducción (\namedref{fri:fig:reduction-rules}), implementamos un algoritmo de reducción simple. dado que son \textit{pasos} que acercan la demostración sucesivamente a su versión normalizada, podemos implementarlo de forma análoga a la conversión a DNF (\namedref{ppa:sec:dnf:algoritmo}) como la clausura reflexiva transitiva de la reducción en un paso: aplicarla 0 o más veces hasta que esté en forma normal. Al igual que DNF, también necesitaremos reglas de congruencia: si no hay una eliminación de una introducción para simplificar, se trata de reducir recursivamente las sub-demostraciones.
+A partir de todas las reglas de reducción (\namedref{fri:fig:reduction-rules}) podemos implementar el algoritmo. Para acotar el alcance del trabajo, implementamos un mecanismo sencillo e ingenuo, que tiene algunas limitaciones que exploraremos en la siguiente \namedref{fri:norm:sec:limitations}.
+
+Como las reglas son \textit{pasos} que acercan la demostración sucesivamente a su versión normalizada, podemos implementarlo de forma análoga a la conversión a DNF (\namedref{ppa:sec:dnf:algoritmo}) como la clausura reflexiva transitiva de la reducción en un paso: aplicarla 0 o más veces hasta que esté en forma normal. Al igual que DNF, también necesitaremos reglas de congruencia: si no hay una eliminación de una introducción para simplificar, se trata de reducir recursivamente las sub-demostraciones.
 
 En una primera implementación las sub-demostraciones las reducíamos en un paso, de izquierda a derecha. Por ejemplo, si teníamos una introducción de una conjunción,
 
@@ -1374,14 +1384,14 @@ al mismo tiempo. Aplicado a demostraciones, quiere decir que en un único paso d
 reducción, reduciríamos $\form \fAnd \formTwo \rewrite \form^{*}
 \fAnd \formTwo^{*}$.
 
-\duda{Probablemente falta rigurosidad en esta sección.}
-
 \subsection{Limitaciones}
 \label{fri:norm:sec:limitations}
 
-Implementamos una reducción sencilla, que solamente reduce eliminaciones de introducciones de la misma regla. Pero no contempla las que se conocen como ``reducciones permutativas'', que mezclan introducciones y eliminaciones de conectivos distintos. Si estos patrones ocurren, no nos permitirán llegar a una forma normal útil. Entonces no siempre podremos extraer un testigo. Por ejemplo, en \fullref{fri:norm:fig:non-norm}, se puede observar una demostración sencilla que usa \lstinline{cases}. Pero al certificarla, traducirla y reducirla, no queda en una forma normal útil: aparece dos veces \ruleExistsI{}, cuando se podría mover hacia la raíz del árbol y evitar repetirlo en cada rama del \ruleOrE{}. Esto hace que al intentar extraer un testigo, el programa reporte una falla. Para soportar estos casos sería necesario sofisticar la reducción agregando reducciones permutativas, que quedó fuera del alcance del trabajo.
+El mecanismo sencillo de reducción que implementamos tiene dos desventajas: no contempla todas las reglas de reducción posible, y es ineficiente. Comencemos por la primera. Como solamente reduce eliminaciones de introducciones de la misma regla, no contempla las ``reducciones permutativas'', que mezclan introducciones y eliminaciones de conectivos distintos. Si estos patrones ocurren, no nos permitirán llegar a una forma normal útil. Entonces no siempre podremos extraer un testigo. Por ejemplo, en la \fullref{fri:norm:fig:non-norm}, se puede observar una demostración sencilla que usa \lstinline{cases}. Pero al certificarla, traducirla y reducirla, no queda en una forma normal útil: aparece dos veces \ruleExistsI{}, cuando se podría mover hacia la raíz del árbol y evitar repetirlo en cada rama del \ruleOrE{}. Esto hace que al intentar extraer un testigo, el programa reporte una falla. Para soportar estos casos sería necesario sofisticar la reducción agregando reducciones permutativas, que quedó fuera del alcance del trabajo.
 
-\begin{figure}[H]
+Por otro lado, también es ineficiente: en cada paso reinicia la búsqueda de todos los focos de evaluación. Se podría mejorar usando una máquina abstracta que implemente reducción a forma normal, inspirada por ejemplo en la máquina de Crégut para reducción \textit{call-by-name} fuerte \cite{cregut-call-by-name} o la máquina de Biernacka para reducción \textit{call-by-need} fuerte \cite{biernacka-call-by-need}.
+
+\begin{figure}[h]
     \centering
     \begin{subfigure}[b]{0.4\textwidth}
         \caption{Programa de PPA}
@@ -1540,10 +1550,11 @@ De esa forma, como los axiomas se mantienen, existe la forma normal que buscamos
     \)}
 \end{prooftree}
 
-Esto no valdrá para todas las fórmulas, lo que restringirá las axiomatizaciones. Solo para las que llamaremos \textit{con traducción introducible}.
+Esto no valdrá para todas las fórmulas, lo que restringirá las axiomatizaciones. \textbf{Solo podrán ser axiomas las que llamaremos \textit{F-fórmulas}}.
 
-\begin{definition}[Fórmulas con traducción introducible]
-    Decimos que $\formTwo$ tiene \textit{traducción introducible} si está generada por la siguiente gramática:
+\begin{definition}[F-fórmulas]
+    \label{fri:def:f-form}
+    Decimos que $\formTwo$ es una \textit{F-fórmula} si está generada por la siguiente gramática:
     \begin{align*}
         \formTwo ::=\  & \pred(\term_1, \dots, \term_n) \mid \fFalse \mid \fTrue                        \\
                        & \mid \formTwo \fAnd \formTwo \mid \formTwo \fOr \formTwo                       \\
@@ -1556,7 +1567,7 @@ Esto no valdrá para todas las fórmulas, lo que restringirá las axiomatizacion
 
 \begin{lemma}[Introducción de la traducción $\fNot\fNot$]
     \label{fri:lemma:trans-intro}
-    Si $\formTwo$ es de \textit{traducción introducible}, vale
+    Si $\formTwo$ es una \textit{F-fórmula}, vale
     $\formTwo \judgI \tdn{\formTwo}$.
 \end{lemma}
 \begin{proof}
@@ -1648,16 +1659,35 @@ Esto no valdrá para todas las fórmulas, lo que restringirá las axiomatizacion
 \end{proof}
 
 \begin{obs*}[Completitud]
-    Vimos que el \fullref{fri:lemma:trans-intro}, $\form \judgI \tdn{\form}$, se reduce al \fullref{fri:lemma:notr-trans-intro}, que cumplen $\fNotR \form \judgI \fNotR \tdn{\form}$. Las fórmulas de \textit{traducción introducible} se ven restringidas por las \textit{conjuntivas}.
+    Vimos que el \fullref{fri:lemma:trans-intro}, $\form \judgI \tdn{\form}$, se reduce al \fullref{fri:lemma:notr-trans-intro}, que cumplen $\fNotR \form \judgI \fNotR \tdn{\form}$. Las \textit{F-fórmulas} se ven restringidas por las \textit{conjuntivas}.
     
     Por otro lado, en \cite{selinger-friedman}, se exhibe el contra ejemplo $\fNot \fNot \formLit$ para $\form \judgI \tdn{\form}$ (en una versión distinta pero equivalente de la traducción de Friedman). En nuestro caso, como el \namedref{fri:lemma:trans-intro} se reduce a
     \namedref{fri:lemma:notr-trans-intro}, si el primero no vale en general
     (por el contra ejemplo) entonces el segundo tampoco podría. Esto es consistente con nuestros resultados, tampoco
-    podemos demostrar $\fNot \fNot \formLit \judgI \tdn{(\fNot \fNot \formLit)}$ pues no la consideramos con
-    \textit{traducción introducible}.
+    podemos demostrar $\fNot \fNot \formLit \judgI \tdn{(\fNot \fNot \formLit)}$ pues no la consideramos como \textit{F-fórmula}.
 
     Esto resultó suficientemente permisivo para los axiomas que se suelen definir.
 \end{obs*}
+
+\begin{obs}[Similitud con fórmulas de Harrop]
+    \label{fi:obs:harrop}
+
+    Aparentemente, la noción de F-fórmulas a la que llegamos en \namedref{fri:def:f-form} se vincula con las fórmulas hereditarias de Harrop \cite{harrop}, definidas por la siguiente gramática:
+    \begin{align*}
+        A ::=\ & \pred(\term_1, \dots, \term_n) \mid \fFalse \mid \fTrue \\
+        G ::=\ & A \\
+            &\mid G \fAnd G \mid G \fOr G \\
+            &\mid \forall x . G \mid \exists x. G \\
+            &\mid H \fImp G\\
+        H ::=\ & A \\
+                       & \mid H \fAnd H                    \\
+                       & \mid \forall \var . H\\
+                       & \mid G \fImp A
+    \end{align*}
+    Donde $A$ son fórmulas atómicas, $G$ son \textit{G-fórmulas} (similares a las F-fórmulas) y $H$ son fórmulas \textit{Harrop Hereditarias} (similares a las conjuntivas). Habría que estudiar este posible vínculo más en profundidad en el futuro.
+
+    Sería llamativo que sean iguales, pues las fórmulas \textit{conjuntivas} que definimos no incluyen $\forall$ y las hereditarias sí. Por cómo son usadas en el \namedref{fri:thm:fri-pitwo-general}, que incluyan $\forall$ implicaría que podríamos usar la traducción de Friedman para fórmulas $\classPi{3}$ de la forma $\forall \var. \exists \varTwo . \forall \varThree . \anyForm$ con $\anyForm$ sin cuantificadores.
+\end{obs}
 
 \section{Otros métodos de extracción}
 

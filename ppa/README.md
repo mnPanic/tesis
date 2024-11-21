@@ -2,6 +2,8 @@
 
 PPA - *Pani's proof assistant*.
 
+Para la sintaxis del lenguaje, ver [`doc/docs.md`](doc/docs.md).
+
 ## Instalación
 
 Con `cabal`
@@ -114,38 +116,3 @@ Usando https://github.com/yav/graphmod
 ```bash
 find src/ -name '*.hs' | xargs graphmod -i src -d 15,10 | tred | dot -Tpng > modules.png
 ```
-
-## Cabal
-
-Correr con args
-
-cabal run ppa -- debug-simple.txt out
-
-cabal run ppa -- debug-simple.txt out +RTS -p
-
-Instalar
-
-cabal install
-
-### Errores comunes
-
-Si pincha por profiling libraries, ej.
-
-```
-src/Main.hs:20:1: error:
-    Could not find module ‘Text.Pretty.Simple’
-    Perhaps you haven't installed the profiling libraries for package ‘pretty-simple-4.1.2.0’?
-    Use -v (or `:set -v` in ghci) to see a list of the files searched for.
-   |
-20 | import Text.Pretty.Simple (
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^...
-```
-
-hacer
-
-```
-cabal install --lib --enable-profiling pretty-simple 
-```
-
-## GHCI
-

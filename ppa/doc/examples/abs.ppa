@@ -1,0 +1,47 @@
+axiom juanEsBajo : bajo(juan)
+
+// Este axioma no es F-Fórmula por la vuelta
+axiom losBajosNoSonAltos : forall X. bajo(X) <-> ~alto(X)
+
+theorem noTodoElMundoEsAlto : ~forall X. alto(X)
+proof
+    have juanNoEsAlto : ~alto(juan) by juanEsBajo, losBajosNoSonAltos
+    suppose todosSonAltos: forall X. alto(X)
+    thus false by juanNoEsAlto, todosSonAltos
+end
+
+// No funciona para la extracción porque ~alto(X) no es conjuntiva.
+theorem hayAlguienQueNoEsAlto : exists X. ~alto(X)
+proof
+    cases
+        case exists X. ~alto(X)
+            hence exists X. ~alto(X)
+        case h1: ~exists X. ~alto(X)
+            claim h2: forall X. alto(X)
+            proof
+                let X
+                cases
+                    case alto(X)
+                        hence alto(X)
+                    case h3: ~alto(X)
+                        claim h4: exists Y. ~alto(Y)
+                        proof
+                            take Y := X
+                            hence ~alto(X) by h3
+                        end
+                        have -: false by h1,h4
+                        hence alto(X)
+                end
+            end
+            have -: false by h2, noTodoElMundoEsAlto
+            hence exists X. ~alto(X)
+    end
+end
+
+// No funciona para la extracción porque el axioma losBajosNoSonAltos no es F-fórmula
+theorem hayAlguienQueEsBajo : exists X. bajo(X)
+proof
+    consider X st xEsBajo: ~alto(X) by hayAlguienQueNoEsAlto
+    take X := X
+    thus bajo(X) by xEsBajo, losBajosNoSonAltos
+end

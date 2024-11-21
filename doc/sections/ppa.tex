@@ -80,10 +80,7 @@ el error. No debería fallar nunca el chequeo sobre el certificado.
 
 PPA es un lenguaje que permite escribir demostraciones de cualquier teoría de
 lógica de primer orden. Su sintaxis busca ser lo más parecida posible al
-lenguaje natural, inspirada en el trabajo de Markus Wenzel con Isar
-\cite{wenzel-isar} que luego fue combinado con otros lenguajes de demostración
-(como el de Mizar) y simplificado por Freek Wiedijk en su \textit{mathematical
-vernacular} \cite{freek-mv}. También se puede entender como una notación de
+lenguaje natural, inspirada en Mizar y el \textit{mathematical vernacular} de Freek Wiedijk \cite{freek-mv}. También se puede entender como una notación de
 deducción natural en el estilo de Fitch \cite{sep-natural-deduction}, en donde
 las demostraciones son esencialmente listas de fórmulas, con las que aparecen
 más adelante siendo consecuencia de las que aparecieron antes. El estilo de
@@ -357,6 +354,9 @@ end
     incluso si la hipótesis fuera \lstinline{~((~a | ~b) & (~c | ~a))}, pues es
     equivalente a \lstinline{(a & b) | (c & a)}.
 
+    Además, se puede omitir el \lstinline{by} para razonar mediante LEM, donde
+    los casos son $\anyForm$ y $\fNot \anyForm$.
+
     \item \lstinline{take} (\ruleExistsI)
     
     Introduce un existencial instanciando su variable y reemplazándola por un
@@ -419,6 +419,19 @@ Esto puede ser prácticamente en cualquier orden.
     equivalente. Útil para usar descarga de conjunciones.
     
     \lstinputlisting{listings/interfaz/equivalently.ppa}
+
+    O también para razonar por el absurdo mediante la eliminación de la doble
+    negación,
+    
+    \begin{lstlisting}[numbers=none]
+theorem t: <form>
+proof
+    equivalently ~~<form>
+    suppose <name>: ~<form>
+    // Demostración de <form> por el absurdo, asumiendo ~<form>
+    // y llegando a una contradicción (false).
+end
+    \end{lstlisting}
 
     \item \lstinline{claim}: permite demostrar una afirmación auxiliar. Útil
     para ordenar las demostraciones sin tener que definir otro teorema. Ejemplo
