@@ -9,6 +9,7 @@ import Extractor.RProofs (
 import Extractor.Reducer (reduce)
 import Extractor.Translator.Proof (translateFriedman)
 import Extractor.Types (R, fromPi02, toPi02)
+import GHC.Stack (HasCallStack)
 import ND.ND (Form (..), HypId, Proof (..), Term (TVar), proofName)
 import ND.Subst (subst, substHyp)
 import PPA.Certifier (checkContext)
@@ -76,7 +77,7 @@ Para ello,
 La fórmula debe ser de la clase Sigma^0_1, es decir N
 existenciales seguidos de una fórmula sin cuantificadores.
 -}
-extractWitness :: Context -> Proof -> Form -> [Term] -> Result (Proof, Form, Term)
+extractWitness :: (HasCallStack) => Context -> Proof -> Form -> [Term] -> Result (Proof, Form, Term)
 extractWitness ctxAxioms proof form instanceTerms = do
   formPi02@(ys, f_exists) <- toPi02 form
   if length ys /= length instanceTerms

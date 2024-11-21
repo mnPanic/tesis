@@ -18,6 +18,7 @@ import Text.Printf (printf)
 import Extractor.RProofs (dNegRElim, rElim, rIntro)
 
 import Data.Set qualified as Set
+import GHC.Stack (HasCallStack)
 
 -- Usado solo para tests
 translateContext :: Context -> Form -> Context
@@ -41,7 +42,7 @@ misma fórmula.
  |-_C F ~~~> |-_I F
 
 -}
-translateFriedman :: Proof -> FormPi02 -> (Proof, R)
+translateFriedman :: (HasCallStack) => Proof -> FormPi02 -> (Proof, R)
 translateFriedman proof form@(ys, f_exists@(FExists x _)) = do
     let proofVars = fvP proof
     let ys' = foldr (\y rest -> freshWRT y (Set.union proofVars (Set.fromList rest)) : rest) [] ys

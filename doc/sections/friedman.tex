@@ -1542,9 +1542,10 @@ De esa forma, como los axiomas se mantienen, existe la forma normal que buscamos
     \)}
 \end{prooftree}
 
-Esto no valdrá para todas las fórmulas, lo que restringirá las axiomatizaciones. Solo para las que llamaremos \textit{F-fórmulas}
+Esto no valdrá para todas las fórmulas, lo que restringirá las axiomatizaciones. \textbf{Solo podrán ser axiomas las que llamaremos \textit{F-fórmulas}}.
 
 \begin{definition}[F-fórmulas]
+    \label{fri:def:f-form}
     Decimos que $\formTwo$ es una \textit{F-fórmula} si está generada por la siguiente gramática:
     \begin{align*}
         \formTwo ::=\  & \pred(\term_1, \dots, \term_n) \mid \fFalse \mid \fTrue                        \\
@@ -1555,24 +1556,6 @@ Esto no valdrá para todas las fórmulas, lo que restringirá las axiomatizacion
     \end{align*}
     Donde $\form$ son fórmulas \textit{conjuntivas} (\namedref{fri:def:conjuntive}).
 \end{definition}
-
-\begin{obs}[Similitud con fórmulas de Harrop]
-    \label{fi:obs:harrop}
-
-    Aparentemente, la noción de F-fórmulas a la que llegamos se vincula con las fórmulas hereditarias de Harrop \cite{harrop}, definidas por la siguiente gramática:
-    \begin{align*}
-        A ::=\ & \pred(\term_1, \dots, \term_n) \mid \fFalse \mid \fTrue \\
-        G ::=\ & A \\
-            &\mid G \fAnd G \mid G \fOr G \\
-            &\mid \forall x . G \mid \exists x. G \\
-            &\mid H \fImp G\\
-        H ::=\ & A \\
-                       & \mid H \fAnd H                    \\
-                       & \mid \forall \var . H\\
-                       & \mid G \fImp A
-    \end{align*}
-    Donde $A$ son fórmulas atómicas, $G$ son \textit{G-fórmulas} (similares a las F-fórmulas) y $H$ son fórmulas \textit{Harrop Hereditarias} (similares a las conjuntivas). Habría que estudiar este posible vínculo más en profundidad en el futuro.
-\end{obs}
 
 \begin{lemma}[Introducción de la traducción $\fNot\fNot$]
     \label{fri:lemma:trans-intro}
@@ -1678,6 +1661,24 @@ Esto no valdrá para todas las fórmulas, lo que restringirá las axiomatizacion
 
     Esto resultó suficientemente permisivo para los axiomas que se suelen definir.
 \end{obs*}
+
+\begin{obs}[Similitud con fórmulas de Harrop]
+    \label{fi:obs:harrop}
+
+    Aparentemente, la noción de F-fórmulas a la que llegamos en \namedref{fri:def:f-form} se vincula con las fórmulas hereditarias de Harrop \cite{harrop}, definidas por la siguiente gramática:
+    \begin{align*}
+        A ::=\ & \pred(\term_1, \dots, \term_n) \mid \fFalse \mid \fTrue \\
+        G ::=\ & A \\
+            &\mid G \fAnd G \mid G \fOr G \\
+            &\mid \forall x . G \mid \exists x. G \\
+            &\mid H \fImp G\\
+        H ::=\ & A \\
+                       & \mid H \fAnd H                    \\
+                       & \mid \forall \var . H\\
+                       & \mid G \fImp A
+    \end{align*}
+    Donde $A$ son fórmulas atómicas, $G$ son \textit{G-fórmulas} (similares a las F-fórmulas) y $H$ son fórmulas \textit{Harrop Hereditarias} (similares a las conjuntivas). Habría que estudiar este posible vínculo más en profundidad en el futuro.
+\end{obs}
 
 \section{Otros métodos de extracción}
 
