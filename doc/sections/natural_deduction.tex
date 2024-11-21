@@ -660,9 +660,9 @@ Si tenemos una hipótesis $\exists \var . \fun(\var)$, sería ideal poder usarla
         \\
 \end{align*}
 \end{definition}
-Para implementarlo, un algoritmo naíf podría ser cuadrático: chequeamos recursivamente la igualdad estructural de ambas fórmulas. Si nos encontramos con un cuantificador con variables con nombres distintos, digamos $\var$ e $\varTwo$, elegimos una nueva variable \textit{fresca} (para evitar capturas) y lo renombramos recursivamente en ambos. Luego continuamos con el algoritmo. Si en la base nos encontramos con dos variables, tienen que ser iguales.
+Para implementarlo, un algoritmo naíf podría ser de tiempo cuadrático en peor caso: chequeamos recursivamente la igualdad estructural de ambas fórmulas. Si nos encontramos con un cuantificador con variables con nombres distintos, digamos $\var$ e $\varTwo$, elegimos una nueva variable \textit{fresca} (para evitar capturas) y lo renombramos recursivamente en ambos. Luego continuamos con el algoritmo. Si en la base nos encontramos con dos variables, tienen que ser iguales.
 
-Para hacerlo un poco más eficiente, se implementó un algoritmo cuasilineal en la estructura de la fórmula. Mantenemos dos sustituciones de variables, una para cada fórmula. Si nos encontramos con $\exists \var . \fun(\var)$ y $\exists \varTwo . \fun(\varTwo)$, vamos a elegir una variable fresca igual que antes (por ejemplo $\varThree$), pero en vez de renombrar recursivamente, que lo hace cuadrático, insertamos en cada sustitución los renombres $\var \mapsto \varThree$ y $\varTwo \mapsto \varThree$. Luego, cuando estemos comparando dos variables libres, chequeamos que \textit{sus renombres} sean iguales. En este ejemplo son alfa equivalentes, pues
+Para hacerlo un poco más eficiente, se implementó un algoritmo de tiempo cuasilineal en la estructura de la fórmula en peor caso. Mantenemos dos sustituciones de variables, una para cada fórmula. Si nos encontramos con $\exists \var . \fun(\var)$ y $\exists \varTwo . \fun(\varTwo)$, vamos a elegir una variable fresca igual que antes (por ejemplo $\varThree$), pero en vez de renombrar recursivamente, que lo hace cuadrático, insertamos en cada sustitución los renombres $\var \mapsto \varThree$ y $\varTwo \mapsto \varThree$. Luego, cuando estemos comparando dos variables libres, chequeamos que \textit{sus renombres} sean iguales. En este ejemplo son alfa equivalentes, pues
 \begin{align*}
     (\exists \var . \fun(\var)) &\alphaEq (\exists \varTwo . \fun(\varTwo))
     &&\{\}, \{\}
@@ -758,7 +758,7 @@ donde $\varThree$ es una variable \textit{fresca}.
     \end{itemize}
 \end{definition}
 
-Para implementarlo, cada vez que nos encontramos con una captura, vamos a \textit{renombrar} la variable del cuantificador por una nueva, fresca. Al igual que la alfa igualdad, esto se puede implementar de forma naíf cuadrática pero lo hicimos lineal. Mantenemos un único mapeo a lo largo de la sustitución, y cada vez que nos encontramos con una variable libre, si son iguales la sustituimos por el término, y si está mapeada la renombramos.
+Para implementarlo, cada vez que nos encontramos con una captura, vamos a \textit{renombrar} la variable del cuantificador por una nueva, fresca. Al igual que la alfa igualdad, esto se puede implementar de forma naíf cuadrática en peor caso pero lo hicimos cuasilineal. Mantenemos un único mapeo a lo largo de la sustitución, y cada vez que nos encontramos con una variable libre, si son iguales la sustituimos por el término, y si está mapeada la renombramos.
 
 \begin{definition}[Variables libres de una demostración] Sea $\someProof$ una demostración. $\fv{\someProof}$ son las variables libres de todas las fórmulas que la componen. Por ejemplo, para la siguiente
 

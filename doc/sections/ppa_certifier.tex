@@ -31,11 +31,11 @@ demostración que cuenta con esta propiedad cumple con el
 \textbf{criterio de de Bruijn}. \ppaTool{} lo cumple al generar demostraciones
 en deducción natural.
 
-\begin{prop*}[Criterio de de Bruijn \cite{freek-bruijn}] Un asistente de
+\begin{criterion*}[Criterio de de Bruijn \cite{freek-bruijn}] Un asistente de
     demostración que satisface que sus demostraciones puedan ser chequeadas por
     un programa independiente, pequeño y confiable se dice que cumple con el
     criterio de de Bruijn.
-\end{prop*}
+\end{criterion*}
 
 %\duda{Para pablo: pero si emite certificados que no corresponden a la demo original y chequean siempre, por ej. siempre el mismo, no estaría mal igual? Tenés que confiar también en la parte que emite el certificado.}
 % RTA: Sí, o tendrías que poder mirar qué es lo que se está demostrando. Ese es un problema insalvable.
@@ -255,11 +255,6 @@ vemos la idea general de la estrategia y luego profundizamos en cada paso. Los p
     \setNaturals$ es la cantidad de fórmulas de cada cláusula y $\formLit^i_j$
     es la $j$-ésima fórmula de la $i$-ésima cláusula.
 
-    \duda{Me parece que me compliqué de más con esta notación. Estaría OK dejarlo como \(
-        (\formLit_1 \fAnd \dots \fAnd \formLit_n)
-        \fOr \dots \fOr
-        (\formLitTwo_1 \fAnd \dots \fAnd \formLitTwo_m)
-    \)?}
     \item Buscamos una \textbf{contradicción} refutando cada cláusula individualmente.
     Una cláusula $\formLit_1 \fAnd \dots \fAnd \formLit_n$ será refutable si
     cumple una de las siguientes condiciones.
@@ -538,7 +533,8 @@ contradicción, pero lo queremos hacer a partir de la tesis en DNF. ¿Cómo la c
     \label{ppa-cert:thm:dnf}
     
     Para toda fórmula $\form$, existe
-    $\dnf{\form}$ su equivalente en DNF. Y vale $\form \judG \dnf{\form}$.
+    $\dnf{\form}$ su conversión a DNF y son equivalentes: vale $\judG \form \leftrightarrow \dnf{\form}$, es decir
+    $\judG (\form \fImp \dnf{\form}) \fAnd (\dnf{\form} \fImp \form)$
 \end{theorem}
 \begin{proof}
     La demostración se basa en el algoritmo que presentamos a continuación en la \namedref{ppa:sec:dnf:algoritmo}.
@@ -825,7 +821,7 @@ hacerlo, vamos a reemplazar las ocurrencias de su variable por
 \end{definition}
 
 \begin{obs*}
-    El problema de unificación que nos encontramos aquí es el problema estándar de unificación de primer orden. El algoritmo que usa \ppaTool{} es una variante del algoritmo de Martelli-Montanari \cite{martelli-montanari-unification}.
+    El problema de unificación que nos encontramos aquí es el problema estándar de unificación de primer orden. El algoritmo que usa \ppaTool{} es una variante del algoritmo de Martelli-Montanari \cite{martelli-montanari-unification}, que encuentra un unificador más general.
 \end{obs*}
 
 \begin{ejemplo}[Ejemplo de by con cuantificadores]

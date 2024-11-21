@@ -26,7 +26,8 @@ semantic techniques such as classical realizability \cite{miquel-friedman}) or i
 The main contribution of this work is a practical implementation of witness
 extraction. PPA achieves this indirectly by using Friedman's translation, which
 allows converting classical proofs of \( \classPiTwo \) formulas of the form \(
-\forall y_0 \dots \forall y_n . \exists x . \phi \) into intuitionistic ones. We
+\forall y_0 \dots \forall y_n . \exists x . \anyForm \), with the formula
+$\anyForm$ having no quantifiers, into intuitionistic ones. We
 describes how, once translated, these proofs can be normalized using well-known
 reduction rules, which correspond to the reduction rules of lambda calculus viewed through the Curry-Howard isomorphism. Finally, a
 normalized proof enables the extraction of a witness. We identify some practical
