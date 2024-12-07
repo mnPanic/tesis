@@ -1,12 +1,27 @@
 %\documentclass[handout]{beamer} % Sin animaciones
 % https://tex.stackexchange.com/questions/74805/latex-error-option-clash-for-package-xcolor
-\documentclass{beamer}
-\usetheme{Warsaw}
+\documentclass[xcolor={dvipsnames},spanish]{beamer}
+%\usetheme{Warsaw}
+\usetheme{Madrid}
 \setbeamertemplate{navigation symbols}{} % remove navigation symbols
 \setbeamercolor{alerted text}{fg=orange}
 
 \usepackage{thesis}
+\usepackage{sections/nd_rules}
 \setbeamertemplate{footline}[frame number]
+
+% https://tex.stackexchange.com/questions/178800/creating-sections-each-with-title-pages-in-beamers-slides
+\AtBeginSection[]{
+  \begin{frame}
+  \vfill
+  \centering
+  \begin{beamercolorbox}[sep=8pt,center,shadow=true,rounded=true]{title}
+    \usebeamerfont{title}\insertsectionhead\par%
+  \end{beamercolorbox}
+  \vfill
+  \end{frame}
+}
+
 
 % Tiempo total para dar la presentación: 60 minutos, 15 para preguntas
 
@@ -22,11 +37,17 @@ testigos usando la traducción de Friedman}
 
 \begin{document}
 
+
 \frame{\titlepage}
 
+\section{Introducción}
+
+% TODO: Considerar explicar que es un teorema y qué es la verificación
 \begin{frame}{Asistentes de demostración}
     \begin{itemize}
-        \item Los \textbf{asistentes de demostración} son herramientas que facilitan la escritura y el chequeo de demostraciones por computadora.
+        \item Los \textbf{asistentes de demostración} son herramientas que
+        facilitan la escritura y el chequeo de demostraciones por
+        computadora.
         \item Usos usuales: formalización de teoremas matemáticos y verificación de programas.
         \item Ventajas:\footnote{\href{https://youtu.be/AayZuuDDKP0?si=eGETzgh9PQ_8JecR}{Terrence Tao - Machine Assisted Proof}}
         \begin{itemize}
@@ -36,12 +57,27 @@ testigos usando la traducción de Friedman}
     \end{itemize}
 \end{frame}
 
+\begin{frame}{Asistentes de demostración}
+    Implementan distintas \textit{teorías}. \todo{No me gusta teoria, se usa
+    para teorias de primer orden}
+    Ejemplos:
+    \begin{itemize}
+        \item Mizar (lógica de primer orden)
+        \item Coq (teoría de tipos)
+        \item Agda (teoría de tipos)
+        \item Isabelle (lógica de orden superior / teoría de conjuntos ZF)
+    \end{itemize}
+\end{frame}
+
 \begin{frame}{Representación de demostraciones}
-    Queremos escribir demostraciones en la computadora. ¿Cómo las representamos? Veamos un ejemplo.
+    Queremos escribir demostraciones en la computadora. ¿Cómo las representamos?. Veamos un ejemplo.
     
     \begin{itemize}
-        \item Los alumnos que faltan a los exámenes, los reprueban.
-        \item Si se reprueba un final de una materia, se recursa.
+        \item Tenemos dos premisas
+        \begin{enumerate}
+            \item Los alumnos que faltan a los exámenes, los reprueban.
+            \item Si se reprueba un final, se recursa la materia.
+        \end{enumerate}
         \item Con estas dos, podríamos demostrar que si un alumno falta a un final, entonces recursa la materia.
     \end{itemize}
 
@@ -69,25 +105,178 @@ testigos usando la traducción de Friedman}
     \textit{modus tollens} (si es cierto $\form \fImp \formTwo$ y $\fNot
     \formTwo$, se puede concluir $\fNot\form$)
     \item \textbf{Axiomas}: fórmulas de $L$ que se asumen válidas. Todos los
-    teoremas se derivan de axiomas.
+    teoremas se derivan de axiomas. Se usan para modelar \textit{teorías} de
+    primer orden (por ej. teoría de estudiantes en la facultad).
         \end{itemize}
     \end{itemize}
 \end{frame}
 
 \begin{frame}{Lógica de primer orden}
-    
+
+\begin{definition}[Términos]
+    Los términos están dados por la gramática:
+    \begin{align*}
+        \term ::= &\ \var                               &\text{(variables)} \\
+                  & \mid \fun(\term_1, \dots, \term_n) &\text{(funciones)}
+    \end{align*}
+\end{definition}
+\begin{definition}[Fórmulas]
+    Las fórmulas están dadas por la gramática:
+    \begin{align*}
+        \form, \formTwo ::=
+         & \ \pred(\term_1, \dots, \term_n) & (\text{predicados})                \\
+         & \mid \fFalse                     
+           \mid \fTrue                      & \text{(falso o \textit{bottom} y verdadero o \textit{top})} \\
+         & \mid \form \fAnd \formTwo                        
+           \mid \form \fOr \formTwo           & \text{(conjunción y disyunción)}     \\
+         & \mid \form \fImp \formTwo                       
+           \mid \fNot \form                 & \text{(implicación y negación)}                  \\
+         & \mid \forall \var . \form        
+           \mid \exists \var . \form        & \text{(cuantificador universal y existencial)}
+    \end{align*}
+\end{definition}
+
 \end{frame}
 
-\begin{frame}{Asistentes de demostración}
-    Implementan distintas \textit{teorías}.
-    Ejemplos:
+\begin{frame}{Lógica de primer orden}
+Los predicados son \textbf{fórmulas atómicas}. Los de aridad 0 además son llamados \textit{variables proposicionales}.
+
+\begin{notation*}
+    Usamos
     \begin{itemize}
-        \item Mizar (lógica de primer orden)
-        \item Coq (teoría de tipos)
-        \item Agda (teoría de tipos)
-        \item Isabelle (lógica de orden superior / teoría de conjuntos ZF)
+        \item $\var, \varTwo, \varThree, \dots$ como \textbf{variables}.
+        \item $\fun, \funTwo, \funThree, \dots$ como \textbf{símbolos de función}.
+        \item $\pred, \predTwo, \predThree, \dots$ como \textbf{símbolos de predicado}.
+        \item $\term, \termTwo, \dots$ para referirnos a \textbf{términos}.
+        \item $\formLit, \formLitTwo, \formLitThree, \dots$, $\form, \formTwo, \formThree, \dots$ y $\anyForm, \anyFormTwo, \dots$ para referirnos a \textbf{fórmulas}.
+    \end{itemize}
+\end{notation*}
+\end{frame}
+
+\section{Deducción natural}
+
+\begin{frame}{Deducción natural}
+    \begin{definitions}
+        \begin{itemize}
+            \item $\ctx$ es un \textbf{contexto de demostración}, conjunto de
+            fórmulas que se asumen válidas
+            \item Notación: $\ctx, \anyForm = \ctx \cup \{\anyForm\}$
+            \item $\judG$ es la \textbf{relación de derivabilidad} definida a
+            partir de las \textit{reglas de inferencia}. Permite escribir
+            juicios $\ctx \judG \anyForm$.
+            \item Intuición: \textit{``$\anyForm$ es
+            una consecuencia de las suposiciones de $\ctx$''}
+            \item El juicio es cierto si en una cantidad finita de
+            pasos podemos concluir $\anyForm$ a partir de las fórmulas de
+            $\ctx$, los axiomas y las reglas de inferencia.
+            \item Decimos que
+            $\anyForm$ es \textit{derivable} a partir de $\ctx$.
+        \end{itemize}
+    \end{definitions}
+\end{frame}
+
+\begin{frame}{Reglas de inferencia}
+    \begin{definition}[Reglas de inferencia]
+        \begin{columns}
+            \column{0.5\textwidth}
+            \proofTreeAx
+            \proofTreeImpI
+            \proofTreeImpE
+            \column{0.5\textwidth}
+            \proofTreeAndI
+            \proofTreeAndEOne
+            \proofTreeAndETwo
+        \end{columns}
+        
+    \end{definition}
+    Dos tipos para cada conectivo y cuantificador, dada una fórmula formada con un conectivo:
+    \begin{itemize}
+        \item \textbf{Introducción}: ¿Cómo la demuestro?
+        \item \textbf{Eliminación}: ¿Cómo la uso para demostrar otra?
     \end{itemize}
 \end{frame}
+
+\begin{frame}{Ejemplo}
+    Vamos a demostrar el ejemplo informal en deducción natural. Lo modelamos
+    para un alumno y materia particulares. Notamos:
+    \begin{itemize}
+        \item $\reprueba \equiv \predReprueba(juan, \funFinal(logica))$
+        \item $\recursa \equiv \predRecursa(juan, logica)$
+        \item $\falta \equiv \predFalta(juan, \funFinal(logica))$
+    \end{itemize}
+
+    Queremos probar entonces 
+    \[
+        \Big(
+            (\falta \fImp \reprueba) \wedge (\reprueba \fImp \recursa)
+        \Big)
+        \fImp
+        (\falta \fImp \recursa)
+    \]
+\end{frame}
+
+\begin{frame}{Ejemplo}
+    \begin{prooftree}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{$\ctx \judG (\falta \fImp \reprueba) \wedge (\reprueba \fImp \recursa)$}
+        \RL{\ruleAndEOne}
+        \UnaryInfC{$\ctx \judG \reprueba \fImp \recursa$}
+        
+        \AxiomC{$\someProof$}
+        \noLine
+        \UnaryInfC{$\ctx \judG \reprueba$}
+        \RL{\ruleImpE}
+        \BinaryInfC{\(
+            \ctx =
+            (\falta \fImp \reprueba) \wedge (\reprueba \fImp \recursa),\
+            \falta
+            \judG
+            \recursa
+        \)}
+        \RL{\ruleImpI}
+        \UnaryInfC{\(
+            (\falta \fImp \reprueba) \wedge (\reprueba \fImp \recursa)
+            \judG
+            \falta \fImp \recursa 
+        \)}
+        \RL{\ruleImpI}
+        \UnaryInfC{\(
+            \judG
+            \Big(
+                (\falta \fImp \reprueba) \wedge (\reprueba \fImp \recursa)
+            \Big)
+            \fImp
+            (\falta \fImp \recursa)
+        \)}
+    \end{prooftree}
+
+    donde
+
+    \begin{prooftree}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{$\ctx \judG (\falta \fImp \reprueba) \wedge (\reprueba \fImp \recursa)$}
+        \RL{\ruleAndETwo}
+        \UnaryInfC{$\ctx \judG \falta \fImp \reprueba$}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{$\ctx \judG \falta$}
+        \RL{\ruleImpE}
+        \LL{$\someProof=$}
+        \BinaryInfC{$\ctx \judG \reprueba$}
+    \end{prooftree}
+\end{frame}
+
+\begin{frame}{Reglas de inferencia}
+    \begin{definitions}
+        
+    \end{definitions}
+\end{frame}
+
+% TODO: Considerar agregar ejemplo, pero seguro no alcanza el tiempo
+
+% Acá arranca lo viejo
 
 \begin{frame}{Introducción}
     \begin{itemize}
