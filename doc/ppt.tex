@@ -10,6 +10,9 @@
 \usepackage{sections/nd_rules}
 \setbeamertemplate{footline}[frame number]
 
+% https://tex.stackexchange.com/questions/464916/listing-inside-a-frame-using-beamer
+\lstset{language=ppa, xleftmargin=0.5cm}
+
 \usepackage{fitch}
 
 % https://tex.stackexchange.com/questions/178800/creating-sections-each-with-title-pages-in-beamers-slides
@@ -24,6 +27,11 @@
   \end{frame}
 }
 
+\newenvironment{command}
+    {
+        \begin{beamercolorbox}[sep=8pt,center,shadow=true,rounded=true]{block body}
+    }
+    {\end{beamercolorbox}}
 
 % Tiempo total para dar la presentación: 60 minutos, 15 para preguntas
 
@@ -78,8 +86,7 @@ testigos usando la traducción de Friedman}
         de primer orden.
         \item Permite hacer extracción de testigos: dada una demostración de
         $\exists \var . \pred(\var)$, encuentra $\term$ tal que $\pred(\term)$.
-        \item Aporte principal: implementación de extracción de testigos de
-        cierto tipo (que vemos después).
+        \item Aporte principal: implementación de extracción de testigos para lógica clásica de forma directa (vemos los detalles después).
     \end{itemize}
     
 \end{frame}
@@ -285,16 +292,22 @@ Los predicados son \textbf{fórmulas atómicas}. Los de aridad 0 además son lla
 
 \begin{frame}{Reglas de inferencia}
     \begin{definition}[Reglas de inferencia]
+        \proofTreeLEM
         \begin{columns}
             \begin{column}{0.5\textwidth}
                 \proofTreeFalseE
                 \proofTreeTrueI
-                \proofTreeLEM
             \end{column}
             \begin{column}{0.5\textwidth}
                 \proofTreeNotI
                 \proofTreeNotE
+            \end{column}
+        \end{columns}
+        \begin{columns}
+            \begin{column}{0.5\textwidth}
                 \proofTreeOrIOne
+            \end{column}
+            \begin{column}{0.5\textwidth}
                 \proofTreeOrITwo
             \end{column}
         \end{columns}
@@ -511,14 +524,36 @@ end
         (fórmula a demostrar) hasta agotarla por completo.
         \item Corresponden aproximadamente a reglas de inferencia de deducción
         natural (vistas como una demostración en el estilo de Fitch).
-        \item Llevan asociada un \textbf{contexto} con todas las hipótesis
+        \item Tienen disponible un \textbf{contexto} con todas las hipótesis
         asumidas (como axiomas) o demostradas (teoremas y comandos que
         demuestran hipótesis auxiliares).
     \end{itemize}
 \end{frame}
 
-\begin{frame}{by}
-    
+\begin{frame}{by - El mecanismo principal de demostración}
+    \begin{itemize}
+        \item \lstinline{<form> by <name>, ..., <name>} afirma que la fórmula es una consecuencia lógica de las fórmulas que corresponden a las hipótesis provistas.
+        \item Por debajo usa un \textit{solver} completo para lógica proposicional pero heurístico para primer órden.
+        \item Se usa para eliminar implicaciones y universales.
+        \item Usado por dos comandos principales: \lstinline{thus} y \lstinline{have}.
+    \end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]{Thus}
+    \begin{command}
+    \lstinline{thus <form> by <name>, ..., <name>}
+    \end{command}
+
+    Si \lstinline{<form>} es \textit{parte} de la tesis, y el \textit{solver} puede demostrar la implicación, lo demuestra automáticamente y lo descarga de la tesis.
+    \begin{columns}
+        \begin{column}{0.5\textwidth}
+            \lstinputlisting{listings/interfaz/by-imp.ppa}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \lstinputlisting{listings/interfaz/by-forall.ppa}
+        \end{column}
+    \end{columns}
 \end{frame}
 
 \section{Certificador}
