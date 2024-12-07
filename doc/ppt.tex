@@ -4,11 +4,13 @@
 %\usetheme{Warsaw}
 \usetheme{Madrid}
 \setbeamertemplate{navigation symbols}{} % remove navigation symbols
-\setbeamercolor{alerted text}{fg=orange}
+%\setbeamercolor{alerted text}{fg=orange}
 
 \usepackage{thesis}
 \usepackage{sections/nd_rules}
 \setbeamertemplate{footline}[frame number]
+
+\usepackage{fitch}
 
 % https://tex.stackexchange.com/questions/178800/creating-sections-each-with-title-pages-in-beamers-slides
 \AtBeginSection[]{
@@ -69,6 +71,19 @@ testigos usando la traducción de Friedman}
     \end{itemize}
 \end{frame}
 
+\begin{frame}{PPA}
+    \begin{itemize}
+        \item Diseñamos e implementamos \textbf{PPA} (\textit{Pani's Proof
+        Assistant}), un asistente de demostración para lógica \textbf{clásica}
+        de primer orden.
+        \item Permite hacer extracción de testigos: dada una demostración de
+        $\exists \var . \pred(\var)$, encuentra $\term$ tal que $\pred(\term)$.
+        \item Aporte principal: implementación de extracción de testigos de
+        cierto tipo (que vemos después).
+    \end{itemize}
+    
+\end{frame}
+
 \begin{frame}{Representación de demostraciones}
     Queremos escribir demostraciones en la computadora. ¿Cómo las representamos?. Veamos un ejemplo.
     
@@ -78,7 +93,7 @@ testigos usando la traducción de Friedman}
             \item Los alumnos que faltan a los exámenes, los reprueban.
             \item Si se reprueba un final, se recursa la materia.
         \end{enumerate}
-        \item Con estas dos, podríamos demostrar que si un alumno falta a un final, entonces recursa la materia.
+        \item A partir de ellas, podríamos demostrar que si un alumno falta a un final, entonces recursa la materia.
     \end{itemize}
 
     \begin{block}{Teorema}
@@ -269,10 +284,255 @@ Los predicados son \textbf{fórmulas atómicas}. Los de aridad 0 además son lla
 \end{frame}
 
 \begin{frame}{Reglas de inferencia}
-    \begin{definitions}
-        
-    \end{definitions}
+    \begin{definition}[Reglas de inferencia]
+        \begin{columns}
+            \begin{column}{0.5\textwidth}
+                \proofTreeFalseE
+                \proofTreeTrueI
+                \proofTreeLEM
+            \end{column}
+            \begin{column}{0.5\textwidth}
+                \proofTreeNotI
+                \proofTreeNotE
+                \proofTreeOrIOne
+                \proofTreeOrITwo
+            \end{column}
+        \end{columns}
+        \proofTreeOrE
+    \end{definition}
 \end{frame}
+
+\begin{frame}{Reglas de inferencia}
+    \begin{definition}[Sustitución]
+        Notamos como $\form \subst{\var}{\term}$ a la sustitución de todas las
+        ocurrencias libres de la variable $\var$ por el término $\term$ en la
+        fórmula $\form$.
+    \end{definition}
+    \begin{definition}[Reglas de cuantificadores]
+        \begin{columns}
+            \column{0.5\textwidth}
+            \proofTreeForallI
+            \column{0.5\textwidth}
+            \proofTreeForallE
+        \end{columns}
+        \proofTreeExistsI
+        \proofTreeExistsE
+    \end{definition}
+\end{frame}
+
+\begin{frame}{Reglas admisibles}
+    \begin{itemize}
+        \item Mencionamos \textit{modus tollens} pero no aparece en las reglas de inferencia.
+        \item Queremos un sistema lógico \textbf{minimal}: no agregamos como
+        regla de inferencia lo que podemos derivar a partir de las existentes,
+        las reglas \textbf{admisibles}.
+        \item Se implementan como \textit{macros}: cada uso de la regla
+        admisible se reemplaza por su demostración.
+    \end{itemize} 
+
+    \begin{lemma}[Modus tollens]
+        
+    \begin{prooftree}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{\(\ctx \judG (\form \fImp \formTwo) \fAnd \fNot \formTwo\)}
+        \RL{\ruleAndETwo}
+        \UnaryInfC{\(
+            \ctx \judG \fNot \formTwo
+        \)}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{\(\ctx \judG (\form \fImp \formTwo) \fAnd \fNot \formTwo\)}
+        \RL{\ruleAndEOne}
+        \UnaryInfC{$\ctx \judG \form \fImp \formTwo$}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{$\ctx \judG \form$}
+        \RL{\ruleImpE}
+        \BinaryInfC{\(
+            \ctx \judG \formTwo
+        \)}
+        \RL{\ruleNotE{}}
+        \BinaryInfC{\(
+            \ctx = (\form \fImp \formTwo) \fAnd \fNot \formTwo, \form
+            \judG
+            \fFalse
+        \)}
+        \RL{\ruleNotI{}}
+        \UnaryInfC{\(
+            (\form \fImp \formTwo) \fAnd \fNot \formTwo
+            \judG
+            \fNot \form
+        \)}
+        \RL{\ruleImpI{}}
+        \UnaryInfC{\(\judG
+            (\form \fImp \formTwo \fAnd \fNot \formTwo)
+            \fImp \fNot\form
+        \)}
+    \end{prooftree}
+    \end{lemma}
+\end{frame}
+
+\begin{frame}{Sustitución sin capturas}
+    Para la sustitución $\form \subst{\var}{\term}$ queremos evitar la
+    \textbf{captura de variables}, por ejemplo
+    \[
+        (\forall \varTwo . \pred(\var))\subst{\var}{\varTwo} \overset{?}{=}
+        \forall \varTwo . \pred(\alert{\varTwo})
+    \]
+    sustituyendo sin más, capturamos a la variable $\var$ que ahora está ligada.
+    Lo evitamos \textbf{automáticamente}: cuando se encuentra con una captura,
+    se renombra la variable ligada de forma que no ocurra
+    \[
+        (\forall \varTwo . \pred(\var))\subst{\var}{\varTwo} =
+        \forall \alert{\varThree} . \pred(\varTwo)
+    \]
+\end{frame}
+
+\begin{frame}{Alfa equivalencia}
+    \begin{itemize}    
+        \item Si tenemos una hipótesis $\exists \var . \pred(\var)$ queremos poder
+        usarla para demostrar $\exists \varTwo . \pred(\varTwo)$.
+        \item No son iguales, pero son \textbf{\bm{$\alpha$}-equivalentes}: si
+        renombramos variables ligadas de forma apropiada, son iguales.
+        \item Algoritmo naíf: cuadrático en la estructura de la fórmula,
+        renombrando recursivamente.
+        \item Algoritmo cuasilineal: manteniendo dos sustituciones, una por
+        fórmula.
+    \end{itemize}
+    \begin{example}
+        \begin{align*}
+            (\exists \var . \fun(\var)) &\alphaEq (\exists \varTwo . \fun(\varTwo))
+            &&\{\}, \{\}
+            \\
+            &\iff \fun(\var) \alphaEq \fun(\varTwo)
+                &&\{\var \mapsto \varThree\}, \{\varTwo \mapsto \varThree\}\\
+            &\iff \var \alphaEq \varTwo
+                &&\{\var \mapsto \varThree\}, \{\varTwo \mapsto \varThree\}\\
+            &\iff \varThree = \varThree.
+        \end{align*}        
+    \end{example}
+\end{frame}
+
+\section{PPA}
+
+\begin{frame}{Mathematical vernacular}
+    Aparentemente hay una forma canónica de presentar demostraciones matemáticas\footnote{\textit{Mathematical
+    Vernacular} de Freek Wiedijk}. Descubierta e implementada independientemente en Mizar,
+    Isar (Isabelle), etc. Combinación de ideas:
+
+    \begin{itemize}
+        \item \textbf{Deducción natural en estilo de \textit{Fitch}}. Notación
+        equivalente en la cual las demostraciones son
+        representadas como listas de fórmulas en lugar de árboles. Las que
+        aparecen antes justifican las que aparecen después.
+        \item \textbf{Reglas de inferencia \textit{``big step''}}: una forma de afirmar
+        que $\form_1, \dots, \form_n \judG \form$ es válida, sin
+        tener que demostrarlo a mano.
+        \item \textbf{Sintaxis similar a un lenguaje de programación} en lugar del
+        lenguaje natural usado para demostraciones.
+    \end{itemize}
+\end{frame}
+
+
+% \begin{frame}{Deducción natural en estilo de Fitch}
+%     En vez de árboles,
+%     las demostraciones son listas de fórmulas, con las anteriores
+%     justificando las posteriores.
+%     \todo{Considerar dar un ejemplo para clarificar}
+% \end{frame}
+
+\begin{frame}[fragile]{PPA}
+    Diseñamos e implementamos el \textit{lenguaje} PPA, inspirado en el
+    \textit{mathematical vernacular}. Ejemplo:
+    \lstinputlisting{listings/ppt/alumnos-corto.ppa}
+\end{frame}
+
+\begin{frame}[fragile]{Programas}
+    Un \textbf{programa} de PPA consiste en una lista de \textbf{declaraciones},
+    que pueden ser
+    \begin{itemize}
+        \item \textbf{Axiomas}: fórmulas que se asumen válidas
+        \begin{lstlisting}[numbers=none]
+axiom <name> : <form>
+        \end{lstlisting}
+        \item \textbf{Teoremas}: fórmulas junto con sus demostraciones.
+\begin{lstlisting}[numbers=none]
+theorem <name> : <form>
+proof
+    <steps>
+end
+\end{lstlisting}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Identificadores}
+    \begin{itemize}
+        \item \textbf{Variables} (\lstinline{<var>})
+        \begin{center}
+            \verb/(\_|[A-Z])[a-zA-Z0-9\_\-]*(\')*/
+        \end{center}
+        \item \textbf{Identificadores} (\lstinline{<id>})
+        \begin{center}
+            \verb/[a-zA-Z0-9\_\-\?!#\$\%\*\+\<\>\=\?\@\^]+(\')*/
+        \end{center}
+        \item \textbf{Nombres} (\lstinline{<name>}) 
+        \begin{center}
+            \verb/\"[^\"]*\"/
+        \end{center}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Fórmulas y términos}
+    Términos:
+    \begin{itemize}
+        \item Variables: \lstinline{<var>}
+        \item Funciones: \lstinline{<id>(<term>, ..., <term>)}
+    \end{itemize}
+
+    Funciones:
+    \begin{itemize}
+        \item Predicados: \lstinline{<id>(<term>, ..., <term>)}
+        \item \lstinline{<form> & <form>}
+        \item \lstinline{<form> | <form>}
+        \item \lstinline{<form> -> <form>}
+        \item \lstinline{<form> <-> <form>}
+        \item \lstinline{~ <form>}
+        \item \lstinline{exists <var> . <form>}
+        \item \lstinline{forall <var> . <form>}
+        \item \lstinline{true}, \lstinline{false}
+        \item \lstinline{(<form>)}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Demostraciones}
+    \begin{itemize}
+        \item Lista de comandos que reducen sucesivamente la \textit{tesis}
+        (fórmula a demostrar) hasta agotarla por completo.
+        \item Corresponden aproximadamente a reglas de inferencia de deducción
+        natural (vistas como una demostración en el estilo de Fitch).
+        \item Llevan asociada un \textbf{contexto} con todas las hipótesis
+        asumidas (como axiomas) o demostradas (teoremas y comandos que
+        demuestran hipótesis auxiliares).
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{by}
+    
+\end{frame}
+
+\section{Certificador}
+
+\begin{frame}{Certificados}
+    \begin{itemize}
+        \item Las demostraciones de \ppaLang se \textit{certifican} generando
+        una demostración de deducción natural.
+        \item Cumple con el criterio de de bruijn 
+    \end{itemize}
+    
+\end{frame}
+
+\section{Extracción de testigos}
 
 % TODO: Considerar agregar ejemplo, pero seguro no alcanza el tiempo
 
@@ -322,139 +582,6 @@ Los predicados son \textbf{fórmulas atómicas}. Los de aridad 0 además son lla
         \item Cumplida por Coq, pero no Mizar\footnote{\href{https://www.researchgate.net/publication/225341870_A_Brief_Overview_of_Mizar}{Adam Naumowicz - A brief overview of Mizar}}.
     \end{itemize}
 
-\end{frame}
-
-\begin{frame}{Deducción natural}
-    \begin{itemize}
-        \item Los certificados emitidos por PPA son demostraciones en \textbf{deducción natural}.
-        \item Es un sistema lógico que nos permite construir demostraciones mediante reglas de inferencia
-        \item Estas reglas definen la relación $\Gamma \vdash \varphi$. 
-        
-        Intuición: ``$\varphi$ es una consecuencia de las suposiciones de $\Gamma$''
-    \end{itemize}
-\end{frame}
-
-\begin{frame}{Deducción natural}
-    \begin{block}{Reglas}
-
-\begin{columns}
-    \column{0.5\textwidth}
-
-      \begin{prooftree}
-        \AxiomC{}
-        \RL{Ax}
-        \UnaryInfC{$\judg{\ctx, \form}{\form}$}
-    \end{prooftree}
-\begin{prooftree}
-    \AxiomC{$\judg{\ctx, \form}{\formTwo}$}
-    \RL{\ruleI{$\to$}}
-    \UnaryInfC{$\judg{\ctx}{\form \to \formTwo}$}
-\end{prooftree}
-
-\begin{prooftree}
-    \AxiomC{$\judg{\ctx}{\form \to \formTwo}$}
-    \AxiomC{$\judg{\ctx}{\form}$}
-    \RL{\ruleE{$\to$}}
-    \BinaryInfC{$\judg{\ctx}{\formTwo}$}
-\end{prooftree}
-
-    \column{0.5\textwidth}
-\begin{prooftree}
-    \AxiomC{$\judg{\ctx}{\form}$}
-    \AxiomC{$\judg{\ctx}{\formTwo}$}
-    \RL{\ruleI{$\wedge$}}
-    \BinaryInfC{$\judg{\ctx}{\form \wedge \formTwo}$}
-\end{prooftree}
-
-    \begin{prooftree}
-        \AxiomC{$\judg{\ctx}{\form \wedge \formTwo}$}
-        \RL{\ruleE{$\wedge_1$}}
-        \UnaryInfC{$\judg{\ctx}{\form}$}
-    \end{prooftree}
-    \begin{prooftree}
-        \AxiomC{$\judg{\ctx}{\form \wedge \formTwo}$}
-        \RL{\ruleE{$\wedge_2$}}
-        \UnaryInfC{$\judg{\ctx}{\formTwo}$}
-    \end{prooftree}
-    \end{columns}
-
-    \end{block}
-
-    Dos tipos de regla: 
-    \begin{itemize}
-        \item \textbf{introducción}: ¿cómo lo demuestro?
-        \item \textbf{eliminación}: ¿cómo lo uso para demostrar otra cosa?
-    \end{itemize}
-\end{frame}
-
-\begin{frame}{Deducción natural}
-    \begin{exampleblock}{Demostración de ejemplo}
-    \begin{prooftree}
-        
-        \AxiomC{}
-        \RL{Ax}
-        \UnaryInfC{$\judg{\Gamma}{(A \to B) \wedge (B \to C)}$}
-        \RL{\ruleE{$\wedge_2$}}
-        \UnaryInfC{$\judg{\Gamma}{B \to C}$}
-
-        \AxiomC{$\vdots$}
-        \RL{\ruleE{$\wedge_1$}}
-        \UnaryInfC{$\judg{\Gamma}{A \to B}$}
-        
-        \AxiomC{}
-        \RL{Ax}
-        \UnaryInfC{$\judg{\Gamma}{A}$}
-        
-        \RL{\ruleE{$\to$}}        
-        \BinaryInfC{$\judg{\Gamma}{B}$}
-        
-        \RL{\ruleE{$\to$}}
-        \BinaryInfC{$\judg{\alert{\Gamma =} \big((A \to B) \wedge (B \to C)\big), A}{C}$}
-        \RL{\ruleI{$\to$}}
-        \UnaryInfC{$\judg{\big((A \to B) \wedge (B \to C)\big)}{A \to C}$}
-        \RL{\ruleI{$\to$}}
-        \UnaryInfC{$\judg{}{\big((A \to B) \wedge (B \to C)\big)\to (A \to C)}$}
-    \end{prooftree}
-    \end{exampleblock}
-\end{frame}
-
-\begin{frame}{Deducción natural}
-    \begin{block}{Reglas de cuantificadores}
-    \begin{prooftree}
-        \AxiomC{$\judg{\ctx}{\form}$}
-        \AxiomC{$x \notin fv(\ctx)$}
-        \RL{\ruleI{$\forall$}}
-        \BinaryInfC{$\judg{\ctx}{\forall \var.\form}$}
-    \end{prooftree}
-    \begin{prooftree}
-        \AxiomC{$\judg{\ctx}{\forall \var.\form}$}
-        \RL{\ruleE{$\forall$}}
-        \UnaryInfC{$\judg{\ctx}{\form \{\var := \term\}}$}
-    \end{prooftree}
-
-    \begin{prooftree}
-    \AxiomC{$\judg{\ctx}{\form\{\var := \term\}}$}
-    \RL{\ruleI{$\exists$}}
-    \UnaryInfC{$\judg{\ctx}{\exists \var. \form}$}
-\end{prooftree}
-
-\begin{prooftree}
-    \AxiomC{$\judg{\ctx}{\exists \var.\form}$}
-    \AxiomC{$\judg{\ctx, \form}{\formTwo}$}
-    \AxiomC{$x \notin fv(\ctx, \formTwo)$}
-    \RL{\ruleE{$\exists$}}
-    \TrinaryInfC{$\judg{\ctx}{\formTwo}$}
-\end{prooftree}
-
-    \end{block}
-    
-\end{frame}
-
-\begin{frame}{PPA}
-    \begin{figure}
-    \centering
-    %\includegraphics[width=1\linewidth]{arch.png}
-\end{figure}
 \end{frame}
 
 \begin{frame}{PPA}
