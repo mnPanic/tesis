@@ -35,6 +35,10 @@
     }
     {\end{beamercolorbox}}
 
+
+% Justificaciones
+\newcommand{\just}[1]{\textcolor{violet}{(#1)}}
+
 % Tiempo total para dar la presentación: 60 minutos, 15 para preguntas
 
 % Notas
@@ -441,21 +445,13 @@ Los predicados son \textbf{fórmulas atómicas}. Los de aridad 0 además son lla
         equivalente en la cual las demostraciones son
         representadas como listas de fórmulas en lugar de árboles. Las que
         aparecen antes justifican las que aparecen después.
-        \item \textbf{Reglas de inferencia \textit{``big step''}}: una forma de afirmar
+        \item \textbf{Reglas de inferencia \textit{declarativas}}: una forma de afirmar
         que $\form_1, \dots, \form_n \judG \form$ es válida, sin
         tener que demostrarlo a mano.
         \item \textbf{Sintaxis similar a un lenguaje de programación} en lugar del
         lenguaje natural usado para demostraciones.
     \end{itemize}
 \end{frame}
-
-
-% \begin{frame}{Deducción natural en estilo de Fitch}
-%     En vez de árboles,
-%     las demostraciones son listas de fórmulas, con las anteriores
-%     justificando las posteriores.
-%     \todo{Considerar dar un ejemplo para clarificar}
-% \end{frame}
 
 \begin{frame}[fragile]{PPA}
     Diseñamos e implementamos el \textit{lenguaje} PPA, inspirado en el
@@ -569,7 +565,15 @@ end
     Análogo a \lstinline{thus}, pero introduce una afirmación \textit{auxiliar}
     sin reducir la tesis, agregándola al contexto.
     
-    \lstinputlisting[title=Eliminación de implicación en dos pasos]{listings/interfaz/by-imp-have.ppa}
+    \begin{figure}[H]
+        \centering
+        \small Eliminación de implicación en dos pasos
+        
+        \begin{tabular}{c}
+            \lstinputlisting{listings/interfaz/by-imp-have.ppa}
+        \end{tabular}
+    \end{figure}
+
 \end{frame}
 
 \begin{frame}[fragile]{Hipótesis anterior}
@@ -613,7 +617,14 @@ end
         \item Vale para todas las tautologías proposicionales.
     \end{itemize}
 
-    \lstinputlisting[title=Tautología proposicional]{listings/interfaz/by-taut.ppa}
+    \begin{figure}[H]
+        \centering
+        \small Tautología proposicional
+        
+        \begin{tabular}{c}
+            \lstinputlisting{listings/interfaz/by-taut.ppa}
+        \end{tabular}
+    \end{figure}
 \end{frame}
 
 \begin{frame}{Comandos y reglas de inferencia}
@@ -809,395 +820,293 @@ end
 \section{Certificador}
 
 \begin{frame}{Certificados}
-    \begin{itemize}
-        \item Las demostraciones de \ppaLang se \textit{certifican} generando
-        una demostración de deducción natural.
-        \item Cumple con el criterio de de bruijn 
-    \end{itemize}
+    \begin{columns}
+        
+        \begin{column}{0.5\textwidth}
+            \begin{itemize}
+                \item Las demostraciones de \ppaLang{} se \textit{certifican} generando
+                una demostración de deducción natural.
+                \item No deberían generarse demostraciones erróneas, pero son chequeadas independientemente como mecanismo de \textit{fallback}.
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            
+            \begin{figure}
+                \includegraphics[scale=0.32]{img/ppt/certify.png}
+                \centering
+                \title{Arquitectura del certificador}
+            \end{figure}
+        \end{column}
+    \end{columns}
 
+    \begin{block}{Criterio de de Bruijn}
+        Un asistente de demostración cumple con el criterio de de Bruijn si
+        satisface que sus demostraciones puedan ser chequeadas por un programa
+        independiente, pequeño y confiable.
+    \end{block}
+\end{frame}
+
+\begin{frame}{Contexto global}
+    Se generan $N$ demostraciones de deducción natural para cada programa, y se guardan en el \textit{contexto global}. El chequeo se extiende a contextos.
+    
     \begin{figure}
-        \includegraphics[scale=0.2]{img/ppt/certify.png}
-        \centering
-        \title{Arquitectura del certificador}
+        \begin{columns}
+            \begin{column}{0.4\textwidth}
+                \begin{tabular}{c}
+                    \lstinputlisting{listings/certifier/two-theorems.ppa}
+                \end{tabular}
+            \end{column}
+            \begin{column}{0.3\textwidth}
+                \includegraphics[scale=0.4]{img/ppa-context.png}
+            \end{column}
+        \end{columns}
+        \caption{Contexto resultante de certificar un programa}
     \end{figure}
+\end{frame}
+
+\begin{frame}{Certificado de demostraciones}
+    El certificado de una demostración es recursivo: se certifica cada comando, generando una demostración en deducción natural cuyas premisas son el certificado del resto de la demostración en PPA.
+    \begin{figure}
+        \begin{columns}
+            \begin{column}{0.45\textwidth}
+                \begin{tabular}{c}
+                    \lstinputlisting{listings/ppt/certificado.ppa}
+                \end{tabular}
+    
+            \end{column}
+            \begin{column}{0.35\textwidth}
+                \begin{prooftree}
+                    \AxiomC{}
+                    \RL{\alert{\ruleAxh{h}}}
+                    \UnaryInfC{$h: p(v) \judG p(v)$}
+                    \RL{\ruleExistsI}
+                    \UnaryInfC{$h: p(v) \judG \exists x . p(X)$}
+                    \RL{\ruleImpIh{h}}
+                    \UnaryInfC{$\judG p(v) \fImp \exists x . p(X)$}
+                \end{prooftree}
+    
+            \end{column}
+        \end{columns}
+        \caption{Ejemplo de certificado generado para un programa}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Contexto local}
+    Cada demostración tiene un contexto local a ella con las hipótesis agregadas por ciertos comandos (\lstinline{suppose}, \lstinline{consider}, \lstinline{have}, \lstinline{claim}, etc.). Necesaria para obtener las fórmulas asociadas a las hipótesis en el \lstinline{by}.
+
+    \begin{figure}[h]
+        \centering
+        \begin{columns}
+            \begin{column}{0.5\textwidth}
+                \begin{tabular}{c}
+                    \lstinputlisting{listings/certifier/local-context.ppa}
+                \end{tabular}
+            \end{column}
+            \begin{column}{0.35\textwidth}
+                \includegraphics[scale=0.33]{img/ppa-local-context.png}
+            \end{column}
+        \end{columns}
+        \caption{Ejemplo de contexto local}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Certificado del by}
+    Teniendo $\ctx = \{\hypId_1: \formTwo_1, \dots, \hypId_n: \formTwo_n\}$, para certificar \lstinline{thus A by h1, ..., hn}:
+
+    \begin{enumerate}
+        \item Buscamos las hipótesis en el contexto. Queremos demostrar
+        \[
+            \formTwo_1 \fAnd \dots \fAnd \formTwo_n \fImp \form
+        \]
+        \item \textbf{Razonamos por el absurdo}: Asumiendo la negación buscamos una contradicción
+        \begin{align*}
+            \fNot (\formTwo_1 \fAnd \dots \fAnd \formTwo_n \fImp \form)
+            &\equiv \fNot (\fNot (\formTwo_1 \fAnd \dots \fAnd \formTwo_n) \fOr \form)\\
+            &\equiv \formTwo_1 \fAnd \dots \fAnd \formTwo_n \fAnd \fNot \form
+        \end{align*}
+        \item Convertimos la negación a forma normal disyuntiva (\textbf{DNF})
+        \[
+            (\formLit_{1} \fAnd \dots \fAnd \formLit_n)
+            \fOr \dots \fOr
+            (\formLitTwo_{1} \fAnd \dots \fAnd \formLitTwo_m)
+        \]
+        \item Buscamos una \textbf{contradicción} refutando cada cláusula individualmente. Será refutable si
+        \begin{itemize}
+            \item Contiene $\fFalse$ o dos fórmulas opuestas ($\formLit, \fNot \formLit$), 
+            \item Eliminando existenciales consecutivos y reiniciando el proceso, se consigue una refutación ($\fNot \pred(k), \forall \var . \pred(\var)$)
+        \end{itemize}
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}{Ejemplo sin cuantificadores (1/2)}
+    Tenemos el siguiente programa
+
+    \begin{figure}[H]
+        \centering
+        \begin{tabular}{c}
+            \lstinputlisting{listings/certifier/by-modus-ponens.ppa}
+        \end{tabular}
+    \end{figure}
+    \begin{enumerate}
+        \item Para certificar \lstinline{thus b by ax1, ax2} hay que generar una
+        demostración para la implicación \[\big((a \fImp b) \wedge a \big)\fImp b\]
+        \item Negamos la fórmula 
+        \[ \fNot [ \big( (a \to b) \fAnd a \big) \to b ] \]
+    \end{enumerate}
+\end{frame}
+\begin{frame}{Ejemplo sin cuantificadores (2/2)}
+    \begin{enumerate}
+        \setcounter{enumi}{2}
+        \item La convertimos a DNF
+        \begin{align*}
+            &\fNot [ \big( (a \to b) \fAnd a \big) \to b ] \\
+            &\equiv \fNot [ \fNot \big( (a \to b) \fAnd a \big) \fOr b ]
+                && \just{\form \to \formTwo \equiv \fNot \form \fOr \formTwo}\\
+            &\equiv \fNot \fNot \big( (a \to b) \fAnd a \big) \fAnd \fNot b
+                && \just{\fNot(\form \fOr \formTwo) \equiv \fNot \form \fAnd \fNot \formTwo}\\
+            &\equiv \big( (a \to b) \fAnd a \big) \fAnd \fNot b
+                && \just{\fNot\fNot \form \equiv \form}\\
+            &\equiv (\fNot a \fOr b) \fAnd a \fAnd \fNot b
+                 && \just{\form \to \formTwo \equiv \fNot \form \fOr \formTwo}\\
+            &\equiv (\fNot a \fOr b) \fAnd a \fAnd \fNot b
+                && \just{(\form \fOr \formTwo) \fAnd \formThree \equiv (\form \fAnd \formThree) \fOr (\formTwo \fAnd \formThree)}\\
+            &\equiv \begin{aligned}[t]
+                &(\fNot a \fAnd a \fAnd \fNot b)\ \vee\\
+                &(b \fAnd a \fAnd \fNot b)
+            \end{aligned}
+        \end{align*}
+        \item Refutamos cada cláusula
+        \[
+            (\alert{\fNot a} \fAnd \alert{a} \fAnd \fNot b) \vee
+            (\alert{b} \fAnd a \fAnd \alert{\fNot b})
+        \]
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}{Ejemplo con cuantificadores (1/3)}
+    Tenemos el siguiente programa
+
+    \begin{figure}[H]
+        \centering
+        \begin{tabular}{c}
+            \lstinputlisting{listings/certifier/by-modus-ponens-quant.ppa}
+        \end{tabular}
+    \end{figure}
+
+    \begin{enumerate}
+        \item Para certificar \lstinline{thus q(a) by ax1, ax2} hay que generar una
+        demostración para la implicación \[
+            \Big(\big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(a) \Big)
+            \fImp q(a)
+        \]
+        \item Negamos la fórmula 
+        \[
+            \fNot \left[
+            \Big(\big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(a) \Big)
+            \fImp q(a)
+        \right]
+        \]
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}{Ejemplo con cuantificadores (2/3)}
+    \begin{enumerate}
+        \setcounter{enumi}{2}
+        \item La convertimos a DNF
+        \begin{align*}
+            &\fNot \left[
+                \Big(\big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(a) \Big)
+                \fImp q(a)
+            \right] \\
+            &\equiv \fNot \left[
+                \fNot \Big(\big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(a) \Big)
+                \fOr q(a)
+            \right] \\
+            &\equiv
+                \fNot \fNot \Big(\big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(a) \Big)
+                \fAnd \fNot q(a)\\
+            &\equiv \big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(a)
+            \fAnd \fNot q(a)
+        \end{align*}
+
+        como a los ojos de DNF un $\forall$ es opaco, a pesar de que dentro
+        tenga una implicación, la fórmula ya está en forma normal.
+
+        \item Buscamos una contradicción refutando cada cláusula. No hay forma
+        encontrando literales opuestos o $\fFalse$, por ej. la cláusula
+        $p(a)$ no es refutable.
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}{Ejemplo con cuantificadores (3/3)}
+    \begin{enumerate}
+        \setcounter{enumi}{4}
+        \item Probamos eliminando $\forall x. (p(x) \fImp q(x))$. Reemplazamos
+        $x$ por una meta-variable fresca $\metavar{u}$.
+        \[
+            (p(\metavar{u}) \fImp q(\metavar{u})) \fAnd p(a) \fAnd \fNot q(a)
+        \]
+        \item Convertimos a DNF
+        \begin{align*}
+            &(p(\metavar{u}) \fImp q(\metavar{u})) \fAnd p(a) \fAnd \fNot q(a)\\
+            &\equiv (\fNot p(\metavar{u}) \fOr q(\metavar{u})) \fAnd p(a) \fAnd \fNot q(a)\\
+            &\equiv ( (\fNot p(\metavar{u}) \fAnd p(a)) \fOr (q(\metavar{u}) \fAnd p(a))) \fAnd \fNot q(a)\\
+            &\equiv 
+            \begin{aligned}[t]
+                &(\fNot p(\metavar{u}) \fAnd p(a) \fAnd \fNot q(a))\ \fOr\\
+                &(q(\metavar{u}) \fAnd p(a)\fAnd \fNot q(a))
+            \end{aligned}
+        \end{align*}
+        \item Buscamos una contradicción refutando cada cláusula. Los
+        literales opuestos tienen que \textit{unificar} en lugar de ser iguales.
+        \begin{itemize}
+            \item $\alert{\fNot p(\metavar{u})} \fAnd \alert{p(a)} \fAnd \fNot q(a)$ tenemos $p(\metavar{u}) \unify p(a)$ con $\subst{\metavar{u}}{a}$
+            \item $\alert{q(\metavar{u})} \fAnd p(a) \fAnd \alert{\fNot q(a)}$ tenemos $q(\metavar{u}) \unify q(a)$ con $\subst{\metavar{u}}{a}$
+        \end{itemize}
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}{Deducción natural}
+    \begin{alertblock}{Desafío}
+        ¡Hay que generar una demostración en deducción natural!
+    \end{alertblock}
+
+    Pasos
+
+    \begin{itemize}
+        \item \textbf{Razonamiento por el absurdo}: mediante las \textit{reglas admisibles} cut y eliminación de la doble negación (\ruleDnegE).
+        \item \textbf{Conversión a DNF}: mediante la implementación de un \textit{sistema de reescritura}.
+        \item \textbf{Contradicciones}: mediante la \textit{regla admisible} \ruleAndEProj{\anyForm} + \ruleOrE{} + \ruleNotI{}.
+        \item \textbf{Eliminación de cuantificadores universales}: mediante unificación y \ruleForallE{}.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Razonamiento por el absurdo}
+    
+\end{frame}
+
+\begin{frame}{Conversión a DNF}
+    
+\end{frame}
+
+\begin{frame}{Contradicciones}
+    
+\end{frame}
+
+\begin{frame}{Alcance y limitaciones}
+    \begin{itemize}
+        \item Completo para lógica proposicional y heurístico para primer orden. Esto es aceptable, la validez de LPO es indecidible (Teorema de Church).
+    \end{itemize}
+\end{frame}
+
+% Considerar saltear esto si no da el tiempo
+\begin{frame}{Descarga de conjunciones}
+    
 \end{frame}
 
 \section{Extracción de testigos}
 
-% TODO: Considerar agregar ejemplo, pero seguro no alcanza el tiempo
-
-% Acá arranca lo viejo
-
-\begin{frame}{Introducción}
-    \begin{itemize}
-        \item PPA (\textit{Pani's proof assistant}) es un \textbf{asistente de demostraciones} inspirado en Mizar.
-        \item Es un \textbf{lenguaje de programación} implementado en Haskell que permite escribir y chequear demostraciones en lógica \textit{clásica} de primer órden.
-        \item A diferencia de Prolog, \textbf{no demuestra todo automáticamente}*. Deben ser escritas \textit{rigurosamente} por el usuario.
-        \item (WIP) permite la extracción de testigos mediante la \textbf{traducción de Friedman}.
-    \end{itemize}
-\end{frame}
-
-\begin{frame}{Asistentes de demostraciones (\textit{proof assistants})}
-    \begin{itemize}
-        \item Son programas que \textit{asisten} al usuario a la hora de escribir demostraciones, permiten representarlas en un programa
-        \item Aplicaciones: Formalización de teoremas, verificación formal de programas, etc.
-        \item Ejemplos: Coq, Isabelle (Isar), \textbf{Mizar}, $\dots$
-        \item Ventajas\footnote{\href{https://youtu.be/AayZuuDDKP0?si=eGETzgh9PQ_8JecR}{Terrence Tao - Machine Assisted Proof}}:
-        \begin{itemize}
-            \item facilitan colaboración a gran escala (via confianza en el checker)
-            \item habilitan generación automática de demostraciones con ML. Un LLM suele devolver alucinaciones, pero pueden ser chequeadas
-        \end{itemize}
-        
-    \end{itemize}
-\end{frame}
-
-% TODO: Considerar mover para adelante
-
-% TODO: usar referencias bien
-
-\begin{frame}{Arquitectura de PPA}
-
-\begin{figure}
-    \centering
-    %\includegraphics[width=1\linewidth]{arch.png}
-\end{figure}
-
-\end{frame}
-
-\begin{frame}{¿Por qué certificados?}
-
-    \begin{itemize}
-        \item Si formalizamos una demostración en PPA y queremos chequear que sea correcta, hay que confiar en la implementación del \textit{proof assistant}.
-        \item \textbf{Criterio de De Brujin}: si guardamos una demostración de bajo nivel de forma completa, puede ser chequeada por un programa independiente (que es sencillo de implementar).
-        \item Cumplida por Coq, pero no Mizar\footnote{\href{https://www.researchgate.net/publication/225341870_A_Brief_Overview_of_Mizar}{Adam Naumowicz - A brief overview of Mizar}}.
-    \end{itemize}
-
-\end{frame}
-
-\begin{frame}{PPA}
-    \begin{itemize}
-        \item Es un lenguaje. Frontend implementado con un \textit{parser generator} (happy + alex)
-        \item Permite definir axiomas y teoremas con sus demostraciones, que al \textbf{certificarse} generan una demostración en deducción natural.
-        \item Basado en \textit{Mathematical Vernacular}\footnote{\href{https://www.cs.ru.nl/~freek/notes/mv.pdf}{The Mathematical Vernacular - Freek Wiedijk}}: un leguaje formal para escribir demostraciones similar al natural.
-    \end{itemize}
-\end{frame}
 
 
-\begin{frame}[fragile]{Ejemplo}
-    Una demostración es una secuencia de \textit{comandos}, que pueden ir sucesivamente reduciendo la \textit{tesis} (objetivo a probar) y agregando hipótesis a un contexto. Se mapean a reglas de deducción natural.
-
-\begin{block}{Teorema}
-    \begin{Verbatim}[commandchars=\\\{\}]
-\textbf{theorem} "implication transitivity":
-    (a -> b) & (b -> c) -> (a -> c) // Tesis
-\textbf{proof}        
-    \textbf{suppose} h1: (a -> b) & (b -> c)
-    // Tesis: a -> c
-    
-    \textbf{suppose} h2: a
-    // Tesis: c
-    
-    \textbf{thus} c \textbf{by} h1, h2
-\textbf{end}
-\end{Verbatim}
-
-\end{block}
-\end{frame}
-
-\begin{frame}{by}
-    \begin{itemize}
-        \item El mecanismo principal para demostrar es el \textbf{by}, que \textit{automáticamente} demuestra que un hecho es consecuencia de una lista de hipótesis.
-        \item Se usa en lugar de \ruleE{$\to$} y \ruleE{$\forall$}
-        \item Es completo para lógica proposicional pero heurístico para LPO
-    \end{itemize}
-\end{frame}
-
-\begin{frame}[fragile]{Ejemplo}
-\begin{block}{}
-\begin{Verbatim}[commandchars=\\\{\}]
-\textbf{axoim} ax1: a -> b
-\textbf{axiom} ax2: a
-\textbf{theorem} thm: b
-\textbf{proof}
-    \textbf{thus} b \textbf{by} ax1, ax2
-\textbf{end}
-\end{Verbatim}    
-\end{block}
-
-Para demostrar $\big( (a \to b) \wedge a \big) \to b$ lo hacemos por el absurdo: negamos y encontramos una contradicción.
-\end{frame}
-
-\begin{frame}[fragile]{DNF}
-Primero convertimos la fórmula a forma normal disyuntiva (DNF)
-
-\newcommand{\just}[1]{\textcolor{violet}{(#1)}}
-
-\begin{align*}
-    &\neg [ \big( (a \to b) \wedge a \big) \to b ] \\
-    &\equiv \neg [ \neg \big( (a \to b) \wedge a \big) \vee b ]
-        && \just{x \to y \equiv \neg x \vee y}\\
-    &\equiv \neg \neg \big( (a \to b) \wedge a \big) \wedge \neg b
-        && \just{\neg(x \vee y) \equiv \neg x \wedge \neg y}\\
-    &\equiv \big( (a \to b) \wedge a \big) \wedge \neg b
-        && \just{\neg\neg x \equiv x}\\
-    &\equiv (\neg a \vee b) \wedge a \wedge \neg b
-         && \just{x \to y \equiv \neg x \vee y}\\
-    &\equiv (\neg a \vee b) \wedge a \wedge \neg b
-        && \just{(x \vee y) \wedge z \equiv (x \wedge z) \vee (y \wedge z) }\\
-    &\equiv
-        (\neg a \wedge a \wedge \neg b)
-        \vee
-        (b \wedge a \wedge \neg b)
-\end{align*}
-\end{frame}
-
-\begin{frame}{Contradicción}
-    Ya tenemos la fórmula en DNF, ahora tenemos que demostrar la contradicción. Lo hacemos refutando cada cláusula
-    \[
-    (\alert{\neg a} \wedge \alert{a} \wedge \neg b)
-        \vee
-        (\alert{b} \wedge a \wedge \alert{\neg b}) \vdash \bot
-    \]
-
-    \begin{block}{Reglas}
-        \begin{prooftree}
-            \AxiomC{$\judg{\ctx}{\form \vee \formTwo}$}
-            \AxiomC{$\judg{\ctx, \form}{\formThree}$}
-            \AxiomC{$\judg{\ctx, \formTwo}{\formThree}$}
-            \RL{\ruleE{$\vee$}}
-            \TrinaryInfC{$\judg{\ctx}{\formThree}$}
-        \end{prooftree}
-
-        \begin{prooftree}
-        \AxiomC{$\judg{\ctx}{\neg \form}$}
-        \AxiomC{$\judg{\ctx}{\form}$}
-        \RL{\ruleE{$\neg$}}
-        \BinaryInfC{$\judg{\ctx}{\bot}$}
-    \end{prooftree}
-    \end{block}
-\end{frame}
-
-\begin{frame}{Recap by}
-    Teniendo en el contexto $\Gamma = \{ h_1 : b_1, \dotso, h_n : b_n\}$
-    para certificar
-    $$\text{thus } a \text{ by } h_1 \dots h_n$$
-
-    \begin{itemize}
-        \item Debe demostrar $b_1 \wedge \dotso \wedge b_n \to a$
-        \item Lo hace por absurdo: la niega y encuentra una contradicción
-        \item Primero la convierte a forma normal disyuntiva (DNF)
-        \item Luego refuta cada cláusula (conjunción de literales)
-        \begin{itemize}
-            \item False ($\bot \wedge p \wedge q$)
-            \item Literales opuestos ($p(a) \wedge \neg p(a) \wedge q$)
-            \item Eliminación de existencial ($\forall x. p(x) \wedge \neg p(a))$
-        \end{itemize}
-    \end{itemize}
-
-    \begin{alertblock}{}
-    \textbf{Desafío}: ¡Hay que generar una demostración de deducción natural!
-    \end{alertblock}
-\end{frame}
-
-\begin{frame}{DNF}
-    ¿Cómo demostramos el pasaje de uno al otro?
-    \begin{gather*}
-        \neg [ \big( (a \to b) \wedge a \big) \to b ] \vdash \bot\\
-        \vdots\\
-        (\neg a \wedge a \wedge \neg b) \vee (b \wedge a \wedge \neg b) \vdash \bot
-    \end{gather*}
-
-    Generando demostraciones para todas las equivalencias, y convirtiendo la fórmula paso por paso (\textit{``small step''})
-    \begin{columns}
-        \column{0.5\textwidth}
-        \begin{align*}
-        \neg\neg x &\equiv x\\
-        \neg \bot &\equiv \top\\
-        \neg \top &\equiv \bot\\
-        x \to y &\equiv \neg x \vee y\\
-        \neg(x \vee y) &\equiv \neg x \wedge \neg y\\
-        \neg(x \wedge y) &\equiv \neg x \vee \neg y
-    \end{align*}
-        \column{0.5\textwidth}
-        \begin{align*}
-            (x \vee y) \wedge z &\equiv (x \wedge z) \vee (y \wedge z)\\
-            z \wedge (x \vee y) &\equiv (z \wedge x) \vee (z \wedge y)\\
-            x \vee (y \vee z) &\equiv (x \vee y) \vee z\\
-            x \wedge (y \wedge z) &\equiv (x \wedge y) \wedge z
-        \end{align*}
-    \end{columns}
-\end{frame}
-
-\begin{frame}{DNF}
-    Para poder hacerlo paso por paso también hace falta demostrar la \textit{congruencia} de los operadores
-
-    \[
-        a \vee \alert{\neg (b \vee c)}
-        \equiv
-        a \vee \alert{(\neg b \wedge \neg c)}
-    \]
-
-    En general,
-    \begin{align*}
-        \alpha \equiv \alpha' &\Rightarrow \alpha \wedge \beta \equiv \alpha' \wedge \beta\\
-        \beta \equiv \beta' &\Rightarrow \alpha \wedge \beta \equiv \alpha \wedge \beta'
-    \end{align*}
-
-    Análogo para $\vee$, $\neg$
-\end{frame}
-
-\begin{frame}{¿Por qué este mecanismo?}
-    \begin{itemize}
-        \item Es un procedimiento completo para LP pero \textbf{heurístico} para LPO, puede fallar (i.e no demuestra cualquier cosa)
-        \item Satisfacibilidad de LPO es indecidible
-        \item Mecanismos como \textit{resolución general} se pueden colgar
-        \item Podríamos haber hecho otro, queríamos hacer \textit{alguno}
-    \end{itemize}
-    
-\end{frame}
-
-% \begin{frame}[fragile]{Descarga de conjunciones}
-%     Queremos poder demostrar parte de una tesis
-%     \begin{Verbatim}[commandchars=\\\{\}]
-% \textbf{axiom} ax_a: a; \textbf{axiom} ax_b: b
-% \textbf{axiom} ax_c: c; \textbf{axiom} ax_d: d
-
-% \textbf{theorem} t: a & b & c & d
-% \textbf{proof}
-%     thus c & a by ax_a, ax_c
-%     thus d by ax_d
-%     thus b by ax_b
-% \textbf{end}
-%     \end{Verbatim}
-
-%     Para certificar el primer thus,
-
-%     \begin{itemize}
-%         \item Hay que usar \ruleI{$\wedge$}
-%         \item Se reordena la fórmula para que quede cómodo $\alert{c \wedge a} \wedge b \wedge d$
-%         \item Como el by es completo para proposicional, puede demostrar automáticamente que
-%         $$a \wedge b \wedge c \wedge d \Leftrightarrow \alert{c \wedge a} \wedge b \wedge d$$
-%     \end{itemize}
-    
-% \end{frame}
-
-\begin{frame}{Friedman}
-    \begin{figure}
-    \centering
-    %\includegraphics[width=1\linewidth]{arch.png}
-\end{figure}
-\end{frame}
-
-\begin{frame}{Lógica clásica / Lógica intuicionista}
-    \begin{itemize}
-        \item La lógica \textbf{clásica} no siempre es constructiva, por el \textit{principio del tercero excluido} (LEM): 
-        
-            \begin{center}
-                para toda proposición $A$, es verdadera ella o su negación
-            \end{center}
-        $$A \vee \neg A$$
-
-        \item La lógica \textbf{intuicionista} se puede describir de forma sucinta como la lógica clásica sin LEM. Equivalentemente, tampoco vale la \textit{eliminación de la doble negación} ($\neg\neg A \rightarrow A$)
-    \end{itemize}
-\end{frame}
-
-\begin{frame}{Demostración no constructiva}
-    \begin{block}{Teorema}
-        Existen dos números irracionales $a, b$ tq $a^b$ es racional.
-    \end{block}
-    
-    Sabemos que $\sqrt{2}$ es irracional, y por LEM que $\sqrt{2}^{\sqrt{2}}$ es o racional o irracional.
-    \begin{itemize}
-        \item Si $\sqrt{2}^{\sqrt{2}}$ es racional, tomamos $a = b = \sqrt{2}$
-        \item Sino, tomamos $a = \sqrt{2}^{\sqrt{2}}$, $b = \sqrt{2}$ y luego
-        \[a^b
-            = (\sqrt{2}^{\sqrt{2}})^{\sqrt{2}}
-            = \sqrt{2}^{\sqrt{2} \sqrt{2}}
-            = \sqrt{2}^2 = 2
-        \]
-        que es racional.
-    \end{itemize}
-
-    \vspace{1cm}
-    \textbf{¡No nos dice cuales son $a$ y $b$!}
-\end{frame}
-
-
-\begin{frame}{Traducción de Friedman}
-
-\begin{itemize}
-    \item Queremos ``reducir'' o ``ejecutar'' los programas para obtener testigos de existenciales.
-    \item La lógica clásica no es ejecutable (no constructiva). La intuicionista sí
-    \item Friedman traduce de clásica a intuicionista. Caveat: solo fórmulas $\in \Pi^0_2$ (i.e de la forma $\forall x_1 \dots \forall x_n \exists y . \varphi)$
-\end{itemize}
-    
-\end{frame}
-
-
-% \begin{frame}{Demostración de ejemplo}
-%     \begin{enumerate}
-%         \item Todas las personas tienen padre. 
-        
-%         $$\forall H \exists P . padre(H, P)$$ 
-
-%         \item Definición de abuelo: El padre de mi padre es mi abuelo
-%         \[\forall H \forall P \forall Q
-%             (padre(H, P) \wedge padre(P, Q))
-%             \Rightarrow
-%             abuelo(H, Q)
-%         \]
-%     \end{enumerate}
-
-%     \textbf{Teorema} (Todos tienen abuelo). $\forall A \exists C . abuelo(A, C)$
-    
-
-% \begin{columns}
-%     \column{0.6\textwidth}
-%     \textit{Demostración}
-%     \begin{itemize}
-%         \item Sea $A$ una persona cualquiera.
-%         \item Por (1), existe $B$, padre de $A$.
-%         \item Por (1), existe $C$, padre de $B$.
-%         \item Luego, por (2), $C$ es abuelo de $A$
-%     \end{itemize}
-%     \qed
-
-%     \column{0.4\textwidth}
-%     \begin{figure}
-%         \centering
-%         \includegraphics[width=0.65\linewidth]{ejemplo.png}
-%     \end{figure}
-% \end{columns}
-% \end{frame}
-
-% \begin{frame}[fragile]{Programa de ejemplo}
-% \begin{verbatim}
-% axiom todos_tienen_padre: forall P. exists Q. padre(P, Q)
-% axiom def_abuelo: forall P. forall Q. forall R.
-%     (padre(P, Q) & padre(Q, R)) -> abuelo(P, R)
-
-% theorem todos_tienen_abuelo:
-%     forall A. exists C. abuelo(A, C)
-% proof
-%     let A
-%     consider B st a_padre_b: padre(A, B)
-%         by todos_tienen_padre
-%     consider C st b_padre_c: padre(B, C)
-%         by todos_tienen_padre
-    
-%     take C
-    
-%     thus abuelo(A, C)
-%         by a_padre_b, b_padre_c, def_abuelo
-% end
-% \end{verbatim}
-% \end{frame}
-
-\begin{frame}{¿En dónde estamos parados?}
-\begin{figure}
-    \centering
-    %\includegraphics[width=1\linewidth]{arch.png}
-\end{figure}
-\end{frame}
 
 \end{document}
