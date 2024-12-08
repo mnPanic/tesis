@@ -13,6 +13,8 @@
 % https://tex.stackexchange.com/questions/464916/listing-inside-a-frame-using-beamer
 \lstset{language=ppa, xleftmargin=0.5cm}
 
+\renewcommand{\lstlistingname}{Programa}
+
 \usepackage{fitch}
 
 % https://tex.stackexchange.com/questions/178800/creating-sections-each-with-title-pages-in-beamers-slides
@@ -457,8 +459,8 @@ Los predicados son \textbf{fórmulas atómicas}. Los de aridad 0 además son lla
 
 \begin{frame}[fragile]{PPA}
     Diseñamos e implementamos el \textit{lenguaje} PPA, inspirado en el
-    \textit{mathematical vernacular}. Ejemplo:
-    \lstinputlisting{listings/ppt/alumnos-corto.ppa}
+    \textit{mathematical vernacular}. Veamos la \textbf{interfaz} completa y luego la implementación.
+    \lstinputlisting[title=Ejemplo demostración]{listings/ppt/alumnos-corto.ppa}
 \end{frame}
 
 \begin{frame}[fragile]{Programas}
@@ -489,9 +491,11 @@ end
         \begin{center}
             \verb/[a-zA-Z0-9\_\-\?!#\$\%\*\+\<\>\=\?\@\^]+(\')*/
         \end{center}
-        \item \textbf{Nombres} (\lstinline{<name>}) 
+        \item \textbf{Nombres} (\lstinline{<name>})
+        
+        Pueden ser identificadores o strings arbitrarios encerrados por comillas dobles.
         \begin{center}
-            \verb/\"[^\"]*\"/
+            \verb/<id> | \"[^\"]*\"/
         \end{center}
     \end{itemize}
 \end{frame}
@@ -532,7 +536,8 @@ end
 
 \begin{frame}{by - El mecanismo principal de demostración}
     \begin{itemize}
-        \item \lstinline{<form> by <name>, ..., <name>} afirma que la fórmula es una consecuencia lógica de las fórmulas que corresponden a las hipótesis provistas.
+        \item \lstinline{<form> by <h1>, ..., <hn>} afirma que la fórmula es una consecuencia lógica de las fórmulas que corresponden a las hipótesis provistas.
+        \item Los nombres de las hipótesis son del tipo \lstinline{<name>} (o bien identificadores o \textit{strings} arbitrarios).
         \item Por debajo usa un \textit{solver} completo para lógica proposicional pero heurístico para primer órden.
         \item Se usa para eliminar implicaciones y universales.
         \item Usado por dos comandos principales: \lstinline{thus} y \lstinline{have}.
@@ -542,18 +547,263 @@ end
 
 \begin{frame}[fragile]{Thus}
     \begin{command}
-    \lstinline{thus <form> by <name>, ..., <name>}
+    \lstinline{thus <form> by <h1>, ..., <hn>}
     \end{command}
 
     Si \lstinline{<form>} es \textit{parte} de la tesis, y el \textit{solver} puede demostrar la implicación, lo demuestra automáticamente y lo descarga de la tesis.
     \begin{columns}
         \begin{column}{0.5\textwidth}
-            \lstinputlisting{listings/interfaz/by-imp.ppa}
+            \lstinputlisting[title=Eliminación de implicación]{listings/interfaz/by-imp.ppa}
         \end{column}
         \begin{column}{0.5\textwidth}
-            \lstinputlisting{listings/interfaz/by-forall.ppa}
+            \lstinputlisting[title=Eliminación de universal]{listings/interfaz/by-forall.ppa}
         \end{column}
     \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Have}
+    \begin{command}
+    \lstinline{have <name>: <form> by <h1>, ..., <hn>}
+    \end{command}
+
+    Análogo a \lstinline{thus}, pero introduce una afirmación \textit{auxiliar}
+    sin reducir la tesis, agregándola al contexto.
+    
+    \lstinputlisting[title=Eliminación de implicación en dos pasos]{listings/interfaz/by-imp-have.ppa}
+\end{frame}
+
+\begin{frame}[fragile]{Hipótesis anterior}
+    Ambas pueden referirse a la hipótesis anterior con guión medio
+    (\lstinline{-}), y pueden hacerlo implícitamente usando \lstinline{hence} y
+    \lstinline{have}.
+
+    \begin{table}[H]
+        \centering
+    \begin{tabular}{l|l|l}
+    Comando             & Alternativo             & ¿Reduce la tesis? \\
+    \hline
+    \lstinline|thus|    & \lstinline|hence|       & Sí               \\
+    \lstinline|have|    & \lstinline|then|        & No              
+    \end{tabular}
+    \end{table}
+
+    \begin{columns}
+        \begin{column}{0.5\textwidth}
+        \lstinputlisting[
+            firstline=1,
+            lastline=9,
+            title=Eliminación en dos pasos,
+        ]{listings/interfaz/by-imp-then.ppa}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \lstinputlisting[
+                linerange={12-16, 19-23},
+                numbers=none,
+                title=Alternativas equivalentes,
+            ]{listings/interfaz/by-imp-then.ppa}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{By opcional}
+    \begin{itemize}
+        \item El \lstinline{by} es opcional
+        \item Si se omite, la fórmula debe ser
+        demostrable por el \textit{solver} sin partir de ninguna hipótesis
+        \item Vale para todas las tautologías proposicionales.
+    \end{itemize}
+
+    \lstinputlisting[title=Tautología proposicional]{listings/interfaz/by-taut.ppa}
+\end{frame}
+
+\begin{frame}{Comandos y reglas de inferencia}
+    \begin{columns}
+        \begin{column}{0.5\textwidth}
+            \begin{table}[H]
+                \centering
+                \begin{tabular}{c|c}
+                Regla & Comando \\
+                \hline
+                \ruleLEM        &   \lstinline|cases| \\
+                \ruleAx         &   \lstinline|by| \\
+                \ruleExistsI    &   \lstinline|take| \\
+                \ruleExistsE    &   \lstinline|consider| \\
+                \ruleForallI    &   \lstinline|let| \\
+                \ruleForallE    &   \lstinline|by| \\
+                \ruleOrIOne     &   \lstinline|by| \\
+                \ruleOrITwo     &   \lstinline|by| \\
+                \ruleOrE        &   \lstinline|cases|
+                \end{tabular}
+            \end{table}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{table}[H]
+                \centering
+                \begin{tabular}{c|c}
+                Regla & Comando \\
+                \hline
+                \ruleAndI       &   \lstinline|by| \\
+                \ruleAndEOne    &   \lstinline|by| \\
+                \ruleAndETwo    &   \lstinline|by| \\
+                \ruleImpI       &   \lstinline|suppose| \\
+                \ruleImpE       &   \lstinline|by| \\
+                \ruleNotI       &   \lstinline|suppose| \\
+                \ruleNotE       &   \lstinline|by| \\
+                \ruleTrueI      &   \lstinline|by| \\
+                \ruleFalseE     &   \lstinline|by|
+                \end{tabular}
+            \end{table}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Suppose (\ruleImpI / \ruleNotI)}
+    \begin{command}
+        \lstinline{suppose <name>: <form>} \quad (\ruleImpI / \ruleNotI)
+    \end{command}
+
+    \begin{itemize}
+        \item  Si la tesis es una implicación $\form \fImp \formTwo$, agrega el antecedente
+        $\form$ como hipótesis con el nombre dado y reduce la tesis al consecuente
+        $\formTwo$
+        \item Viendo la negación como una implicación $\fNot \form \equiv
+        \form \fImp \fFalse$, permite introducir negaciones, tomando
+        $\formTwo = \fFalse$.
+    \end{itemize}
+
+    \begin{columns}
+        \begin{column}{0.5\textwidth}
+            \lstinputlisting[
+                firstline=1, lastline=7,
+                title=Introducción de implicación,
+            ]{listings/interfaz/suppose.ppa}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \lstinputlisting[
+                firstline=9, lastline=15,
+                title=Introducción de negación,
+            ]{listings/interfaz/suppose.ppa}    
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Cases (\ruleOrE)}
+    \begin{command}
+        \lstinline{cases by <h1>, ..., <hn>} \quad (\ruleImpI / \ruleNotI)
+    \end{command}
+    \begin{columns}
+        \begin{column}{0.5\textwidth}
+        \begin{itemize}
+            \item Permite razonar por casos a partir de una disyunción. Para cada uno, se debe
+            demostrar la tesis en su totalidad.
+            \item Si los casos son \lstinline{<f1>} a
+            \lstinline{<fn>}, tiene que valer \lstinline{<f1> | ... | <fn> by} \lstinline{<h1>, ..., <hn>}.
+            \item Se puede omitir el \lstinline{by} para razonar mediante LEM (casos $\anyForm$ y $\fNot \anyForm$).
+        \end{itemize}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \lstinputlisting[
+        title=Cases,
+        firstline=1, lastline=11,
+    ]{listings/interfaz/cases.ppa}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Take (\ruleExistsI)}
+    \begin{command}
+        \lstinline{take <var> := <term>} \quad (\ruleExistsI)
+    \end{command}
+    \vfill
+    \begin{itemize}
+        \item Introduce un existencial instanciando su variable y reemplazándola por un término.
+        \item Si la tesis es \lstinline{exists X . p(X)}, luego de \lstinline{take X := a}, se reduce a \lstinline{p(a)}.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Consider (\ruleExistsE)}
+    \begin{command}
+        \lstinline{consider <var> st <name>: <form> by <h1>, ..., <hn>} \quad (\ruleExistsE)
+    \end{command}
+    \begin{itemize}
+        \item Si se puede justificar \lstinline{exists X. p(X)}, permite razonar sobre tal \lstinline{X}.
+        \item Agrega \lstinline{<form>} como hipótesis al contexto, con nombre \lstinline{<name>}. No reduce la tesis.
+        \item Debe valer \lstinline{exists <var> . <form> by <h1>, ..., <hn>}
+        \item Permite $\alpha$-equivalencias: Si podemos justificar \lstinline{exists X. p(X)}, podemos usarlo como \lstinline{consider Y st h: p(Y) by ...}.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Let (\ruleForallI)}
+    \begin{command}
+        \lstinline{let <var>} \quad (\ruleForallI)
+    \end{command}
+    \begin{itemize}
+        \item Permite demostrar un cuantificador universal.
+        \item Si la tesis es \lstinline{forall X . p(X)}, luego de \lstinline{let X}, la tesis se reduce a \lstinline{p(X)}.
+        \item Permite renombrar la variable, por ejemplo luego de \lstinline{let Y} la tesis se reduce a \lstinline{p(Y)}.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Descarga de conjunciones}
+    Si la tesis es una conjunción, se puede probar un subconjunto de ella y se reduce el resto.
+
+    \begin{columns}
+        \begin{column}{0.5\textwidth}
+            \lstinputlisting[title=Descarga simple]{listings/interfaz/discharge-simple.ppa}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \lstinputlisting[title=Descarga compleja]{listings/interfaz/discharge-complex.ppa}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Equivalently}
+    \begin{command}
+        \lstinline{equivalently <form>}
+    \end{command}
+    \begin{itemize}
+        \item Permite reducir la tesis a una fórmula equivalente
+        \item Se puede usar por ejemplo para descarga de conjunciones, o para razonar por el absurdo mediante la eliminación de la doble negación.
+    \end{itemize}
+
+    \begin{columns}
+        \begin{column}{0.5\textwidth}
+            \lstinputlisting[title=Descarga de conjunción]{listings/interfaz/equivalently.ppa}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+\begin{lstlisting}[numbers=none,title=Razonamiento por el absurdo]
+theorem t: <form>
+proof
+    equivalently ~~<form>
+    suppose <name>: ~<form>
+    // Demostración de <form>
+    // por el absurdo,
+    // asumiendo ~<form>
+    // y llegando a una
+    // contradicción (false).
+end
+\end{lstlisting}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+
+\begin{frame}[fragile]{Claim}
+    \begin{command}
+        \lstinline{claim <name>: <form>}
+    \end{command}
+    Permite demostrar una afirmación auxiliar. Útil para ordenar las demostraciones sin tener que definir otro teorema.
+
+    \begin{lstlisting}[numbers=none]
+theorem t: <form1>
+proof
+    claim <name>: <form2>
+    proof
+        // Demostración de <form2>.
+    end
+    // Demostración de <form1> refiriéndose a <name>.
+end
+    \end{lstlisting}
 \end{frame}
 
 \section{Certificador}
@@ -564,7 +814,12 @@ end
         una demostración de deducción natural.
         \item Cumple con el criterio de de bruijn 
     \end{itemize}
-    
+
+    \begin{figure}
+        \includegraphics[scale=0.2]{img/ppt/certify.png}
+        \centering
+        \title{Arquitectura del certificador}
+    \end{figure}
 \end{frame}
 
 \section{Extracción de testigos}

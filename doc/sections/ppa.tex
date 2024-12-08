@@ -229,7 +229,7 @@ formas principales, \lstinline{thus} y \lstinline{have}.
 
     \lstinputlisting{listings/interfaz/by-forall.ppa}
 
-    \item \lstinline{have <form> by <justification>}.
+    \item \lstinline{have <name>:<form> by <justification>}.
     
     Igual a \lstinline{thus}, pero permite introducir afirmaciones
     \textit{auxiliares} que no son parte de la tesis, sin reducirla, y las
@@ -275,10 +275,9 @@ En todos, el \lstinline{by} es opcional. En caso de no especificarlo en
 \textit{solver} heurístico sin partir de ninguna hipótesis, lo cual en
 particular vale para todas las tautologías proposicionales. Por ejemplo,
 
-\lstinputlisting{listings/interfaz/by-taut.ppa}
+\lstinputlisting[title=Tautología proposicional]{listings/interfaz/by-taut.ppa}
 
 \subsection{Comandos y reglas de inferencia}
-
 
 Muchas reglas de inferencia de deducción natural (\ref{nd:inference-rules})
 tienen una correspondencia directa con comandos. Como se puede ver en
@@ -324,11 +323,17 @@ natural resuelve automáticamente con el uso \lstinline{by}.
     $\formTwo = \fFalse$.
 
     \begin{multicols}{2}
-        \lstinputlisting[firstline=1, lastline=7]{listings/interfaz/suppose.ppa}
-        \vfill\null
+        \lstinputlisting[
+            firstline=1, lastline=7,
+            title=Introducción de implicación,
+        ]{listings/interfaz/suppose.ppa}
+    \vfill\null
         \columnbreak
-        \lstinputlisting[firstline=9, lastline=15]{listings/interfaz/suppose.ppa}    
-    \end{multicols}
+        \lstinputlisting[
+            firstline=9, lastline=15,
+            title=Introducción de negación,
+        ]{listings/interfaz/suppose.ppa}    
+\end{multicols}
     \item \lstinline{cases} (\ruleOrE)
     
     Permite razonar por casos. Para cada uno se debe demostrar la tesis en su
