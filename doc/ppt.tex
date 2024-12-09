@@ -166,20 +166,20 @@ testigos usando la traducción de Friedman}
 
 \end{frame}
 
-\begin{frame}{Lógica de primer orden}
-Los predicados son \textbf{fórmulas atómicas}. Los de aridad 0 además son llamados \textit{variables proposicionales}.
+% \begin{frame}{Lógica de primer orden}
+% Los predicados son \textbf{fórmulas atómicas}. Los de aridad 0 además son llamados \textit{variables proposicionales}.
 
-\begin{notation*}
-    Usamos
-    \begin{itemize}
-        \item $\var, \varTwo, \varThree, \dots$ como \textbf{variables}.
-        \item $\fun, \funTwo, \funThree, \dots$ como \textbf{símbolos de función}.
-        \item $\pred, \predTwo, \predThree, \dots$ como \textbf{símbolos de predicado}.
-        \item $\term, \termTwo, \dots$ para referirnos a \textbf{términos}.
-        \item $\formLit, \formLitTwo, \formLitThree, \dots$, $\form, \formTwo, \formThree, \dots$ y $\anyForm, \anyFormTwo, \dots$ para referirnos a \textbf{fórmulas}.
-    \end{itemize}
-\end{notation*}
-\end{frame}
+% \begin{notation*}
+%     Usamos
+%     \begin{itemize}
+%         \item $\var, \varTwo, \varThree, \dots$ como \textbf{variables}.
+%         \item $\fun, \funTwo, \funThree, \dots$ como \textbf{símbolos de función}.
+%         \item $\pred, \predTwo, \predThree, \dots$ como \textbf{símbolos de predicado}.
+%         \item $\term, \termTwo, \dots$ para referirnos a \textbf{términos}.
+%         \item $\formLit, \formLitTwo, \formLitThree, \dots$, $\form, \formTwo, \formThree, \dots$ y $\anyForm, \anyFormTwo, \dots$ para referirnos a \textbf{fórmulas}.
+%     \end{itemize}
+% \end{notation*}
+% \end{frame}
 
 \section{Deducción natural}
 
@@ -1082,26 +1082,259 @@ end
 \end{frame}
 
 \begin{frame}{Razonamiento por el absurdo}
+    \[
+        \judG \formTwo_1 \fAnd \dots \fAnd \formTwo_n \fImp \form
+        \overset{?}{\rightsquigarrow}
+        \fNot (\formTwo_1 \fAnd \dots \fAnd \formTwo_n \fImp \form) \judG \fFalse
+    \]
+    \begin{columns}
+        \begin{column}{0.4\textwidth}
+            \begin{theorem}[DNeg Elim]
+                \begin{prooftree}
+                    \AxiomC{}
+                    \RL{\ruleDnegE}
+                    \admissibleRuleLine
+                    \UnaryInfC{$\fNot \fNot \form \judG \form$}
+                \end{prooftree}
+            \end{theorem}        
+        \end{column}
+        % "Cortar el flujo de la demostración"
+        \begin{column}{0.4\textwidth}
+            \begin{theorem}[cut]
+                \begin{prooftree}
+                    \AxiomC{$\ctx, \formTwo \judG \form$}
+                    \AxiomC{$\ctx \judG \formTwo$}
+                    \RL{\ruleCut}
+                    \admissibleRuleLine
+                    \BinaryInfC{$\ctx \judG \form$}
+                \end{prooftree}
+            \end{theorem}
+        \end{column}
+    \end{columns}
+    \begin{lemma}[Razonamiento por el absurdo]
+        \begin{prooftree}
+            \AxiomC{$\vdots$}
+            \noLine
+            \UnaryInfC{$\ctx, \fNot \form \judG \fFalse$}
+            \RL{\ruleNotI}
+            \UnaryInfC{$\ctx \judG \fNot\fNot \form$}
+            \RL{\ruleCutWith{\ruleDnegE}}
+            \admissibleRuleLine
+            \UnaryInfC{$\ctx \judG \form$}
+        \end{prooftree}
+        \vspace{0.1cm}
+    \end{lemma}
     
 \end{frame}
 
 \begin{frame}{Conversión a DNF}
-    
+    Implementamos una traducción mediante el siguiente sistema de reescritura. \textbf{Algoritmo}: reescribir de a un paso hasta que no cambie (clausura de Kleene)
+        \begin{align*}
+            \fNot\fNot \formLit &\rewrite
+                \formLit
+                &&\text{eliminación de $\fNot\fNot$}\\
+            \fNot \fFalse &\rewrite
+                \fTrue\\
+            \fNot \fTrue &\rewrite
+                \fFalse\\
+            \formLit \fImp \formLitTwo &\rewrite
+                \fNot \formLit \fOr \formLitTwo
+                &&\text{definición de implicación}\\
+            \fNot(\formLit \fOr \formLitTwo) &\rewrite
+                \fNot \formLit \fAnd \fNot \formLitTwo
+                &&\text{distributiva de $\fNot$ sobre $\fAnd$}\\
+            \fNot(\formLit \fAnd \formLitTwo) &\rewrite
+                \fNot \formLit \fOr \fNot \formLitTwo
+                &&\text{distributiva de $\fNot$ sobre $\fOr$}\\
+            (\formLit \fOr \formLitTwo) \fAnd \formLitThree &\rewrite
+                (\formLit \fAnd \formLitThree) \fOr (\formLitTwo \fAnd \formLitThree)
+                &&\text{distributiva de $\fAnd$ sobre $\fOr$ (der)}\\
+            \formLitThree \fAnd (\formLit \fOr \formLitTwo) &\rewrite
+                (\formLitThree \fAnd \formLit) \fOr (\formLitThree \fAnd \formLitTwo)
+                &&\text{distributiva de $\fAnd$ sobre $\fOr$ (izq)}\\
+            \formLit \fOr (\formLitTwo \fOr \formLitThree) &\rewrite
+                (\formLit \fOr \formLitTwo) \fOr \formLitThree
+                &&\text{asociatividad de $\fOr$}\\
+            \formLit \fAnd (\formLitTwo \fAnd \formLitThree) &\rewrite
+                (\formLit \fAnd \formLitTwo) \fAnd \formLitThree
+                &&\text{asociatividad de $\fAnd$}
+        \end{align*}
+\end{frame}
+
+\begin{frame}{Conversión a DNF - Congruencias}
+    Para reescribir una sub-fórmula (trivial sintácticamente), hay que demostrar las congruencias de los conectivos.
+    \[
+        \formLit \fOr \alert{\fNot (\formLitTwo \fOr \formLitThree)}
+        \rewrite
+        \formLit \fOr \alert{(\fNot \formLitTwo \fAnd \fNot \formLitThree)}
+    \]
+
+    \begin{block}{Congruencias}
+        \begin{align*}
+            \form \judG \form'
+                &\Rightarrow \form \fAnd \formTwo \judG \form' \fAnd \formTwo\\
+            \form \judG \form'
+                &\Rightarrow \form \fOr \formTwo \judG \form' \fOr \formTwo\\
+            \form' \judG \form
+                &\Rightarrow \fNot \form \judG \fNot \form'
+        \end{align*}        
+    \end{block}
+
+    \begin{alertblock}{$\fNot$ es contravariante}
+        Para demostrar $\fNot \form \judG \fNot \form'$ no necesitamos una demostración de $\form \judG \form'$, sino de $\form' \judG \form$.
+        
+        $\Rightarrow$ para todas las reescrituras, incluso las congruencias, tenemos que demostrarlas en ambos sentidos.
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}{Conversión a DNF - Reglas admisibles}
+    \begin{block}{Reglas admisibles para conversión a DNF}
+        \begin{columns}[t]
+        \begin{column}{0.5\textwidth}
+            \centering
+            Pasos base
+            \begin{align*}
+            \fNot\fNot \formLit &\judgEquiv
+                \formLit
+                \\
+            \fNot \fFalse &\judgEquiv
+                \fTrue\\
+            \fNot \fTrue &\judgEquiv
+                \fFalse\\
+            \formLit \fImp \formLitTwo &\judgEquiv
+                \fNot \formLit \fOr \formLitTwo
+                \\
+            \fNot(\formLit \fOr \formLitTwo) &\judgEquiv
+                \fNot \formLit \fAnd \fNot \formLitTwo
+                \\
+            \fNot(\formLit \fAnd \formLitTwo) &\judgEquiv
+                \fNot \formLit \fOr \fNot \formLitTwo
+                \\
+            (\formLit \fOr \formLitTwo) \fAnd \formLitThree &\judgEquiv
+                (\formLit \fAnd \formLitThree) \fOr (\formLitTwo \fAnd \formLitThree)
+                \\
+            \formLitThree \fAnd (\formLit \fOr \formLitTwo) &\judgEquiv
+                (\formLitThree \fAnd \formLit) \fOr (\formLitThree \fAnd \formLitTwo)
+                \\
+            \formLit \fOr (\formLitTwo \fOr \formLitThree) &\judgEquiv
+                (\formLit \fOr \formLitTwo) \fOr \formLitThree
+                \\
+            \formLit \fAnd (\formLitTwo \fAnd \formLitThree) &\judgEquiv
+                (\formLit \fAnd \formLitTwo) \fAnd \formLitThree
+            \end{align*}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \centering
+            Pasos recursivos de congruencia
+            
+            (con $\form \judgEquiv \form'$)
+            \begin{align*}
+                \form \fAnd \formTwo &\judgEquiv \form' \fAnd \formTwo\\
+                \form \fOr \formTwo &\judgEquiv \form' \fOr \formTwo\\
+                \fNot \form &\judgEquiv \fNot \form'
+            \end{align*}
+        \end{column}
+        \end{columns}
+    \end{block}
 \end{frame}
 
 \begin{frame}{Contradicciones}
+    \begin{exampleblock}{Ejemplo}
+    \begin{prooftree}
+        \def\defaultHypSeparation{\hskip .1in}
+        \AxiomC{}
+        \LL{\ruleAx}
+        \UnaryInfC{\(
+            \ctx \judG
+            \begin{aligned}[b]
+                &(\fNot a \fAnd a \fAnd \fNot b)\\
+                &\vee (b \fAnd a \fAnd \fFalse)
+            \end{aligned}
+        \)}
+        \AxiomC{$\someProof_L$}
+        \noLine
+        \UnaryInfC{\(
+            \ctx, \fNot a \fAnd a \fAnd \fNot b \judG \fFalse
+        \)}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{$\ctx_1 \judG b \fAnd a \fAnd \fFalse$}
+        \RL{\ruleAndEProj{\fFalse}}
+        \admissibleRuleLine
+        \UnaryInfC{\(
+            \ctx, b \fAnd a \fAnd \fFalse \judG \fFalse
+        \)}
+        \RL{\ruleOrE}
+        \TrinaryInfC{\(
+            \ctx = (\fNot a \fAnd a \fAnd \fNot b)
+            \vee
+            (b \fAnd a \fAnd \fFalse)
+            \judG
+            \fFalse
+        \)}
+    \end{prooftree}
     
+    donde
+    
+    \begin{prooftree}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{$\ctx_1 \judG \fNot a \fAnd a \fAnd \fNot b$}
+        \RL{\ruleAndEProj{\fNot a}}
+        \admissibleRuleLine
+        \UnaryInfC{$\ctx_1 \judG \fNot a$}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{$\ctx_1 \judG \fNot a \fAnd a \fAnd \fNot b$}
+        \RL{\ruleAndEProj{a}}
+        \admissibleRuleLine
+        \UnaryInfC{$\ctx_1 \judG a$}
+        \RL{\ruleNotE}
+        \LL{$\someProof_L=$}
+        \BinaryInfC{\(
+            \ctx_1 = \ctx, b \fAnd a \fAnd \fFalse \judG \fFalse
+        \)}
+    \end{prooftree}
+    \end{exampleblock}
+
+    \begin{lemma}[Regla admisible \ruleAndEProj{\anyForm}]
+        \begin{prooftree}
+            \AxiomC{$\ctx \judG \anyForm_1 \fAnd \dots \fAnd \anyForm_i \fAnd \dots \fAnd \anyForm_n$}
+            \AxiomC{$n \in \setNaturals$}
+            \admissibleRuleLine
+            \RL{\ruleAndEProj{\anyForm_{i}}}
+            \BinaryInfC{$\ctx \judG \anyForm_i$}
+        \end{prooftree}
+    \end{lemma}
 \end{frame}
 
-\begin{frame}{Alcance y limitaciones}
+\begin{frame}[fragile]{Alcance y limitaciones del by}
     \begin{itemize}
-        \item Completo para lógica proposicional y heurístico para primer orden. Esto es aceptable, la validez de LPO es indecidible (Teorema de Church).
+        \item \textbf{Completo} para lógica proposicional y \textbf{heurístico} para primer orden.
+        \item Esto es aceptable, la validez de LPO es indecidible (Teorema de Church).
+        \item Elimina los $\forall$ consecutivos de a lo sumo una hipótesis. Pero le faltan más cosas.
     \end{itemize}
+\begin{figure}
+    \centering
+    \small Ejemplo de falla en eliminación
+    \vspace{0.1cm}
+
+    \begin{tabular}{c}
+\begin{lstlisting}
+axiom ax1: forall X . p(X) -> q(X)
+axiom ax2: forall X . p(X)
+theorem t: q(a)
+proof
+    thus q(a) by ax1, ax2
+end
+\end{lstlisting}
+    \end{tabular}
+\end{figure}
 \end{frame}
 
 % Considerar saltear esto si no da el tiempo
 \begin{frame}{Descarga de conjunciones}
-    
+    \todo{Agregar esto}
 \end{frame}
 
 \section{Extracción de testigos}
