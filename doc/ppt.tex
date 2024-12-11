@@ -10,6 +10,11 @@
 \usepackage{sections/nd_rules}
 \setbeamertemplate{footline}[frame number]
 
+\usepackage{cancel} % https://tex.stackexchange.com/questions/23711/strikethrough-text
+% https://tex.stackexchange.com/questions/362077/line-jump-using-the-xcancel-macro-in-beamer/362236#362236
+\newcommand<>{\xxcancel}[1]{\alt#2{\xcancel{#1}}{\vphantom{\xcancel{#1}}#1}}%uncover the xcancel command
+
+
 % https://tex.stackexchange.com/questions/464916/listing-inside-a-frame-using-beamer
 \lstset{language=ppa, xleftmargin=0.5cm}
 
@@ -1519,7 +1524,7 @@ end
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Estrategia de extracción indirecta - Aporte principal}
+\begin{frame}{Estrategia de extracción indirecta}
     \begin{figure}
         \centering
         \includegraphics[scale=0.33]{img/arch.png}
@@ -1601,26 +1606,196 @@ end
     mostrar: introducción del and, LEM, lemas
 \end{frame}
 
-%\subsection{Normalización}
+\begin{frame}{Estrategia de extracción indirecta}
+    \begin{figure}
+        \centering
+        \includegraphics[scale=0.33]{img/arch.png}
+    \end{figure}
+\end{frame}
 
 
 \begin{frame}{Normalización}
-    - evitar desvíos supérfluos (mostrar ejemplo). Simplificamos hasta que esté en forma normal
-    - isomorfismo curry howard
+    Motivación: evitar \textit{``desvíos superfluos''}.
+
+    \begin{example}
+        \[
+    \AxiomC{}
+    \RL{\ruleAx}
+    \UnaryInfC{$\form \judG \form$}
+    \RL{\ruleImpI}
+    \UnaryInfC{$\judG \form \fImp \form$}
+    \AxiomC{}
+    \RL{\ruleAx}
+    \UnaryInfC{$\formTwo \judG \formTwo$}
+    \RL{\ruleImpI}
+    \UnaryInfC{$\judG \formTwo \fImp \formTwo$}
+    \RL{\alert<2>{\ruleAndI}}
+    \BinaryInfC{$\judG (\form \fImp \form) \fAnd (\formTwo \fImp \formTwo)$}
+    \RL{\alert<2>{\ruleAndEOne{}}}
+    \UnaryInfC{$\judG \form \fImp \form$}
+\DisplayProof
+\quad
+\rewrite
+\quad
+    \AxiomC{}
+    \RL{\ruleAx}
+    \UnaryInfC{$\form \judG \form$}
+    \RL{\ruleImpI}
+    \UnaryInfC{$\judG \form \fImp \form$}
+    \DisplayProof
+\]
+    \end{example}
+
+    \pause
+    \begin{itemize}
+        \item Se van a ver todos de esa forma: Una \textbf{eliminación} demostrada inmediatamente por su \textbf{introducción} correspondiente. 
+        \item Ejemplo: \ruleAndEOne{} demostrada por \ruleAndI{}.
+        \item Idea: Simplificarlos sucesivamente hasta que no haya más y esté en \textbf{forma normal}.
+    \end{itemize}
 \end{frame}
 
-\begin{frame}{Sustituciones}
-    - regla de \ruleImpE, motivar sustituciones sin captura
+\begin{frame}{Curry Howard}
+    \begin{itemize}
+        \item \textbf{Isomorfismo Curry-Howard}: correspondencia entre demostraciones en deducción natural y términos de $\lambda$-cálculo.
+        \item Normalización de demostraciones corresponde a semántica de $\lambda$-cálculo
+    \end{itemize}
+
+    \begin{example}
+        Conjunciones como el tipo de las tuplas, y las eliminaciones como proyecciones.
+        \begin{align*}
+            \projectOne{\tuple{\lTerm_1}{\lTerm_2}} &\rewrite \lTerm_1\\
+            \projectTwo{\tuple{\lTerm_1}{\lTerm_2}} &\rewrite \lTerm_2
+        \end{align*}
+        \[
+            \reductionAnd
+        \]
+    \end{example}
+\end{frame}
+
+\begin{frame}{Normalización de implicación}
+    \[
+        \AxiomC{$\someProof_\formTwo$}
+    \noLine
+    \UnaryInfC{$\ctx, \hypId: \form \judG \formTwo$}
+    \RL{\ruleImpIh{\hypId}}
+    \UnaryInfC{$\ctx \judG \form \fImp \formTwo$}
+    \AxiomC{$\someProof_\form$}
+    \noLine
+    \UnaryInfC{$\ctx \judG \form$}
+    \RL{\ruleImpE}
+    \BinaryInfC{$\ctx \judG \formTwo$}
+    \DisplayProof
+    \only<3->{
+    %
+    \quad \rewrite \quad
+    %
+    \AxiomC{$\someProof_\formTwo\subst{\hypId}{\someProof_\form}$}
+    \noLine
+    \UnaryInfC{$\ctx \judG \formTwo$}
+    \DisplayProof
+    }
+    \]
+
+    \begin{itemize}
+        \item Primer idea: \xxcancel<2->{$\someProof_\formTwo \proves \ctx \judG \formTwo$} \pause pero ¡\textbf{no sería correcto}! La demostración $\someProof_\formTwo$ requiere la hipótesis $\hypId : \form$, que no necesariamente está en $\ctx$, es agregada por \ruleImpIh{\hypId}
+        \item Correcto: usar $\someProof_\formTwo$, pero \textit{sustituyendo} todas las ocurrencias de la hipótesis $\hypId$ por la demostración $\someProof_\form$.
+        \item Es necesaria una noción de sustitución de hipótesis por demostraciones (sin capturas).
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Reglas de reducción}
+    Además, hay reglas para
+    \begin{itemize}
+        \item \ruleExistsE{} con \ruleExistsI{},
+        \item \ruleForallE{} con \ruleForallI{},
+        \item \ruleNotE{} con \ruleNotI{},
+        \item \ruleOrE{} con \ruleOrI{}
+    \end{itemize}
 \end{frame}
 
 \begin{frame}{Algoritmo de reducción}
-    - estrategia original, lenta
-    - estrategia gross knuth
+    \begin{itemize}
+        \item Original: Similar a DNF, reducir de a 1 paso sucesivamente hasta que sea irreducible.
+        \item Problema: Congruencias se reducían de a un paso. Muy lento (demostraciones muy grandes)
+    \end{itemize}
+
+
+\begin{prooftree}
+    \AxiomC{$\judg{\ctx}{\form}$}
+    \AxiomC{$\judg{\ctx}{\formTwo}$}
+    \RL{\ruleAndI}
+    \BinaryInfC{$\judg{\ctx}{\form \wedge \formTwo}$}
+    \noLine
+    \UnaryInfC{$\vdots$}
+    \noLine
+    \UnaryInfC{$\someProof$}
+\end{prooftree}
+
+reducíamos de a un paso a la vez $\form \rewrite \form_1 \rewrite \form_2
+\rewrite \dots \rewrite \form^{*}$ hasta llegar a $\form^{*}$ irreducible y
+recién ahí aplicamos mismo para $\formTwo$. En cada paso se recorría todo el árbol.
+\end{frame}
+
+\begin{frame}{Estrategia de reducción}
+    Dos tipos de estrategias:
+    \begin{itemize}
+        \item Un paso
+        \item Muchos pasos
+        \begin{itemize}
+            \item \textbf{Gross Knuth}: reduce en muchos pasos todos los sub-términos posibles al mismo tiempo.
+        \end{itemize}
+    \end{itemize}
+
+    En un solo paso, reducimos
+
+    \[
+        \AxiomC{$\judg{\ctx}{\form}$}
+        \AxiomC{$\judg{\ctx}{\formTwo}$}
+        \RL{\ruleAndI}
+        \BinaryInfC{$\judg{\ctx}{\form \wedge \formTwo}$}
+        \noLine
+        \UnaryInfC{$\vdots$}
+        \noLine
+        \UnaryInfC{$\someProof$}
+        \DisplayProof
+        \quad
+        \rewrite
+        \quad
+        \AxiomC{$\judg{\ctx}{\alert{\form^{*}}}$}
+        \AxiomC{$\judg{\ctx}{\alert{\formTwo^{*}}}$}
+        \RL{\ruleAndI}
+        \BinaryInfC{$\judg{\ctx}{\form \wedge \formTwo}$}
+        \noLine
+        \UnaryInfC{$\vdots$}
+        \noLine
+        \UnaryInfC{$\someProof$}
+        \DisplayProof
+    \]
 \end{frame}
 
 \begin{frame}{Limitaciones}
-    - lenta (reinicia focos de evaluación)
-    - incompleta (reglas permutativas)
+    \begin{itemize}
+        \item \textbf{Incompleta}: no contempla \textit{reducciones permutativas} (mezclando introducciones y eliminaciones de conectivos distintos).
+        \begin{itemize}
+            \item \textit{Mejora}: Implementarlas.
+        \end{itemize}
+        \item \textbf{Ineficiente}: en cada paso reinicia la búsqueda de todos los focos de evaluación.
+        \begin{itemize}
+            \item \textit{Mejora}: Usar una máquina abstracta que implemente reducción a forma normal, Crégut para reducción \textit{call-by-name} fuerte o la máquina de Biernacka para reducción \textit{call-by-need} fuerte.
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Programa con falla de extracción}
+    \begin{columns}
+        \begin{column}{0.5\textwidth}
+            \lstinputlisting{listings/extract/or-fail.ppa}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            Certifica el programa generando una demostración que en lugar de comenzar con \ruleExistsI{}, comienza con \ruleOrE{} y en cada rama introduce el existencial dos veces, con el mismo término
+        \end{column}
+        
+    \end{columns}
 \end{frame}
 
 \begin{frame}{Manteniendo el contexto}
