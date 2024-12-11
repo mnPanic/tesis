@@ -29,6 +29,17 @@
   \end{frame}
 }
 
+\AtBeginSubsection[]{
+  \begin{frame}
+  \vfill
+  \centering
+  \begin{beamercolorbox}[sep=8pt,center,shadow=true,rounded=true]{title}
+    \usebeamerfont{title}\insertsubsectionhead\par%
+  \end{beamercolorbox}
+  \vfill
+  \end{frame}
+}
+
 \newenvironment{command}
     {
         \begin{beamercolorbox}[sep=8pt,center,shadow=true,rounded=true]{block body}
@@ -74,8 +85,7 @@ testigos usando la traducción de Friedman}
 \end{frame}
 
 \begin{frame}{Asistentes de demostración}
-    Implementan distintas \textit{teorías}. \todo{No me gusta teoria, se usa
-    para teorias de primer orden}
+    Implementan distintas \textit{teorías}.
     Ejemplos:
     \begin{itemize}
         \item Mizar (lógica de primer orden)
@@ -83,22 +93,30 @@ testigos usando la traducción de Friedman}
         \item Agda (teoría de tipos)
         \item Isabelle (lógica de orden superior / teoría de conjuntos ZF)
     \end{itemize}
+
+    \todo{No me gusta la palabra teoria, lo usamos para teorias de primer orden}
 \end{frame}
 
 \begin{frame}{PPA}
+    \begin{figure}
+        \includegraphics[scale=0.25]{img/ppt/ppa-tool-parts.png}
+    \end{figure}
+    Diseñamos e implementamos en Haskell la herramienta \ppaTool{} (\textit{Pani's Proof Assistant}): un asistente de demostración para LPO \textbf{clásica}. Dos partes:
     \begin{itemize}
-        \item Diseñamos e implementamos \textbf{PPA} (\textit{Pani's Proof
-        Assistant}), un asistente de demostración para lógica \textbf{clásica}
-        de primer orden.
-        \item Permite hacer extracción de testigos: dada una demostración de
-        $\exists \var . \pred(\var)$, encuentra $\term$ tal que $\pred(\term)$.
-        \item Aporte principal: implementación de extracción de testigos para lógica clásica de forma directa (vemos los detalles después).
+        \item El lenguaje \textbf{PPA} para escribir demostraciones.
+        \item \textbf{Extracción de testigos}: De una demo de
+        $\exists \var . \pred(\var)$, extrae $\term$ tq $\pred(\term)$.
     \end{itemize}
-    
+\end{frame}
+
+\begin{frame}{Aporte principal}
+    \centering
+    \Large
+    Implementación de extracción de testigos para lógica clásica de forma \textit{indirecta}.
 \end{frame}
 
 \begin{frame}{Representación de demostraciones}
-    Queremos escribir demostraciones en la computadora. ¿Cómo las representamos?. Veamos un ejemplo.
+    ¿Cómo representamos las demostraciones? Ejemplo:
     
     \begin{itemize}
         \item Tenemos dos premisas
@@ -109,23 +127,23 @@ testigos usando la traducción de Friedman}
         \item A partir de ellas, podríamos demostrar que si un alumno falta a un final, entonces recursa la materia.
     \end{itemize}
 
-    \begin{block}{Teorema}
+    \begin{theorem}
         Si ((falta entonces reprueba) y (reprueba entonces recursa)) y falta, entonces recursa
-    \end{block}
-    \begin{exampleblock}{Demostración}
+    \end{theorem}
+    \begin{proof}
         \begin{itemize}
     \item Asumo que falta. Quiero ver que recursa.
     \item Sabemos que si falta, entonces reprueba. Por lo tanto reprobó.
-    \item Sabemos que si reprueba, entonces recursa. Por lo tanto recursó. \qed
+    \item Sabemos que si reprueba, entonces recursa. Por lo tanto recursó.
 \end{itemize}
-    \end{exampleblock}
+    \end{proof}
 \end{frame}
 
 \begin{frame}{Sistemas deductivos}
     \begin{itemize}
-        \item La demostración anterior es poco precisa. No se puede representar rigurosamente.
-        \item Necesitamos \textbf{sistemas deductivos}: sistemas lógicos formales usados para demostrar setencias. Pueden ser representados como un tipo abstracto de datos.
-        \item Usamos \textbf{deducción natural}. Compuesto por,
+        \item \textbf{Problema}: Poco precisa. No se puede representar rigurosamente.
+        \item Necesitamos \textbf{sistemas deductivos}: sistemas lógicos formales usados para escribir demostraciones de setencias.
+        \item En particular usamos \textbf{deducción natural}. Compuesto por,
         \begin{itemize}
             \item \textbf{Lenguaje formal}: lógica de primer orden.
             \item \textbf{Reglas de inferencia}: lista de reglas que se usan para probar teoremas a partir de axiomas y otros teoremas. Por ejemplo, \textit{modus ponens} (si
@@ -182,47 +200,6 @@ testigos usando la traducción de Friedman}
 % \end{frame}
 
 \section{Deducción natural}
-
-\begin{frame}{Deducción natural}
-    \begin{definitions}
-        \begin{itemize}
-            \item $\ctx$ es un \textbf{contexto de demostración}, conjunto de
-            fórmulas que se asumen válidas
-            \item Notación: $\ctx, \anyForm = \ctx \cup \{\anyForm\}$
-            \item $\judG$ es la \textbf{relación de derivabilidad} definida a
-            partir de las \textit{reglas de inferencia}. Permite escribir
-            juicios $\ctx \judG \anyForm$.
-            \item Intuición: \textit{``$\anyForm$ es
-            una consecuencia de las suposiciones de $\ctx$''}
-            \item El juicio es cierto si en una cantidad finita de
-            pasos podemos concluir $\anyForm$ a partir de las fórmulas de
-            $\ctx$, los axiomas y las reglas de inferencia.
-            \item Decimos que
-            $\anyForm$ es \textit{derivable} a partir de $\ctx$.
-        \end{itemize}
-    \end{definitions}
-\end{frame}
-
-\begin{frame}{Reglas de inferencia}
-    \begin{definition}[Reglas de inferencia]
-        \begin{columns}
-            \column{0.5\textwidth}
-            \proofTreeAx
-            \proofTreeImpI
-            \proofTreeImpE
-            \column{0.5\textwidth}
-            \proofTreeAndI
-            \proofTreeAndEOne
-            \proofTreeAndETwo
-        \end{columns}
-        
-    \end{definition}
-    Dos tipos para cada conectivo y cuantificador, dada una fórmula formada con un conectivo:
-    \begin{itemize}
-        \item \textbf{Introducción}: ¿Cómo la demuestro?
-        \item \textbf{Eliminación}: ¿Cómo la uso para demostrar otra?
-    \end{itemize}
-\end{frame}
 
 \begin{frame}{Ejemplo}
     Vamos a demostrar el ejemplo informal en deducción natural. Lo modelamos
@@ -298,6 +275,51 @@ testigos usando la traducción de Friedman}
 
 \begin{frame}{Reglas de inferencia}
     \begin{definition}[Reglas de inferencia]
+        \begin{columns}
+            \column{0.5\textwidth}
+            \proofTreeAx
+            \proofTreeImpI
+            \proofTreeImpE
+            \column{0.5\textwidth}
+            \proofTreeAndI
+            \proofTreeAndEOne
+            \proofTreeAndETwo
+        \end{columns}
+        
+    \end{definition}
+    Dos tipos para cada conectivo y cuantificador, dada una fórmula formada con un conectivo:
+    \begin{itemize}
+        \item \textbf{Introducción}: ¿Cómo la demuestro?
+        \item \textbf{Eliminación}: ¿Cómo la uso para demostrar otra?
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Deducción natural}
+    \begin{definition}[Contexto de demostración]
+        $\ctx$ es un \textbf{contexto de demostración}, conjunto de
+        fórmulas que se asumen válidas.
+
+        \textbf{Notación}: $\ctx, \anyForm = \ctx \cup \{\anyForm\}$
+    \end{definition}
+    \begin{definition}[Relación de derivabilidad]
+        \begin{itemize}
+            \item $\judG$ es la \textbf{relación de derivabilidad} definida a
+            partir de las \textit{reglas de inferencia}. Permite escribir
+            juicios $\ctx \judG \anyForm$.
+            \item Intuición: \textit{``$\anyForm$ es
+            una consecuencia de las suposiciones de $\ctx$''}
+            \item Decimos que
+            $\anyForm$ es \textit{derivable} a partir de $\ctx$.
+            \item El juicio es cierto si en una cantidad finita de
+            pasos podemos concluir $\anyForm$ a partir de las fórmulas de
+            $\ctx$, los axiomas y las reglas de inferencia.
+        \end{itemize}
+    \end{definition}
+\end{frame}
+
+
+\begin{frame}{Reglas de inferencia}
+    \begin{definition}[Reglas de inferencia]
         \proofTreeLEM
         \begin{columns}
             \begin{column}{0.5\textwidth}
@@ -342,11 +364,8 @@ testigos usando la traducción de Friedman}
 \begin{frame}{Reglas admisibles}
     \begin{itemize}
         \item Mencionamos \textit{modus tollens} pero no aparece en las reglas de inferencia.
-        \item Queremos un sistema lógico \textbf{minimal}: no agregamos como
-        regla de inferencia lo que podemos derivar a partir de las existentes,
-        las reglas \textbf{admisibles}.
-        \item Se implementan como \textit{macros}: cada uso de la regla
-        admisible se reemplaza por su demostración.
+        \item Queremos un sistema lógico \textbf{minimal}: no agregamos las reglas \textbf{admisibles}, derivables a partir de las existentes.
+        \item Se implementan como funciones o macros.
     \end{itemize} 
 
     \begin{lemma}[Modus tollens]
@@ -436,20 +455,17 @@ testigos usando la traducción de Friedman}
 \section{PPA}
 
 \begin{frame}{Mathematical vernacular}
-    Aparentemente hay una forma canónica de presentar demostraciones matemáticas\footnote{\textit{Mathematical
+    Hay una forma canónica de representar demostraciones matemáticas\footnote{\textit{Mathematical
     Vernacular} de Freek Wiedijk}. Descubierta e implementada independientemente en Mizar,
     Isar (Isabelle), etc. Combinación de ideas:
 
     \begin{itemize}
         \item \textbf{Deducción natural en estilo de \textit{Fitch}}. Notación
-        equivalente en la cual las demostraciones son
-        representadas como listas de fórmulas en lugar de árboles. Las que
-        aparecen antes justifican las que aparecen después.
+        equivalente, demostraciones como listas de fórmulas en lugar de árboles.
         \item \textbf{Reglas de inferencia \textit{declarativas}}: una forma de afirmar
         que $\form_1, \dots, \form_n \judG \form$ es válida, sin
         tener que demostrarlo a mano.
-        \item \textbf{Sintaxis similar a un lenguaje de programación} en lugar del
-        lenguaje natural usado para demostraciones.
+        \item \textbf{Sintaxis similar a un lenguaje de programación} en lugar al lenguaje natural.
     \end{itemize}
 \end{frame}
 
@@ -519,15 +535,22 @@ end
 \end{frame}
 
 \begin{frame}{Demostraciones}
-    \begin{itemize}
-        \item Lista de comandos que reducen sucesivamente la \textit{tesis}
-        (fórmula a demostrar) hasta agotarla por completo.
-        \item Corresponden aproximadamente a reglas de inferencia de deducción
-        natural (vistas como una demostración en el estilo de Fitch).
-        \item Tienen disponible un \textbf{contexto} con todas las hipótesis
-        asumidas (como axiomas) o demostradas (teoremas y comandos que
-        demuestran hipótesis auxiliares).
-    \end{itemize}
+    \begin{columns}
+        \begin{column}{0.5\textwidth}
+            \includegraphics[scale=0.25]{img/ppt/dem-reduccion.png}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{itemize}
+                \item Lista de \textbf{comandos} que reducen sucesivamente la \textit{tesis}
+                (fórmula a demostrar) hasta agotarla por completo.
+                \item Corresponden aproximadamente a reglas de inferencia de deducción
+                natural.
+                \item Tienen disponible un \textbf{contexto} con todas las hipótesis
+                asumidas (axiomas) o demostradas (teoremas y comandos que
+                demuestran hipótesis auxiliares).
+            \end{itemize}
+        \end{column}
+    \end{columns}
 \end{frame}
 
 \begin{frame}{by - El mecanismo principal de demostración}
@@ -1339,7 +1362,297 @@ end
 
 \section{Extracción de testigos}
 
+\begin{frame}{Extracción simple}
+    \lstinputlisting[title=Extracción simple]{listings/extract/exists.ppa}
+    
+    Extraemos un testigo de $\exists X . p(X)$: $v$, tal que valga $p(v)$.
+\end{frame}
 
 
+\begin{frame}{Extracción con instanciación}
+    \lstinputlisting[title=Extracción con instanciación]{listings/extract/forall.ppa}
+
+    Extraemos un testigo \lstinline{v} y podemos instanciar \lstinline{X} en lo que sea, por ej. la siguiente fórmula es demostrable: \lstinline{p(f(n, m), v)}
+\end{frame}
+
+\begin{frame}{Extracción indirecta}
+    \lstinputlisting[firstline=2, title=Extracción indirecta]{listings/extract/indirect.ppa}
+    Extracción \textbf{indirecta} de \lstinline{theorem t2} nos da el testigo \lstinline{m}.
+\end{frame}
+
+\begin{frame}{Extracción por el absurdo (1/2)}
+    \lstinputlisting[
+        title=Extracción por el absurdo,
+        firstline=1,
+        lastline=8,
+    ]{listings/ppt/abs-ppt-narrow.ppa}    
+\end{frame}
+
+\begin{frame}{Extracción por el absurdo (2/2)}
+    \begin{columns}
+        \begin{column}{0.7\textwidth}
+            \lstinputlisting[
+                firstline=9,
+            ]{listings/ppt/abs-ppt-narrow.ppa}
+        \end{column}
+        \begin{column}{0.3\textwidth}
+            Sin \lstinline{take} (\ruleExistsI) explícito, igual podemos extraer el testigo a partir del \lstinline{theorem} \lstinline{hayAlguienBajo}: \lstinline{juan}.
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Extracción de testigos}
+    Buscamos un mecanismo general tal que,
+
+    \begin{block}{Mecanismo de extracción de testigos}
+        A partir de una demostración en PPA para una fórmula de la forma \[\forall \var_0 \dots \forall \var_n
+\exists \varTwo . \anyForm(\var_0, \dots, \var_n, \varTwo),\]
+
+\begin{enumerate}
+    \item la certifique generando una demostración en deducción natural \textbf{clásica}
+    \item  a partir de ella extraiga $\termTwo$ tal que, para $\term_0, \dots, \term_n$ cuales quiera, valga \[\anyForm(\term_0, \dots, \term_n, \termTwo)\]
+\end{enumerate}
+    \end{block}
+\end{frame}
+
+\begin{frame}{Lógica clásica}
+    \centering
+    La lógica clásica \textbf{no es constructiva} por LEM
+    \vspace{0.5cm}
+    \proofTreeLEM
+\end{frame}
+
+% \begin{frame}{Demostración no constructiva}
+%     \begin{theorem}
+%         Existen dos números irracionales $a$ y $b$ tales que $a^b$ es racional.
+%     \end{theorem}
+%     \begin{proof}
+%         Considerar el número $\sqrt{2}^{\sqrt{2}}$. Por LEM, es o bien racional o
+%     irracional.
+%     \begin{itemize}
+%         \item Supongamos que es racional. Como sabemos que $\sqrt{2}$ es
+%               irracional, podemos tomar $a=b=\sqrt{2}$ que por hipótesis es racional.
+%         \item Supongamos que es irracional. Tomamos $a = \sqrt{2}^{\sqrt{2}}, b
+%                   = \sqrt{2}$. Ambos son irracionales, y tenemos
+
+%               \[
+%                   a^b
+%                   = \left( \sqrt{2}^{\sqrt{2}} \right)^{\sqrt{2}}
+%                   = \sqrt{2}^{\sqrt{2} \cdot \sqrt{2}}
+%                   = \sqrt{2}^{2}
+%                   = 2,
+%               \]
+
+%               que es racional.
+%     \end{itemize}
+
+%     En ambos casos podemos encontrar $a, b$ tales que $a^b$ es racional.
+%     \end{proof}
+    % \begin{itemize}
+    %     \item ¡No nos dice quienes son $a$ y $b$! Complica la extracción de testigos.
+    %     \item Pero podría: $a = \sqrt{2}$ y $b = 2 \log_2{3}$. \alert{No siempre}.
+    % \end{itemize}
+% \end{frame}
+
+\begin{frame}{Demostración no constructiva}
+    \begin{ejemplo}[Fórmula sin demostración constructiva]
+        Sea $C$ algo indecidible (tipo \texttt{HALT}), queremos ver que
+        \[
+            \exists y .
+                (y = 1 \fAnd \alert{C})
+                \fOr
+                (y = 0 \fAnd \alert{\fNot C})
+        \]
+        podemos demostrarlo por LEM, sabemos que vale $C \fOr \fNot C$
+
+        \begin{itemize}
+            \item Supongamos que vale $C$, tomo $y = 1$.
+            \item Supongamos que vale $\fNot C$, tomo $y = 0$. \qed
+        \end{itemize}
+        
+        ¡No nos dice cual es cierto! No es \textit{constructiva}. No tenemos forma de saber si es cierto $C$ o $\fNot C$ (indecidible).
+    \end{ejemplo}
+    
+    \begin{theorem}
+        Existen dos números irracionales $a$ y $b$ tales que $a^b$ es racional.
+    \end{theorem}
+
+    Existen fórmulas que admiten demostraciones constructivas y no constructivas, y otras solo no constructivas. % vale la pena lógica clásica
+\end{frame}
+
+\begin{frame}{Clases de estrategias de extracción}
+    \begin{figure}
+        \centering
+        \includegraphics[scale=0.25]{img/ppt/extract.png}
+    \end{figure}
+    Clases de estrategias de extracción de demostraciones en lógica clásica:
+    \begin{itemize}
+        \item \textbf{Directas}: Extraer directamente de demostraciones clásicas. Técnicas de \textit{realizabilidad clásica} (Semánticas de $\lambda$-cálculos clásicos).
+        \item \textbf{Indirectas}: Convertir la demostración a una lógica que se porte mejor y extraer de ahí.
+    \end{itemize}
+\end{frame}
+
+
+\begin{frame}{Lógica intuicionista}
+    \begin{center}
+        \textbf{lógica intuicionista} = lógica clásica $-$ \ruleLEM{}
+    \end{center}
+
+    Características:
+    
+    \begin{itemize}
+        \item No tiene LEM\footnote{Ni principios de razonamiento equivalentes, como \ruleDnegE{}}, entonces siempre es constructiva.
+        \item Noción de \textit{forma normal} buena: una demostración de un $\exists$ debería comenzar con \ruleExistsI{}:
+        \proofTreeExistsI{}
+        \item Proceso de normalización análogo a reducción de $\lambda$-cálculo (su semántica operacional), visto desde el isomorfismo Curry-Howard.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Traducción de Friedman}
+    \begin{itemize}
+        \item La \textbf{traducción de Friedman} permite embeber la lógica clásica en la intuicionista, para \textit{algunas} fórmulas.
+        \item Traduce demostraciones de fórmulas $\classPiTwo$: de la forma \[
+        \forall \varTwo_1 \dots \forall \varTwo_n .
+        \exists \var .
+        \anyForm(\var, \varTwo_1, \dots, \varTwo_n)
+        \]
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Estrategia de extracción indirecta - Aporte principal}
+    \begin{figure}
+        \centering
+        \includegraphics[scale=0.33]{img/arch.png}
+    \end{figure}
+\end{frame}
+
+%\subsection{Traducción de Friedman}
+
+\begin{frame}{Traducción de doble negación relativizada}
+    \begin{definition}[Traducción de doble negación relativizada]
+        Sea $\fNotR \form
+        \equiv \form \rightarrow R$, se define la traducción de doble negación relativizada:
+        \begin{align*}
+            \transDNeg{\bot}                         & = \bot                                                             \\
+            \transDNeg{\form}                        & = \fNotR\fNotR \form
+            \quad \text{con $\form$ atómica}                                                                              \\
+            \transDNeg{(\fNot \form)}                & = \fNotR \transDNeg{\form}                                          \\
+            \transDNeg{(\form \fAnd \formTwo)}       & = \transDNeg{\form} \fAnd \transDNeg{\formTwo}                     \\
+            \transDNeg{(\form \fOr \formTwo)}        & = \fNotR(\fNotR\transDNeg{\form} \fAnd \fNotR\transDNeg{\formTwo}) \\
+            \transDNeg{(\form \rightarrow \formTwo)} & = \transDNeg{\form} \rightarrow \transDNeg{\formTwo}               \\
+            \transDNeg{(\forall x . \form)}          & = \forall x . \transDNeg{\form}                                    \\
+            \transDNeg{(\exists x . \form)}          & = \fNotR \forall x . \fNotR \transDNeg{\form}
+        \end{align*}
+    \end{definition}
+    \begin{theorem}
+        Si $\someProof \proves \ctx \judgC \form$, luego
+        $\tdn{\someProof} \proves \tdn{\ctx} \judgI \alert<2>{\transDNeg{\form}}$
+    \end{theorem}
+\end{frame}
+
+\begin{frame}{El truco de Friedman}
+
+    \begin{theorem}[Traducción de Friedman]
+        Sea $\someProof$ una demostración clásica de \(
+            \forall \varTwo_1 \dots \forall \varTwo_n .
+            \exists \var .
+            \anyForm(\var, \varTwo_1, \dots, \varTwo_n)
+            \), y
+            $\anyForm$ una fórmula \textit{conjuntiva}.
+            Si tenemos
+            \[
+                \ctx \judgC
+                \forall \varTwo_1 \dots \forall \varTwo_n .
+                \exists \var .
+                \anyForm(\var, \varTwo_1, \dots, \varTwo_n),
+            \]
+            podemos generar una demostración intuicionista de la misma fórmula
+            \[
+                \transDNeg{\ctx} \judgI
+                \forall \varTwo_1 \dots \forall \varTwo_n .
+                \exists \var .
+                \anyForm(\var, \varTwo_1, \dots, \varTwo_n).
+            \]
+        \end{theorem}
+
+
+    \begin{definition}[Fórmulas conjuntivas]
+        Generadas por
+        \[
+            \form ::=
+                \fFalse \mid \fTrue \mid \pred(\term_1, \dots, \term_n)
+                \mid \form \fAnd \form
+        \]
+    \end{definition}
+\end{frame}
+
+\begin{frame}{El truco de Friedman}
+    
+\end{frame}
+
+\begin{frame}{Traducción de demostraciones}
+    \begin{theorem}
+        Si $\someProof \proves \ctx \judgC \form$, luego
+        $\tdn{\someProof} \proves \tdn{\ctx} \judgI \transDNeg{\form}$
+    \end{theorem}
+
+    Inducción estructural sobre la demostración.
+
+    mostrar: introducción del and, LEM, lemas
+\end{frame}
+
+%\subsection{Normalización}
+
+
+\begin{frame}{Normalización}
+    - evitar desvíos supérfluos (mostrar ejemplo). Simplificamos hasta que esté en forma normal
+    - isomorfismo curry howard
+\end{frame}
+
+\begin{frame}{Sustituciones}
+    - regla de \ruleImpE, motivar sustituciones sin captura
+\end{frame}
+
+\begin{frame}{Algoritmo de reducción}
+    - estrategia original, lenta
+    - estrategia gross knuth
+\end{frame}
+
+\begin{frame}{Limitaciones}
+    - lenta (reinicia focos de evaluación)
+    - incompleta (reglas permutativas)
+\end{frame}
+
+\begin{frame}{Manteniendo el contexto}
+    
+\end{frame}
+
+\begin{frame}{Animación}
+    Animación de la reducción
+\end{frame}
+
+\section{Detalles de implementación}
+
+\begin{frame}{La herramienta \ppaTool{}}
+    - modulos (para dar una idea de la cantidad y complejidad del código)
+    - haskell
+    - comandos check y extract
+\end{frame}
+
+\begin{frame}{Parser y lexer}
+    diagrama para los dos caminos para hacer un parser.
+    - happy y alex
+\end{frame}
+
+
+\section{Conclusiones y trabajo futuro}
+
+
+\begin{frame}{Conclusiones}
+    
+\end{frame}
+
+\begin{frame}{Trabajo futuro}    
+\end{frame}
 
 \end{document}
