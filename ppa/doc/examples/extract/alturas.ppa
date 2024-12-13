@@ -1,0 +1,5 @@
+axiom alberto_es_bajo: es_bajo(alberto)
+axiom juan_menor_alberto: <(juan, alberto)
+
+axiom menor_implica_bajo: forall P . forall Q
+    es_bajo(P) & <(Q, P) -> es_bajo(Q)

@@ -1,0 +1,8 @@
+axiom ax: forall N . <=(cero, N)
+theorem t:
+    forall X. exists V . p(X, V)
+proof
+    let X
+    take V := v
+    thus p(X, v) by ax
+end

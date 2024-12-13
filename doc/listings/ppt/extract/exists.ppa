@@ -1,0 +1,6 @@
+axiom ax: es_bajo(juan)
+theorem t: exists Alguien . es_bajo(Alguien)
+proof
+    take Alguien := juan
+    thus es_bajo(juan) by ax
+end

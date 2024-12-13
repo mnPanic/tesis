@@ -1367,10 +1367,25 @@ end
 
 \section{Extracción de testigos}
 
+\begin{frame}{Intuición del problema}
+    \begin{figure}
+        \includegraphics[scale=0.28]{img/ppt/extraction.png}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{En general}
+    \centering
+    \large
+    Dada una demostración de $\exists \var . \pred(\var)$, extraer un término $\term$ que sea \textit{testigo del existencial}, i.e. que cumpla $\pred(\term)$.
+\end{frame}
+
 \begin{frame}{Extracción simple}
-    \lstinputlisting[title=Extracción simple]{listings/extract/exists.ppa}
-    
-    Extraemos un testigo de $\exists X . p(X)$: $v$, tal que valga $p(v)$.
+    \begin{columns}
+        \begin{column}{0.5\textwidth}
+            \lstinputlisting[title=Extracción simple]{listings/ppt/extract/exists.ppa}
+        \end{column}
+    \end{columns}
+
 \end{frame}
 
 

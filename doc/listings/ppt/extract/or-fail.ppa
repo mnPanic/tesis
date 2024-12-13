@@ -1,0 +1,15 @@
+axiom ax_1: p(k) | q(k)
+axiom ax_2: p(k) -> r(k)
+axiom ax_3: q(k) -> r(k)
+
+theorem t: exists Y . r(Y)
+proof
+    take Y := k
+    cases by ax_1
+        case p(k)
+            hence r(k) by ax_2
+        
+        case q(k)
+            hence r(k) by ax_3
+    end
+end
