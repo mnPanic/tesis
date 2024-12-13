@@ -45,6 +45,8 @@ Las fórmulas y términos de primer orden son
 
   > Los argumentos son opcionales
 
+  En caso de ser binario, se puede escribir de forma infija: `<term> <id> <term>`
+
 - **Conectivos binarios**: and, or, implicación
 
   ```text
@@ -61,6 +63,7 @@ Las fórmulas y términos de primer orden son
 Términos:
 
 - **Funciones**: `<id>(<term>, ..., <term>)`
+  - En caso de ser binaria, se puede escribir de forma infija ```<term> `<id>` <term>```
 - **Variables**: `<var>`
 
 ## Comentarios

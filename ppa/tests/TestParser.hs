@@ -1,6 +1,6 @@
 module TestParser (testParserLexer) where
 
-import ND.ND (Form (..), Term (..), predVar, propVar)
+import ND.ND (Form (..), Term (..), predVar, propVar, tFun0)
 import PPA.Lexer (Alex (Alex), Token (..), TokenClass (..), alexInitUserState, runAlex, runAlex')
 import PPA.PPA (Decl (..), Program, ProofStep (PSSuppose, PSThusBy))
 import PPA.Parser (parseProgram)
@@ -13,6 +13,9 @@ import Test.HUnit (
     (~:),
     (~?=),
  )
+
+main :: IO Counts
+main = do runTestTT testParserLexer
 
 testParserLexer :: Test
 testParserLexer =
@@ -141,6 +144,23 @@ testParseForms =
                         )
                     )
                 )
+        , "infix pred" ~: doTestForm "x < y" (FPred "<" [tFun0 "x", tFun0 "y"])
+        , "infix pred vars"
+            ~: doTestForm
+                "forall X . forall Y . X < Y"
+                (FForall "X" $ FForall "Y" (FPred "<" [TVar "X", TVar "Y"]))
+        , "infix term"
+            ~: doTestForm
+                "positivo(1 `+` 2)"
+                (FPred "positivo" [TFun "+" [tFun0 "1", tFun0 "2"]])
+        , "infix pred and terms"
+            ~: doTestForm
+                "3 < 1 `+` 2"
+                (FPred "<" [tFun0 "3", TFun "+" [tFun0 "1", tFun0 "2"]])
+        , "infix pred and terms both sides"
+            ~: doTestForm
+                "3 `+` 5 < 1 `+` 2"
+                (FPred "<" [TFun "+" [tFun0 "3", tFun0 "5"], TFun "+" [tFun0 "1", tFun0 "2"]])
         ]
 
 doTestForm :: String -> Form -> Test

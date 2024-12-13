@@ -59,6 +59,7 @@ tokens :-
     st              { literal TokenSuchThat }
     consider        { literal TokenConsider }
     let             { literal TokenLet }
+    \`              { literal TokenBacktick }
 
     \"[^\"]*\"          { lex (TokenQuotedName . firstLast) }
 
@@ -125,6 +126,7 @@ data TokenClass
     | TokenConsider
     | TokenSuchThat
     | TokenLet
+    | TokenBacktick
     deriving (Eq, Show)
 
 unLex :: TokenClass -> String
@@ -162,6 +164,7 @@ unLex TokenTake = "take"
 unLex TokenAssign = ":="
 unLex TokenConsider = "consider"
 unLex TokenSuchThat = "st"
+unLex TokenBacktick = "`"
 unLex (TokenQuotedName n) = "\"" ++ n ++ "\""
 unLex (TokenVar s) = "(var) " ++ s
 unLex (TokenId s) = "(id) " ++ s
