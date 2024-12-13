@@ -58,7 +58,8 @@ import Debug.Trace (trace)
     ':='                { Token _ TokenAssign }
     consider            { Token _ TokenConsider }
     st                  { Token _ TokenSuchThat }
-    let                 { Token _ TokenLet }       
+    let                 { Token _ TokenLet }
+    '`'                 { Token _ TokenBacktick }
 
 %right exists forall dot
 %right imp iff
@@ -122,6 +123,7 @@ Name    : id               { $1 }
 
 Form :: { Form }
 Form    : id TermArgs               { FPred $1 $2 }
+        | Term id Term              { FPred $2 [$1, $3] }
         | Form and Form             { FAnd $1 $3 }
         | Form or Form              { FOr $1 $3 }
         | Form imp Form             { FImp $1 $3 }
@@ -134,8 +136,13 @@ Form    : id TermArgs               { FPred $1 $2 }
         | '(' Form ')'              { $2 }
 
 Term :: { Term }
-Term    : var                       { TVar $1 }
-        | id TermArgs               { TFun $1 $2 }
+Term    : var                           { TVar $1 }
+        | id TermArgs                   { TFun $1 $2 }
+        | Term '`' id '`' TermNoInfix   { TFun $3 [$1, $5] }
+
+TermNoInfix     :: { Term }
+TermNoInfix     : var                 { TVar $1 }
+                | id TermArgs         { TFun $1 $2 }
 
 TermArgs :: { [Term] }
 TermArgs : {- empty -}              { [] }

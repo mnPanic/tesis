@@ -25,4 +25,4 @@ lexer-parser:
 	alex src/PPA/Lexer.x && happy src/PPA/Parser.y
 
 parser-debug:
-	happy src/Parser.y -i
+	happy src/PPA/Parser.y -i
