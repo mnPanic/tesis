@@ -1,8 +1,8 @@
-axiom ax: forall N . <=(cero, N)
-theorem t:
-    forall X. exists V . p(X, V)
+axiom cero_min: forall N . cero <= N
+theorem todo_numero_tiene_menor:
+    forall N. exists M . M <= N
 proof
-    let X
-    take V := v
-    thus p(X, v) by ax
+    let N
+    take M := cero
+    thus <=(cero, N) by cero_min
 end

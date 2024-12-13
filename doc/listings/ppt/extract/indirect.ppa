@@ -1,16 +1,15 @@
-// ppa extract t2 listings/extract/indirect.ppa out
-axiom ax1: q(m)
-axiom ax2: forall X. q(X) -> p(X)
+axiom ax1: no_es_alto(juan)
+axiom ax2: forall X. no_es_alto(X) -> es_bajo(X)
 
-theorem t1: exists X. q(X)
+theorem t1: exists X. no_es_alto(X)
 proof
-    take X := m
-    thus q(m) by ax1
+    take X := juan
+    thus no_es_alto(juan) by ax1
 end
 
-theorem t2: exists X. p(X)
+theorem t2: exists X. es_bajo(X)
 proof
-    consider Y st h: q(Y) by t1
+    consider Y st h: no_es_alto(Y) by t1
     take X := Y
-    hence p(Y) by ax2
+    hence es_bajo(Y) by ax2
 end

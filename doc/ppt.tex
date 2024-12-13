@@ -56,6 +56,7 @@
 \newcommand{\just}[1]{\textcolor{violet}{(#1)}}
 
 % Tiempo total para dar la presentación: 60 minutos, 15 para preguntas
+% cada diapo 1-2m. 50 diapos.
 
 % Notas
 
@@ -100,6 +101,7 @@ testigos usando la traducción de Friedman}
     \end{itemize}
 
     \todo{No me gusta la palabra teoria, lo usamos para teorias de primer orden}
+    \todo{Hablar acá de cuales son las diferencias de PPA, y cual es el hueco que buscamos cubrir!}
 \end{frame}
 
 \begin{frame}{PPA}
@@ -1373,52 +1375,34 @@ end
     \end{figure}
 \end{frame}
 
-\begin{frame}{En general}
-    \centering
-    \large
-    Dada una demostración de $\exists \var . \pred(\var)$, extraer un término $\term$ que sea \textit{testigo del existencial}, i.e. que cumpla $\pred(\term)$.
-\end{frame}
-
 \begin{frame}{Extracción simple}
-    \begin{columns}
-        \begin{column}{0.5\textwidth}
-            \lstinputlisting[title=Extracción simple]{listings/ppt/extract/exists.ppa}
-        \end{column}
-    \end{columns}
-
+    \lstinputlisting[title=Extracción simple]{listings/ppt/extract/exists.ppa}
 \end{frame}
 
 
 \begin{frame}{Extracción con instanciación}
-    \lstinputlisting[title=Extracción con instanciación]{listings/extract/forall.ppa}
+    \lstinputlisting[title=Extracción con instanciación]{listings/ppt/extract/forall.ppa}
 
-    Extraemos un testigo \lstinline{v} y podemos instanciar \lstinline{X} en lo que sea, por ej. la siguiente fórmula es demostrable: \lstinline{p(f(n, m), v)}
+    Extraemos un testigo \lstinline{cero} y podemos instanciar \lstinline{N} en lo que sea, por ej. la siguiente fórmula es demostrable: \lstinline{cero <= 60}
 \end{frame}
 
 \begin{frame}{Extracción indirecta}
-    \lstinputlisting[firstline=2, title=Extracción indirecta]{listings/extract/indirect.ppa}
-    Extracción \textbf{indirecta} de \lstinline{theorem t2} nos da el testigo \lstinline{m}.
+    \lstinputlisting[title=Extracción indirecta]{listings/ppt/extract/indirect.ppa}
+    Extracción \textbf{indirecta} de \lstinline{theorem t2} nos da el testigo \lstinline{juan}.
 \end{frame}
 
-\begin{frame}{Extracción por el absurdo (1/2)}
+\begin{frame}{Extracción por el absurdo}
     \lstinputlisting[
         title=Extracción por el absurdo,
         firstline=1,
-        lastline=8,
-    ]{listings/ppt/abs-ppt-narrow.ppa}    
-\end{frame}
-
-\begin{frame}{Extracción por el absurdo (2/2)}
-    \begin{columns}
-        \begin{column}{0.7\textwidth}
-            \lstinputlisting[
-                firstline=9,
-            ]{listings/ppt/abs-ppt-narrow.ppa}
-        \end{column}
-        \begin{column}{0.3\textwidth}
-            Sin \lstinline{take} (\ruleExistsI) explícito, igual podemos extraer el testigo a partir del \lstinline{theorem} \lstinline{hayAlguienBajo}: \lstinline{juan}.
-        \end{column}
-    \end{columns}
+        lastline=9,
+    ]{listings/ppt/abs-ppt-narrow.ppa}
+    \begin{itemize}
+        \item En general $\exists \var . \anyForm \equiv \fNot \forall \var .\fNot \anyForm$.
+        \item Sin \lstinline{take} (\ruleExistsI) explícito, igual podemos extraer el testigo a partir del \lstinline{theorem} \lstinline{hayAlguienBajo}: \lstinline{juan}.
+        \item \alert{La implementación no es tan directa como buscar un \ruleExistsI}
+    \end{itemize}
+    
 \end{frame}
 
 \begin{frame}{Extracción de testigos}
@@ -1429,7 +1413,7 @@ end
 \exists \varTwo . \anyForm(\var_0, \dots, \var_n, \varTwo),\]
 
 \begin{enumerate}
-    \item la certifique generando una demostración en deducción natural \textbf{clásica}
+    \item la certifique generando una demostración en \alert<2>{deducción natural \textbf{clásica}}
     \item  a partir de ella extraiga $\termTwo$ tal que, para $\term_0, \dots, \term_n$ cuales quiera, valga \[\anyForm(\term_0, \dots, \term_n, \termTwo)\]
 \end{enumerate}
     \end{block}
@@ -1437,7 +1421,7 @@ end
 
 \begin{frame}{Lógica clásica}
     \centering
-    La lógica clásica \textbf{no es constructiva} por LEM
+    La lógica clásica \textbf{no es constructiva}, por LEM:
     \vspace{0.5cm}
     \proofTreeLEM
 \end{frame}
@@ -1476,7 +1460,7 @@ end
 
 \begin{frame}{Demostración no constructiva}
     \begin{ejemplo}[Fórmula sin demostración constructiva]
-        Sea $C$ algo indecidible (tipo \texttt{HALT}), queremos ver que
+        Sea $C$ algo indecidible (tipo \texttt{HALT}), queremos ver que vale
         \[
             \exists y .
                 (y = 1 \fAnd \alert{C})
@@ -1486,8 +1470,8 @@ end
         podemos demostrarlo por LEM, sabemos que vale $C \fOr \fNot C$
 
         \begin{itemize}
-            \item Supongamos que vale $C$, tomo $y = 1$.
-            \item Supongamos que vale $\fNot C$, tomo $y = 0$. \qed
+            \item Supongamos que vale $C$. Tomo $y = 1$.
+            \item Supongamos que vale $\fNot C$. Tomo $y = 0$. \qed
         \end{itemize}
         
         ¡No nos dice cual es cierto! No es \textit{constructiva}. No tenemos forma de saber si es cierto $C$ o $\fNot C$ (indecidible).
@@ -1496,14 +1480,20 @@ end
     \begin{theorem}
         Existen dos números irracionales $a$ y $b$ tales que $a^b$ es racional.
     \end{theorem}
+\end{frame}
 
-    Existen fórmulas que admiten demostraciones constructivas y no constructivas, y otras solo no constructivas. % vale la pena lógica clásica
+\begin{frame}{¿Entonces por qué lógica clásica?}
+    \begin{itemize}
+        \item Existen fórmulas que admiten demostraciones constructivas y no constructivas, y otras \textit{solo no constructivas} (i.e. clásicas).
+        \item Herramientas como Coq las dejan afuera. Es interesante considerarlas.
+        %\item Permite razonar por el absurdo $(\ruleDnegE{} \equiv \ruleLEM{})$
+    \end{itemize}
 \end{frame}
 
 \begin{frame}{Clases de estrategias de extracción}
     \begin{figure}
         \centering
-        \includegraphics[scale=0.25]{img/ppt/extract.png}
+        \includegraphics[scale=0.25]{img/ppt/extract-strategies.png}
     \end{figure}
     Clases de estrategias de extracción de demostraciones en lógica clásica:
     \begin{itemize}
@@ -1529,14 +1519,11 @@ end
 \end{frame}
 
 \begin{frame}{Traducción de Friedman}
-    \begin{itemize}
-        \item La \textbf{traducción de Friedman} permite embeber la lógica clásica en la intuicionista, para \textit{algunas} fórmulas.
-        \item Traduce demostraciones de fórmulas $\classPiTwo$: de la forma \[
+    La \textbf{traducción de Friedman} permite embeber la lógica clásica en la intuicionista, para demostraciones de \textit{algunas} fórmulas: de la clase $\classPiTwo$, de la forma \[
         \forall \varTwo_1 \dots \forall \varTwo_n .
         \exists \var .
         \anyForm(\var, \varTwo_1, \dots, \varTwo_n)
         \]
-    \end{itemize}
 \end{frame}
 
 \begin{frame}{Estrategia de extracción indirecta}
@@ -1573,26 +1560,13 @@ end
 \begin{frame}{El truco de Friedman}
 
     \begin{theorem}[Traducción de Friedman]
-        Sea $\someProof$ una demostración clásica de \(
+        Sea $\someProof$ una demostración clásica de \[
             \forall \varTwo_1 \dots \forall \varTwo_n .
             \exists \var .
-            \anyForm(\var, \varTwo_1, \dots, \varTwo_n)
-            \), y
-            $\anyForm$ una fórmula \textit{conjuntiva}.
-            Si tenemos
-            \[
-                \ctx \judgC
-                \forall \varTwo_1 \dots \forall \varTwo_n .
-                \exists \var .
-                \anyForm(\var, \varTwo_1, \dots, \varTwo_n),
-            \]
-            podemos generar una demostración intuicionista de la misma fórmula
-            \[
-                \transDNeg{\ctx} \judgI
-                \forall \varTwo_1 \dots \forall \varTwo_n .
-                \exists \var .
-                \anyForm(\var, \varTwo_1, \dots, \varTwo_n).
-            \]
+            \anyForm(\var, \varTwo_1, \dots, \varTwo_n),
+            \] y
+            $\anyForm$ una fórmula \textbf{conjuntiva}.
+            Podemos generar una demostración intuicionista de la misma fórmula.
         \end{theorem}
 
 
@@ -1607,7 +1581,69 @@ end
 \end{frame}
 
 \begin{frame}{El truco de Friedman}
+    Ejemplo sin $\forall$ (similar, omitiendo detalles técnicos).
     
+    \begin{lemma}[Traducción de Friedman simplificada]
+        Sea $\anyForm$ una fórmula conjuntiva. Si tenemos
+        \[
+            \ctx \judgC \exists \var . \anyForm,
+        \]
+        podemos generar una demostración intuicionista de \textit{la misma fórmula}
+        \[
+            \transDNeg{\ctx} \judgI \exists \var . \anyForm.
+        \]
+    \end{lemma}
+\end{frame}
+\begin{frame}{El truco de Friedman}
+    \begin{proof}
+        Aplicando la traducción tomando $R = \exists \var . \anyForm$, tenemos que
+    \[
+        \tdn{\big(
+            \someProof \proves \ctx \judgC \exists \var . \anyForm
+            \big)}
+        \Leftrightarrow
+        \tdn{\someProof} \proves \tdn{\ctx} \judgI \fNotR \forall \var . \fNotR \tdn{\anyForm}
+    \]
+    Luego,
+    \begin{prooftree}
+        \def\defaultHypSeparation{\hskip .1in}
+        \AxiomC{$\tdn{\someProof}$}
+        \noLine
+        \UnaryInfC{\(
+            \tdn{\ctx} \judgI \fNotR \forall \var \fNotR \tdn{\anyForm}
+            \)}
+        \AxiomC{}
+        \RL{\ruleAx}
+        \UnaryInfC{$\tdn{\ctx}, \anyForm \judgI \anyForm$}
+        \RL{\ruleExistsI}
+        \UnaryInfC{$\tdn{\ctx}, \anyForm \judgI R = \exists \var . \anyForm$}
+        \RL{\ruleImpI}
+        \UnaryInfC{$\tdn{\ctx} \judgI \fNotR \anyForm$}
+        \RL{\ruleCutWith{\ruleNotRTransI}}
+        \admissibleRuleLine
+        \UnaryInfC{$\tdn{\ctx} \judgI \fNotR \tdn{\anyForm}$}
+        \RL{\ruleForallI}
+        \UnaryInfC{\(
+            \tdn{\ctx} \judgI \forall \var \fNotR \tdn{\anyForm}
+            \)}
+        \RL{\ruleImpE}
+        \BinaryInfC{$\tdn{\ctx} \judgI \exists \var . \anyForm$}
+    \end{prooftree}
+    \end{proof}
+\end{frame}
+
+\begin{frame}{Introducción de negación relativizada}
+    \begin{lemma}[Introducción de $\fNotR$]
+        Si $\form$ es \textit{conjuntiva}, entonces vale $\fNotR \form \judgI \fNotR \tdn{\form}$ y lo notamos con la regla admisible \ruleNotRTransI{}.
+    \end{lemma}
+    \begin{proof}
+        Por inducción estructural en la fórmula. Intuición:
+        \begin{itemize}
+            \item Atómicas trivial. $\fNotR \form \judgI \fNotR \tdn{\form} \iff \fNotR \form \judgI \fNotR \fNotR \fNotR \form$ sale con \textit{eliminación de triple negación}.
+            \item En lógica intuicionista, el $\fNot$ contiene ``poca información''. Son más difíciles las demostraciones como $\fNotR (\form \fAnd \formTwo) \judgI \fNotR \tdn{(\form \fAnd \formTwo)}$
+            \item En lógica clásica requeriría LEM.
+        \end{itemize}
+    \end{proof}
 \end{frame}
 
 \begin{frame}{Traducción de demostraciones}
@@ -1615,13 +1651,64 @@ end
         Si $\someProof \proves \ctx \judgC \form$, luego
         $\tdn{\someProof} \proves \tdn{\ctx} \judgI \transDNeg{\form}$
     \end{theorem}
-
-    Inducción estructural sobre la demostración.
-
-    mostrar: introducción del and, LEM, lemas
+    \begin{proof}
+        Inducción estructural sobre la demostración. \textbf{Estrategia}: traducimos recursivamente las partes de $\someProof$ y las usamos para construir una nueva demostración de $\tdn{\form}$.
+        \begin{itemize}
+            \item \alert{\ruleAndI{}}, \ruleAndEOne{}, \ruleAndETwo{}, \ruleImpI{}, \ruleImpE{},
+            \ruleOrIOne{}, \ruleOrITwo{}, \ruleForallI{}, \ruleForallE{}, \ruleNotI{}, \ruleNotE{}, \ruleTrueI{}, \ruleAx{}, \ruleExistsI{} fáciles.
+            \item \alert{\ruleLEM{}} interesante.
+            \item \ruleFalseE{} inducción estructural sobre la fórmula.
+            \item \ruleOrE{} y \ruleExistsE{} son análogos y requieren un truco: usar la eliminación de la doble negación. No vale \ruleDnegE{} pero si \ruleDnegRE{} (probado por inducción estructural sobre la fórmula).
+        \end{itemize}
+    \end{proof}
 \end{frame}
 
-\begin{frame}{Estrategia de extracción indirecta}
+\begin{frame}{Traducción de introducción de conjunción}
+    \begin{lemma}[Traducción de \ruleAndI{}]
+        \label{fri:lemma:trad-and-i}    
+        \begin{prooftree}
+            \AxiomC{$\someProof_\form$}
+            \noLine
+            \UnaryInfC{$\ctx \judgI \form$}
+            \AxiomC{$\someProof_\formTwo$}
+            \noLine
+            \UnaryInfC{$\ctx \judgI \formTwo$}
+            \RL{\ruleAndI}
+            \BinaryInfC{$\ctx \judgI \form \wedge \formTwo$}
+        \end{prooftree}
+        Dada una aparición de la regla \ruleAndI{},
+        es posible traducirla generando una demostración de $\tdn{(\form \fAnd \formTwo)} = \tdn{\form} \fAnd \tdn{\formTwo}$.
+    \end{lemma}
+\end{frame}
+\begin{frame}{Traducción de introducción de conjunción}
+    \begin{proof}
+        Por hipótesis inductiva, tenemos que
+        \begin{align*}
+            \tdn{\someProof_\form} \proves
+            \tdn{\ctx} &\judgI
+            \tdn{\form}\\
+            \tdn{\someProof_\formTwo} \proves
+            \tdn{\ctx} &\judgI
+            \tdn{\formTwo}
+        \end{align*}
+    
+        Luego, podemos generar una demostración de $\tdn{\form} \fAnd \tdn{\formTwo}$
+    
+        \begin{prooftree}
+            \AxiomC{$\tdn{\someProof_\form}$}
+            \noLine
+            \UnaryInfC{$\tdn{\ctx} \judgI \tdn{\form}$}
+            \AxiomC{$\tdn{\someProof_\formTwo}$}
+            \noLine
+            \UnaryInfC{$\tdn{\ctx} \judgI \tdn{\formTwo}$}
+            \RL{\ruleAndI}
+            \BinaryInfC{$\tdn{\ctx} \judgI \tdn{\form} \fAnd \tdn{\formTwo}$}
+        \end{prooftree}
+    \end{proof}    
+    
+\end{frame}
+
+\begin{frame}{Repaso - estrategia de extracción indirecta}
     \begin{figure}
         \centering
         \includegraphics[scale=0.33]{img/arch.png}
@@ -1804,7 +1891,7 @@ recién ahí aplicamos mismo para $\formTwo$. En cada paso se recorría todo el 
 \begin{frame}{Programa con falla de extracción}
     \begin{columns}
         \begin{column}{0.5\textwidth}
-            \lstinputlisting{listings/extract/or-fail.ppa}
+            \lstinputlisting{listings/ppt/extract/or-fail.ppa}
         \end{column}
         \begin{column}{0.5\textwidth}
             Certifica el programa generando una demostración que en lugar de comenzar con \ruleExistsI{}, comienza con \ruleOrE{} y en cada rama introduce el existencial dos veces, con el mismo término
@@ -1817,32 +1904,61 @@ recién ahí aplicamos mismo para $\formTwo$. En cada paso se recorría todo el 
     
 \end{frame}
 
-\begin{frame}{Animación}
-    Animación de la reducción
+\begin{frame}{Repaso}
+    Repaso de la reducción con las limitaciones
+\end{frame}
+
+\begin{frame}{Dificultades}
+    \begin{itemize}
+        \item \textit{Integration hell}
+        \item Encontré poca bibliografía de Friedman. Ni hablar que hable de  generación de demostraciones en deducción natural.
+    \end{itemize}
 \end{frame}
 
 \section{Detalles de implementación}
 
 \begin{frame}{La herramienta \ppaTool{}}
-    - modulos (para dar una idea de la cantidad y complejidad del código)
-    - haskell
-    - comandos check y extract
+    \begin{figure}
+        \includegraphics[scale=0.3]{img/modules.png}
+    \end{figure}
+    % Aprovechar para hacer un repaso
+\end{frame}
+
+\begin{frame}{Implementación}
+    \begin{itemize}
+        \item Implementado en Haskell
+        \item 330 tests
+        \item X? LoC
+    \end{itemize}
 \end{frame}
 
 \begin{frame}{Parser y lexer}
-    diagrama para los dos caminos para hacer un parser.
-    - happy y alex
+    \begin{figure}
+        \includegraphics[scale=0.28]{img/ppt/parsers.png}
+    \end{figure}
 \end{frame}
 
 
-\section{Conclusiones y trabajo futuro}
-
-
-\begin{frame}{Conclusiones}
-    
-\end{frame}
+\section{Trabajo futuro}
 
 \begin{frame}{Trabajo futuro}    
+    \begin{itemize}
+        \item Modelar de forma nativa inducción (segundo orden) e igualdad
+        \item Sofisticar el \textit{solver heurístico} del \lstinline{by} (recursivo, eliminar más de una hipótesis).
+        \item Refinar fórmulas conjuntivas. Profundizar vínculo con Harrop.
+        \item Extender traducción de Friedman a más de un existencial.
+        \item Sofisticar reducción de demostraciones: hacer completa (reglas permutativas) y más eficiente (implementando máquina abstracta).
+        \item Mejorar \ppaLang{} como lenguaje de programación: módulos, importar archivos, biblioteca estándar
+        \item Extender PPA con tipos (usando LPO \textit{many-sorted} con géneros)
+        \item Mejorar reporte de errores (muy bajo nivel)
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Fin}
+    \begin{itemize}
+        \item QR con la página
+        \item Preguntas
+    \end{itemize}
 \end{frame}
 
 \end{document}
