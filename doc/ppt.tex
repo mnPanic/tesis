@@ -20,6 +20,9 @@
 
 \renewcommand{\lstlistingname}{Programa}
 
+\newcommand{\fForm}{F}
+\newcommand{\cForm}{C}
+
 \usepackage{fitch}
 
 % https://tex.stackexchange.com/questions/178800/creating-sections-each-with-title-pages-in-beamers-slides
@@ -1900,12 +1903,98 @@ recién ahí aplicamos mismo para $\formTwo$. En cada paso se recorría todo el 
     \end{columns}
 \end{frame}
 
-\begin{frame}{Manteniendo el contexto}
-    
+\begin{frame}{Problema con axiomas}
+\begin{lemma}[Traducción de Friedman simplificada]
+    Sea $\anyForm$ una fórmula conjuntiva. Si tenemos
+    \[
+        \ctx \judgC \exists \var . \anyForm,
+    \]
+    podemos generar una demostración intuicionista de \textit{la misma fórmula}
+    \[
+        \alert{\tdn{\ctx}} \judgI \exists \var . \anyForm.
+    \]
+\end{lemma}
+
+\textbf{Problema:} la demostración normalizada no puede comenzar con \ruleExistsI{}
+
+\[
+    \fNotR \fNotR p(v) \judgI \exists x . p(x)
+\]
+
+Nos gustaría
+
+\[
+    p(v) \judgI \exists x . p(x)
+\]
+
 \end{frame}
 
-\begin{frame}{Repaso}
-    Repaso de la reducción con las limitaciones
+\begin{frame}{F-fórmulas}
+    \begin{definition}[F-fórmulas]
+        $\formTwo$ es una \textit{F-fórmula} si está generada por:
+        \begin{align*}
+            \formTwo ::=\  & \pred(\term_1, \dots, \term_n) \mid \fFalse \mid \fTrue                        \\
+                           & \mid \formTwo \fAnd \formTwo \mid \formTwo \fOr \formTwo                       \\
+                           & \mid \forall \var . \formTwo \mid \exists \var . \formTwo                      \\
+                           & \mid \form \fImp \formTwo                                                      \\
+                           & \mid \fNot \form
+        \end{align*}
+        Donde $\form$ son fórmulas \textit{conjuntivas}
+    \end{definition}
+    
+    \begin{lemma}[Introducción de la traducción $\fNot\fNot$]
+        Si $\formTwo$ es una \textit{F-fórmula}, vale
+        $\formTwo \judgI \tdn{\formTwo}$.
+    \end{lemma}
+\end{frame}
+
+\begin{frame}{Manteniendo el contexto}
+    \begin{itemize}
+        \item Después de la traducción, se reemplaza cada axioma
+        \item Los axiomas deben ser F-fórmulas.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Harrop}
+    \begin{columns}[t]
+        \begin{column}{0.4\textwidth}
+            \begin{block}{F-fórmulas}
+                \begin{align*}
+                    \form ::=\ & \fFalse \mid \fTrue \mid \pred(\term_1, \dots, \term_n)\\
+                    \fForm ::=\  &A \\
+                    & \mid \fForm \fAnd \fForm \mid \fForm \fOr \fForm                       \\
+                    & \mid \forall \var . \fForm \mid \exists \var . \fForm                      \\
+                    & \mid \cForm \fImp \fForm                                                     \mid \fNot \cForm\\
+                    \cForm ::=\ & A  \mid \cForm \fAnd \cForm
+                \end{align*}
+            \end{block}
+            A: Atómicas
+            F: F-fórmulas
+            C: Fórmulas conjuntivas
+        \end{column}
+        \begin{column}{0.4\textwidth}
+            \begin{block}{Harrop}
+                \begin{align*}
+                    A ::=\ & \fFalse \mid \fTrue \mid \pred(\term_1, \dots, \term_n)\\
+                    G ::=\ & A \\
+                        &\mid G \fAnd G \mid G \fOr G \\
+                        &\mid \forall x . G \mid \exists x. G \\
+                        &\mid H \fImp G\\
+                    H ::=\ & A \mid H \fAnd H                    \\
+                           & \alert<2>{\mid \forall \var . H}\\
+                           & \alert<2>{\mid G \fImp A}
+                \end{align*}            
+            \end{block}
+            G: G-fórmulas
+            H: Harrop Hereditarias
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Mecanismo de extracción de testigos}
+    \begin{itemize}
+        \item 
+    \end{itemize}
 \end{frame}
 
 \begin{frame}{Dificultades}

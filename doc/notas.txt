@@ -1,0 +1,13 @@
+comandos en friedman
+
+take
+thus
+let
+consider
+cases (normalización falla)
+
+
+tienen que estar en DN
+forallE (para by)
+existsI (para fri)
+orE (lo puedo mostrar cuando lo use)
