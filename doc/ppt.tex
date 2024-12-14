@@ -493,7 +493,7 @@ testigos usando la traducción de Friedman}
 
 \begin{frame}[fragile]{PPA}
     \textit{Lenguaje} PPA, inspirado en el
-    \textit{Mathematical Vernacular}.
+    \textit{Mathematical Vernacular}. Demostraciones son listas de \textbf{comandos} que reducen sucesivamente la \textit{tesis} (fórmula a demostrar) hasta agotarla.
     \onslide<1->{\lstinputlisting[title=Ejemplo demostración,lastline=4]{listings/ppt/alumnos-corto.ppa}}\vspace*{-\baselineskip}
 
     \onslide<2->{\lstinputlisting[firstnumber=last,firstline=5,lastline=8]{listings/ppt/alumnos-corto.ppa}}\vspace*{-\baselineskip}
@@ -563,25 +563,29 @@ testigos usando la traducción de Friedman}
 %     \end{itemize}
 % \end{frame}
 
-\begin{frame}{Demostraciones}
-    \begin{columns}
-        \begin{column}{0.5\textwidth}
-            \includegraphics[scale=0.25]{img/ppt/dem-reduccion.png}
-        \end{column}
-        \begin{column}{0.5\textwidth}
-            Lista de \textbf{comandos} que reducen sucesivamente la \textit{tesis} (fórmula a demostrar) hasta agotarla.
-        \end{column}
-    \end{columns}
-\end{frame}
+% \begin{frame}{Demostraciones}
+%     \begin{columns}
+%         \begin{column}{0.5\textwidth}
+%             \includegraphics[scale=0.25]{img/ppt/dem-reduccion.png}
+%         \end{column}
+%         \begin{column}{0.5\textwidth}
+%             Lista de \textbf{comandos} que reducen sucesivamente la \textit{tesis} (fórmula a demostrar) hasta agotarla.
+%         \end{column}
+%     \end{columns}
+% \end{frame}
 
 \begin{frame}{by - El mecanismo principal de demostración}
-    \begin{center}
-        \lstinline{<form> by <h1>, ..., <hn>}
-    \end{center}
+    \begin{command}
+        \lstinline{thus <form> by <h1>, ..., <hn>}
+        \lstinline{have <name>: <form> by <h1>, ..., <hn>}
+    \end{command}
+    %\begin{center}
+    %    \lstinline{<form> by <h1>, ..., <hn>}
+    %\end{center}
     \begin{itemize}
         %\item Los nombres de las hipótesis son del tipo \lstinline{<name>} (o bien identificadores o \textit{strings} arbitrarios).
-        \item Demuestra \textbf{automáticamente} que la fórmula es consecuencia lógica de la justificación
         \item Por debajo usa un \textit{solver} completo para lógica proposicional pero \textit{heurístico} para primer orden.
+        \item Si puede, demuestra \textbf{automáticamente} que la fórmula es consecuencia lógica de la justificación.
         \item Toma las hipótesis del \textbf{contexto}:
         fórmulas asumidas (axiomas) o demostradas (teoremas y comandos que
         demuestran hipótesis auxiliares).
@@ -589,25 +593,25 @@ testigos usando la traducción de Friedman}
 \end{frame}
 
 
-\begin{frame}[fragile]{Thus y Have}
-    \begin{command}
-    \lstinline{thus <form> by <h1>, ..., <hn>}
+% \begin{frame}[fragile]{Thus y Have}
+%     \begin{command}
+%     \lstinline{thus <form> by <h1>, ..., <hn>}
 
-    \vspace{0.25cm}
+%     \vspace{0.25cm}
 
-    Si \lstinline{<form>} es \textit{parte} de la tesis, y el \textit{solver} puede demostrar la implicación, lo demuestra automáticamente y lo descarga de la tesis.
-    \end{command}
+%     Si \lstinline{<form>} es \textit{parte} de la tesis, y el \textit{solver} puede demostrar la implicación, lo demuestra automáticamente y lo descarga de la tesis.
+%     \end{command}
 
-    \vspace{0.25cm}
+%     \vspace{0.25cm}
 
-    \begin{command}
-        \lstinline{have <name>: <form> by <h1>, ..., <hn>}
+%     \begin{command}
+%         \lstinline{have <name>: <form> by <h1>, ..., <hn>}
     
-        \vspace{0.25cm}
+%         \vspace{0.25cm}
     
-        Análogo a \lstinline{thus}, pero introduce una afirmación \textit{auxiliar}
-        sin reducir la tesis, agregándola al contexto.
-    \end{command}    
+%         Análogo a \lstinline{thus}, pero introduce una afirmación \textit{auxiliar}
+%         sin reducir la tesis, agregándola al contexto.
+%     \end{command}    
     % \vspace{-0.4cm}
     % \begin{columns}[t]
     %     \begin{column}{0.5\textwidth}
@@ -617,7 +621,8 @@ testigos usando la traducción de Friedman}
     %         \lstinputlisting[title=Eliminación de universal]{listings/interfaz/by-forall.ppa}
     %     \end{column}
     % \end{columns}
-\end{frame}
+
+%\end{frame}
 
 % \begin{frame}[fragile]{Have}
 %     \pause
@@ -719,6 +724,12 @@ testigos usando la traducción de Friedman}
             \end{table}
         \end{column}
     \end{columns}
+    \pause
+    Adicionales:
+    \begin{itemize}
+        \item \lstinline{equivalently}: Reduce la tesis a una fórmula equivalente.
+        \item \lstinline{claim}: Análogo a \lstinline{have} pero con una sub-demostración.
+    \end{itemize}
 \end{frame}
 
 % \begin{frame}[fragile]{Suppose (\ruleImpI / \ruleNotI)}
@@ -808,29 +819,29 @@ testigos usando la traducción de Friedman}
 %     \end{itemize}
 % \end{frame}
 
-\begin{frame}[fragile]{Comandos adicionales}
-    \begin{command}
-        \lstinline{equivalently <form>}
+% \begin{frame}[fragile]{Comandos adicionales}
+%     \begin{command}
+%         \lstinline{equivalently <form>}
 
-        Permite reducir la tesis a una fórmula equivalente
-    \end{command}
+%         Permite reducir la tesis a una fórmula equivalente
+%     \end{command}
 
-    \begin{command}
-        \lstinline{claim <name>: <form>}
+%     \begin{command}
+%         \lstinline{claim <name>: <form>}
 
-        Análogo a \lstinline{have} pero con una sub-demostración.
-    \end{command}
+%         Análogo a \lstinline{have} pero con una sub-demostración.
+%     \end{command}
 
-    \begin{lstlisting}[numbers=none, title=Esquema de claim]
-theorem t: <form1>
-proof
-    claim <name>: <form2>
-    proof
-        // Demostración de <form2>.
-    end
-    // Demostración de <form1> refiriéndose a <name>.
-end
-    \end{lstlisting}
+%     \begin{lstlisting}[numbers=none, title=Esquema de claim]
+% theorem t: <form1>
+% proof
+%     claim <name>: <form2>
+%     proof
+%         // Demostración de <form2>.
+%     end
+%     // Demostración de <form1> refiriéndose a <name>.
+% end
+%     \end{lstlisting}
 
 %     \begin{itemize}
 %         \item Permite reducir la tesis a una fórmula equivalente
@@ -856,7 +867,7 @@ end
 % \end{lstlisting}
 %         \end{column}
 %     \end{columns}
-\end{frame}
+%\end{frame}
 
 \section{Certificador}
 
@@ -887,23 +898,6 @@ end
     \end{block}
 \end{frame}
 
-\begin{frame}{Contexto global}
-    Se generan $N$ demostraciones de deducción natural para cada programa, y se guardan en el \textit{contexto global}. El chequeo se extiende a contextos.
-    
-    \begin{figure}
-        \begin{columns}
-            \begin{column}{0.4\textwidth}
-                \begin{tabular}{c}
-                    \lstinputlisting{listings/certifier/two-theorems.ppa}
-                \end{tabular}
-            \end{column}
-            \begin{column}{0.3\textwidth}
-                \includegraphics[scale=0.4]{img/ppa-context.png}
-            \end{column}
-        \end{columns}
-        \caption{Contexto resultante de certificar un programa}
-    \end{figure}
-\end{frame}
 
 \begin{frame}{Certificado de demostraciones}
     El certificado de una demostración es recursivo:
@@ -932,6 +926,25 @@ end
         \caption{Ejemplo de certificado generado para un programa}
     \end{figure}
 \end{frame}
+
+\begin{frame}{Contexto global}
+    Se generan $N$ demostraciones de deducción natural para cada programa, y se guardan en el \textit{contexto global}. El chequeo se extiende a contextos.
+    
+    \begin{figure}
+        \begin{columns}
+            \begin{column}{0.4\textwidth}
+                \begin{tabular}{c}
+                    \lstinputlisting{listings/certifier/two-theorems.ppa}
+                \end{tabular}
+            \end{column}
+            \begin{column}{0.3\textwidth}
+                \includegraphics[scale=0.4]{img/ppa-context.png}
+            \end{column}
+        \end{columns}
+        \caption{Contexto resultante de certificar un programa}
+    \end{figure}
+\end{frame}
+
 
 \begin{frame}{Contexto local}
     Cada demostración tiene un contexto local a ella con las hipótesis agregadas por ciertos comandos (\lstinline{suppose}, \lstinline{consider}, \lstinline{have}, \lstinline{claim}, etc.).
@@ -1529,7 +1542,7 @@ end
     ¿Entonces por qué lógica clásica?
     \begin{itemize}
         \item Existen fórmulas que admiten demostraciones constructivas y no constructivas, y otras \textit{solo no constructivas} (i.e. clásicas).
-        \item Lógica clásica permite razonar por el absurdo, con \ruleDnegE{} $\equiv$ \ruleLEM{}
+        \item Además permite razonar por el absurdo, con \ruleDnegE{} $\equiv$ \ruleLEM{}
     \end{itemize}
 
     % \begin{theorem}[Teorema constructivo y no constructivo]
