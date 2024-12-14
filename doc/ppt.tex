@@ -78,10 +78,14 @@ testigos usando la traducción de Friedman}
 
 \section{Introducción}
 
-\begin{frame}{Teoremas}
+\begin{frame}{Repaso de lógica}
     \begin{itemize}
         \item \textbf{Teorema}: Afirmación que puede ser \textit{demostrada}.
-        \item \textbf{Demostración} de un teorema: \textit{Argumento lógico} que usa las \textit{reglas de inferencia} de un \textit{sistema deductivo} para establecer que el teorema es una \textit{consecuencia lógica} de los \textit{axiomas} y teoremas probados anteriormente.
+        \item \textbf{Demostración} de un teorema:
+        \begin{itemize}
+            \item \textit{Argumento} que establece que el teorema es cierto
+            \item Usa \textit{reglas de inferencia} a partir de \textit{axiomas} y otros teoremas probados anteriormente. 
+        \end{itemize}
         \item \textbf{Axiomas}: Afirmaciones que son siempre válidas (sin demostración).
     \end{itemize}
 \end{frame}
@@ -180,10 +184,12 @@ testigos usando la traducción de Friedman}
         \item Usamos \textbf{deducción natural}
         \begin{itemize}
             \item \textbf{Lenguaje formal}: lógica de primer orden.
-            \item \textbf{Reglas de inferencia}: Por ejemplo, \textit{modus ponens} (si
-            es cierto $\form \fImp \formTwo$ y $\form$, se puede concluir $\formTwo$) o
-            \textit{modus tollens} (si es cierto $\form \fImp \formTwo$ y $\fNot
-            \formTwo$, se puede concluir $\fNot\form$)
+            \item \textbf{Reglas de inferencia}: Por ejemplo,
+            \begin{itemize}
+            \item \textit{modus ponens}: si
+            es cierto $\form \fImp \formTwo$ y $\form$, se puede concluir $\formTwo$
+            \item \textit{modus tollens}: si es cierto $\form \fImp \formTwo$ y $\fNot \formTwo$, se puede concluir $\fNot\form$
+            \end{itemize}
         \end{itemize}
     \end{itemize}
 \end{frame}
@@ -319,12 +325,9 @@ testigos usando la traducción de Friedman}
             \item $\judG$ es la \textbf{relación de derivabilidad} definida a
             partir de las \textit{reglas de inferencia}.
             \item Permite escribir
-            juicios $\ctx \judG \anyForm$.
-            \item Decimos que
-            $\anyForm$ es \textit{derivable} a partir de $\ctx$.
-            \item Intuición: \textit{``$\anyForm$ es
+            juicios $\ctx \judG \anyForm$. Intuición: \textit{``$\anyForm$ es
             una consecuencia de las suposiciones de $\ctx$''}
-            \item El juicio es cierto si en una cantidad finita de
+            \item Es cierto si en una cantidad finita de
             pasos podemos concluir $\anyForm$ a partir de las fórmulas de
             $\ctx$, los axiomas y las reglas de inferencia.
         \end{itemize}
@@ -468,24 +471,29 @@ testigos usando la traducción de Friedman}
 
 \section{PPA}
 
-\begin{frame}{Mathematical vernacular}
-    Hay una forma natural de representar demostraciones matemáticas\footnote{\textit{Mathematical
-    Vernacular} de Freek Wiedijk}. Descubierta e implementada independientemente en Mizar,
-    Isar (Isabelle), etc. Combinación de ideas:
+\begin{frame}{Mathematical Vernacular}
+
+    \begin{center}
+        \textit{Mathematical
+        Vernacular}\footnote{De Freek Wiedijk} = Mizar + Isar (Isabelle)    
+    \end{center}
+    
+
+    Forma \textit{natural} de representar demostraciones matemáticas. Ideas:
 
     \begin{itemize}
         \item \textbf{Deducción natural en estilo de \textit{Fitch}}. Notación
         equivalente, demostraciones como listas de fórmulas en lugar de árboles.
-        \item \textbf{Reglas de inferencia \textit{declarativas}}: una forma de afirmar
-        que $\form_1, \dots, \form_n \judG \form$ es válida, sin
-        tener que demostrarlo a mano (automáticamente).
+        \item \textbf{Reglas de inferencia \textit{declarativas}}: Afirmar
+         \[\form_1, \dots, \form_n \judG \form\] sin
+        tener que demostrarlo a mano (automático).
         \item \textbf{Sintaxis similar a un lenguaje de programación} en lugar al lenguaje natural.
     \end{itemize}
 \end{frame}
 
 \begin{frame}[fragile]{PPA}
-    Diseñamos e implementamos el \textit{lenguaje} PPA, inspirado en el
-    \textit{mathematical vernacular}. Veamos la \textbf{interfaz} completa y luego la implementación.
+    \textit{Lenguaje} PPA, inspirado en el
+    \textit{Mathematical Vernacular}.
     \onslide<1->{\lstinputlisting[title=Ejemplo demostración,lastline=4]{listings/ppt/alumnos-corto.ppa}}\vspace*{-\baselineskip}
 
     \onslide<2->{\lstinputlisting[firstnumber=last,firstline=5,lastline=8]{listings/ppt/alumnos-corto.ppa}}\vspace*{-\baselineskip}
@@ -588,10 +596,13 @@ end
 \begin{frame}[fragile]{Thus}
     \begin{command}
     \lstinline{thus <form> by <h1>, ..., <hn>}
-    \end{command}
+
+    \vspace{0.25cm}
 
     Si \lstinline{<form>} es \textit{parte} de la tesis, y el \textit{solver} puede demostrar la implicación, lo demuestra automáticamente y lo descarga de la tesis.
-    \begin{columns}
+    \end{command}
+    \vspace{-0.4cm}
+    \begin{columns}[t]
         \begin{column}{0.5\textwidth}
             \lstinputlisting[title=Eliminación de implicación]{listings/interfaz/by-imp.ppa}
         \end{column}
@@ -604,11 +615,12 @@ end
 \begin{frame}[fragile]{Have}
     \begin{command}
     \lstinline{have <name>: <form> by <h1>, ..., <hn>}
-    \end{command}
+
+    \vspace{0.25cm}
 
     Análogo a \lstinline{thus}, pero introduce una afirmación \textit{auxiliar}
     sin reducir la tesis, agregándola al contexto.
-    
+    \end{command}
     \pause
     \begin{block}{Hipótesis anterior implícita}
         Ambas pueden referirse a la hipótesis anterior con guión medio
@@ -895,7 +907,8 @@ end
 \end{frame}
 
 \begin{frame}{Certificado de demostraciones}
-    El certificado de una demostración es recursivo: se certifica cada comando, generando una demostración en deducción natural cuyas premisas son el certificado del resto de la demostración en PPA.
+    El certificado de una demostración es recursivo:
+    % se certifica cada comando, generando una demostración en deducción natural cuyas premisas son el certificado del resto de la demostración en PPA.
     \begin{figure}
         \begin{columns}
             \begin{column}{0.45\textwidth}
@@ -922,7 +935,7 @@ end
 \end{frame}
 
 \begin{frame}{Contexto local}
-    Cada demostración tiene un contexto local a ella con las hipótesis agregadas por ciertos comandos (\lstinline{suppose}, \lstinline{consider}, \lstinline{have}, \lstinline{claim}, etc.). Necesaria para obtener las fórmulas asociadas a las hipótesis en el \lstinline{by}.
+    Cada demostración tiene un contexto local a ella con las hipótesis agregadas por ciertos comandos (\lstinline{suppose}, \lstinline{consider}, \lstinline{have}, \lstinline{claim}, etc.).
 
     \begin{figure}[h]
         \centering
@@ -941,9 +954,9 @@ end
 \end{frame}
 
 \begin{frame}{Certificado del by}
-    Teniendo $\ctx = \{\hypId_1: \formTwo_1, \dots, \hypId_n: \formTwo_n\}$, para certificar \lstinline{thus A by h1, ..., hn}:
+    Teniendo $\ctx = \{\hypId_1: \formTwo_1, \dots, \hypId_n: \formTwo_n\}$, para \lstinline{thus A by h1, ..., hn}:
 
-    \begin{enumerate}
+    \begin{enumerate}[<+->]
         \item Buscamos las hipótesis en el contexto. Queremos demostrar
         \[
             \formTwo_1 \fAnd \dots \fAnd \formTwo_n \fImp \form
@@ -969,23 +982,25 @@ end
 \end{frame}
 
 \begin{frame}{Ejemplo sin cuantificadores (1/2)}
-    Tenemos el siguiente programa
-
-    \begin{figure}[H]
+    \begin{figure}
         \centering
+        \small By sin cuantificadores
+
+        \vspace{0.1cm}
         \begin{tabular}{c}
             \lstinputlisting{listings/certifier/by-modus-ponens.ppa}
         \end{tabular}
     \end{figure}
-    \begin{enumerate}
+    \pause
+    \begin{enumerate}[<+->]
         \item Para certificar \lstinline{thus b by ax1, ax2} hay que generar una
         demostración para la implicación \[\big((a \fImp b) \wedge a \big)\fImp b\]
-        \item Negamos la fórmula 
+        \item Negamos la fórmula y buscamos una contradicción.
         \[ \fNot [ \big( (a \to b) \fAnd a \big) \to b ] \]
     \end{enumerate}
 \end{frame}
 \begin{frame}{Ejemplo sin cuantificadores (2/2)}
-    \begin{enumerate}
+    \begin{enumerate}[<+->]
         \setcounter{enumi}{2}
         \item La convertimos a DNF
         \begin{align*}
@@ -1010,53 +1025,55 @@ end
             (\alert{\fNot a} \fAnd \alert{a} \fAnd \fNot b) \vee
             (\alert{b} \fAnd a \fAnd \alert{\fNot b})
         \]
+        \qed
     \end{enumerate}
 \end{frame}
 
 \begin{frame}{Ejemplo con cuantificadores (1/3)}
-    Tenemos el siguiente programa
-
     \begin{figure}[H]
         \centering
+        \small By con cuantificadores
+
+        \vspace{0.1cm}    
         \begin{tabular}{c}
-            \lstinputlisting{listings/certifier/by-modus-ponens-quant.ppa}
+            \lstinputlisting{listings/ppt/by-modus-ponens-quant.ppa}
         \end{tabular}
     \end{figure}
-
-    \begin{enumerate}
-        \item Para certificar \lstinline{thus q(a) by ax1, ax2} hay que generar una
+    \pause
+    \begin{enumerate}[<+->]
+        \item Para certificar \lstinline{thus q(k) by ax1, ax2} hay que generar una
         demostración para la implicación \[
-            \Big(\big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(a) \Big)
-            \fImp q(a)
+            \Big(\big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(k) \Big)
+            \fImp q(k)
         \]
         \item Negamos la fórmula 
         \[
             \fNot \left[
-            \Big(\big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(a) \Big)
-            \fImp q(a)
+            \Big(\big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(k) \Big)
+            \fImp q(k)
         \right]
         \]
     \end{enumerate}
 \end{frame}
 
 \begin{frame}{Ejemplo con cuantificadores (2/3)}
-    \begin{enumerate}
+    \begin{enumerate}[<+->]
         \setcounter{enumi}{2}
         \item La convertimos a DNF
         \begin{align*}
             &\fNot \left[
-                \Big(\big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(a) \Big)
-                \fImp q(a)
+                \Big(\big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(k) \Big)
+                \fImp q(k)
             \right] \\
             &\equiv \fNot \left[
-                \fNot \Big(\big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(a) \Big)
-                \fOr q(a)
+                \fNot \Big(\big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(k) \Big)
+                \fOr q(k)
             \right] \\
             &\equiv
-                \fNot \fNot \Big(\big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(a) \Big)
-                \fAnd \fNot q(a)\\
-            &\equiv \big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(a)
-            \fAnd \fNot q(a)
+                \fNot \fNot \Big(\big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(k) \Big)
+                \fAnd \fNot q(k)\\
+            &\equiv \big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(k)
+            \fAnd \fNot q(k)
         \end{align*}
 
         como a los ojos de DNF un $\forall$ es opaco, a pesar de que dentro
@@ -1069,29 +1086,29 @@ end
 \end{frame}
 
 \begin{frame}{Ejemplo con cuantificadores (3/3)}
-    \begin{enumerate}
+    \begin{enumerate}[<+->]
         \setcounter{enumi}{4}
         \item Probamos eliminando $\forall x. (p(x) \fImp q(x))$. Reemplazamos
         $x$ por una meta-variable fresca $\metavar{u}$.
         \[
-            (p(\metavar{u}) \fImp q(\metavar{u})) \fAnd p(a) \fAnd \fNot q(a)
+            (p(\metavar{u}) \fImp q(\metavar{u})) \fAnd p(k) \fAnd \fNot q(k)
         \]
         \item Convertimos a DNF
         \begin{align*}
-            &(p(\metavar{u}) \fImp q(\metavar{u})) \fAnd p(a) \fAnd \fNot q(a)\\
-            &\equiv (\fNot p(\metavar{u}) \fOr q(\metavar{u})) \fAnd p(a) \fAnd \fNot q(a)\\
-            &\equiv ( (\fNot p(\metavar{u}) \fAnd p(a)) \fOr (q(\metavar{u}) \fAnd p(a))) \fAnd \fNot q(a)\\
+            &(p(\metavar{u}) \fImp q(\metavar{u})) \fAnd p(k) \fAnd \fNot q(k)\\
+            &\equiv (\fNot p(\metavar{u}) \fOr q(\metavar{u})) \fAnd p(k) \fAnd \fNot q(k)\\
+            &\equiv ( (\fNot p(\metavar{u}) \fAnd p(k)) \fOr (q(\metavar{u}) \fAnd p(k))) \fAnd \fNot q(k)\\
             &\equiv 
             \begin{aligned}[t]
-                &(\fNot p(\metavar{u}) \fAnd p(a) \fAnd \fNot q(a))\ \fOr\\
-                &(q(\metavar{u}) \fAnd p(a)\fAnd \fNot q(a))
+                &(\fNot p(\metavar{u}) \fAnd p(k) \fAnd \fNot q(k))\ \fOr\\
+                &(q(\metavar{u}) \fAnd p(k)\fAnd \fNot q(k))
             \end{aligned}
         \end{align*}
         \item Buscamos una contradicción refutando cada cláusula. Los
         literales opuestos tienen que \textit{unificar} en lugar de ser iguales.
         \begin{itemize}
-            \item $\alert{\fNot p(\metavar{u})} \fAnd \alert{p(a)} \fAnd \fNot q(a)$ tenemos $p(\metavar{u}) \unify p(a)$ con $\subst{\metavar{u}}{a}$
-            \item $\alert{q(\metavar{u})} \fAnd p(a) \fAnd \alert{\fNot q(a)}$ tenemos $q(\metavar{u}) \unify q(a)$ con $\subst{\metavar{u}}{a}$
+            \item $\alert{\fNot p(\metavar{u})} \fAnd \alert{p(k)} \fAnd \fNot q(k)$ tenemos $p(\metavar{u}) \unify p(k)$ con $\subst{\metavar{u}}{k}$
+            \item $\alert{q(\metavar{u})} \fAnd p(k) \fAnd \alert{\fNot q(k)}$ tenemos $q(\metavar{u}) \unify q(k)$ con $\subst{\metavar{u}}{k}$
         \end{itemize}
     \end{enumerate}
 \end{frame}
@@ -1112,11 +1129,14 @@ end
 \end{frame}
 
 \begin{frame}{Razonamiento por el absurdo}
-    \[
+    \begin{exampleblock}{Razonamiento por el absurdo en DNF}
+        \[
         \judG \formTwo_1 \fAnd \dots \fAnd \formTwo_n \fImp \form
         \overset{?}{\rightsquigarrow}
         \fNot (\formTwo_1 \fAnd \dots \fAnd \formTwo_n \fImp \form) \judG \fFalse
     \]
+    \end{exampleblock}
+    \pause
     \begin{columns}
         \begin{column}{0.4\textwidth}
             \begin{theorem}[DNeg Elim]
@@ -1195,24 +1215,34 @@ end
     Para reescribir una sub-fórmula (trivial sintácticamente), hay que demostrar las congruencias de los conectivos.
     \[
         \formLit \fOr \alert{\fNot (\formLitTwo \fOr \formLitThree)}
-        \rewrite
+        \judG
         \formLit \fOr \alert{(\fNot \formLitTwo \fAnd \fNot \formLitThree)}
-    \]
-
+    \]\pause
+    \vspace{-0.3cm}
     \begin{block}{Congruencias}
-        \begin{align*}
-            \form \judG \form'
-                &\Rightarrow \form \fAnd \formTwo \judG \form' \fAnd \formTwo\\
-            \form \judG \form'
-                &\Rightarrow \form \fOr \formTwo \judG \form' \fOr \formTwo\\
-            \form' \judG \form
-                &\Rightarrow \fNot \form \judG \fNot \form'
-        \end{align*}        
+        \vspace{-0.3cm}
+        \begin{gather*}
+        \form \judG \form'
+        \Rightarrow \form \fAnd \formTwo \judG \form' \fAnd \formTwo
+        \qquad
+        \formTwo \judG \formTwo'
+        \Rightarrow \form \fAnd \formTwo \judG \form \fAnd \formTwo'
+        \\
+        \form \judG \form'
+        \Rightarrow \form \fOr \formTwo \judG \form' \fOr \formTwo
+        \qquad
+        \alert{\formTwo \judG \formTwo'
+        \Rightarrow \form \fOr \formTwo \judG \form \fOr \formTwo'}
+        \\
+        \form' \judG \form
+        \Rightarrow \fNot \form \judG \fNot \form'
+        \end{gather*}        
     \end{block}
-
+    \pause
     \begin{alertblock}{$\fNot$ es contravariante}
-        Para demostrar $\fNot \form \judG \fNot \form'$ no necesitamos una demostración de $\form \judG \form'$, sino de $\form' \judG \form$.
-        
+        Para demostrar $\fNot \form \judG \fNot \form'$ no necesitamos una demostración de $\form \judG \form'$ (\textit{covariante}), sino de $\form' \judG \form$ (\textit{contravariante}).
+        \pause
+
         $\Rightarrow$ para todas las reescrituras, incluso las congruencias, tenemos que demostrarlas en ambos sentidos.
     \end{alertblock}
 \end{frame}
@@ -1263,6 +1293,10 @@ end
                 \form \fOr \formTwo &\judgEquiv \form' \fOr \formTwo\\
                 \fNot \form &\judgEquiv \fNot \form'
             \end{align*}
+            \vspace{0.5cm}
+            \begin{center}
+                \textbf{¡26 demostraciones!}
+            \end{center}
         \end{column}
         \end{columns}
     \end{block}
@@ -1326,7 +1360,7 @@ end
         \)}
     \end{prooftree}
     \end{exampleblock}
-
+    \pause
     \begin{lemma}[Regla admisible \ruleAndEProj{\anyForm}]
         \begin{prooftree}
             \AxiomC{$\ctx \judG \anyForm_1 \fAnd \dots \fAnd \anyForm_i \fAnd \dots \fAnd \anyForm_n$}
@@ -1374,27 +1408,36 @@ end
 
 \section{Extracción de testigos}
 
-\begin{frame}{Intuición del problema}
-    \begin{figure}
-        \includegraphics[scale=0.28]{img/ppt/extraction.png}
-    \end{figure}
-\end{frame}
+% \begin{frame}{Intuición del problema}
+%     \begin{figure}
+%         \includegraphics[scale=0.28]{img/ppt/extraction.png}
+%     \end{figure}
+% \end{frame}
 
 \begin{frame}{Extracción simple}
     \lstinputlisting[title=Extracción simple]{listings/ppt/extract/exists.ppa}
+    \pause
+    \begin{command}
+        \lstinline{take <var> := <term>}
+        \proofTreeExistsI
+    \end{command}
 \end{frame}
 
 
-\begin{frame}{Extracción con instanciación}
+\begin{frame}{Extracción indirecta con instanciación}
     \lstinputlisting[title=Extracción con instanciación]{listings/ppt/extract/forall.ppa}
-
-    Extraemos un testigo \lstinline{cero} y podemos instanciar \lstinline{N} en lo que sea, por ej. la siguiente fórmula es demostrable: \lstinline{cero <= 60}
 \end{frame}
 
-\begin{frame}{Extracción indirecta}
-    \lstinputlisting[title=Extracción indirecta]{listings/ppt/extract/indirect.ppa}
-    Extracción \textbf{indirecta} de \lstinline{theorem t2} nos da el testigo \lstinline{juan}.
+\begin{frame}
+    \lstinline{theorem todo_numero_tiene_leq: forall N. exists M . M <= N}
+
+    Extraemos un testigo \lstinline{cero} y podemos instanciar \lstinline{N} en lo que sea, por ej. \lstinline{cero <= 60}
 \end{frame}
+
+% \begin{frame}{Extracción indirecta}
+%     \lstinputlisting[title=Extracción indirecta]{listings/ppt/extract/indirect.ppa}
+%     Extracción \textbf{indirecta} de \lstinline{theorem t2} nos da el testigo \lstinline{juan}.
+% \end{frame}
 
 \begin{frame}{Extracción por el absurdo}
     \lstinputlisting[
@@ -1405,30 +1448,30 @@ end
     \begin{itemize}
         \item En general $\exists \var . \anyForm \equiv \fNot \forall \var .\fNot \anyForm$.
         \item Sin \lstinline{take} (\ruleExistsI) explícito, igual podemos extraer el testigo a partir del \lstinline{theorem} \lstinline{hayAlguienBajo}: \lstinline{juan}.
-        \item \alert{La implementación no es tan directa como buscar un \ruleExistsI}
+        \item \alert{La implementación no es tan directa como buscar un \ruleExistsI} en el árbol de la demostración.
     \end{itemize}
     
 \end{frame}
 
-\begin{frame}{Extracción de testigos}
-    Buscamos un mecanismo general tal que,
-
-    \begin{block}{Mecanismo de extracción de testigos}
-        A partir de una demostración en PPA para una fórmula de la forma \[\forall \var_0 \dots \forall \var_n
-\exists \varTwo . \anyForm(\var_0, \dots, \var_n, \varTwo),\]
-
-\begin{enumerate}
-    \item la certifique generando una demostración en \alert<2>{deducción natural \textbf{clásica}}
-    \item  a partir de ella extraiga $\termTwo$ tal que, para $\term_0, \dots, \term_n$ cuales quiera, valga \[\anyForm(\term_0, \dots, \term_n, \termTwo)\]
-\end{enumerate}
-    \end{block}
-\end{frame}
-
 \begin{frame}{Lógica clásica}
-    \centering
-    La lógica clásica \textbf{no es constructiva}, por LEM:
-    \vspace{0.5cm}
-    \proofTreeLEM
+    \begin{figure}
+        \includegraphics[scale=0.3]{img/ppt/extraction-candidate.png}
+    \end{figure}
+    \begin{itemize}[<+->]
+        \item Buscamos un mecanismo general que nos permita extraer testigos a partir de demostraciones en \textbf{deducción natural clásica}
+        \item Pero la lógica clásica \textbf{no es constructiva}, por LEM:
+        \vspace{0.5cm}
+        \proofTreeLEM
+    \end{itemize}
+%     \begin{block}{Mecanismo de extracción de testigos}
+%         A partir de una demostración en PPA para una fórmula de la forma \[\forall \var_0 \dots \forall \var_n
+% \exists \varTwo . \anyForm(\var_0, \dots, \var_n, \varTwo),\]
+
+% \begin{enumerate}
+%     \item la certifique generando una demostración en \alert<2>{deducción natural \textbf{clásica}}
+%     \item  a partir de ella extraiga $\termTwo$ tal que, para $\term_0, \dots, \term_n$ cuales quiera, valga \[\anyForm(\term_0, \dots, \term_n, \termTwo)\]
+% \end{enumerate}
+%     \end{block}
 \end{frame}
 
 % \begin{frame}{Demostración no constructiva}
@@ -1472,6 +1515,7 @@ end
                 \fOr
                 (y = 0 \fAnd \alert{\fNot C})
         \]
+        \pause
         podemos demostrarlo por LEM, sabemos que vale $C \fOr \fNot C$
 
         \begin{itemize}
@@ -1479,18 +1523,19 @@ end
             \item Supongamos que vale $\fNot C$. Tomo $y = 0$. \qed
         \end{itemize}
         
+        \pause
         ¡No nos dice cual es cierto! No es \textit{constructiva}. No tenemos forma de saber si es cierto $C$ o $\fNot C$ (indecidible).
     \end{ejemplo}
-    
-    \begin{theorem}
-        Existen dos números irracionales $a$ y $b$ tales que $a^b$ es racional.
-    \end{theorem}
 \end{frame}
 
 \begin{frame}{¿Entonces por qué lógica clásica?}
+    \begin{theorem}[Teorema constructivo y no constructivo]
+        Existen dos números irracionales $a$ y $b$ tales que $a^b$ es racional.
+    \end{theorem}
+
     \begin{itemize}
         \item Existen fórmulas que admiten demostraciones constructivas y no constructivas, y otras \textit{solo no constructivas} (i.e. clásicas).
-        %\item Lógica clásica permite razonar por el absurdo: \ruleDnegE{}, \ruleLEM{}
+        \item Lógica clásica permite razonar por el \textbf{absurdo}: \ruleDnegE{} $\equiv$ \ruleLEM{}
     \end{itemize}
 \end{frame}
 
@@ -1516,9 +1561,8 @@ end
     
     \begin{itemize}
         \item No tiene LEM\footnote{Ni principios de razonamiento equivalentes, como \ruleDnegE{}}, entonces siempre es constructiva.
-        \item Noción de \textit{forma normal} buena: una demostración de un $\exists$ debería comenzar con \ruleExistsI{}:
+        \item Siempre permite hacer extracción de testigos: proceso de normalización con \textit{forma normal} buena, una demostración de un $\exists$ debería comenzar con \ruleExistsI{} y de ahí sacás el testigo.
         \proofTreeExistsI{}
-        \item Proceso de normalización análogo a reducción de $\lambda$-cálculo (su semántica operacional), visto desde el isomorfismo Curry-Howard.
     \end{itemize}
 \end{frame}
 
@@ -1608,7 +1652,7 @@ end
         \Leftrightarrow
         \tdn{\someProof} \proves \tdn{\ctx} \judgI \fNotR \forall \var . \fNotR \tdn{\anyForm}
     \]
-    Luego,
+    Luego, \pause
     \begin{prooftree}
         \def\defaultHypSeparation{\hskip .1in}
         \AxiomC{$\tdn{\someProof}$}
@@ -1640,12 +1684,12 @@ end
     \begin{lemma}[Introducción de $\fNotR$]
         Si $\form$ es \textit{conjuntiva}, entonces vale $\fNotR \form \judgI \fNotR \tdn{\form}$ y lo notamos con la regla admisible \ruleNotRTransI{}.
     \end{lemma}
+    \pause
     \begin{proof}
         Por inducción estructural en la fórmula. Intuición:
         \begin{itemize}
-            \item Atómicas trivial. $\fNotR \form \judgI \fNotR \tdn{\form} \iff \fNotR \form \judgI \fNotR \fNotR \fNotR \form$ sale con \textit{eliminación de triple negación}.
-            \item En lógica intuicionista, el $\fNot$ contiene ``poca información''. Son más difíciles las demostraciones como $\fNotR (\form \fAnd \formTwo) \judgI \fNotR \tdn{(\form \fAnd \formTwo)}$
-            \item En lógica clásica requeriría LEM.
+            \item Atómicas trivial. Para predicados, \[\fNotR \form \judgI \fNotR \tdn{\form} \iff \fNotR \form \judgI \fNotR \fNotR \fNotR \form\] sale con \textit{eliminación de triple negación}.
+            \item Conjunción tiene algunos trucos.
         \end{itemize}
     \end{proof}
 \end{frame}
@@ -1655,6 +1699,7 @@ end
         Si $\someProof \proves \ctx \judgC \form$, luego
         $\tdn{\someProof} \proves \tdn{\ctx} \judgI \transDNeg{\form}$
     \end{theorem}
+    \pause
     \begin{proof}
         Inducción estructural sobre la demostración. \textbf{Estrategia}: traducimos recursivamente las partes de $\someProof$ y las usamos para construir una nueva demostración de $\tdn{\form}$.
         \begin{itemize}
@@ -1791,22 +1836,19 @@ end
     \RL{\ruleImpE}
     \BinaryInfC{$\ctx \judG \formTwo$}
     \DisplayProof
-    \only<3->{
     %
     \quad \rewrite \quad
     %
-    \AxiomC{$\someProof_\formTwo\subst{\hypId}{\someProof_\form}$}
+    \AxiomC{$\someProof_\formTwo\only<2->{\alert{\subst{\hypId}{\someProof_\form}}}$}
     \noLine
     \UnaryInfC{$\ctx \judG \formTwo$}
     \DisplayProof
-    }
     \]
 
     \begin{itemize}
         \item Primer idea: \xxcancel<2->{$\someProof_\formTwo \proves \ctx \judG \formTwo$} \pause
-        \item ¡\textbf{no sería correcto}! La demostración $\someProof_\formTwo$ requiere la hipótesis $\hypId : \form$, que no necesariamente está en $\ctx$, es agregada por \ruleImpIh{\hypId}
-        \item Correcto: usar $\someProof_\formTwo$, pero \textit{sustituyendo} todas las ocurrencias de la hipótesis $\hypId$ por la demostración $\someProof_\form$.
-        \item Es necesaria una noción de sustitución de hipótesis por demostraciones (sin capturas).
+        \item $\someProof_\formTwo$ requiere $\hypId : \form$, agregada por \ruleImpIh{\hypId}
+        \item Correcto: usar $\someProof_\formTwo$, pero \textit{sustituyendo} todas las ocurrencias de la hipótesis $\hypId$ por la demostración $\someProof_\form$ (sin capturas).
     \end{itemize}
 \end{frame}
 

@@ -1,8 +1,17 @@
-axiom cero_min: forall N . cero <= N
-theorem todo_numero_tiene_menor:
-    forall N. exists M . M <= N
+axiom cero_min: forall N . cero < N
+axiom lt_leq: forall N . forall M . M < N -> M <= N
+
+theorem todo_numero_tiene_lt: forall N. exists M . M < N
 proof
     let N
     take M := cero
-    thus <=(cero, N) by cero_min
+    thus cero < N by cero_min
+end
+
+theorem todo_numero_tiene_leq: forall N. exists M . M <= N
+proof
+    let N'
+    consider Min st h: Min < N' by todo_numero_tiene_lt
+    take M := Min
+    thus Min <= N' by h, lt_leq
 end
