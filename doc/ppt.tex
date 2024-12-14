@@ -122,9 +122,10 @@ testigos usando la traducción de Friedman}
             \item Formalización de teoremas matemáticos.
             \item Verificación de programas.
         \end{itemize}
+        \pause
         \item Ventajas:\footnote{\href{https://youtu.be/AayZuuDDKP0?si=eGETzgh9PQ_8JecR}{Terrence Tao - Machine Assisted Proof}}
         \begin{itemize}
-            \item Facilitan la colaboración a gran escala (mediante la confianza en el asistente).
+            \item Facilitan la colaboración a gran escala (mediante la confianza en el asistente).\pause
             \item Habilitan generación automática de demostraciones con IA. Por ej. un \textit{LLM} (como \textit{ChatGPT}) suele devolver alucinaciones, que pueden ser filtradas automáticamente con un asistente.
         \end{itemize}
     \end{itemize}
@@ -134,10 +135,11 @@ testigos usando la traducción de Friedman}
     \begin{figure}
         \includegraphics[scale=0.25]{img/ppt/proof-assistants.png}
     \end{figure}
-    \begin{block}{Extracción de testigos}
-        De una demo de
-        $\exists \var . \pred(\var)$, encontrar $\term$ tq $\pred(\term)$.
-    \end{block}
+    \pause
+    \textbf{Extracción de testigos}: De una demo de
+    $\exists \var . \pred(\var)$, encontrar $\term$ tq $\pred(\term)$.
+
+    Lógica constructiva = sencillo, no constructiva = complicado.
 \end{frame}
 
 \begin{frame}{PPA}
@@ -367,6 +369,13 @@ testigos usando la traducción de Friedman}
         \item \ruleExistsI, \ruleExistsE
         \item \ruleLEM
     \end{itemize}
+    \pause
+    \begin{block}{Alfa equivalencia}
+        \begin{itemize}
+            \item Podemos usar $\exists \var . \pred(\var)$ y $\exists \varTwo . \pred(\varTwo)$ intercambiablemente.
+            \item Son $\alpha$-equivalentes (renombrando variables ligadas de forma apropiada, son iguales).
+        \end{itemize}
+    \end{block}
 \end{frame}
 
 \begin{frame}{Reglas admisibles}
@@ -419,36 +428,27 @@ testigos usando la traducción de Friedman}
     \end{lemma}
 \end{frame}
 
-\begin{frame}{Sustitución sin capturas}
+\begin{frame}{Sustitución}
     \begin{definition}[Sustitución]
         Notamos como $\form \subst{\var}{\term}$ a la sustitución de todas las
         ocurrencias libres de la variable $\var$ por el término $\term$ en la
         fórmula $\form$.
     \end{definition}
-
-    \proofTreeForallE
-
-    Queremos evitar la \textbf{captura de variables}, por ejemplo
-    \[
-        (\forall \varTwo . \pred(\var))\subst{\var}{\varTwo} \overset{?}{=}
-        \forall \varTwo . \pred(\alert{\varTwo})
-    \]
-    Lo evitamos \textbf{automáticamente}: cuando se encuentra con una captura,
-    se renombra la variable ligada de forma que no ocurra
-    \[
-        (\forall \varTwo . \pred(\var))\subst{\var}{\varTwo} =
-        \forall \alert{\varThree} . \pred(\varTwo)
-    \]
+    \begin{exampleblock}{Eliminación de universal}
+        \proofTreeForallE
+    \end{exampleblock}
+    \begin{block}{Capturas}
+        Evitamos automáticamente la \textbf{captura de variables}
+        \begin{align*}
+        (\forall \varTwo . \pred(\var))\subst{\var}{\varTwo} &\not =
+        \forall \varTwo . \pred(\alert{\varTwo}) & & \text{(capturada)}\\
+        (\forall \varTwo . \pred(\var))\subst{\var}{\varTwo} &=
+        \forall \alert{\varThree} . \pred(\varTwo) & & \text{(renombrada)}
+        \end{align*}
+    \end{block}
 \end{frame}
 
-\begin{frame}{Alfa equivalencia}
-    \begin{itemize}    
-        \item Si tenemos una hipótesis $\exists \var . \pred(\var)$ queremos poder
-        usarla para demostrar $\exists \varTwo . \pred(\varTwo)$.
-        \item No son iguales, pero son \textbf{\bm{$\alpha$}-equivalentes}: si
-        renombramos variables ligadas de forma apropiada, son iguales.
-    \end{itemize}
-
+%\begin{frame}{Alfa equivalencia}
     % \begin{itemize}
     %     \item Algoritmo naíf: cuadrático en la estructura de la fórmula,
     %     renombrando recursivamente.
@@ -467,7 +467,7 @@ testigos usando la traducción de Friedman}
     %         &\iff \varThree = \varThree.
     %     \end{align*}        
     % \end{example}
-\end{frame}
+%\end{frame}
 
 \section{PPA}
 
@@ -481,7 +481,7 @@ testigos usando la traducción de Friedman}
 
     Forma \textit{natural} de representar demostraciones matemáticas. Ideas:
 
-    \begin{itemize}
+    \begin{itemize}[<+->]
         \item \textbf{Deducción natural en estilo de \textit{Fitch}}. Notación
         equivalente, demostraciones como listas de fórmulas en lugar de árboles.
         \item \textbf{Reglas de inferencia \textit{declarativas}}: Afirmar
@@ -523,23 +523,23 @@ testigos usando la traducción de Friedman}
 %     \end{itemize}
 % \end{frame}
 
-\begin{frame}[fragile]{Programas}
-    Un \textbf{programa} de PPA consiste en una lista de \textbf{declaraciones},
-    que pueden ser
-    \begin{itemize}
-        \item \textbf{Axiomas}: fórmulas que se asumen válidas
-        \begin{lstlisting}[numbers=none]
-axiom <name> : <form>
-        \end{lstlisting}
-        \item \textbf{Teoremas}: fórmulas junto con sus demostraciones.
-\begin{lstlisting}[numbers=none]
-theorem <name> : <form>
-proof
-    <steps>
-end
-\end{lstlisting}
-    \end{itemize}
-\end{frame}
+% \begin{frame}[fragile]{Programas}
+%     Un \textbf{programa} de PPA consiste en una lista de \textbf{declaraciones},
+%     que pueden ser
+%     \begin{itemize}
+%         \item \textbf{Axiomas}: fórmulas que se asumen válidas
+%         \begin{lstlisting}[numbers=none]
+% axiom <name> : <form>
+%         \end{lstlisting}
+%         \item \textbf{Teoremas}: fórmulas junto con sus demostraciones.
+% \begin{lstlisting}[numbers=none]
+% theorem <name> : <form>
+% proof
+%     <steps>
+% end
+% \end{lstlisting}
+%     \end{itemize}
+% \end{frame}
 
 % \begin{frame}[fragile]{Fórmulas y términos}
 %     Términos:
@@ -569,13 +569,7 @@ end
             \includegraphics[scale=0.25]{img/ppt/dem-reduccion.png}
         \end{column}
         \begin{column}{0.5\textwidth}
-            \begin{itemize}
-                \item Lista de \textbf{comandos} que reducen sucesivamente la \textit{tesis}
-                (fórmula a demostrar) hasta agotarla.
-                \item Tienen disponible un \textbf{contexto} con todas las hipótesis
-                asumidas (axiomas) o demostradas (teoremas y comandos que
-                demuestran hipótesis auxiliares).
-            \end{itemize}
+            Lista de \textbf{comandos} que reducen sucesivamente la \textit{tesis} (fórmula a demostrar) hasta agotarla.
         \end{column}
     \end{columns}
 \end{frame}
@@ -585,15 +579,17 @@ end
         \lstinline{<form> by <h1>, ..., <hn>}
     \end{center}
     \begin{itemize}
-        \item Afirma que la fórmula es una consecuencia lógica de las fórmulas que corresponden a las hipótesis provistas.
         %\item Los nombres de las hipótesis son del tipo \lstinline{<name>} (o bien identificadores o \textit{strings} arbitrarios).
-        \item Demostrado \textbf{automáticamente}: Por debajo usa un \textit{solver} completo para lógica proposicional pero \textit{heurístico} para primer orden.
-        \item Dos comandos principales: \lstinline{thus} y \lstinline{have}.
+        \item Demuestra \textbf{automáticamente} que la fórmula es consecuencia lógica de la justificación
+        \item Por debajo usa un \textit{solver} completo para lógica proposicional pero \textit{heurístico} para primer orden.
+        \item Toma las hipótesis del \textbf{contexto}:
+        fórmulas asumidas (axiomas) o demostradas (teoremas y comandos que
+        demuestran hipótesis auxiliares).
     \end{itemize}
 \end{frame}
 
 
-\begin{frame}[fragile]{Thus}
+\begin{frame}[fragile]{Thus y Have}
     \begin{command}
     \lstinline{thus <form> by <h1>, ..., <hn>}
 
@@ -601,68 +597,71 @@ end
 
     Si \lstinline{<form>} es \textit{parte} de la tesis, y el \textit{solver} puede demostrar la implicación, lo demuestra automáticamente y lo descarga de la tesis.
     \end{command}
-    \vspace{-0.4cm}
-    \begin{columns}[t]
-        \begin{column}{0.5\textwidth}
-            \lstinputlisting[title=Eliminación de implicación]{listings/interfaz/by-imp.ppa}
-        \end{column}
-        \begin{column}{0.5\textwidth}
-            \lstinputlisting[title=Eliminación de universal]{listings/interfaz/by-forall.ppa}
-        \end{column}
-    \end{columns}
-\end{frame}
-
-\begin{frame}[fragile]{Have}
-    \begin{command}
-    \lstinline{have <name>: <form> by <h1>, ..., <hn>}
 
     \vspace{0.25cm}
 
-    Análogo a \lstinline{thus}, pero introduce una afirmación \textit{auxiliar}
-    sin reducir la tesis, agregándola al contexto.
-    \end{command}
-    \pause
-    \begin{block}{Hipótesis anterior implícita}
-        Ambas pueden referirse a la hipótesis anterior con guión medio
-        (\lstinline{-}), y pueden hacerlo implícitamente usando \lstinline{hence} y
-        \lstinline{then}.
+    \begin{command}
+        \lstinline{have <name>: <form> by <h1>, ..., <hn>}
     
-        \begin{table}[H]
-            \centering
-        \begin{tabular}{l|l|l}
-        Comando             & Alternativo             & ¿Reduce la tesis? \\
-        \hline
-        \lstinline|thus|    & \lstinline|hence|       & Sí               \\
-        \lstinline|have|    & \lstinline|then|        & No              
-        \end{tabular}
-        \end{table}    
-    \end{block}
-    % \begin{figure}[H]
-    %     \centering
-    %     \small Eliminación de implicación en dos pasos
-        
-    %     \begin{tabular}{c}
-    %         \lstinputlisting{listings/interfaz/by-imp-have.ppa}
-    %     \end{tabular}
-    % \end{figure}
-    % \begin{columns}
+        \vspace{0.25cm}
+    
+        Análogo a \lstinline{thus}, pero introduce una afirmación \textit{auxiliar}
+        sin reducir la tesis, agregándola al contexto.
+    \end{command}    
+    % \vspace{-0.4cm}
+    % \begin{columns}[t]
     %     \begin{column}{0.5\textwidth}
-    %     \lstinputlisting[
-    %         firstline=1,
-    %         lastline=9,
-    %         title=Eliminación en dos pasos,
-    %     ]{listings/interfaz/by-imp-then.ppa}
+    %         \lstinputlisting[title=Eliminación de implicación]{listings/interfaz/by-imp.ppa}
     %     \end{column}
     %     \begin{column}{0.5\textwidth}
-    %         \lstinputlisting[
-    %             linerange={12-16, 19-23},
-    %             numbers=none,
-    %             title=Alternativas equivalentes,
-    %         ]{listings/interfaz/by-imp-then.ppa}
+    %         \lstinputlisting[title=Eliminación de universal]{listings/interfaz/by-forall.ppa}
     %     \end{column}
     % \end{columns}
-
 \end{frame}
+
+% \begin{frame}[fragile]{Have}
+%     \pause
+%     \begin{block}{Hipótesis anterior implícita}
+%         Ambas pueden referirse a la hipótesis anterior con guión medio
+%         (\lstinline{-}), y pueden hacerlo implícitamente usando \lstinline{hence} y
+%         \lstinline{then}.
+    
+%         \begin{table}[H]
+%             \centering
+%         \begin{tabular}{l|l|l}
+%         Comando             & Alternativo             & ¿Reduce la tesis? \\
+%         \hline
+%         \lstinline|thus|    & \lstinline|hence|       & Sí               \\
+%         \lstinline|have|    & \lstinline|then|        & No              
+%         \end{tabular}
+%         \end{table}    
+%     \end{block}
+%     % \begin{figure}[H]
+%     %     \centering
+%     %     \small Eliminación de implicación en dos pasos
+        
+%     %     \begin{tabular}{c}
+%     %         \lstinputlisting{listings/interfaz/by-imp-have.ppa}
+%     %     \end{tabular}
+%     % \end{figure}
+%     % \begin{columns}
+%     %     \begin{column}{0.5\textwidth}
+%     %     \lstinputlisting[
+%     %         firstline=1,
+%     %         lastline=9,
+%     %         title=Eliminación en dos pasos,
+%     %     ]{listings/interfaz/by-imp-then.ppa}
+%     %     \end{column}
+%     %     \begin{column}{0.5\textwidth}
+%     %         \lstinputlisting[
+%     %             linerange={12-16, 19-23},
+%     %             numbers=none,
+%     %             title=Alternativas equivalentes,
+%     %         ]{listings/interfaz/by-imp-then.ppa}
+%     %     \end{column}
+%     % \end{columns}
+
+% \end{frame}
 % \begin{frame}[fragile]{By opcional}
 %     \begin{itemize}
 %         \item El \lstinline{by} es opcional
@@ -868,7 +867,7 @@ end
             \begin{itemize}
                 \item Las demostraciones de \ppaLang{} se \textit{certifican} generando
                 una demostración de deducción natural.
-                \item No deberían generarse demostraciones erróneas, pero son chequeadas independientemente como mecanismo de \textit{fallback}.
+                \item Evita confiar en la implementación del asistente.
             \end{itemize}
         \end{column}
         \begin{column}{0.5\textwidth}
@@ -880,7 +879,7 @@ end
             \end{figure}
         \end{column}
     \end{columns}
-
+    \pause
     \begin{block}{Criterio de de Bruijn}
         Un asistente de demostración cumple con el criterio de de Bruijn si
         satisface que sus demostraciones puedan ser chequeadas por un programa
@@ -1428,11 +1427,11 @@ end
     \lstinputlisting[title=Extracción con instanciación]{listings/ppt/extract/forall.ppa}
 \end{frame}
 
-\begin{frame}
-    \lstinline{theorem todo_numero_tiene_leq: forall N. exists M . M <= N}
+% \begin{frame}
+%     \lstinline{theorem todo_numero_tiene_leq: forall N. exists M . M <= N}
 
-    Extraemos un testigo \lstinline{cero} y podemos instanciar \lstinline{N} en lo que sea, por ej. \lstinline{cero <= 60}
-\end{frame}
+%     Extraemos un testigo \lstinline{cero} y podemos instanciar \lstinline{N} en lo que sea, por ej. \lstinline{cero <= 60}
+% \end{frame}
 
 % \begin{frame}{Extracción indirecta}
 %     \lstinputlisting[title=Extracción indirecta]{listings/ppt/extract/indirect.ppa}
@@ -1526,17 +1525,16 @@ end
         \pause
         ¡No nos dice cual es cierto! No es \textit{constructiva}. No tenemos forma de saber si es cierto $C$ o $\fNot C$ (indecidible).
     \end{ejemplo}
-\end{frame}
-
-\begin{frame}{¿Entonces por qué lógica clásica?}
-    \begin{theorem}[Teorema constructivo y no constructivo]
-        Existen dos números irracionales $a$ y $b$ tales que $a^b$ es racional.
-    \end{theorem}
-
+    \pause
+    ¿Entonces por qué lógica clásica?
     \begin{itemize}
         \item Existen fórmulas que admiten demostraciones constructivas y no constructivas, y otras \textit{solo no constructivas} (i.e. clásicas).
-        \item Lógica clásica permite razonar por el \textbf{absurdo}: \ruleDnegE{} $\equiv$ \ruleLEM{}
+        \item Lógica clásica permite razonar por el absurdo, con \ruleDnegE{} $\equiv$ \ruleLEM{}
     \end{itemize}
+
+    % \begin{theorem}[Teorema constructivo y no constructivo]
+    %     Existen dos números irracionales $a$ y $b$ tales que $a^b$ es racional.
+    % \end{theorem}
 \end{frame}
 
 \begin{frame}{Clases de estrategias de extracción}
@@ -1566,13 +1564,13 @@ end
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Traducción de Friedman}
-    La \textbf{traducción de Friedman} permite embeber la lógica clásica en la intuicionista, para demostraciones de \textit{algunas} fórmulas: de la clase $\classPiTwo$, de la forma \[
-        \forall \varTwo_1 \dots \forall \varTwo_n .
-        \exists \var .
-        \anyForm(\var, \varTwo_1, \dots, \varTwo_n)
-        \]
-\end{frame}
+% \begin{frame}{Traducción de Friedman}
+%     La \textbf{traducción de Friedman} permite embeber la lógica clásica en la intuicionista, para demostraciones de \textit{algunas} fórmulas: de la clase $\classPiTwo$, de la forma \[
+%         \forall \varTwo_1 \dots \forall \varTwo_n .
+%         \exists \var .
+%         \anyForm(\var, \varTwo_1, \dots, \varTwo_n)
+%         \]
+% \end{frame}
 
 \begin{frame}{Estrategia de extracción indirecta}
     \begin{figure}
@@ -1606,45 +1604,36 @@ end
 \end{frame}
 
 \begin{frame}{El truco de Friedman}
+    \begin{definition}[Fórmulas conjuntivas]
+        \[
+            \cForm ::=
+                \fFalse \mid \fTrue \mid \pred(\term_1, \dots, \term_n)
+                \mid \cForm \fAnd \cForm
+        \]
+    \end{definition}
 
     \begin{theorem}[Traducción de Friedman]
-        Sea $\someProof$ una demostración clásica de \[
+        Sea $\anyForm$ una fórmula \textbf{conjuntiva}. Si tenemos
+        \[ 
+            \someProof \proves \ctx \judgC
             \forall \varTwo_1 \dots \forall \varTwo_n .
             \exists \var .
             \anyForm(\var, \varTwo_1, \dots, \varTwo_n),
-            \] y
-            $\anyForm$ una fórmula \textbf{conjuntiva}.
-            Podemos generar una demostración intuicionista de la misma fórmula.
-        \end{theorem}
-
-
-    \begin{definition}[Fórmulas conjuntivas]
-        Generadas por
-        \[
-            \form ::=
-                \fFalse \mid \fTrue \mid \pred(\term_1, \dots, \term_n)
-                \mid \form \fAnd \form
         \]
-    \end{definition}
-\end{frame}
-
-\begin{frame}{El truco de Friedman}
-    Ejemplo sin $\forall$ (similar, omitiendo detalles técnicos).
-    
+        podemos generar una demostración intuicionista de la misma fórmula.
+    \end{theorem}
+    \pause
     \begin{lemma}[Traducción de Friedman simplificada]
         Sea $\anyForm$ una fórmula conjuntiva. Si tenemos
-        \[
-            \ctx \judgC \exists \var . \anyForm,
-        \]
-        podemos generar una demostración intuicionista de \textit{la misma fórmula}
-        \[
-            \transDNeg{\ctx} \judgI \exists \var . \anyForm.
-        \]
+        \(
+            \someProof \proves \ctx \judgC \exists \var . \anyForm,
+        \)
+        podemos generar una demostración intuicionista de la misma fórmula.
     \end{lemma}
 \end{frame}
 \begin{frame}{El truco de Friedman}
     \begin{proof}
-        Aplicando la traducción tomando $R = \exists \var . \anyForm$, tenemos que
+        Aplicando la traducción con $R = \exists \var . \anyForm$, tenemos que
     \[
         \tdn{\big(
             \someProof \proves \ctx \judgC \exists \var . \anyForm
@@ -1714,35 +1703,36 @@ end
 
 \begin{frame}{Traducción de introducción de conjunción}
     \begin{lemma}[Traducción de \ruleAndI{}]
-        \label{fri:lemma:trad-and-i}    
-        \begin{prooftree}
-            \AxiomC{$\someProof_\form$}
-            \noLine
-            \UnaryInfC{$\ctx \judgI \form$}
-            \AxiomC{$\someProof_\formTwo$}
-            \noLine
-            \UnaryInfC{$\ctx \judgI \formTwo$}
-            \RL{\ruleAndI}
-            \BinaryInfC{$\ctx \judgI \form \wedge \formTwo$}
-        \end{prooftree}
-        Dada una aparición de la regla \ruleAndI{},
-        es posible traducirla generando una demostración de $\tdn{(\form \fAnd \formTwo)} = \tdn{\form} \fAnd \tdn{\formTwo}$.
+        \begin{columns}
+            \begin{column}{0.5\textwidth}
+                \begin{prooftree}
+                    \AxiomC{$\someProof_\form$}
+                    \noLine
+                    \UnaryInfC{$\ctx \judgI \form$}
+                    \AxiomC{$\someProof_\formTwo$}
+                    \noLine
+                    \UnaryInfC{$\ctx \judgI \formTwo$}
+                    \RL{\ruleAndI}
+                    \BinaryInfC{$\ctx \judgI \form \wedge \formTwo$}
+                \end{prooftree}        
+            \end{column}
+            \begin{column}{0.5\textwidth}
+                Es posible demostrar $\tdn{(\form \fAnd \formTwo)} = \tdn{\form} \fAnd \tdn{\formTwo}$.
+            \end{column}
+        \end{columns}
     \end{lemma}
-\end{frame}
-\begin{frame}{Traducción de introducción de conjunción}
+
     \begin{proof}
-        Por hipótesis inductiva, tenemos que
-        \begin{align*}
+        Usando la HI:
+        \(
             \tdn{\someProof_\form} \proves
-            \tdn{\ctx} &\judgI
-            \tdn{\form}\\
+            \tdn{\ctx} \judgI
+            \tdn{\form} \text{ y }
             \tdn{\someProof_\formTwo} \proves
-            \tdn{\ctx} &\judgI
-            \tdn{\formTwo}
-        \end{align*}
-    
-        Luego, podemos generar una demostración de $\tdn{\form} \fAnd \tdn{\formTwo}$
-    
+            \tdn{\ctx} \judgI
+            \tdn{\formTwo},
+        \)
+        generamos
         \begin{prooftree}
             \AxiomC{$\tdn{\someProof_\form}$}
             \noLine
@@ -1753,20 +1743,96 @@ end
             \RL{\ruleAndI}
             \BinaryInfC{$\tdn{\ctx} \judgI \tdn{\form} \fAnd \tdn{\formTwo}$}
         \end{prooftree}
-    \end{proof}    
-    
+    \end{proof} 
 \end{frame}
 
-\begin{frame}{Repaso - estrategia de extracción indirecta}
-    \begin{figure}
-        \centering
-        \includegraphics[scale=0.33]{img/arch.png}
-    \end{figure}
+
+\begin{frame}{Problema con axiomas}
+    \begin{lemma}[Traducción de Friedman simplificada]
+        Sea $\anyForm$ una fórmula conjuntiva. Si tenemos
+        \(
+            \ctx \judgC \exists \var . \anyForm,
+        \)
+        podemos generar una demostración intuicionista de la misma fórmula
+        \(
+            \alert{\tdn{\ctx}} \judgI \exists \var . \anyForm.
+        \)
+    \end{lemma}
+    
+    \textbf{Problema:} la demostración normalizada no puede comenzar con \ruleExistsI{}
+    \[
+        \tdn{\pred(v)} \judgI \exists \var . \pred(\var)
+        \iff
+        \fNotR \fNotR \pred(v) \judgI \exists \var . \pred(\var)
+    \]
+    Nos gustaría \textit{mantener el contexto original}:
+    \(
+        p(v) \judgI \exists \var . \pred(\var)
+    \)
+    \begin{block}{Manteniendo el contexto}
+        Luego de la traducción, antes de reducir, reemplazamos cada cita (\ruleAx) de un axioma $\hypId: \tdn{\anyForm}$ por la demostración $\anyForm \judgI \tdn{\anyForm}$.
+    \end{block}
+    \begin{lemma}[Introducción de la traducción $\fNot\fNot$]
+        Si $\anyForm$ es una \textit{F-fórmula}, vale
+        $\anyForm \judgI \tdn{\anyForm}$.
+    \end{lemma}
+
 \end{frame}
+
+\begin{frame}{F-fórmulas}
+    \vspace{-0.2cm}
+    \begin{columns}[t]
+        \begin{column}{0.4\textwidth}
+            \begin{block}{F-fórmulas}
+                \vspace{-0.4cm}
+                \begin{align*}
+                    \form ::=\ & \fFalse \mid \fTrue \mid \pred(\term_1, \dots, \term_n)\\
+                    \fForm ::=\  &\form \\
+                    & \mid \fForm \fAnd \fForm \mid \fForm \fOr \fForm                       \\
+                    & \mid \forall \var . \fForm \mid \exists \var . \fForm                      \\
+                    & \mid \cForm \fImp \fForm                                                     \mid \fNot \cForm\\
+                    \cForm ::=\ & A  \mid \cForm \fAnd \cForm
+                \end{align*}
+            \end{block}
+            \begin{itemize}
+                \item $A$: Fórmulas atómicas
+                \item $F$: F-fórmulas
+                \item $C$: Fórmulas conjuntivas
+            \end{itemize}
+        \end{column}
+        \pause
+        \begin{column}{0.5\textwidth}
+            \begin{block}{Fórmulas de Harrop}
+                \vspace{-0.4cm}
+                \begin{align*}
+                    G ::=\ & \form\\
+                        &\mid G \fAnd G \mid G \fOr G \\
+                        &\mid \forall x . G \mid \exists x. G \\
+                        &\mid H \fImp G\\
+                    H ::=\ & A \mid H \fAnd H                    \\
+                            & \alert<2>{\mid \forall \var . H}\\
+                            & \alert<2>{\mid G \fImp A}
+                \end{align*}            
+            \end{block}
+            \begin{itemize}
+                \item $G$: G-fórmulas
+                \item $H$: Fórmulas Harrop Hereditarias
+                \item Generalización de cláusulas de Horn, usadas para realizabilidad
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% \begin{frame}{Repaso - estrategia de extracción indirecta}
+%     \begin{figure}
+%         \centering
+%         \includegraphics[scale=0.33]{img/arch.png}
+%     \end{figure}
+% \end{frame}
 
 
 \begin{frame}{Normalización}
-    Motivación: evitar \textit{``desvíos superfluos''}.
+    \textbf{Motivación}: evitar \textit{``desvíos superfluos''}.
 
     \begin{example}
         \[
@@ -1863,10 +1929,7 @@ end
 \end{frame}
 
 \begin{frame}{Algoritmo de reducción}
-    \begin{itemize}
-        \item Original: Similar a DNF, reducir de a 1 paso sucesivamente hasta que sea irreducible.
-        \item Problema: Congruencias se reducían de a un paso. Muy lento (demostraciones muy grandes)
-    \end{itemize}
+    \textbf{Idea original}: reducir en un paso sucesivamente hasta que sea irreducible.
 
 
 \begin{prooftree}
@@ -1883,6 +1946,8 @@ end
 reducíamos de a un paso a la vez $\form \rewrite \form_1 \rewrite \form_2
 \rewrite \dots \rewrite \form^{*}$ hasta llegar a $\form^{*}$ irreducible y
 recién ahí aplicamos mismo para $\formTwo$. En cada paso se recorría todo el árbol.
+
+Problema: Muy lento
 \end{frame}
 
 \begin{frame}{Estrategia de reducción}
@@ -1923,7 +1988,7 @@ recién ahí aplicamos mismo para $\formTwo$. En cada paso se recorría todo el 
 \end{frame}
 
 \begin{frame}{Limitaciones}
-    \begin{itemize}
+    \begin{itemize}[<+->]
         \item \textbf{Incompleta}: no contempla \textit{reducciones permutativas} (mezclando introducciones y eliminaciones de conectivos distintos).
         \begin{itemize}
             \item \textit{Mejora}: Implementarlas.
@@ -1947,112 +2012,26 @@ recién ahí aplicamos mismo para $\formTwo$. En cada paso se recorría todo el 
     \end{columns}
 \end{frame}
 
-\begin{frame}{Problema con axiomas}
-\begin{lemma}[Traducción de Friedman simplificada]
-    Sea $\anyForm$ una fórmula conjuntiva. Si tenemos
-    \[
-        \ctx \judgC \exists \var . \anyForm,
-    \]
-    podemos generar una demostración intuicionista de \textit{la misma fórmula}
-    \[
-        \alert{\tdn{\ctx}} \judgI \exists \var . \anyForm.
-    \]
-\end{lemma}
+% \begin{frame}{Mecanismo de extracción de testigos}
+%     \begin{itemize}
+%         \item 
+%     \end{itemize}
+% \end{frame}
 
-\textbf{Problema:} la demostración normalizada no puede comenzar con \ruleExistsI{}
-
-\[
-    \fNotR \fNotR p(v) \judgI \exists x . p(x)
-\]
-
-Nos gustaría
-
-\[
-    p(v) \judgI \exists x . p(x)
-\]
-
-\end{frame}
-
-\begin{frame}{F-fórmulas}
-    \begin{definition}[F-fórmulas]
-        $\formTwo$ es una \textit{F-fórmula} si está generada por:
-        \begin{align*}
-            \formTwo ::=\  & \pred(\term_1, \dots, \term_n) \mid \fFalse \mid \fTrue                        \\
-                           & \mid \formTwo \fAnd \formTwo \mid \formTwo \fOr \formTwo                       \\
-                           & \mid \forall \var . \formTwo \mid \exists \var . \formTwo                      \\
-                           & \mid \form \fImp \formTwo                                                      \\
-                           & \mid \fNot \form
-        \end{align*}
-        Donde $\form$ son fórmulas \textit{conjuntivas}
-    \end{definition}
-    
-    \begin{lemma}[Introducción de la traducción $\fNot\fNot$]
-        Si $\formTwo$ es una \textit{F-fórmula}, vale
-        $\formTwo \judgI \tdn{\formTwo}$.
-    \end{lemma}
-\end{frame}
-
-\begin{frame}{Manteniendo el contexto}
-    \begin{itemize}
-        \item Después de la traducción, se reemplaza cada axioma
-        \item Los axiomas deben ser F-fórmulas.
-    \end{itemize}
-\end{frame}
-
-\begin{frame}{Harrop}
-    \begin{columns}[t]
-        \begin{column}{0.4\textwidth}
-            \begin{block}{F-fórmulas}
-                \begin{align*}
-                    \form ::=\ & \fFalse \mid \fTrue \mid \pred(\term_1, \dots, \term_n)\\
-                    \fForm ::=\  &A \\
-                    & \mid \fForm \fAnd \fForm \mid \fForm \fOr \fForm                       \\
-                    & \mid \forall \var . \fForm \mid \exists \var . \fForm                      \\
-                    & \mid \cForm \fImp \fForm                                                     \mid \fNot \cForm\\
-                    \cForm ::=\ & A  \mid \cForm \fAnd \cForm
-                \end{align*}
-            \end{block}
-            A: Atómicas
-            F: F-fórmulas
-            C: Fórmulas conjuntivas
-        \end{column}
-        \begin{column}{0.4\textwidth}
-            \begin{block}{Harrop}
-                \begin{align*}
-                    A ::=\ & \fFalse \mid \fTrue \mid \pred(\term_1, \dots, \term_n)\\
-                    G ::=\ & A \\
-                        &\mid G \fAnd G \mid G \fOr G \\
-                        &\mid \forall x . G \mid \exists x. G \\
-                        &\mid H \fImp G\\
-                    H ::=\ & A \mid H \fAnd H                    \\
-                           & \alert<2>{\mid \forall \var . H}\\
-                           & \alert<2>{\mid G \fImp A}
-                \end{align*}            
-            \end{block}
-            G: G-fórmulas
-            H: Harrop Hereditarias
-        \end{column}
-    \end{columns}
-\end{frame}
-
-\begin{frame}{Mecanismo de extracción de testigos}
-    \begin{itemize}
-        \item 
-    \end{itemize}
-\end{frame}
-
-\begin{frame}{Dificultades}
-    \begin{itemize}
-        \item \textit{Integration hell}
-        \item Encontré poca bibliografía de Friedman. Ni hablar que hable de  generación de demostraciones en deducción natural.
-    \end{itemize}
-\end{frame}
+% \begin{frame}{Dificultades}
+%     \begin{itemize}
+%         \item \textit{Integration hell}
+%         \item Encontré poca bibliografía de Friedman. Ni hablar que hable de  generación de demostraciones en deducción natural.
+%     \end{itemize}
+% \end{frame}
 
 \section{Detalles de implementación}
 
 \begin{frame}{La herramienta \ppaTool{}}
     \begin{figure}
-        \includegraphics[scale=0.3]{img/modules.png}
+        \includegraphics[scale=0.285]{img/modules.png}
+        \centering
+        \small Haskell, 19 módulos con 330 tests
     \end{figure}
     % Aprovechar para hacer un repaso
 \end{frame}
@@ -2064,15 +2043,6 @@ Nos gustaría
 \end{frame}
 
 
-\begin{frame}{Implementación}
-    \begin{itemize}
-        \item Implementado en Haskell
-        \item 330 tests
-        \item X? LoC
-    \end{itemize}
-\end{frame}
-
-
 \section{Trabajo futuro}
 
 \begin{frame}{Trabajo futuro}    
@@ -2081,10 +2051,10 @@ Nos gustaría
         \item Extender traducción de Friedman a más de un existencial.
         \item Refinar fórmulas conjuntivas. Profundizar vínculo con Harrop.
         \item Sofisticar reducción de demostraciones: hacer completa (reglas permutativas) y más eficiente (implementando máquina abstracta).
-        \item Mejorar \ppaLang{} como lenguaje de programación: módulos, importar archivos, biblioteca estándar
-        \item Extender PPA con tipos (usando LPO \textit{many-sorted} con géneros)
-        \item Modelar de forma nativa inducción (segundo orden) e igualdad
-        \item Mejorar reporte de errores (muy bajo nivel)
+        \item Mejorar \ppaLang{} como lenguaje de programación: módulos, importar archivos, biblioteca estándar.
+        \item Extender PPA con tipos (usando LPO \textit{many-sorted} con géneros).
+        \item Modelar de forma nativa inducción (segundo orden) e igualdad.
+        \item Mejorar reporte de errores (muy bajo nivel).
     \end{itemize}
 \end{frame}
 
