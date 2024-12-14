@@ -78,13 +78,46 @@ testigos usando la traducción de Friedman}
 
 \section{Introducción}
 
+\begin{frame}{Teoremas}
+    \begin{itemize}
+        \item \textbf{Teorema}: Afirmación que puede ser \textit{demostrada}.
+        \item \textbf{Demostración} de un teorema: \textit{Argumento lógico} que usa las \textit{reglas de inferencia} de un \textit{sistema deductivo} para establecer que el teorema es una \textit{consecuencia lógica} de los \textit{axiomas} y teoremas probados anteriormente.
+        \item \textbf{Axiomas}: Afirmaciones que son siempre válidas (sin demostración).
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Ejemplo de teorema}
+    \begin{example}[Teorema de Pitágoras]
+        \begin{columns}
+            \begin{column}{0.5\textwidth}
+                \[
+                a^2 + b^2 = c^2.
+                \]
+            \end{column}
+            \begin{column}{0.5\textwidth}
+                \begin{figure}[H]
+                    \includegraphics[scale=0.4]{img/ppt/pitagoras.png}
+                \end{figure}
+            \end{column}
+        \end{columns}
+        \begin{itemize}
+            \item \textbf{Sistema}: Geometría euclidiana
+            \item Un axioma: se puede dibujar una línea recta entre dos puntos
+        \end{itemize}
+    \end{example}
+\end{frame}
+
 % TODO: Considerar explicar que es un teorema y qué es la verificación
 \begin{frame}{Asistentes de demostración}
     \begin{itemize}
         \item Los \textbf{asistentes de demostración} son herramientas que
         facilitan la escritura y el chequeo de demostraciones por
         computadora.
-        \item Usos usuales: formalización de teoremas matemáticos y verificación de programas.
+        \item Usos usuales:
+        \begin{itemize}
+            \item Formalización de teoremas matemáticos.
+            \item Verificación de programas.
+        \end{itemize}
         \item Ventajas:\footnote{\href{https://youtu.be/AayZuuDDKP0?si=eGETzgh9PQ_8JecR}{Terrence Tao - Machine Assisted Proof}}
         \begin{itemize}
             \item Facilitan la colaboración a gran escala (mediante la confianza en el asistente).
@@ -94,17 +127,13 @@ testigos usando la traducción de Friedman}
 \end{frame}
 
 \begin{frame}{Asistentes de demostración}
-    Implementan distintas \textit{teorías}.
-    Ejemplos:
-    \begin{itemize}
-        \item Mizar (lógica de primer orden)
-        \item Coq (teoría de tipos)
-        \item Agda (teoría de tipos)
-        \item Isabelle (lógica de orden superior / teoría de conjuntos ZF)
-    \end{itemize}
-
-    \todo{No me gusta la palabra teoria, lo usamos para teorias de primer orden}
-    \todo{Hablar acá de cuales son las diferencias de PPA, y cual es el hueco que buscamos cubrir!}
+    \begin{figure}
+        \includegraphics[scale=0.25]{img/ppt/proof-assistants.png}
+    \end{figure}
+    \begin{block}{Extracción de testigos}
+        De una demo de
+        $\exists \var . \pred(\var)$, encontrar $\term$ tq $\pred(\term)$.
+    \end{block}
 \end{frame}
 
 \begin{frame}{PPA}
@@ -114,15 +143,8 @@ testigos usando la traducción de Friedman}
     Diseñamos e implementamos en Haskell la herramienta \ppaTool{} (\textit{Pani's Proof Assistant}): un asistente de demostración para LPO \textbf{clásica}. Dos partes:
     \begin{itemize}
         \item El lenguaje \textbf{PPA} para escribir demostraciones.
-        \item \textbf{Extracción de testigos}: De una demo de
-        $\exists \var . \pred(\var)$, extrae $\term$ tq $\pred(\term)$.
+        \item \textbf{Extracción de testigos} \alert{(Aporte principal)}.
     \end{itemize}
-\end{frame}
-
-\begin{frame}{Aporte principal}
-    \centering
-    \Large
-    Implementación de extracción de testigos para lógica clásica de forma \textit{indirecta}.
 \end{frame}
 
 \begin{frame}{Representación de demostraciones}
@@ -136,6 +158,8 @@ testigos usando la traducción de Friedman}
         \end{enumerate}
         \item A partir de ellas, podríamos demostrar que si un alumno falta a un final, entonces recursa la materia.
     \end{itemize}
+
+    \pause
 
     \begin{theorem}
         Si ((falta entonces reprueba) y (reprueba entonces recursa)) y falta, entonces recursa
@@ -152,17 +176,14 @@ testigos usando la traducción de Friedman}
 \begin{frame}{Sistemas deductivos}
     \begin{itemize}
         \item \textbf{Problema}: Poco precisa. No se puede representar rigurosamente.
-        \item Necesitamos \textbf{sistemas deductivos}: sistemas lógicos formales usados para escribir demostraciones de setencias.
-        \item En particular usamos \textbf{deducción natural}. Compuesto por,
+        \item Necesitamos \textbf{sistemas deductivos}: sistemas lógicos formales usados para escribir demostraciones
+        \item Usamos \textbf{deducción natural}
         \begin{itemize}
             \item \textbf{Lenguaje formal}: lógica de primer orden.
-            \item \textbf{Reglas de inferencia}: lista de reglas que se usan para probar teoremas a partir de axiomas y otros teoremas. Por ejemplo, \textit{modus ponens} (si
-    es cierto $\form \fImp \formTwo$ y $\form$, se puede concluir $\formTwo$) o
-    \textit{modus tollens} (si es cierto $\form \fImp \formTwo$ y $\fNot
-    \formTwo$, se puede concluir $\fNot\form$)
-    \item \textbf{Axiomas}: fórmulas de $L$ que se asumen válidas. Todos los
-    teoremas se derivan de axiomas. Se usan para modelar \textit{teorías} de
-    primer orden (por ej. teoría de estudiantes en la facultad).
+            \item \textbf{Reglas de inferencia}: Por ejemplo, \textit{modus ponens} (si
+            es cierto $\form \fImp \formTwo$ y $\form$, se puede concluir $\formTwo$) o
+            \textit{modus tollens} (si es cierto $\form \fImp \formTwo$ y $\fNot
+            \formTwo$, se puede concluir $\fNot\form$)
         \end{itemize}
     \end{itemize}
 \end{frame}
@@ -212,34 +233,35 @@ testigos usando la traducción de Friedman}
 \section{Deducción natural}
 
 \begin{frame}{Ejemplo}
-    Vamos a demostrar el ejemplo informal en deducción natural. Lo modelamos
-    para un alumno y materia particulares. Notamos:
-    \begin{itemize}
-        \item $\reprueba \equiv \predReprueba(juan, \funFinal(logica))$
-        \item $\recursa \equiv \predRecursa(juan, logica)$
-        \item $\falta \equiv \predFalta(juan, \funFinal(logica))$
-    \end{itemize}
-
-    Queremos probar entonces 
-    \[
-        \Big(
-            (\falta \fImp \reprueba) \wedge (\reprueba \fImp \recursa)
-        \Big)
-        \fImp
-        (\falta \fImp \recursa)
-    \]
+    \begin{example}[Demostración en DN]
+        Notamos:
+        \begin{itemize}
+            \item $\reprueba \equiv \predReprueba(juan, \funFinal(logica))$
+            \item $\recursa \equiv \predRecursa(juan, logica)$
+            \item $\falta \equiv \predFalta(juan, \funFinal(logica))$
+        \end{itemize}
+        Queremos probar
+        \[
+            \Big(
+                (\falta \fImp \reprueba) \wedge (\reprueba \fImp \recursa)
+            \Big)
+            \fImp
+            (\falta \fImp \recursa)
+        \]
+    \end{example}
 \end{frame}
 
 \begin{frame}{Ejemplo}
-    \begin{prooftree}
-        \AxiomC{}
-        \RL{\ruleAx}
-        \UnaryInfC{$\ctx \judG (\falta \fImp \reprueba) \wedge (\reprueba \fImp \recursa)$}
-        \RL{\ruleAndEOne}
-        \UnaryInfC{$\ctx \judG \reprueba \fImp \recursa$}
+    \begin{example}[Demostración en DN]
+        \begin{prooftree}
+            \AxiomC{}
+            \RL{\ruleAx}
+            \UnaryInfC{$\ctx \judG (\falta \fImp \reprueba) \wedge (\reprueba \fImp \recursa)$}
+            \RL{\ruleAndEOne}
+            \UnaryInfC{$\ctx \judG \reprueba \fImp \recursa$}
         
-        \AxiomC{$\someProof$}
-        \noLine
+            \AxiomC{$\someProof$}
+            \noLine
         \UnaryInfC{$\ctx \judG \reprueba$}
         \RL{\ruleImpE}
         \BinaryInfC{\(
@@ -254,33 +276,59 @@ testigos usando la traducción de Friedman}
             (\falta \fImp \reprueba) \wedge (\reprueba \fImp \recursa)
             \judG
             \falta \fImp \recursa 
-        \)}
+            \)}
         \RL{\ruleImpI}
         \UnaryInfC{\(
             \judG
             \Big(
                 (\falta \fImp \reprueba) \wedge (\reprueba \fImp \recursa)
-            \Big)
-            \fImp
-            (\falta \fImp \recursa)
-        \)}
-    \end{prooftree}
+                \Big)
+                \fImp
+                (\falta \fImp \recursa)
+                \)}
+        \end{prooftree}
+        
+        donde
+        
+        \begin{prooftree}
+            \AxiomC{}
+            \RL{\ruleAx}
+            \UnaryInfC{$\ctx \judG (\falta \fImp \reprueba) \wedge (\reprueba \fImp \recursa)$}
+            \RL{\ruleAndETwo}
+            \UnaryInfC{$\ctx \judG \falta \fImp \reprueba$}
+            \AxiomC{}
+            \RL{\ruleAx}
+            \UnaryInfC{$\ctx \judG \falta$}
+            \RL{\ruleImpE}
+            \LL{$\someProof=$}
+            \BinaryInfC{$\ctx \judG \reprueba$}
+        \end{prooftree}
+    \end{example}
+\end{frame}
 
-    donde
+\begin{frame}{Deducción natural}
+    \begin{definition}[Contexto de demostración]
+        $\ctx$ es un \textbf{contexto de demostración}, conjunto de
+        fórmulas que se asumen válidas.
 
-    \begin{prooftree}
-        \AxiomC{}
-        \RL{\ruleAx}
-        \UnaryInfC{$\ctx \judG (\falta \fImp \reprueba) \wedge (\reprueba \fImp \recursa)$}
-        \RL{\ruleAndETwo}
-        \UnaryInfC{$\ctx \judG \falta \fImp \reprueba$}
-        \AxiomC{}
-        \RL{\ruleAx}
-        \UnaryInfC{$\ctx \judG \falta$}
-        \RL{\ruleImpE}
-        \LL{$\someProof=$}
-        \BinaryInfC{$\ctx \judG \reprueba$}
-    \end{prooftree}
+        \textbf{Notación}: $\ctx, \anyForm = \ctx \cup \{\anyForm\}$
+    \end{definition}
+    \pause
+    \begin{definition}[Relación de derivabilidad]
+        \begin{itemize}
+            \item $\judG$ es la \textbf{relación de derivabilidad} definida a
+            partir de las \textit{reglas de inferencia}.
+            \item Permite escribir
+            juicios $\ctx \judG \anyForm$.
+            \item Decimos que
+            $\anyForm$ es \textit{derivable} a partir de $\ctx$.
+            \item Intuición: \textit{``$\anyForm$ es
+            una consecuencia de las suposiciones de $\ctx$''}
+            \item El juicio es cierto si en una cantidad finita de
+            pasos podemos concluir $\anyForm$ a partir de las fórmulas de
+            $\ctx$, los axiomas y las reglas de inferencia.
+        \end{itemize}
+    \end{definition}
 \end{frame}
 
 \begin{frame}{Reglas de inferencia}
@@ -304,78 +352,25 @@ testigos usando la traducción de Friedman}
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Deducción natural}
-    \begin{definition}[Contexto de demostración]
-        $\ctx$ es un \textbf{contexto de demostración}, conjunto de
-        fórmulas que se asumen válidas.
-
-        \textbf{Notación}: $\ctx, \anyForm = \ctx \cup \{\anyForm\}$
-    \end{definition}
-    \begin{definition}[Relación de derivabilidad]
-        \begin{itemize}
-            \item $\judG$ es la \textbf{relación de derivabilidad} definida a
-            partir de las \textit{reglas de inferencia}. Permite escribir
-            juicios $\ctx \judG \anyForm$.
-            \item Intuición: \textit{``$\anyForm$ es
-            una consecuencia de las suposiciones de $\ctx$''}
-            \item Decimos que
-            $\anyForm$ es \textit{derivable} a partir de $\ctx$.
-            \item El juicio es cierto si en una cantidad finita de
-            pasos podemos concluir $\anyForm$ a partir de las fórmulas de
-            $\ctx$, los axiomas y las reglas de inferencia.
-        \end{itemize}
-    \end{definition}
-\end{frame}
 
 
 \begin{frame}{Reglas de inferencia}
-    \begin{definition}[Reglas de inferencia]
-        \proofTreeLEM
-        \begin{columns}
-            \begin{column}{0.5\textwidth}
-                \proofTreeFalseE
-                \proofTreeTrueI
-            \end{column}
-            \begin{column}{0.5\textwidth}
-                \proofTreeNotI
-                \proofTreeNotE
-            \end{column}
-        \end{columns}
-        \begin{columns}
-            \begin{column}{0.5\textwidth}
-                \proofTreeOrIOne
-            \end{column}
-            \begin{column}{0.5\textwidth}
-                \proofTreeOrITwo
-            \end{column}
-        \end{columns}
-        \proofTreeOrE
-    \end{definition}
-\end{frame}
-
-\begin{frame}{Reglas de inferencia}
-    \begin{definition}[Sustitución]
-        Notamos como $\form \subst{\var}{\term}$ a la sustitución de todas las
-        ocurrencias libres de la variable $\var$ por el término $\term$ en la
-        fórmula $\form$.
-    \end{definition}
-    \begin{definition}[Reglas de cuantificadores]
-        \begin{columns}
-            \column{0.5\textwidth}
-            \proofTreeForallI
-            \column{0.5\textwidth}
-            \proofTreeForallE
-        \end{columns}
-        \proofTreeExistsI
-        \proofTreeExistsE
-    \end{definition}
+    Otras reglas de inferencia
+    \begin{itemize}
+        \item \ruleFalseE, \ruleTrueI
+        \item \ruleNotI, \ruleNotE
+        \item \ruleOrIOne, \ruleOrITwo, \ruleOrE
+        \item \ruleForallI, \ruleForallE
+        \item \ruleExistsI, \ruleExistsE
+        \item \ruleLEM
+    \end{itemize}
 \end{frame}
 
 \begin{frame}{Reglas admisibles}
     \begin{itemize}
         \item Mencionamos \textit{modus tollens} pero no aparece en las reglas de inferencia.
         \item Queremos un sistema lógico \textbf{minimal}: no agregamos las reglas \textbf{admisibles}, derivables a partir de las existentes.
-        \item Se implementan como funciones o macros.
+        \item Se implementan como funciones o \textit{macros}.
     \end{itemize} 
 
     \begin{lemma}[Modus tollens]
@@ -422,13 +417,19 @@ testigos usando la traducción de Friedman}
 \end{frame}
 
 \begin{frame}{Sustitución sin capturas}
-    Para la sustitución $\form \subst{\var}{\term}$ queremos evitar la
-    \textbf{captura de variables}, por ejemplo
+    \begin{definition}[Sustitución]
+        Notamos como $\form \subst{\var}{\term}$ a la sustitución de todas las
+        ocurrencias libres de la variable $\var$ por el término $\term$ en la
+        fórmula $\form$.
+    \end{definition}
+
+    \proofTreeForallE
+
+    Queremos evitar la \textbf{captura de variables}, por ejemplo
     \[
         (\forall \varTwo . \pred(\var))\subst{\var}{\varTwo} \overset{?}{=}
         \forall \varTwo . \pred(\alert{\varTwo})
     \]
-    sustituyendo sin más, capturamos a la variable $\var$ que ahora está ligada.
     Lo evitamos \textbf{automáticamente}: cuando se encuentra con una captura,
     se renombra la variable ligada de forma que no ocurra
     \[
@@ -443,29 +444,32 @@ testigos usando la traducción de Friedman}
         usarla para demostrar $\exists \varTwo . \pred(\varTwo)$.
         \item No son iguales, pero son \textbf{\bm{$\alpha$}-equivalentes}: si
         renombramos variables ligadas de forma apropiada, son iguales.
-        \item Algoritmo naíf: cuadrático en la estructura de la fórmula,
-        renombrando recursivamente.
-        \item Algoritmo cuasilineal: manteniendo dos sustituciones, una por
-        fórmula.
     \end{itemize}
-    \begin{example}
-        \begin{align*}
-            (\exists \var . \fun(\var)) &\alphaEq (\exists \varTwo . \fun(\varTwo))
-            &&\{\}, \{\}
-            \\
-            &\iff \fun(\var) \alphaEq \fun(\varTwo)
-                &&\{\var \mapsto \varThree\}, \{\varTwo \mapsto \varThree\}\\
-            &\iff \var \alphaEq \varTwo
-                &&\{\var \mapsto \varThree\}, \{\varTwo \mapsto \varThree\}\\
-            &\iff \varThree = \varThree.
-        \end{align*}        
-    \end{example}
+
+    % \begin{itemize}
+    %     \item Algoritmo naíf: cuadrático en la estructura de la fórmula,
+    %     renombrando recursivamente.
+    %     \item Algoritmo cuasilineal: manteniendo dos sustituciones, una por
+    %     fórmula.
+    % \end{itemize}
+    % \begin{example}
+    %     \begin{align*}
+    %         (\exists \var . \fun(\var)) &\alphaEq (\exists \varTwo . \fun(\varTwo))
+    %         &&\{\}, \{\}
+    %         \\
+    %         &\iff \fun(\var) \alphaEq \fun(\varTwo)
+    %             &&\{\var \mapsto \varThree\}, \{\varTwo \mapsto \varThree\}\\
+    %         &\iff \var \alphaEq \varTwo
+    %             &&\{\var \mapsto \varThree\}, \{\varTwo \mapsto \varThree\}\\
+    %         &\iff \varThree = \varThree.
+    %     \end{align*}        
+    % \end{example}
 \end{frame}
 
 \section{PPA}
 
 \begin{frame}{Mathematical vernacular}
-    Hay una forma canónica de representar demostraciones matemáticas\footnote{\textit{Mathematical
+    Hay una forma natural de representar demostraciones matemáticas\footnote{\textit{Mathematical
     Vernacular} de Freek Wiedijk}. Descubierta e implementada independientemente en Mizar,
     Isar (Isabelle), etc. Combinación de ideas:
 
@@ -474,7 +478,7 @@ testigos usando la traducción de Friedman}
         equivalente, demostraciones como listas de fórmulas en lugar de árboles.
         \item \textbf{Reglas de inferencia \textit{declarativas}}: una forma de afirmar
         que $\form_1, \dots, \form_n \judG \form$ es válida, sin
-        tener que demostrarlo a mano.
+        tener que demostrarlo a mano (automáticamente).
         \item \textbf{Sintaxis similar a un lenguaje de programación} en lugar al lenguaje natural.
     \end{itemize}
 \end{frame}
@@ -482,8 +486,34 @@ testigos usando la traducción de Friedman}
 \begin{frame}[fragile]{PPA}
     Diseñamos e implementamos el \textit{lenguaje} PPA, inspirado en el
     \textit{mathematical vernacular}. Veamos la \textbf{interfaz} completa y luego la implementación.
-    \lstinputlisting[title=Ejemplo demostración]{listings/ppt/alumnos-corto.ppa}
+    \onslide<1->{\lstinputlisting[title=Ejemplo demostración,lastline=4]{listings/ppt/alumnos-corto.ppa}}\vspace*{-\baselineskip}
+
+    \onslide<2->{\lstinputlisting[firstnumber=last,firstline=5,lastline=8]{listings/ppt/alumnos-corto.ppa}}\vspace*{-\baselineskip}
+    \onslide<3->{\lstinputlisting[firstnumber=last,firstline=9,lastline=10]{listings/ppt/alumnos-corto.ppa}}\vspace*{-\baselineskip}
+    \onslide<4->{\lstinputlisting[firstnumber=last,firstline=11,lastline=11]{listings/ppt/alumnos-corto.ppa}}\vspace*{-\baselineskip}
+    \onslide<5->{\lstinputlisting[firstnumber=last,firstline=12,lastline=12]{listings/ppt/alumnos-corto.ppa}}\vspace*{-\baselineskip}
+    \onslide<6->{\lstinputlisting[firstnumber=last,firstline=13]{listings/ppt/alumnos-corto.ppa}}\vspace*{-\baselineskip}
 \end{frame}
+
+
+% \begin{frame}[fragile]{Identificadores}
+%     \begin{itemize}
+%         \item \textbf{Variables} (\lstinline{<var>})
+%         \begin{center}
+%             \verb/(\_|[A-Z])[a-zA-Z0-9\_\-]*(\')*/
+%         \end{center}
+%         \item \textbf{Identificadores} (\lstinline{<id>})
+%         \begin{center}
+%             \verb/[a-zA-Z0-9\_\-\?!#\$\%\*\+\<\>\=\?\@\^]+(\')*/
+%         \end{center}
+%         \item \textbf{Nombres} (\lstinline{<name>})
+        
+%         Pueden ser identificadores o strings arbitrarios encerrados por comillas dobles.
+%         \begin{center}
+%             \verb/<id> | \"[^\"]*\"/
+%         \end{center}
+%     \end{itemize}
+% \end{frame}
 
 \begin{frame}[fragile]{Programas}
     Un \textbf{programa} de PPA consiste en una lista de \textbf{declaraciones},
@@ -503,46 +533,27 @@ end
     \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Identificadores}
-    \begin{itemize}
-        \item \textbf{Variables} (\lstinline{<var>})
-        \begin{center}
-            \verb/(\_|[A-Z])[a-zA-Z0-9\_\-]*(\')*/
-        \end{center}
-        \item \textbf{Identificadores} (\lstinline{<id>})
-        \begin{center}
-            \verb/[a-zA-Z0-9\_\-\?!#\$\%\*\+\<\>\=\?\@\^]+(\')*/
-        \end{center}
-        \item \textbf{Nombres} (\lstinline{<name>})
-        
-        Pueden ser identificadores o strings arbitrarios encerrados por comillas dobles.
-        \begin{center}
-            \verb/<id> | \"[^\"]*\"/
-        \end{center}
-    \end{itemize}
-\end{frame}
+% \begin{frame}[fragile]{Fórmulas y términos}
+%     Términos:
+%     \begin{itemize}
+%         \item Variables: \lstinline{<var>}
+%         \item Funciones: \lstinline{<id>(<term>, ..., <term>)}
+%     \end{itemize}
 
-\begin{frame}[fragile]{Fórmulas y términos}
-    Términos:
-    \begin{itemize}
-        \item Variables: \lstinline{<var>}
-        \item Funciones: \lstinline{<id>(<term>, ..., <term>)}
-    \end{itemize}
-
-    Funciones:
-    \begin{itemize}
-        \item Predicados: \lstinline{<id>(<term>, ..., <term>)}
-        \item \lstinline{<form> & <form>}
-        \item \lstinline{<form> | <form>}
-        \item \lstinline{<form> -> <form>}
-        \item \lstinline{<form> <-> <form>}
-        \item \lstinline{~ <form>}
-        \item \lstinline{exists <var> . <form>}
-        \item \lstinline{forall <var> . <form>}
-        \item \lstinline{true}, \lstinline{false}
-        \item \lstinline{(<form>)}
-    \end{itemize}
-\end{frame}
+%     Funciones:
+%     \begin{itemize}
+%         \item Predicados: \lstinline{<id>(<term>, ..., <term>)}
+%         \item \lstinline{<form> & <form>}
+%         \item \lstinline{<form> | <form>}
+%         \item \lstinline{<form> -> <form>}
+%         \item \lstinline{<form> <-> <form>}
+%         \item \lstinline{~ <form>}
+%         \item \lstinline{exists <var> . <form>}
+%         \item \lstinline{forall <var> . <form>}
+%         \item \lstinline{true}, \lstinline{false}
+%         \item \lstinline{(<form>)}
+%     \end{itemize}
+% \end{frame}
 
 \begin{frame}{Demostraciones}
     \begin{columns}
@@ -552,9 +563,7 @@ end
         \begin{column}{0.5\textwidth}
             \begin{itemize}
                 \item Lista de \textbf{comandos} que reducen sucesivamente la \textit{tesis}
-                (fórmula a demostrar) hasta agotarla por completo.
-                \item Corresponden aproximadamente a reglas de inferencia de deducción
-                natural.
+                (fórmula a demostrar) hasta agotarla.
                 \item Tienen disponible un \textbf{contexto} con todas las hipótesis
                 asumidas (axiomas) o demostradas (teoremas y comandos que
                 demuestran hipótesis auxiliares).
@@ -564,12 +573,14 @@ end
 \end{frame}
 
 \begin{frame}{by - El mecanismo principal de demostración}
+    \begin{center}
+        \lstinline{<form> by <h1>, ..., <hn>}
+    \end{center}
     \begin{itemize}
-        \item \lstinline{<form> by <h1>, ..., <hn>} afirma que la fórmula es una consecuencia lógica de las fórmulas que corresponden a las hipótesis provistas.
-        \item Los nombres de las hipótesis son del tipo \lstinline{<name>} (o bien identificadores o \textit{strings} arbitrarios).
-        \item Por debajo usa un \textit{solver} completo para lógica proposicional pero heurístico para primer órden.
-        \item Se usa para eliminar implicaciones y universales.
-        \item Usado por dos comandos principales: \lstinline{thus} y \lstinline{have}.
+        \item Afirma que la fórmula es una consecuencia lógica de las fórmulas que corresponden a las hipótesis provistas.
+        %\item Los nombres de las hipótesis son del tipo \lstinline{<name>} (o bien identificadores o \textit{strings} arbitrarios).
+        \item Demostrado \textbf{automáticamente}: Por debajo usa un \textit{solver} completo para lógica proposicional pero \textit{heurístico} para primer orden.
+        \item Dos comandos principales: \lstinline{thus} y \lstinline{have}.
     \end{itemize}
 \end{frame}
 
@@ -598,67 +609,65 @@ end
     Análogo a \lstinline{thus}, pero introduce una afirmación \textit{auxiliar}
     sin reducir la tesis, agregándola al contexto.
     
-    \begin{figure}[H]
-        \centering
-        \small Eliminación de implicación en dos pasos
-        
-        \begin{tabular}{c}
-            \lstinputlisting{listings/interfaz/by-imp-have.ppa}
+    \pause
+    \begin{block}{Hipótesis anterior implícita}
+        Ambas pueden referirse a la hipótesis anterior con guión medio
+        (\lstinline{-}), y pueden hacerlo implícitamente usando \lstinline{hence} y
+        \lstinline{then}.
+    
+        \begin{table}[H]
+            \centering
+        \begin{tabular}{l|l|l}
+        Comando             & Alternativo             & ¿Reduce la tesis? \\
+        \hline
+        \lstinline|thus|    & \lstinline|hence|       & Sí               \\
+        \lstinline|have|    & \lstinline|then|        & No              
         \end{tabular}
-    \end{figure}
-
-\end{frame}
-
-\begin{frame}[fragile]{Hipótesis anterior}
-    Ambas pueden referirse a la hipótesis anterior con guión medio
-    (\lstinline{-}), y pueden hacerlo implícitamente usando \lstinline{hence} y
-    \lstinline{have}.
-
-    \begin{table}[H]
-        \centering
-    \begin{tabular}{l|l|l}
-    Comando             & Alternativo             & ¿Reduce la tesis? \\
-    \hline
-    \lstinline|thus|    & \lstinline|hence|       & Sí               \\
-    \lstinline|have|    & \lstinline|then|        & No              
-    \end{tabular}
-    \end{table}
-
-    \begin{columns}
-        \begin{column}{0.5\textwidth}
-        \lstinputlisting[
-            firstline=1,
-            lastline=9,
-            title=Eliminación en dos pasos,
-        ]{listings/interfaz/by-imp-then.ppa}
-        \end{column}
-        \begin{column}{0.5\textwidth}
-            \lstinputlisting[
-                linerange={12-16, 19-23},
-                numbers=none,
-                title=Alternativas equivalentes,
-            ]{listings/interfaz/by-imp-then.ppa}
-        \end{column}
-    \end{columns}
-\end{frame}
-
-\begin{frame}[fragile]{By opcional}
-    \begin{itemize}
-        \item El \lstinline{by} es opcional
-        \item Si se omite, la fórmula debe ser
-        demostrable por el \textit{solver} sin partir de ninguna hipótesis
-        \item Vale para todas las tautologías proposicionales.
-    \end{itemize}
-
-    \begin{figure}[H]
-        \centering
-        \small Tautología proposicional
+        \end{table}    
+    \end{block}
+    % \begin{figure}[H]
+    %     \centering
+    %     \small Eliminación de implicación en dos pasos
         
-        \begin{tabular}{c}
-            \lstinputlisting{listings/interfaz/by-taut.ppa}
-        \end{tabular}
-    \end{figure}
+    %     \begin{tabular}{c}
+    %         \lstinputlisting{listings/interfaz/by-imp-have.ppa}
+    %     \end{tabular}
+    % \end{figure}
+    % \begin{columns}
+    %     \begin{column}{0.5\textwidth}
+    %     \lstinputlisting[
+    %         firstline=1,
+    %         lastline=9,
+    %         title=Eliminación en dos pasos,
+    %     ]{listings/interfaz/by-imp-then.ppa}
+    %     \end{column}
+    %     \begin{column}{0.5\textwidth}
+    %         \lstinputlisting[
+    %             linerange={12-16, 19-23},
+    %             numbers=none,
+    %             title=Alternativas equivalentes,
+    %         ]{listings/interfaz/by-imp-then.ppa}
+    %     \end{column}
+    % \end{columns}
+
 \end{frame}
+% \begin{frame}[fragile]{By opcional}
+%     \begin{itemize}
+%         \item El \lstinline{by} es opcional
+%         \item Si se omite, la fórmula debe ser
+%         demostrable por el \textit{solver} sin partir de ninguna hipótesis
+%         \item Vale para todas las tautologías proposicionales.
+%     \end{itemize}
+
+%     \begin{figure}[H]
+%         \centering
+%         \small Tautología proposicional
+        
+%         \begin{tabular}{c}
+%             \lstinputlisting{listings/interfaz/by-taut.ppa}
+%         \end{tabular}
+%     \end{figure}
+% \end{frame}
 
 \begin{frame}{Comandos y reglas de inferencia}
     \begin{columns}
@@ -701,144 +710,107 @@ end
     \end{columns}
 \end{frame}
 
-\begin{frame}[fragile]{Suppose (\ruleImpI / \ruleNotI)}
-    \begin{command}
-        \lstinline{suppose <name>: <form>} \quad (\ruleImpI / \ruleNotI)
-    \end{command}
+% \begin{frame}[fragile]{Suppose (\ruleImpI / \ruleNotI)}
+%     \begin{command}
+%         \lstinline{suppose <name>: <form>} \quad (\ruleImpI / \ruleNotI)
+%     \end{command}
 
-    \begin{itemize}
-        \item  Si la tesis es una implicación $\form \fImp \formTwo$, agrega el antecedente
-        $\form$ como hipótesis con el nombre dado y reduce la tesis al consecuente
-        $\formTwo$
-        \item Viendo la negación como una implicación $\fNot \form \equiv
-        \form \fImp \fFalse$, permite introducir negaciones, tomando
-        $\formTwo = \fFalse$.
-    \end{itemize}
+%     \begin{itemize}
+%         \item  Si la tesis es una implicación $\form \fImp \formTwo$, agrega el antecedente
+%         $\form$ como hipótesis con el nombre dado y reduce la tesis al consecuente
+%         $\formTwo$
+%         \item Viendo la negación como una implicación $\fNot \form \equiv
+%         \form \fImp \fFalse$, permite introducir negaciones, tomando
+%         $\formTwo = \fFalse$.
+%     \end{itemize}
 
-    \begin{columns}
-        \begin{column}{0.5\textwidth}
-            \lstinputlisting[
-                firstline=1, lastline=7,
-                title=Introducción de implicación,
-            ]{listings/interfaz/suppose.ppa}
-        \end{column}
-        \begin{column}{0.5\textwidth}
-            \lstinputlisting[
-                firstline=9, lastline=15,
-                title=Introducción de negación,
-            ]{listings/interfaz/suppose.ppa}    
-        \end{column}
-    \end{columns}
-\end{frame}
+%     \begin{columns}
+%         \begin{column}{0.5\textwidth}
+%             \lstinputlisting[
+%                 firstline=1, lastline=7,
+%                 title=Introducción de implicación,
+%             ]{listings/interfaz/suppose.ppa}
+%         \end{column}
+%         \begin{column}{0.5\textwidth}
+%             \lstinputlisting[
+%                 firstline=9, lastline=15,
+%                 title=Introducción de negación,
+%             ]{listings/interfaz/suppose.ppa}    
+%         \end{column}
+%     \end{columns}
+% \end{frame}
 
-\begin{frame}[fragile]{Cases (\ruleOrE)}
-    \begin{command}
-        \lstinline{cases by <h1>, ..., <hn>} \quad (\ruleImpI / \ruleNotI)
-    \end{command}
-    \begin{columns}
-        \begin{column}{0.5\textwidth}
-        \begin{itemize}
-            \item Permite razonar por casos a partir de una disyunción. Para cada uno, se debe
-            demostrar la tesis en su totalidad.
-            \item Si los casos son \lstinline{<f1>} a
-            \lstinline{<fn>}, tiene que valer \lstinline{<f1> | ... | <fn> by} \lstinline{<h1>, ..., <hn>}.
-            \item Se puede omitir el \lstinline{by} para razonar mediante LEM (casos $\anyForm$ y $\fNot \anyForm$).
-        \end{itemize}
-        \end{column}
-        \begin{column}{0.5\textwidth}
-            \lstinputlisting[
-        title=Cases,
-        firstline=1, lastline=11,
-    ]{listings/interfaz/cases.ppa}
-        \end{column}
-    \end{columns}
-\end{frame}
+% \begin{frame}[fragile]{Cases (\ruleOrE)}
+%     \begin{command}
+%         \lstinline{cases by <h1>, ..., <hn>} \quad (\ruleImpI / \ruleNotI)
+%     \end{command}
+%     \begin{columns}
+%         \begin{column}{0.5\textwidth}
+%         \begin{itemize}
+%             \item Permite razonar por casos a partir de una disyunción. Para cada uno, se debe
+%             demostrar la tesis en su totalidad.
+%             \item Si los casos son \lstinline{<f1>} a
+%             \lstinline{<fn>}, tiene que valer \lstinline{<f1> | ... | <fn> by} \lstinline{<h1>, ..., <hn>}.
+%             \item Se puede omitir el \lstinline{by} para razonar mediante LEM (casos $\anyForm$ y $\fNot \anyForm$).
+%         \end{itemize}
+%         \end{column}
+%         \begin{column}{0.5\textwidth}
+%             \lstinputlisting[
+%         title=Cases,
+%         firstline=1, lastline=11,
+%     ]{listings/interfaz/cases.ppa}
+%         \end{column}
+%     \end{columns}
+% \end{frame}
 
-\begin{frame}[fragile]{Take (\ruleExistsI)}
-    \begin{command}
-        \lstinline{take <var> := <term>} \quad (\ruleExistsI)
-    \end{command}
-    \vfill
-    \begin{itemize}
-        \item Introduce un existencial instanciando su variable y reemplazándola por un término.
-        \item Si la tesis es \lstinline{exists X . p(X)}, luego de \lstinline{take X := a}, se reduce a \lstinline{p(a)}.
-    \end{itemize}
-\end{frame}
+% \begin{frame}[fragile]{Take (\ruleExistsI)}
+%     \begin{command}
+%         \lstinline{take <var> := <term>} \quad (\ruleExistsI)
+%     \end{command}
+%     \vfill
+%     \begin{itemize}
+%         \item Introduce un existencial instanciando su variable y reemplazándola por un término.
+%         \item Si la tesis es \lstinline{exists X . p(X)}, luego de \lstinline{take X := a}, se reduce a \lstinline{p(a)}.
+%     \end{itemize}
+% \end{frame}
 
-\begin{frame}[fragile]{Consider (\ruleExistsE)}
-    \begin{command}
-        \lstinline{consider <var> st <name>: <form> by <h1>, ..., <hn>} \quad (\ruleExistsE)
-    \end{command}
-    \begin{itemize}
-        \item Si se puede justificar \lstinline{exists X. p(X)}, permite razonar sobre tal \lstinline{X}.
-        \item Agrega \lstinline{<form>} como hipótesis al contexto, con nombre \lstinline{<name>}. No reduce la tesis.
-        \item Debe valer \lstinline{exists <var> . <form> by <h1>, ..., <hn>}
-        \item Permite $\alpha$-equivalencias: Si podemos justificar \lstinline{exists X. p(X)}, podemos usarlo como \lstinline{consider Y st h: p(Y) by ...}.
-    \end{itemize}
-\end{frame}
+% \begin{frame}[fragile]{Consider (\ruleExistsE)}
+%     \begin{command}
+%         \lstinline{consider <var> st <name>: <form> by <h1>, ..., <hn>} \quad (\ruleExistsE)
+%     \end{command}
+%     \begin{itemize}
+%         \item Si se puede justificar \lstinline{exists X. p(X)}, permite razonar sobre tal \lstinline{X}.
+%         \item Agrega \lstinline{<form>} como hipótesis al contexto, con nombre \lstinline{<name>}. No reduce la tesis.
+%         \item Debe valer \lstinline{exists <var> . <form> by <h1>, ..., <hn>}
+%         \item Permite $\alpha$-equivalencias: Si podemos justificar \lstinline{exists X. p(X)}, podemos usarlo como \lstinline{consider Y st h: p(Y) by ...}.
+%     \end{itemize}
+% \end{frame}
 
-\begin{frame}[fragile]{Let (\ruleForallI)}
-    \begin{command}
-        \lstinline{let <var>} \quad (\ruleForallI)
-    \end{command}
-    \begin{itemize}
-        \item Permite demostrar un cuantificador universal.
-        \item Si la tesis es \lstinline{forall X . p(X)}, luego de \lstinline{let X}, la tesis se reduce a \lstinline{p(X)}.
-        \item Permite renombrar la variable, por ejemplo luego de \lstinline{let Y} la tesis se reduce a \lstinline{p(Y)}.
-    \end{itemize}
-\end{frame}
+% \begin{frame}[fragile]{Let (\ruleForallI)}
+%     \begin{command}
+%         \lstinline{let <var>} \quad (\ruleForallI)
+%     \end{command}
+%     \begin{itemize}
+%         \item Permite demostrar un cuantificador universal.
+%         \item Si la tesis es \lstinline{forall X . p(X)}, luego de \lstinline{let X}, la tesis se reduce a \lstinline{p(X)}.
+%         \item Permite renombrar la variable, por ejemplo luego de \lstinline{let Y} la tesis se reduce a \lstinline{p(Y)}.
+%     \end{itemize}
+% \end{frame}
 
-\begin{frame}[fragile]{Descarga de conjunciones}
-    Si la tesis es una conjunción, se puede probar un subconjunto de ella y se reduce el resto.
-
-    \begin{columns}
-        \begin{column}{0.5\textwidth}
-            \lstinputlisting[title=Descarga simple]{listings/interfaz/discharge-simple.ppa}
-        \end{column}
-        \begin{column}{0.5\textwidth}
-            \lstinputlisting[title=Descarga compleja]{listings/interfaz/discharge-complex.ppa}
-        \end{column}
-    \end{columns}
-\end{frame}
-
-\begin{frame}[fragile]{Equivalently}
+\begin{frame}[fragile]{Comandos adicionales}
     \begin{command}
         \lstinline{equivalently <form>}
+
+        Permite reducir la tesis a una fórmula equivalente
     \end{command}
-    \begin{itemize}
-        \item Permite reducir la tesis a una fórmula equivalente
-        \item Se puede usar por ejemplo para descarga de conjunciones, o para razonar por el absurdo mediante la eliminación de la doble negación.
-    \end{itemize}
 
-    \begin{columns}
-        \begin{column}{0.5\textwidth}
-            \lstinputlisting[title=Descarga de conjunción]{listings/interfaz/equivalently.ppa}
-        \end{column}
-        \begin{column}{0.5\textwidth}
-\begin{lstlisting}[numbers=none,title=Razonamiento por el absurdo]
-theorem t: <form>
-proof
-    equivalently ~~<form>
-    suppose <name>: ~<form>
-    // Demostración de <form>
-    // por el absurdo,
-    // asumiendo ~<form>
-    // y llegando a una
-    // contradicción (false).
-end
-\end{lstlisting}
-        \end{column}
-    \end{columns}
-\end{frame}
-
-
-\begin{frame}[fragile]{Claim}
     \begin{command}
         \lstinline{claim <name>: <form>}
-    \end{command}
-    Permite demostrar una afirmación auxiliar. Útil para ordenar las demostraciones sin tener que definir otro teorema.
 
-    \begin{lstlisting}[numbers=none]
+        Análogo a \lstinline{have} pero con una sub-demostración.
+    \end{command}
+
+    \begin{lstlisting}[numbers=none, title=Esquema de claim]
 theorem t: <form1>
 proof
     claim <name>: <form2>
@@ -848,6 +820,31 @@ proof
     // Demostración de <form1> refiriéndose a <name>.
 end
     \end{lstlisting}
+
+%     \begin{itemize}
+%         \item Permite reducir la tesis a una fórmula equivalente
+%         \item Se puede usar por ejemplo para descarga de conjunciones, o para razonar por el absurdo mediante la eliminación de la doble negación.
+%     \end{itemize}
+
+%     \begin{columns}
+%         \begin{column}{0.5\textwidth}
+%             \lstinputlisting[title=Descarga de conjunción]{listings/interfaz/equivalently.ppa}
+%         \end{column}
+%         \begin{column}{0.5\textwidth}
+% \begin{lstlisting}[numbers=none,title=Razonamiento por el absurdo]
+% theorem t: <form>
+% proof
+%     equivalently ~~<form>
+%     suppose <name>: ~<form>
+%     // Demostración de <form>
+%     // por el absurdo,
+%     // asumiendo ~<form>
+%     // y llegando a una
+%     // contradicción (false).
+% end
+% \end{lstlisting}
+%         \end{column}
+%     \end{columns}
 \end{frame}
 
 \section{Certificador}
@@ -1366,6 +1363,11 @@ end
 \end{frame}
 
 % Considerar saltear esto si no da el tiempo
+
+\begin{frame}[fragile]{Descarga de conjunciones}
+    Si la tesis es una conjunción, se puede probar un subconjunto de ella y se reduce el resto.
+    \lstinputlisting[title=Descarga]{listings/interfaz/discharge-complex.ppa}
+\end{frame}
 \begin{frame}{Descarga de conjunciones}
     \todo{Agregar esto}
 \end{frame}
@@ -1488,8 +1490,7 @@ end
 \begin{frame}{¿Entonces por qué lógica clásica?}
     \begin{itemize}
         \item Existen fórmulas que admiten demostraciones constructivas y no constructivas, y otras \textit{solo no constructivas} (i.e. clásicas).
-        \item Herramientas como Coq las dejan afuera. Es interesante considerarlas.
-        %\item Permite razonar por el absurdo $(\ruleDnegE{} \equiv \ruleLEM{})$
+        %\item Lógica clásica permite razonar por el absurdo: \ruleDnegE{}, \ruleLEM{}
     \end{itemize}
 \end{frame}
 
@@ -1802,7 +1803,8 @@ end
     \]
 
     \begin{itemize}
-        \item Primer idea: \xxcancel<2->{$\someProof_\formTwo \proves \ctx \judG \formTwo$} \pause pero ¡\textbf{no sería correcto}! La demostración $\someProof_\formTwo$ requiere la hipótesis $\hypId : \form$, que no necesariamente está en $\ctx$, es agregada por \ruleImpIh{\hypId}
+        \item Primer idea: \xxcancel<2->{$\someProof_\formTwo \proves \ctx \judG \formTwo$} \pause
+        \item ¡\textbf{no sería correcto}! La demostración $\someProof_\formTwo$ requiere la hipótesis $\hypId : \form$, que no necesariamente está en $\ctx$, es agregada por \ruleImpIh{\hypId}
         \item Correcto: usar $\someProof_\formTwo$, pero \textit{sustituyendo} todas las ocurrencias de la hipótesis $\hypId$ por la demostración $\someProof_\form$.
         \item Es necesaria una noción de sustitución de hipótesis por demostraciones (sin capturas).
     \end{itemize}
@@ -2013,6 +2015,13 @@ Nos gustaría
     % Aprovechar para hacer un repaso
 \end{frame}
 
+\begin{frame}{Parser y lexer}
+    \begin{figure}
+        \includegraphics[scale=0.28]{img/ppt/parsers.png}
+    \end{figure}
+\end{frame}
+
+
 \begin{frame}{Implementación}
     \begin{itemize}
         \item Implementado en Haskell
@@ -2021,24 +2030,18 @@ Nos gustaría
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Parser y lexer}
-    \begin{figure}
-        \includegraphics[scale=0.28]{img/ppt/parsers.png}
-    \end{figure}
-\end{frame}
-
 
 \section{Trabajo futuro}
 
 \begin{frame}{Trabajo futuro}    
-    \begin{itemize}
-        \item Modelar de forma nativa inducción (segundo orden) e igualdad
+    \begin{itemize}[<+->]
         \item Sofisticar el \textit{solver heurístico} del \lstinline{by} (recursivo, eliminar más de una hipótesis).
-        \item Refinar fórmulas conjuntivas. Profundizar vínculo con Harrop.
         \item Extender traducción de Friedman a más de un existencial.
+        \item Refinar fórmulas conjuntivas. Profundizar vínculo con Harrop.
         \item Sofisticar reducción de demostraciones: hacer completa (reglas permutativas) y más eficiente (implementando máquina abstracta).
         \item Mejorar \ppaLang{} como lenguaje de programación: módulos, importar archivos, biblioteca estándar
         \item Extender PPA con tipos (usando LPO \textit{many-sorted} con géneros)
+        \item Modelar de forma nativa inducción (segundo orden) e igualdad
         \item Mejorar reporte de errores (muy bajo nivel)
     \end{itemize}
 \end{frame}

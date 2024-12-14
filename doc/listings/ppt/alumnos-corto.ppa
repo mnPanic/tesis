@@ -9,6 +9,6 @@ proof
     let A
     let M
     suppose falta: falta(A, final(M))
-    have reprueba: reprueba(A, final(M)) by falta, falta_reprueba
-    thus recursa(A, M) by reprueba, reprueba_recursa
+    have reprueba: reprueba(A, final(M)) by falta_reprueba, falta
+    thus recursa(A, M) by reprueba_recursa, reprueba
 end
