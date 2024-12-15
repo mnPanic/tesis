@@ -1,7 +1,7 @@
 // Parientes
 
 // "Skolemizado a mano"
-axiom padre_es_padre: forall P1. padre(P1, padre_de(P1))
+axiom padre_es_padre: forall P. padre(P, padre_de(P))
 
 theorem todos_tienen_padre: forall P. exists Q. padre(P, Q)
 proof
@@ -11,8 +11,8 @@ proof
 end
 
 axiom def_abuelo:
-    forall P2. forall Q2. forall R2.
-        (padre(P2, Q2) & padre(Q2, R2)) -> abuelo(P2, R2)
+    forall P. forall Q. forall R.
+        (padre(P, Q) & padre(Q, R)) <-> abuelo(P, R)
 
 theorem todos_tienen_abuelo: forall A. exists B. abuelo(A, B)
 proof
