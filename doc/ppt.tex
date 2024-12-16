@@ -81,12 +81,12 @@ testigos usando la traducción de Friedman}
 \begin{frame}{Repaso de lógica}
     \begin{itemize}
         \item \textbf{Teorema}: Afirmación que puede ser \textit{demostrada}.
+        \item \textbf{Axiomas}: Afirmaciones que son siempre válidas (sin demostración).
         \item \textbf{Demostración} de un teorema:
         \begin{itemize}
             \item \textit{Argumento} que establece que el teorema es cierto
             \item Usa \textit{reglas de inferencia} a partir de \textit{axiomas} y otros teoremas probados anteriormente. 
         \end{itemize}
-        \item \textbf{Axiomas}: Afirmaciones que son siempre válidas (sin demostración).
     \end{itemize}
 \end{frame}
 
@@ -117,7 +117,7 @@ testigos usando la traducción de Friedman}
         \item Los \textbf{asistentes de demostración} son herramientas que
         facilitan la escritura y el chequeo de demostraciones por
         computadora.
-        \item Usos usuales:
+        \item Usos:
         \begin{itemize}
             \item Formalización de teoremas matemáticos.
             \item Verificación de programas.
@@ -146,10 +146,10 @@ testigos usando la traducción de Friedman}
     \begin{figure}
         \includegraphics[scale=0.25]{img/ppt/ppa-tool-parts.png}
     \end{figure}
-    Diseñamos e implementamos en Haskell la herramienta \ppaTool{} (\textit{Pani's Proof Assistant}): un asistente de demostración para LPO \textbf{clásica}. Dos partes:
+    Diseñamos e implementamos en Haskell \ppaTool{} (\textit{Pani's Proof Assistant}). Dos partes:
     \begin{itemize}
         \item El lenguaje \textbf{PPA} para escribir demostraciones.
-        \item \textbf{Extracción de testigos} \alert{(Aporte principal)}.
+        \item Mecanismo de \textbf{extracción de testigos} de demostraciones no constructivas \alert{(aporte principal)}.
     \end{itemize}
 \end{frame}
 
@@ -238,15 +238,41 @@ testigos usando la traducción de Friedman}
 % \end{notation*}
 % \end{frame}
 
-\section{Deducción natural}
+\section{Deducción natural (DN)}
 
-\begin{frame}{Ejemplo}
+\begin{frame}{Reglas de inferencia}
+    \begin{definitions}
+        $\ctx$ es un \textbf{contexto de demostración} y $\judG$ la \textbf{relación de derivabilidad}.
+    \end{definitions}
+    \begin{definition}[Reglas de inferencia]
+        \begin{columns}
+            \column{0.5\textwidth}
+            \proofTreeImpI
+            \column{0.5\textwidth}
+            \proofTreeAx
+        \end{columns}
+        \begin{prooftree}
+            \AxiomC{$\judg{\ctx}{\form \to \formTwo}$}
+            \AxiomC{$\judg{\ctx}{\form}$}
+            \RL{\ruleImpE \quad (\textit{modus ponens})}
+            \BinaryInfC{$\judg{\ctx}{\formTwo}$}
+        \end{prooftree}
+    \end{definition}
+
+    Dos tipos para cada conectivo y cuantificador, dada una fórmula formada con un conectivo:
+    \begin{itemize}
+        \item \textbf{Introducción}: ¿Cómo la demuestro?
+        \item \textbf{Eliminación}: ¿Cómo la uso para demostrar otra?
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Ejemplo de demostración en DN}
     \begin{example}[Teorema en DN]
         Notamos:
         \begin{itemize}
+            \item $\falta \equiv \predFalta(juan, \funFinal(logica))$
             \item $\reprueba \equiv \predReprueba(juan, \funFinal(logica))$
             \item $\recursa \equiv \predRecursa(juan, logica)$
-            \item $\falta \equiv \predFalta(juan, \funFinal(logica))$
         \end{itemize}
         Afirmamos
         \[
@@ -259,33 +285,39 @@ testigos usando la traducción de Friedman}
     \end{example}
 \end{frame}
 
+% https://tex.stackexchange.com/questions/469229/show-up-only-parts-of-prooftree-on-beamer-frames
 \begin{frame}{Ejemplo}
     \begin{example}[Demostración en DN]
         \begin{prooftree}
-            \AxiomC{}
-            \RL{\ruleAx}
-            \UnaryInfC{$\ctx \judG (\falta \fImp \reprueba) \wedge (\reprueba \fImp \recursa)$}
-            \RL{\ruleAndEOne}
-            \UnaryInfC{$\ctx \judG \reprueba \fImp \recursa$}
-        
-            \AxiomC{$\someProof$}
-            \noLine
-        \UnaryInfC{$\ctx \judG \reprueba$}
-        \RL{\ruleImpE}
-        \BinaryInfC{\(
+        \AxiomC{}
+        \RL{\uncover<6->{\ruleAx}}
+        \only<-5>{\noLine}
+        \UnaryInfC{\uncover<6->{$\ctx \judG (\falta \fImp \reprueba) \wedge (\reprueba \fImp \recursa)$}}
+        \RL{\uncover<6->{\alert<6>{\ruleAndETwo}}}
+        \only<-5>{\noLine}
+        \UnaryInfC{\uncover<5->{$\ctx \judG \reprueba \fImp \recursa$}}
+    
+        \AxiomC{\uncover<7->{\alert{$\someProof$}}}
+        \noLine
+        \UnaryInfC{\uncover<5->{$\ctx \judG \reprueba$}}
+        \RL{\uncover<4->{\ruleImpE}}
+        \only<-3>{\noLine}
+        \BinaryInfC{\uncover<3->{\(
             \ctx =
             (\falta \fImp \reprueba) \wedge (\reprueba \fImp \recursa),\
             \falta
             \judG
             \recursa
-        \)}
-        \RL{\ruleImpI}
-        \UnaryInfC{\(
+        \)}}
+        \RL{\uncover<3->{\ruleImpI}}
+        \only<-2>{\noLine}
+        \UnaryInfC{\uncover<2->{\(
             (\falta \fImp \reprueba) \wedge (\reprueba \fImp \recursa)
             \judG
             \falta \fImp \recursa 
-            \)}
-        \RL{\ruleImpI}
+            \)}}
+        \RL{\uncover<2->{\ruleImpI}}
+        \only<1>{\noLine}
         \UnaryInfC{\(
             \judG
             \Big(
@@ -295,28 +327,39 @@ testigos usando la traducción de Friedman}
                 (\falta \fImp \recursa)
                 \)}
         \end{prooftree}
+        \only<6>{
+            \begin{columns}
+                \begin{column}{0.5\textwidth}
+                    \proofTreeAndEOne
+                \end{column}
+                \begin{column}{0.5\textwidth}
+                    \begin{prooftree}
+                        \AxiomC{$\judg{\ctx}{\form \wedge \formTwo}$}
+                        \RL{\alert{\ruleAndETwo}}
+                        \UnaryInfC{$\judg{\ctx}{\formTwo}$}
+                    \end{prooftree}
+                \end{column}
+            \end{columns}
+        }
+        \uncover<7->{
         
         \vspace{0.2cm}
-        \pause
         
         \begin{prooftree}
             \AxiomC{}
             \RL{\ruleAx}
             \UnaryInfC{$\ctx \judG (\falta \fImp \reprueba) \wedge (\reprueba \fImp \recursa)$}
-            \RL{\ruleAndETwo}
+            \RL{\ruleAndEOne}
             \UnaryInfC{$\ctx \judG \falta \fImp \reprueba$}
             \AxiomC{}
             \RL{\ruleAx}
             \UnaryInfC{$\ctx \judG \falta$}
             \RL{\ruleImpE}
-            \LL{$\someProof=$}
+            \LL{\alert{$\someProof=$}}
             \BinaryInfC{$\ctx \judG \reprueba$}
         \end{prooftree}
+        }
     \end{example}
-    \pause
-    \begin{definitions}
-        $\ctx$ es un \textbf{contexto de demostración} y $\judG$ la \textbf{relación de derivabilidad}.
-    \end{definitions}
 \end{frame}
 
 % \begin{frame}{Deducción natural}
@@ -341,27 +384,6 @@ testigos usando la traducción de Friedman}
 %     \end{definition}
 % \end{frame}
 
-\begin{frame}{Reglas de inferencia}
-    \begin{definition}[Reglas de inferencia]
-        \begin{columns}
-            \column{0.5\textwidth}
-            \proofTreeAx
-            \proofTreeImpI
-            \proofTreeImpE
-            \column{0.5\textwidth}
-            \proofTreeAndI
-            \proofTreeAndEOne
-            \proofTreeAndETwo
-        \end{columns}
-        
-    \end{definition}
-    Dos tipos para cada conectivo y cuantificador, dada una fórmula formada con un conectivo:
-    \begin{itemize}
-        \item \textbf{Introducción}: ¿Cómo la demuestro?
-        \item \textbf{Eliminación}: ¿Cómo la uso para demostrar otra?
-    \end{itemize}
-\end{frame}
-
 
 
 \begin{frame}{Reglas de inferencia}
@@ -372,6 +394,7 @@ testigos usando la traducción de Friedman}
         \item \ruleOrIOne, \ruleOrITwo, \ruleOrE
         \item \ruleForallI, \ruleForallE
         \item \ruleExistsI, \ruleExistsE
+        \item \ruleAndI
         \item \ruleLEM
     \end{itemize}
     \pause
@@ -434,18 +457,18 @@ testigos usando la traducción de Friedman}
 \end{frame}
 
 \begin{frame}{Sustitución}
+    \begin{exampleblock}{Eliminación de universal}
+        \proofTreeForallE
+    \end{exampleblock}
+    \pause
     \begin{definition}[Sustitución]
         Notamos como $\form \subst{\var}{\term}$ a la sustitución de todas las
         ocurrencias libres de la variable $\var$ por el término $\term$ en la
         fórmula $\form$.
     \end{definition}
     \pause
-    \begin{exampleblock}{Eliminación de universal}
-        \proofTreeForallE
-    \end{exampleblock}
-    \pause
     \begin{block}{Capturas}
-        Evitamos automáticamente la \textbf{captura de variables}
+        Evitamos automáticamente la \textbf{captura de variables} (renombrando a fórmula $\alpha$-equivalente tq no ocurra)
         \begin{align*}
         (\forall \varTwo . \pred(\bm{\var}, \varTwo))\subst{\var}{\varTwo} &\not =
         \forall \varTwo . \pred(\alert{\varTwo}, \varTwo) & & \text{(capturada)}\\
@@ -862,26 +885,26 @@ testigos usando la traducción de Friedman}
         
         \begin{column}{0.5\textwidth}
             \begin{itemize}
-                \item Las demostraciones de \ppaLang{} se \textit{certifican} generando
+                \item Las demostraciones de \ppaLang{} se \textbf{certifican} generando
                 una demostración de deducción natural.
                 \item Evita confiar en la implementación del asistente.
+                \onslide<2->{
+                \item Cumple con el \textbf{Criterio de de Bruijn} (sus demostraciones pueden ser chequeadas por un programa independiente)
+                }
             \end{itemize}
         \end{column}
         \begin{column}{0.5\textwidth}
-            
             \begin{figure}
-                \includegraphics[scale=0.32]{img/ppt/certify.png}
-                \centering
-                \title{Arquitectura del certificador}
+                \includegraphics[scale=0.35]{img/ppt/certify.png}
             \end{figure}
         \end{column}
     \end{columns}
-    \pause
-    \begin{block}{Criterio de de Bruijn}
-        Un asistente de demostración cumple con el criterio de de Bruijn si
-        satisface que sus demostraciones puedan ser chequeadas por un programa
-        independiente, pequeño y confiable.
-    \end{block}
+    % \pause
+    % \begin{block}{Criterio de de Bruijn}
+    %     Un asistente de demostración cumple con el criterio de de Bruijn si
+    %     satisface que sus demostraciones puedan ser chequeadas por un programa
+    %     independiente, pequeño y confiable.
+    % \end{block}
 \end{frame}
 
 
@@ -922,14 +945,18 @@ testigos usando la traducción de Friedman}
     \begin{columns}
         \begin{column}{0.5\textwidth}
             \begin{itemize}
-                \item Por debajo usa un \textit{solver} completo para lógica proposicional pero \textit{heurístico} para primer orden.
                 \item Si puede, demuestra \textbf{automáticamente} que la fórmula es consecuencia lógica de la justificación.
+                \item Por debajo usa un \textit{solver} completo para lógica proposicional pero \textit{heurístico} para primer orden.
+                \pause
                 \item Toma las hipótesis del \textbf{contexto} local o global:
                 fórmulas asumidas o demostradas.
             \end{itemize}        
         \end{column}
+        
             \begin{column}{0.5\textwidth}
-                \includegraphics[scale=0.33]{img/ppt/local-context.png}
+                \onslide<2->{
+                    \includegraphics[scale=0.33]{img/ppt/local-context.png}
+                }
             \end{column}
     \end{columns}
 \end{frame}
@@ -1022,6 +1049,7 @@ testigos usando la traducción de Friedman}
         \]
     \end{enumerate}
 \end{frame}
+
 \begin{frame}{Razonamiento por el absurdo}
     \begin{exampleblock}{Razonamiento por el absurdo en DNF}
         \[
@@ -1176,6 +1204,135 @@ testigos usando la traducción de Friedman}
         \end{align*}
     \end{enumerate}
 \end{frame}
+
+% \begin{frame}{Conversión a DNF}
+%     Implementamos una traducción mediante el siguiente sistema de reescritura. \textbf{Algoritmo}: reescribir de a un paso hasta que no cambie (clausura de Kleene)
+%         \begin{align*}
+%             \fNot\fNot \formLit &\rewrite
+%                 \formLit
+%                 &&\text{eliminación de $\fNot\fNot$}\\
+%             \fNot \fFalse &\rewrite
+%                 \fTrue\\
+%             \fNot \fTrue &\rewrite
+%                 \fFalse\\
+%             \formLit \fImp \formLitTwo &\rewrite
+%                 \fNot \formLit \fOr \formLitTwo
+%                 &&\text{definición de implicación}\\
+%             \fNot(\formLit \fOr \formLitTwo) &\rewrite
+%                 \fNot \formLit \fAnd \fNot \formLitTwo
+%                 &&\text{distributiva de $\fNot$ sobre $\fAnd$}\\
+%             \fNot(\formLit \fAnd \formLitTwo) &\rewrite
+%                 \fNot \formLit \fOr \fNot \formLitTwo
+%                 &&\text{distributiva de $\fNot$ sobre $\fOr$}\\
+%             (\formLit \fOr \formLitTwo) \fAnd \formLitThree &\rewrite
+%                 (\formLit \fAnd \formLitThree) \fOr (\formLitTwo \fAnd \formLitThree)
+%                 &&\text{distributiva de $\fAnd$ sobre $\fOr$ (der)}\\
+%             \formLitThree \fAnd (\formLit \fOr \formLitTwo) &\rewrite
+%                 (\formLitThree \fAnd \formLit) \fOr (\formLitThree \fAnd \formLitTwo)
+%                 &&\text{distributiva de $\fAnd$ sobre $\fOr$ (izq)}\\
+%             \formLit \fOr (\formLitTwo \fOr \formLitThree) &\rewrite
+%                 (\formLit \fOr \formLitTwo) \fOr \formLitThree
+%                 &&\text{asociatividad de $\fOr$}\\
+%             \formLit \fAnd (\formLitTwo \fAnd \formLitThree) &\rewrite
+%                 (\formLit \fAnd \formLitTwo) \fAnd \formLitThree
+%                 &&\text{asociatividad de $\fAnd$}
+%         \end{align*}
+% \end{frame}
+
+% \begin{frame}{Conversión a DNF - Congruencias}
+%     Para reescribir una sub-fórmula (trivial sintácticamente), hay que demostrar las congruencias de los conectivos.
+%     \[
+%         \formLit \fOr \alert<1,2>{\fNot (\formLitTwo \fOr \formLitThree)}
+%         \judG
+%         \formLit \fOr \alert<1,2>{(\fNot \formLitTwo \fAnd \fNot \formLitThree)}
+%     \]\pause
+%     \vspace{-0.3cm}
+%     \begin{block}{Congruencias}
+%         \vspace{-0.3cm}
+%         \begin{gather*}
+%         \form \judG \form'
+%         \Rightarrow \form \fAnd \formTwo \judG \form' \fAnd \formTwo
+%         \qquad
+%         \formTwo \judG \formTwo'
+%         \Rightarrow \form \fAnd \formTwo \judG \form \fAnd \formTwo'
+%         \\
+%         \form \judG \form'
+%         \Rightarrow \form \fOr \formTwo \judG \form' \fOr \formTwo
+%         \qquad
+%         \alert<2>{\formTwo \judG \formTwo'
+%         \Rightarrow \form \fOr \formTwo \judG \form \fOr \formTwo'}
+%         \\
+%         \alert<3->{\form'} \judG \form
+%         \Rightarrow \fNot \form \judG \fNot \alert<3->{\form'}
+%         \end{gather*}        
+%     \end{block}
+%     \pause
+%     \begin{alertblock}{$\fNot$ es contravariante}
+%         Para demostrar $\fNot \form \judG \fNot \form'$ no necesitamos una demostración de $\form \judG \form'$ (\textit{covariante}), sino de $\form' \judG \form$ (\textit{contravariante}).
+%         \pause
+
+%         $\Rightarrow$ para todas las reescrituras, incluso las congruencias, tenemos que demostrarlas en ambos sentidos.
+%     \end{alertblock}
+% \end{frame}
+
+\begin{frame}{Conversión a DNF - Reglas admisibles}
+    \begin{block}{Reglas admisibles para conversión a DNF}
+        \begin{columns}[t]
+        \begin{column}{0.5\textwidth}
+            \centering
+            \textbf{Pasos base}
+            \begin{align*}
+            \fNot\fNot \formLit &\judgEquiv
+                \formLit
+                \\
+            \fNot \fFalse &\judgEquiv
+                \fTrue\\
+            \fNot \fTrue &\judgEquiv
+                \fFalse\\
+            \formLit \fImp \formLitTwo &\judgEquiv
+                \fNot \formLit \fOr \formLitTwo
+                \\
+            \fNot(\formLit \fOr \formLitTwo) &\judgEquiv
+                \fNot \formLit \fAnd \fNot \formLitTwo
+                \\
+            \fNot(\formLit \fAnd \formLitTwo) &\judgEquiv
+                \fNot \formLit \fOr \fNot \formLitTwo
+                \\
+            (\formLit \fOr \formLitTwo) \fAnd \formLitThree &\judgEquiv
+                (\formLit \fAnd \formLitThree) \fOr (\formLitTwo \fAnd \formLitThree)
+                \\
+            \formLitThree \fAnd (\formLit \fOr \formLitTwo) &\judgEquiv
+                (\formLitThree \fAnd \formLit) \fOr (\formLitThree \fAnd \formLitTwo)
+                \\
+            \formLit \fOr (\formLitTwo \fOr \formLitThree) &\judgEquiv
+                (\formLit \fOr \formLitTwo) \fOr \formLitThree
+                \\
+            \formLit \fAnd (\formLitTwo \fAnd \formLitThree) &\judgEquiv
+                (\formLit \fAnd \formLitTwo) \fAnd \formLitThree
+            \end{align*}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \centering
+            \textbf{Pasos recursivos de congruencia}
+            
+            (con $\form \judgEquiv \form'$, $\formTwo \judgEquiv \formTwo'$)
+            \begin{align*}
+                \form \fAnd \formTwo &\judgEquiv \form' \fAnd \formTwo\\
+                \form \fAnd \formTwo &\judgEquiv \form \fAnd \formTwo'\\
+                \form \fOr \formTwo &\judgEquiv \form' \fOr \formTwo\\
+                \form \fOr \formTwo &\judgEquiv \form \fOr \formTwo'\\
+                \fNot \form &\judgEquiv \fNot \form'
+            \end{align*}
+            \vspace{0.1cm}
+            \begin{center}
+                \alert{\textbf{¡30 demostraciones!}}
+            \end{center}
+        \end{column}
+        \end{columns}
+    \end{block}
+\end{frame}
+
+
 \begin{frame}{Ejemplo sin cuantificadores (3/3)}
     \begin{enumerate}
         \setcounter{enumi}{3}
@@ -1189,13 +1346,6 @@ testigos usando la traducción de Friedman}
     \begin{definition}[Reglas de inferencia]
         \proofTreeOrE
         \proofTreeNotE
-        \begin{prooftree}
-            \AxiomC{$\ctx \judG \anyForm_1 \fAnd \dots \fAnd \anyForm_i \fAnd \dots \fAnd \anyForm_n$}
-            \AxiomC{$n \in \setNaturals$}
-            \admissibleRuleLine
-            \RL{\ruleAndEProj{\anyForm_{i}}}
-            \BinaryInfC{$\ctx \judG \anyForm_i$}
-        \end{prooftree}
     \end{definition}
 \end{frame}
 
@@ -1261,131 +1411,6 @@ testigos usando la traducción de Friedman}
     \end{enumerate}
 \end{frame}
 
-\begin{frame}{Conversión a DNF}
-    Implementamos una traducción mediante el siguiente sistema de reescritura. \textbf{Algoritmo}: reescribir de a un paso hasta que no cambie (clausura de Kleene)
-        \begin{align*}
-            \fNot\fNot \formLit &\rewrite
-                \formLit
-                &&\text{eliminación de $\fNot\fNot$}\\
-            \fNot \fFalse &\rewrite
-                \fTrue\\
-            \fNot \fTrue &\rewrite
-                \fFalse\\
-            \formLit \fImp \formLitTwo &\rewrite
-                \fNot \formLit \fOr \formLitTwo
-                &&\text{definición de implicación}\\
-            \fNot(\formLit \fOr \formLitTwo) &\rewrite
-                \fNot \formLit \fAnd \fNot \formLitTwo
-                &&\text{distributiva de $\fNot$ sobre $\fAnd$}\\
-            \fNot(\formLit \fAnd \formLitTwo) &\rewrite
-                \fNot \formLit \fOr \fNot \formLitTwo
-                &&\text{distributiva de $\fNot$ sobre $\fOr$}\\
-            (\formLit \fOr \formLitTwo) \fAnd \formLitThree &\rewrite
-                (\formLit \fAnd \formLitThree) \fOr (\formLitTwo \fAnd \formLitThree)
-                &&\text{distributiva de $\fAnd$ sobre $\fOr$ (der)}\\
-            \formLitThree \fAnd (\formLit \fOr \formLitTwo) &\rewrite
-                (\formLitThree \fAnd \formLit) \fOr (\formLitThree \fAnd \formLitTwo)
-                &&\text{distributiva de $\fAnd$ sobre $\fOr$ (izq)}\\
-            \formLit \fOr (\formLitTwo \fOr \formLitThree) &\rewrite
-                (\formLit \fOr \formLitTwo) \fOr \formLitThree
-                &&\text{asociatividad de $\fOr$}\\
-            \formLit \fAnd (\formLitTwo \fAnd \formLitThree) &\rewrite
-                (\formLit \fAnd \formLitTwo) \fAnd \formLitThree
-                &&\text{asociatividad de $\fAnd$}
-        \end{align*}
-\end{frame}
-
-\begin{frame}{Conversión a DNF - Congruencias}
-    Para reescribir una sub-fórmula (trivial sintácticamente), hay que demostrar las congruencias de los conectivos.
-    \[
-        \formLit \fOr \alert<1,2>{\fNot (\formLitTwo \fOr \formLitThree)}
-        \judG
-        \formLit \fOr \alert<1,2>{(\fNot \formLitTwo \fAnd \fNot \formLitThree)}
-    \]\pause
-    \vspace{-0.3cm}
-    \begin{block}{Congruencias}
-        \vspace{-0.3cm}
-        \begin{gather*}
-        \form \judG \form'
-        \Rightarrow \form \fAnd \formTwo \judG \form' \fAnd \formTwo
-        \qquad
-        \formTwo \judG \formTwo'
-        \Rightarrow \form \fAnd \formTwo \judG \form \fAnd \formTwo'
-        \\
-        \form \judG \form'
-        \Rightarrow \form \fOr \formTwo \judG \form' \fOr \formTwo
-        \qquad
-        \alert<2>{\formTwo \judG \formTwo'
-        \Rightarrow \form \fOr \formTwo \judG \form \fOr \formTwo'}
-        \\
-        \alert<3->{\form'} \judG \form
-        \Rightarrow \fNot \form \judG \fNot \alert<3->{\form'}
-        \end{gather*}        
-    \end{block}
-    \pause
-    \begin{alertblock}{$\fNot$ es contravariante}
-        Para demostrar $\fNot \form \judG \fNot \form'$ no necesitamos una demostración de $\form \judG \form'$ (\textit{covariante}), sino de $\form' \judG \form$ (\textit{contravariante}).
-        \pause
-
-        $\Rightarrow$ para todas las reescrituras, incluso las congruencias, tenemos que demostrarlas en ambos sentidos.
-    \end{alertblock}
-\end{frame}
-
-\begin{frame}{Conversión a DNF - Reglas admisibles}
-    \begin{block}{Reglas admisibles para conversión a DNF}
-        \begin{columns}[t]
-        \begin{column}{0.5\textwidth}
-            \centering
-            Pasos base
-            \begin{align*}
-            \fNot\fNot \formLit &\judgEquiv
-                \formLit
-                \\
-            \fNot \fFalse &\judgEquiv
-                \fTrue\\
-            \fNot \fTrue &\judgEquiv
-                \fFalse\\
-            \formLit \fImp \formLitTwo &\judgEquiv
-                \fNot \formLit \fOr \formLitTwo
-                \\
-            \fNot(\formLit \fOr \formLitTwo) &\judgEquiv
-                \fNot \formLit \fAnd \fNot \formLitTwo
-                \\
-            \fNot(\formLit \fAnd \formLitTwo) &\judgEquiv
-                \fNot \formLit \fOr \fNot \formLitTwo
-                \\
-            (\formLit \fOr \formLitTwo) \fAnd \formLitThree &\judgEquiv
-                (\formLit \fAnd \formLitThree) \fOr (\formLitTwo \fAnd \formLitThree)
-                \\
-            \formLitThree \fAnd (\formLit \fOr \formLitTwo) &\judgEquiv
-                (\formLitThree \fAnd \formLit) \fOr (\formLitThree \fAnd \formLitTwo)
-                \\
-            \formLit \fOr (\formLitTwo \fOr \formLitThree) &\judgEquiv
-                (\formLit \fOr \formLitTwo) \fOr \formLitThree
-                \\
-            \formLit \fAnd (\formLitTwo \fAnd \formLitThree) &\judgEquiv
-                (\formLit \fAnd \formLitTwo) \fAnd \formLitThree
-            \end{align*}
-        \end{column}
-        \begin{column}{0.5\textwidth}
-            \centering
-            Pasos recursivos de congruencia
-            
-            (con $\form \judgEquiv \form'$)
-            \begin{align*}
-                \form \fAnd \formTwo &\judgEquiv \form' \fAnd \formTwo\\
-                \form \fOr \formTwo &\judgEquiv \form' \fOr \formTwo\\
-                \fNot \form &\judgEquiv \fNot \form'
-            \end{align*}
-            \vspace{0.5cm}
-            \begin{center}
-                \textbf{¡26 demostraciones!}
-            \end{center}
-        \end{column}
-        \end{columns}
-    \end{block}
-\end{frame}
-
 \begin{frame}[fragile]{Alcance y limitaciones del by}
     \begin{itemize}
         \item \textbf{Completo} para lógica proposicional y \textbf{heurístico} para primer orden.
@@ -1420,6 +1445,7 @@ end
             \lstinputlisting[title=Descarga]{listings/interfaz/discharge-complex.ppa}
         \end{column}
         \begin{column}{0.5\textwidth}
+            \centering
             \only<1>{
                 \textbf{Problema}:
                 \proofTreeAndI
@@ -1436,7 +1462,7 @@ end
                     \fImp
                     (a \fAnd b) \fAnd ((c \fAnd d) \fAnd e)
                 \end{gather*}
-                \item Completo para proposicional $\Rightarrow$ resuelve asociatividad, conmutatividad e idempotencia (repetidos)
+                \item \lstinline{by} es completo para proposicional $\Rightarrow$ resuelve asociatividad, conmutatividad e idempotencia (repetidos)
             \end{itemize}
         \end{column}
     \end{columns}
@@ -1449,7 +1475,7 @@ end
 %     \end{figure}
 % \end{frame}
 
-\begin{frame}{Extracción simple}
+\begin{frame}[fragile]{Extracción simple}
     \lstinputlisting[title=Extracción simple]{listings/ppt/extract/exists.ppa}
     \pause
     \begin{command}
@@ -1459,10 +1485,24 @@ end
 \end{frame}
 
 
-\begin{frame}{Extracción indirecta con instanciación}
-    \onslide<1->{\lstinputlisting[firstline=1,lastline=2]{listings/ppt/extract/forall.ppa}}\vspace*{-\baselineskip}
-    \onslide<2->{\lstinputlisting[firstnumber=last,firstline=3,lastline=9]{listings/ppt/extract/forall.ppa}}\vspace*{-\baselineskip}
-    \onslide<3->{\lstinputlisting[firstnumber=last,firstline=10]{listings/ppt/extract/forall.ppa}}\vspace*{-\baselineskip}
+\begin{frame}[fragile]{Extracción indirecta con instanciación}
+    \onslide<1->{\lstinputlisting[firstline=1,lastline=3]{listings/ppt/extract/parientes.ppa}}\vspace*{-\baselineskip}
+    \onslide<2->{\lstinputlisting[firstnumber=last,firstline=4,lastline=11]{listings/ppt/extract/parientes.ppa}}\vspace*{-\baselineskip}
+    \onslide<3->{\lstinputlisting[firstnumber=last,firstline=12]{listings/ppt/extract/parientes.ppa}}\vspace*{-\baselineskip}
+\end{frame}
+
+\begin{frame}[fragile]{Extracción indirecta}
+    \lstinline{theorem todos_tienen_abuelo: forall A. exists B. es_abuelo(A, B)}
+    \begin{minted}{shell-session}
+$ ppa extract parientes.ppa \
+    --theorem todos_tienen_abuelo \
+    --terms nacho
+Running program... OK!
+Translating... OK!
+Checking translated... OK!
+Extracted witness: padre(padre(nacho))
+of formula: es_abuelo(nacho, padre(padre(nacho)))
+    \end{minted}
 \end{frame}
 
 % \begin{frame}
@@ -1568,8 +1608,9 @@ end
     \pause
     ¿Entonces por qué lógica clásica?
     \begin{itemize}
-        \item Existen fórmulas que admiten demostraciones constructivas y no constructivas, y otras \textit{solo no constructivas} (i.e. clásicas).
-        \item Además permite razonar por el absurdo, con \ruleDnegE{} $\equiv$ \ruleLEM{}
+        \item Existen fórmulas que admiten demostraciones constructivas y no constructivas, y otras \textit{solo no constructivas} (i.e. clásicas)
+        Ejemplo: $\fNot (\form \fAnd \formTwo) \fImp \fNot \form \fOr \formTwo$ solo es válido en lógica clásica.
+        \item Además permite razonar por el absurdo, con \ruleDnegE{} $\equiv$ \ruleLEM{}.
     \end{itemize}
 
     % \begin{theorem}[Teorema constructivo y no constructivo]

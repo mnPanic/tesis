@@ -1,7 +1,7 @@
 theorem t:
     p(v) -> exists X . p(X)
 proof
-    suppose h: p(v)
+    suppose "h": p(v)
     take X := v
-    thus p(v) by h
+    thus p(v) by "h"
 end

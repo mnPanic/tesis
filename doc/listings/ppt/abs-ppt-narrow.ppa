@@ -2,8 +2,8 @@ axiom juanEsBajo: bajo(juan)
 
 theorem noTodoElMundoEsAlto: ~forall X. ~bajo(X)
 proof
-    suppose todosSonAltos: forall X. ~bajo(X)
-    thus false by juanEsBajo, todosSonAltos
+    suppose "todosSonAltos": forall X. ~bajo(X)
+    thus false by "juanEsBajo", "todosSonAltos"
 end
 
 theorem hayAlguienBajo: exists X. bajo(X)

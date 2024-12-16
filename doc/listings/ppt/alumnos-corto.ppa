@@ -1,14 +1,14 @@
-axiom falta_reprueba: forall A . forall E .
+axiom "ax1": forall A . forall E .
     falta(A, E) -> reprueba(A, E)
-axiom reprueba_recursa: forall A . forall M .
+axiom "ax2": forall A . forall M .
     reprueba(A, final(M)) -> recursa(A, M)
 
-theorem falta_entonces_recursa: forall A . forall M .
+theorem "falta_entonces_recursa": forall A . forall M .
     falta(A, final(M)) -> recursa(A, M)
 proof
     let A
     let M
-    suppose falta: falta(A, final(M))
-    have reprueba: reprueba(A, final(M)) by falta_reprueba, falta
-    thus recursa(A, M) by reprueba_recursa, reprueba
+    suppose "falta": falta(A, final(M))
+    have "reprueba": reprueba(A, final(M)) by "ax1", "falta"
+    thus recursa(A, M) by "ax2", "reprueba"
 end
