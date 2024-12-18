@@ -106,7 +106,7 @@ testigos usando la traducción de Friedman}
         \end{columns}
         \begin{itemize}
             \item \textbf{Sistema}: Geometría euclidiana
-            \item \textbf{Axioma}: se puede dibujar una línea recta entre dos puntos
+            \item \textbf{Axioma}: Se puede dibujar una línea recta entre dos puntos
         \end{itemize}
     \end{example}
 \end{frame}
@@ -123,7 +123,7 @@ testigos usando la traducción de Friedman}
             \item Verificación de programas.
         \end{itemize}
         \pause
-        \item Ventajas:\footnote{\href{https://youtu.be/AayZuuDDKP0?si=eGETzgh9PQ_8JecR}{Terrence Tao - Machine Assisted Proof}}
+        \item Ventajas:\footnote{\href{https://youtu.be/AayZuuDDKP0?si=eGETzgh9PQ_8JecR}{Terence Tao - Machine Assisted Proof}}
         \begin{itemize}
             \item Facilitan la colaboración a gran escala (mediante la confianza en el asistente).\pause
             \item Habilitan generación automática de demostraciones con IA. Por ej. un \textit{LLM} (como \textit{ChatGPT}) suele devolver alucinaciones, que pueden ser filtradas automáticamente con un asistente.
@@ -389,13 +389,16 @@ testigos usando la traducción de Friedman}
 \begin{frame}{Reglas de inferencia}
     Otras reglas de inferencia
     \begin{itemize}
-        \item \ruleFalseE, \ruleTrueI
-        \item \ruleNotI, \ruleNotE
+        \item \ruleNotI, \ruleNotE, \ruleAndI
         \item \ruleOrIOne, \ruleOrITwo, \ruleOrE
-        \item \ruleForallI, \ruleForallE
-        \item \ruleExistsI, \ruleExistsE
-        \item \ruleAndI
-        \item \ruleLEM
+        \item \ruleForallI, \ruleForallE, \ruleExistsI, \ruleExistsE
+        \item \ruleFalseE, \ruleTrueI, \ruleLEM
+    \end{itemize}
+    \pause
+    Mencionamos \textit{modus tollens} pero no aparece
+    \begin{itemize}
+        \item Queremos un sistema lógico \textbf{minimal}: no agregamos las reglas \textbf{admisibles}, derivables a partir de las existentes.
+        \item Se implementan como funciones o \textit{macros}.    
     \end{itemize}
     \pause
     \begin{block}{Alfa equivalencia}
@@ -406,55 +409,54 @@ testigos usando la traducción de Friedman}
     \end{block}
 \end{frame}
 
-\begin{frame}{Reglas admisibles}
-    \begin{itemize}
-        \item Mencionamos \textit{modus tollens} pero no aparece en las reglas de inferencia.
-        \item Queremos un sistema lógico \textbf{minimal}: no agregamos las reglas \textbf{admisibles}, derivables a partir de las existentes.
-        \item Se implementan como funciones o \textit{macros}.
-    \end{itemize} 
-    \pause
-    \begin{lemma}[Modus tollens]
+% \begin{frame}{Reglas admisibles}
+%     \begin{itemize}
+%         \item Mencionamos \textit{modus tollens} pero no aparece en las reglas de inferencia.
         
-    \begin{prooftree}
-        \AxiomC{}
-        \RL{\ruleAx}
-        \UnaryInfC{\(\ctx \judG (\form \fImp \formTwo) \fAnd \fNot \formTwo\)}
-        \RL{\ruleAndETwo}
-        \UnaryInfC{\(
-            \ctx \judG \fNot \formTwo
-        \)}
-        \AxiomC{}
-        \RL{\ruleAx}
-        \UnaryInfC{\(\ctx \judG (\form \fImp \formTwo) \fAnd \fNot \formTwo\)}
-        \RL{\ruleAndEOne}
-        \UnaryInfC{$\ctx \judG \form \fImp \formTwo$}
-        \AxiomC{}
-        \RL{\ruleAx}
-        \UnaryInfC{$\ctx \judG \form$}
-        \RL{\ruleImpE}
-        \BinaryInfC{\(
-            \ctx \judG \formTwo
-        \)}
-        \RL{\ruleNotE{}}
-        \BinaryInfC{\(
-            \ctx = (\form \fImp \formTwo) \fAnd \fNot \formTwo, \form
-            \judG
-            \fFalse
-        \)}
-        \RL{\ruleNotI{}}
-        \UnaryInfC{\(
-            (\form \fImp \formTwo) \fAnd \fNot \formTwo
-            \judG
-            \fNot \form
-        \)}
-        \RL{\ruleImpI{}}
-        \UnaryInfC{\(\judG
-            (\form \fImp \formTwo \fAnd \fNot \formTwo)
-            \fImp \fNot\form
-        \)}
-    \end{prooftree}
-    \end{lemma}
-\end{frame}
+%     \end{itemize} 
+%     \pause
+%     \begin{lemma}[Modus tollens]
+        
+%     \begin{prooftree}
+%         \AxiomC{}
+%         \RL{\ruleAx}
+%         \UnaryInfC{\(\ctx \judG (\form \fImp \formTwo) \fAnd \fNot \formTwo\)}
+%         \RL{\ruleAndETwo}
+%         \UnaryInfC{\(
+%             \ctx \judG \fNot \formTwo
+%         \)}
+%         \AxiomC{}
+%         \RL{\ruleAx}
+%         \UnaryInfC{\(\ctx \judG (\form \fImp \formTwo) \fAnd \fNot \formTwo\)}
+%         \RL{\ruleAndEOne}
+%         \UnaryInfC{$\ctx \judG \form \fImp \formTwo$}
+%         \AxiomC{}
+%         \RL{\ruleAx}
+%         \UnaryInfC{$\ctx \judG \form$}
+%         \RL{\ruleImpE}
+%         \BinaryInfC{\(
+%             \ctx \judG \formTwo
+%         \)}
+%         \RL{\ruleNotE{}}
+%         \BinaryInfC{\(
+%             \ctx = (\form \fImp \formTwo) \fAnd \fNot \formTwo, \form
+%             \judG
+%             \fFalse
+%         \)}
+%         \RL{\ruleNotI{}}
+%         \UnaryInfC{\(
+%             (\form \fImp \formTwo) \fAnd \fNot \formTwo
+%             \judG
+%             \fNot \form
+%         \)}
+%         \RL{\ruleImpI{}}
+%         \UnaryInfC{\(\judG
+%             (\form \fImp \formTwo \fAnd \fNot \formTwo)
+%             \fImp \fNot\form
+%         \)}
+%     \end{prooftree}
+%     \end{lemma}
+% \end{frame}
 
 \begin{frame}{Sustitución}
     \begin{exampleblock}{Eliminación de universal}
@@ -502,10 +504,11 @@ testigos usando la traducción de Friedman}
 \section{PPA}
 
 \begin{frame}{Mathematical Vernacular}
-
     \begin{center}
+        Mizar $\rightsquigarrow$
+        Isar (Isabelle) $\rightsquigarrow$
         \textit{Mathematical
-        Vernacular}\footnote{De Freek Wiedijk} = Mizar + Isar (Isabelle)    
+        Vernacular}\footnote{De Freek Wiedijk}
     \end{center}
     
 
@@ -1646,17 +1649,17 @@ of formula: es_abuelo(nacho, padre(padre(nacho)))
 \end{frame}
 
 
-\begin{frame}{Clases de estrategias de extracción}
-    \begin{figure}
-        \centering
-        \includegraphics[scale=0.25]{img/ppt/extract-strategies.png}
-    \end{figure}
-    Clases de estrategias de extracción de demostraciones en lógica clásica:
-    \begin{itemize}
-        \item \textbf{Directas}: Extraer directamente de demostraciones clásicas. Técnicas de \textit{realizabilidad clásica} (Semánticas de $\lambda$-cálculos clásicos).
-        \item \textbf{Indirectas}: Convertir la demostración a una lógica que se porte mejor y extraer de ahí.
-    \end{itemize}
-\end{frame}
+% \begin{frame}{Clases de estrategias de extracción}
+%     \begin{figure}
+%         \centering
+%         \includegraphics[scale=0.25]{img/ppt/extract-strategies.png}
+%     \end{figure}
+%     Clases de estrategias de extracción de demostraciones en lógica clásica:
+%     \begin{itemize}
+%         \item \textbf{Directas}: Extraer directamente de demostraciones clásicas. Técnicas de \textit{realizabilidad clásica} (Semánticas de $\lambda$-cálculos clásicos).
+%         \item \textbf{Indirectas}: Convertir la demostración a una lógica que se porte mejor y extraer de ahí.
+%     \end{itemize}
+% \end{frame}
 
 
 \begin{frame}{Estrategia de extracción indirecta}
@@ -1666,6 +1669,7 @@ of formula: es_abuelo(nacho, padre(padre(nacho)))
     \end{figure}
 \end{frame}
 
+\subsection{Normalización}
 
 \begin{frame}{Normalización o reducción}
     \begin{center}
@@ -1764,68 +1768,64 @@ of formula: es_abuelo(nacho, padre(padre(nacho)))
 \end{frame}
 
 \begin{frame}{Algoritmo de reducción}
-    \textbf{Idea original}: reducir en un paso sucesivamente hasta que sea irreducible.
+%\textbf{Idea original}: reducir en un paso sucesivamente hasta que sea irreducible.
+% \[
+%     \def\defaultHypSeparation{\hskip .05in}
+%     \AxiomC{$\someProof_\form$}
+%     \AxiomC{$\someProof_\formTwo$}
+%     \noLine
+%     \BinaryInfC{$\vdots$}
+%     \noLine
+%     \UnaryInfC{$\someProof$}
+%     \DisplayProof
+%     \onslide<2->{
+%     %
+%     \underset{\left(\someProof_\form \rewrite \someProof_\form^1\right)}{\rewrite}
+%     %
+%     \AxiomC{\alert{$\someProof_\form^1$}}
+%     \AxiomC{$\someProof_\formTwo$}
+%     \noLine
+%     \BinaryInfC{$\vdots$}
+%     \noLine
+%     \UnaryInfC{$\someProof$}
+%     \DisplayProof
+%     }
+%     \onslide<3->{
+%     %
+%     \quad
+%     \dots
+%     \quad
+%     %
+%     \AxiomC{\alert{$\someProof_\form^*$}}
+%     \AxiomC{$\someProof_\formTwo$}
+%     \noLine
+%     \BinaryInfC{$\vdots$}
+%     \noLine
+%     \UnaryInfC{$\someProof$}
+%     \DisplayProof
+%     }
+%     \onslide<4->{
+%     %
+%     \underset{\left(\someProof_\formTwo \rewrite \someProof_\formTwo^1\right)}{\rewrite}
+%     %
+%     \AxiomC{$\someProof_\form^*$}
+%     \AxiomC{\alert{$\someProof_\formTwo^1$}}
+%     \noLine
+%     \BinaryInfC{$\vdots$}
+%     \noLine
+%     \UnaryInfC{$\someProof$}
+%     \DisplayProof
+%     %
+%     \dots
+%     }
+% \]
 
-\[
-    \def\defaultHypSeparation{\hskip .05in}
-    \AxiomC{$\someProof_\form$}
-    \AxiomC{$\someProof_\formTwo$}
-    \noLine
-    \BinaryInfC{$\vdots$}
-    \noLine
-    \UnaryInfC{$\someProof$}
-    \DisplayProof
-    \onslide<2->{
-    %
-    \underset{\left(\someProof_\form \rewrite \someProof_\form^1\right)}{\rewrite}
-    %
-    \AxiomC{\alert{$\someProof_\form^1$}}
-    \AxiomC{$\someProof_\formTwo$}
-    \noLine
-    \BinaryInfC{$\vdots$}
-    \noLine
-    \UnaryInfC{$\someProof$}
-    \DisplayProof
-    }
-    \onslide<3->{
-    %
-    \quad
-    \dots
-    \quad
-    %
-    \AxiomC{\alert{$\someProof_\form^*$}}
-    \AxiomC{$\someProof_\formTwo$}
-    \noLine
-    \BinaryInfC{$\vdots$}
-    \noLine
-    \UnaryInfC{$\someProof$}
-    \DisplayProof
-    }
-    \onslide<4->{
-    %
-    \underset{\left(\someProof_\formTwo \rewrite \someProof_\formTwo^1\right)}{\rewrite}
-    %
-    \AxiomC{$\someProof_\form^*$}
-    \AxiomC{\alert{$\someProof_\formTwo^1$}}
-    \noLine
-    \BinaryInfC{$\vdots$}
-    \noLine
-    \UnaryInfC{$\someProof$}
-    \DisplayProof
-    %
-    \dots
-    }
-\]
-
-\onslide<5->{\textbf{Problema}: Muy lento (demostraciones muy grandes).}
-
-\onslide<6->{
-\textbf{Estrategias alternativas}: reducción en un paso o muchos paso
 \begin{itemize}
+    \item \textbf{Algoritmo}: Reducir sucesivamente hasta que sea irreducible
+    \item \textbf{Estrategias de reducción}: en un paso o muchos pasos
     \item \textit{Gross-Knuth}: reduce en muchos pasos todos los sub-términos posibles al mismo tiempo.
 \end{itemize}
-}
-\onslide<7->{
+
 
 En un solo paso,
 \[
@@ -1837,6 +1837,7 @@ En un solo paso,
     \UnaryInfC{$\someProof$}
     \DisplayProof
     %
+    \pause
     \underset{
         \left(\begin{aligned}
             \someProof_\form &\overset{*}{\rewrite} \someProof_\form^*\\
@@ -1853,7 +1854,6 @@ En un solo paso,
     \UnaryInfC{$\someProof$}
     \DisplayProof
     \]
-}
 \end{frame}
 
 \begin{frame}{Limitaciones}
@@ -1882,309 +1882,129 @@ En un solo paso,
 %     \end{columns}
 % \end{frame}
 
-%\subsection{Traducción de Friedman}
+\subsection{Traducción de Friedman}
 
-\begin{frame}{Traducción de doble negación relativizada}
-    \begin{definition}[Traducción de doble negación relativizada]
-        Podemos ver $\fNot \form \equiv \form \fImp \fFalse$. Definimos $\fNotR \form
-        \equiv \form \rightarrow R$,
-        \vspace{-\baselineskip}
-        \begin{columns}
-            \begin{column}{0.7\textwidth}
-                \begin{align*}
-                    \transDNeg{\bot}                         & = R                                                             \\
-                    \transDNeg{\form}                        & = \fNotR\fNotR \form
-                    \quad \text{con $\form$ atómica}                                                                              \\
-                    \transDNeg{(\fNot \form)}                & = \fNotR \transDNeg{\form}                                          \\
-                    \transDNeg{(\form \fAnd \formTwo)}       & = \transDNeg{\form} \fAnd \transDNeg{\formTwo}                     \\
-                    \transDNeg{(\form \fOr \formTwo)}        & = \fNotR(\fNotR\transDNeg{\form} \fAnd \fNotR\transDNeg{\formTwo}) \\
-                    \transDNeg{(\form \rightarrow \formTwo)} & = \transDNeg{\form} \rightarrow \transDNeg{\formTwo}               \\
-                    \transDNeg{(\forall x . \form)}          & = \forall x . \transDNeg{\form}                                    \\
-                    \transDNeg{(\exists x . \form)}          & = \fNotR \forall x . \fNotR \transDNeg{\form}
-                \end{align*}
-            \end{column}
-            \begin{column}{0.3\textwidth}
-                \begin{itemize}
-                    \item Método general para embeber clásica en intuicionista.
-                    \item En clásica son equivalentes (\ruleDnegE{}).
-                    \item En intuicionista es más débil.
-                \end{itemize}
-            \end{column}
-        \end{columns}
-    \end{definition}
+\begin{frame}{Traducción de doble negación}
+    \begin{itemize}
+        \item Queremos \textit{embeber} lógica clásica a intuicionista (no son equivalentes)
+        \item Traducción de \textbf{doble negación}: método general.
+        \item \textbf{Intuición}: ``agregar una doble negación a todo''
+        \item En clásica son equivalentes (\ruleDnegE{} $\equiv$ \ruleLEM{}) pero en intuicionista es más débil.
+    \end{itemize}
     \pause
+    \vspace{0.2cm}
     \begin{theorem}
-        Si $\someProof \proves \ctx \judgC \form$, luego
-        $\tdn{\someProof} \proves \tdn{\ctx} \judgI \alert<3>{\transDNeg{\form}}$
+        \begin{Large}
+            \[
+            \def\extraVskip{0.15cm}
+            \AxiomC{$\someProof$}
+            \noLine
+            \UnaryInfC{$\ctx \bm{\judgC} \form$}
+            \DisplayProof
+            %
+            \quad \rightsquigarrow \quad
+            %
+            \AxiomC{$\gN{\someProof}$}
+            \noLine
+            \UnaryInfC{$\gN{\ctx} \bm{\judgI} \alert<3>{\gN{\form}}$}
+            \DisplayProof
+        \]
+        \end{Large}    
     \end{theorem}
 \end{frame}
 
 \begin{frame}{El truco de Friedman}
     \begin{theorem}[Traducción de Friedman]
-        Sea $\anyForm$ una fórmula \textbf{conjuntiva}. Si tenemos
+        Sea $\anyForm$ una fórmula \textbf{conjuntiva} y todas las fórmulas de $\ctx$ sean \textbf{F-fórmulas}. Si tenemos
         \[ 
-            \someProof \proves \ctx \judgC
+            \someProof \proves \ctx \alert<2>{\judgC}
             \forall \varTwo_1 \dots \forall \varTwo_n .
             \exists \var .
             \anyForm(\var, \varTwo_1, \dots, \varTwo_n),
         \]
-        podemos generar una demostración intuicionista de la misma fórmula.
-    \end{theorem}
 
-    \begin{definition}[Fórmulas conjuntivas]
-        \[
-            \cForm ::=
-                \fFalse \mid \fTrue \mid \pred(\term_1, \dots, \term_n)
-                \mid \cForm \fAnd \cForm
+        Podemos generar una nueva demostración $\someProofTwo$ tal que
+        \[ 
+            \someProofTwo \proves \ctx \alert<2>{\judgI}
+            \forall \varTwo_1 \dots \forall \varTwo_n .
+            \exists \var .
+            \anyForm(\var, \varTwo_1, \dots, \varTwo_n).
         \]
+    \end{theorem}
+\end{frame}
+
+\begin{frame}{Traducción de doble negación relativizada}
+    \begin{definition}[Traducción de doble negación relativizada]
+        Podemos ver $\fNot \form \equiv \form \fImp \fFalse$. Definimos $\fNotR \form
+        \equiv \form \rightarrow R$, y luego $\tdn{}$ como
+            \begin{align*}
+                \transDNeg{\bot}                         & = R                                                             \\
+                \transDNeg{\form}                        & = \fNotR\fNotR \form
+                \quad \text{con $\form$ atómica}                                                                              \\
+                \transDNeg{(\fNot \form)}                & = \fNotR \transDNeg{\form}                                          \\
+                \transDNeg{(\form \fAnd \formTwo)}       & = \transDNeg{\form} \fAnd \transDNeg{\formTwo}                     \\
+                \transDNeg{(\form \fOr \formTwo)}        & = \fNotR(\fNotR\transDNeg{\form} \fAnd \fNotR\transDNeg{\formTwo}) \\
+                \transDNeg{(\form \rightarrow \formTwo)} & = \transDNeg{\form} \rightarrow \transDNeg{\formTwo}               \\
+                \transDNeg{(\forall x . \form)}          & = \forall x . \transDNeg{\form}                                    \\
+                \transDNeg{(\exists x . \form)}          & = \fNotR \forall x . \fNotR \transDNeg{\form}
+            \end{align*}
     \end{definition}
-
-    \pause
-    \begin{lemma}[Traducción de Friedman simplificada]
-        Idem con 
-        \(
-            \someProof \proves \ctx \judgC \exists \var . \anyForm,
-        \)
-    \end{lemma}
-\end{frame}
-\begin{frame}{El truco de Friedman}
-    \begin{proof}
-        Aplicando la traducción con $R = \exists \var . \anyForm$, tenemos que
-    \[
-        \tdn{\big(
-            \someProof \proves \ctx \judgC \exists \var . \anyForm
-            \big)}
-        \Leftrightarrow
-        \tdn{\someProof} \proves \tdn{\ctx} \judgI \fNotR \forall \var . \fNotR \tdn{\anyForm}
-    \]
-    Luego, \pause
-    \begin{prooftree}
-        \def\defaultHypSeparation{\hskip .1in}
-        \AxiomC{$\tdn{\someProof}$}
-        \noLine
-        \UnaryInfC{\(
-            \tdn{\ctx} \judgI \fNotR \forall \var \fNotR \tdn{\anyForm}
-            \)}
-        \AxiomC{}
-        \RL{\ruleAx}
-        \UnaryInfC{$\tdn{\ctx}, \anyForm \judgI \anyForm$}
-        \RL{\ruleExistsI}
-        \UnaryInfC{$\tdn{\ctx}, \anyForm \judgI R = \exists \var . \anyForm$}
-        \RL{\ruleImpI}
-        \UnaryInfC{$\tdn{\ctx} \judgI \fNotR \anyForm$}
-        \RL{\ruleCutWith{\ruleNotRTransI}}
-        \admissibleRuleLine
-        \UnaryInfC{$\tdn{\ctx} \judgI \fNotR \tdn{\anyForm}$}
-        \RL{\ruleForallI}
-        \UnaryInfC{\(
-            \tdn{\ctx} \judgI \forall \var \fNotR \tdn{\anyForm}
-            \)}
-        \RL{\ruleImpE}
-        \BinaryInfC{$\tdn{\ctx} \judgI \exists \var . \anyForm$}
-    \end{prooftree}
-    \end{proof}
 \end{frame}
 
-\begin{frame}{Introducción de negación relativizada}
-    \begin{lemma}[Introducción de $\fNotR$]
-        Si $\form$ es \textit{conjuntiva}, entonces vale $\fNotR \form \judgI \fNotR \tdn{\form}$ y lo notamos con la regla admisible \ruleNotRTransI{}.
-    \end{lemma}
-    \pause
-    \begin{proof}
-        Por inducción estructural en la fórmula.
-        \begin{itemize}
-            \item Atómicas trivial (y eso aparece en la bib)
-            \item Conjunción tiene algunos trucos.
-        \end{itemize}
-    \end{proof}
-\end{frame}
-
-\begin{frame}{Traducción de demostraciones}
-    \begin{theorem}
-        Si $\someProof \proves \ctx \judgC \form$, luego
-        $\tdn{\someProof} \proves \tdn{\ctx} \judgI \transDNeg{\form}$
-    \end{theorem}
-    \pause
-    \begin{proof}
-        Inducción estructural sobre la demostración.
-
-        \textbf{Estrategia}: traducir recursivamente las partes de $\someProof$ y usarlas para construir una nueva demostración de $\tdn{\form}$.
-    \end{proof}
-\end{frame}
-
-\begin{frame}{Traducción de introducción de conjunción}
-    \begin{lemma}[Traducción de \ruleAndI{}]
-        \begin{columns}
-            \begin{column}{0.5\textwidth}
-                \begin{prooftree}
-                    \AxiomC{$\someProof_\form$}
-                    \noLine
-                    \UnaryInfC{$\ctx \judgC \form$}
-                    \AxiomC{$\someProof_\formTwo$}
-                    \noLine
-                    \UnaryInfC{$\ctx \judgC \formTwo$}
-                    \RL{\ruleAndI}
-                    \BinaryInfC{$\ctx \judgC \form \wedge \formTwo$}
-                \end{prooftree}        
-            \end{column}
-            \begin{column}{0.5\textwidth}
-                Es posible demostrar $\tdn{(\form \fAnd \formTwo)} = \tdn{\form} \fAnd \tdn{\formTwo}$.
-            \end{column}
-        \end{columns}
-    \end{lemma}
-
-    \begin{proof}
-        Usando la HI:
-        \[
-            \tdn{\someProof_\form} \proves
-            \tdn{\ctx} \judgI
-            \tdn{\form} \text{ y }
-            \tdn{\someProof_\formTwo} \proves
-            \tdn{\ctx} \judgI
-            \tdn{\formTwo},
-        \]
-        \begin{prooftree}
-            \AxiomC{$\tdn{\someProof_\form}$}
-            \noLine
-            \UnaryInfC{$\tdn{\ctx} \judgI \tdn{\form}$}
-            \AxiomC{$\tdn{\someProof_\formTwo}$}
-            \noLine
-            \UnaryInfC{$\tdn{\ctx} \judgI \tdn{\formTwo}$}
-            \RL{\ruleAndI}
-            \BinaryInfC{$\tdn{\ctx} \judgI \tdn{\form} \fAnd \tdn{\formTwo}$}
-        \end{prooftree}
-    \end{proof} 
-\end{frame}
-
-\begin{frame}{Traducción de demostraciones}
-    \begin{theorem}
-        Si $\someProof \proves \ctx \judgC \form$, luego
-        $\tdn{\someProof} \proves \tdn{\ctx} \judgI \transDNeg{\form}$
-    \end{theorem}
-    \begin{proof}
-        Inducción estructural sobre la demostración.
-
-        \textbf{Estrategia}: traducir recursivamente las partes de $\someProof$ y usarlas para construir una nueva demostración de $\tdn{\form}$.
-        
-        \begin{itemize}[<+->]
-            \item \alert{\ruleAndI{}}, \ruleAndEOne{}, \ruleAndETwo{}, \ruleImpI{}, \ruleImpE{},
-            \ruleOrIOne{}, \ruleOrITwo{}, \ruleForallI{}, \ruleForallE{}, \ruleNotI{}, \ruleNotE{}, \ruleTrueI{}, \ruleAx{}, \ruleExistsI{} directas.
-            \item \alert{\ruleLEM{}} interesante.
-            \item \ruleFalseE{} inducción estructural sobre la fórmula.
-            \item \ruleOrE{} y \ruleExistsE{} análogos. Truco: No vale \ruleDnegE{} pero si \ruleDnegRE{} (probado por inducción estructural sobre la fórmula).
-        \end{itemize}
-    \end{proof}
-\end{frame}
-
-
-\begin{frame}{Problema con axiomas}
-    \begin{lemma}[Traducción de Friedman simplificada]
-        Sea $\anyForm$ una fórmula conjuntiva. Si tenemos
-        \(
-            \ctx \judgC \exists \var . \anyForm,
-        \)
-        podemos generar una demostración intuicionista de la misma fórmula
-        \(
-            \alert{\tdn{\ctx}} \judgI \exists \var . \anyForm.
-        \)
-    \end{lemma}
-    \pause
-    \textbf{Problema:} la demostración normalizada no puede comenzar con \ruleExistsI{}
-    \[
-        \tdn{\pred(v)} \judgI \exists \var . \pred(\var)
-        \iff
-        \fNotR \fNotR \pred(v) \judgI \exists \var . \pred(\var)
-    \]
-    Nos gustaría \textit{mantener el contexto original}:
-    \(
-        p(v) \judgI \exists \var . \pred(\var)
-    \)
-    \pause
-    \begin{block}{Manteniendo el contexto}
-        Luego de la traducción, antes de reducir, reemplazamos cada cita (\ruleAx) de un axioma $\hypId: \tdn{\anyForm}$ por la demostración $\anyForm \judgI \tdn{\anyForm}$.
-    \end{block}
-    \begin{lemma}[Introducción de la traducción $\fNot\fNot$]
-        Si $\anyForm$ es una \textit{F-fórmula}, vale
-        $\anyForm \judgI \tdn{\anyForm}$.
-    \end{lemma}
-
-\end{frame}
-
-\begin{frame}{F-fórmulas}
-    \vspace{-0.2cm}
-    \begin{columns}[t]
-        \begin{column}{0.4\textwidth}
-            \begin{block}{F-fórmulas}
-                \vspace{-0.4cm}
-                \begin{align*}
-                    \form ::=\ & \fFalse \mid \fTrue \mid \pred(\term_1, \dots, \term_n)\\
-                    \fForm ::=\  &\form \\
-                    & \mid \fForm \fAnd \fForm \mid \fForm \fOr \fForm                       \\
-                    & \mid \forall \var . \fForm \mid \exists \var . \fForm                      \\
-                    & \mid \cForm \fImp \fForm                                                     \mid \fNot \cForm\\
-                    \cForm ::=\ & A  \mid \cForm \fAnd \cForm
-                \end{align*}
-            \end{block}
-            \begin{itemize}
-                \item $A$: Fórmulas atómicas
-                \item $F$: F-fórmulas
-                \item $C$: Fórmulas conjuntivas
-            \end{itemize}
-        \end{column}
-        \pause
-        \begin{column}{0.5\textwidth}
-            \begin{block}{Fórmulas de Harrop}
-                \vspace{-0.4cm}
-                \begin{align*}
-                    G ::=\ & \form\\
-                        &\mid G \fAnd G \mid G \fOr G \\
-                        &\mid \forall x . G \mid \exists x. G \\
-                        &\mid H \fImp G\\
-                    H ::=\ & A \mid H \fAnd H                    \\
-                            & \alert<2>{\mid \forall \var . H}\\
-                            & \alert<2>{\mid G \fImp A}
-                \end{align*}            
-            \end{block}
-            \begin{itemize}
-                \item $G$: G-fórmulas
-                \item $H$: Fórmulas Harrop Hereditarias
-                \item Generalización de cláusulas de Horn, usadas para realizabilidad
-            \end{itemize}
-        \end{column}
-    \end{columns}
-\end{frame}
-
-% \begin{frame}{Repaso - estrategia de extracción indirecta}
-%     \begin{figure}
-%         \centering
-%         \includegraphics[scale=0.33]{img/arch.png}
-%     \end{figure}
-% \end{frame}
-
-\begin{frame}{Traducción de Friedman}
+\begin{frame}{Funcionamiento de traducción de Friedman}
+    Partiendo de
     \[
         \someProof \proves \ctx \judgC \anyFormTwo
     \]
-    \begin{itemize}[<+->]
-        \item Traducción de doble negación (fórmulas + demostraciones)
+    \begin{enumerate}[<+->]
+        \item Aplicar traducción de doble negación relativizada (recursivamente a fórmula y demostración) tomando ``$R = \anyFormTwo$''.
         \[
             \tdn{\someProof} \proves \tdn{\ctx} \judgI \alert{\tdn{\anyFormTwo}}.
         \]
-        \item Traducción de Friedman, manteniendo fórmula (deben ser $\classPiTwo$ con $\anyForm$ \textbf{conjuntiva})
+        \item Usarla para demostrar la fórmula original.
+        
+        \textbf{Restricción}: $\anyFormTwo$ debe ser $\classPiTwo$ con $\anyForm$ \textbf{conjuntiva}.
         \[
             \someProofTwo \proves \alert{\tdn{\ctx}} \judgI
             \forall \varTwo_1 \dots \forall \varTwo_n .
             \exists \var .
             \anyForm(\var, \varTwo_1, \dots, \varTwo_n).
         \]
-        \item Manteniendo contexto (axiomas deben ser \textbf{F-fórmulas})
+        \item Mantener el contexto.
+        
+        \textbf{Restricción}: Axiomas ($\ctx$) deben ser \textbf{F-fórmulas}.
         \[
             \someProofTwo \proves \ctx \judgI
             \forall \varTwo_1 \dots \forall \varTwo_n .
             \exists \var .
-            \anyForm(\var, \varTwo_1, \dots, \varTwo_n).
+            \anyForm(\var, \varTwo_1, \dots, \varTwo_n).\qed
         \]
-    \end{itemize}
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}{Tipos de fórmulas}
+    \begin{definition}[Gramática de fórmulas]
+        \begin{align*}
+            \text{(atómicas)}\quad \form ::=\ & \fFalse \mid \fTrue \mid \pred(\term_1, \dots, \term_n)\\
+            \text{(F-fórmulas)} \quad\fForm ::=\  &\form \\
+            & \mid \fForm \fAnd \fForm \mid \fForm \fOr \fForm                       \\
+            & \mid \forall \var . \fForm \mid \exists \var . \fForm                      \\
+            & \mid \cForm \fImp \fForm                                                     \mid \fNot \cForm\\
+            \text{(conjuntivas)}\quad \cForm ::=\ & A  \mid \cForm \fAnd \cForm
+        \end{align*}
+    \end{definition}
+    \begin{lemma}
+        Sea $\fForm$ una F-fórmula. Vale
+        \(
+            \fForm \judgI \tdn{\fForm}.
+        \)
+    \end{lemma}
+    \begin{lemma}
+        Sea $\cForm$ una fórmula conjuntiva. Vale
+        \(
+            \fNotR \cForm \judgI \fNotR \tdn{\cForm}.
+        \)
+    \end{lemma}
 \end{frame}
 
 \section{Detalles de implementación}
@@ -2205,7 +2025,11 @@ En un solo paso,
 \end{frame}
 
 
-\section{Trabajo futuro}
+\section{Conclusiones}
+
+\begin{frame}{Conclusiones}
+    
+\end{frame}
 
 \begin{frame}{Trabajo futuro}    
     \begin{itemize}[<+->]
