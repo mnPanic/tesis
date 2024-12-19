@@ -1023,7 +1023,18 @@ testigos usando la traducción de Friedman}
         \]
     \end{definition}
     \begin{definition}[Introducción de negación]
-        \proofTreeNotI
+        \begin{columns}
+            \begin{column}{0.4\textwidth}
+                \proofTreeNotI
+            \end{column}
+            \begin{column}{0.4\textwidth}
+            \begin{prooftree}
+                \AxiomC{$\judg{\ctx, \alert{\fNot \form}}{\bot}$}
+                \RL{\ruleNotI}
+                \UnaryInfC{$\judg{\ctx}{\fNot \alert{\fNot \form}}$}
+            \end{prooftree}
+            \end{column}
+        \end{columns}
     \end{definition}
 
 \end{frame}
