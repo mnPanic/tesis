@@ -108,8 +108,8 @@ testigos usando la traducción de Friedman}
             \end{column}
         \end{columns}
         \begin{itemize}
-            \item \textbf{Sistema}: Geometría euclidiana
-            \item \textbf{Axioma}: Se puede dibujar una línea recta entre dos puntos
+            \item \textbf{Sistema}: Geometría euclidiana.
+            \item \textbf{Axioma}: Se puede dibujar una línea recta entre dos puntos.
         \end{itemize}
     \end{example}
 \end{frame}
@@ -229,9 +229,12 @@ testigos usando la traducción de Friedman}
 \end{frame}
 
 \begin{frame}{Reglas de inferencia}    
-    \begin{definitions}
-        $\ctx$ es un \textbf{contexto de demostración} y $\judG$ la \textbf{relación de derivabilidad}.
-    \end{definitions}
+    Dos tipos para cada conectivo y cuantificador, dada una fórmula formada con un conectivo:
+    \begin{itemize}
+        \item \textbf{Introducción}: ¿Cómo la demuestro?
+        \item \textbf{Eliminación}: ¿Cómo la uso para demostrar otra?
+    \end{itemize}
+
     \begin{definition}[Reglas de inferencia]
         \begin{columns}
             \column{0.5\textwidth}
@@ -246,12 +249,9 @@ testigos usando la traducción de Friedman}
             \BinaryInfC{$\judg{\ctx}{\formTwo}$}
         \end{prooftree}
     \end{definition}
-
-    Dos tipos para cada conectivo y cuantificador, dada una fórmula formada con un conectivo:
-    \begin{itemize}
-        \item \textbf{Introducción}: ¿Cómo la demuestro?
-        \item \textbf{Eliminación}: ¿Cómo la uso para demostrar otra?
-    \end{itemize}
+    \begin{definitions}
+        $\ctx$ es un \textbf{contexto de demostración} y $\judG$ la \textbf{relación de derivabilidad}.
+    \end{definitions}
 \end{frame}
 
 \newcommand{\ctxColor}{\textcolor{Plum}{\ctx}}
@@ -413,7 +413,7 @@ testigos usando la traducción de Friedman}
     \end{exampleblock}
     \pause
     \begin{definition}[Sustitución]
-        Notamos como $\form \subst{\var}{\term}$ a la sustitución de todas las
+        $\form \subst{\var}{\term}$ sustituir todas las
         ocurrencias libres de la variable $\var$ por el término $\term$ en la
         fórmula $\form$.
     \end{definition}
@@ -898,7 +898,7 @@ testigos usando la traducción de Friedman}
         \begin{column}{0.5\textwidth}
             \begin{itemize}
                 \item Si puede, demuestra \textbf{automáticamente} que la fórmula es consecuencia lógica de la justificación.
-                \item Por debajo usa un \textit{solver} completo para lógica proposicional pero \textit{heurístico} para primer orden.
+                \item Por debajo usa un \textit{solver heurístico} para primer orden.
                 \pause
                 \item Toma las hipótesis del \textbf{contexto} local o global:
                 fórmulas asumidas o demostradas.
@@ -1266,61 +1266,33 @@ testigos usando la traducción de Friedman}
     \end{definition}
 \end{frame}
 
-\begin{frame}{Ejemplo con cuantificadores (1/2)}
-    \begin{figure}[H]
-        \centering
-        \small By con cuantificadores
-
-        \vspace{0.1cm}    
-        \begin{tabular}{c}
-            \lstinputlisting{listings/ppt/by-modus-ponens-quant.ppa}
-        \end{tabular}
-    \end{figure}
-    \pause
+\begin{frame}{Ejemplo con cuantificadores}
     \begin{enumerate}[<+->]
-        \item Para certificar \lstinline{thus q(k) by ax1, ax2} hay que generar una
-        demostración para la implicación \[
-            \Big(\big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(k) \Big)
-            \fImp q(k)
-        \]
-        \item Negamos la fórmula 
-        \[
-            \fNot \left[
-            \Big(\big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(k) \Big)
-            \fImp q(k)
-        \right]
-        \]
-    \end{enumerate}
-\end{frame}
-
-\begin{frame}{Ejemplo con cuantificadores (2/2)}
-    \begin{enumerate}[<+->]
-        \setcounter{enumi}{2}
-        \item La convertimos a DNF ($\forall$ es opaco)
+        \item Supongamos que tenemos que resolver siguiente implicación
         \begin{align*}
-            &\fNot \left[
-                \Big(\big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(k) \Big)
-                \fImp q(k)
-            \right] \\
-            &\equiv \big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(k)
-            \fAnd \fNot q(k)
+                &\Big(\big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(k) \Big)
+                \fImp q(k)\\
+                &\equiv
+                \fNot \left[
+                    \Big(\big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(k) \Big)
+                    \fImp q(k)
+                    \right]
         \end{align*}
-
-        \item Eliminamos $\forall x. (p(x) \fImp q(x))$ (\ruleForallE{}). Reemplazamos
-        $x$ por una meta-variable fresca $\metavar{u}$.
+        \item Convertimos a DNF ($\forall$ es \textit{opaco})
+        \[\big(\forall x. (p(x) \fImp q(x))\big) \fAnd p(k)
+            \fAnd \fNot q(k)
+        \]
+        \item No es refutable. \ruleForallE{} con $x := \metavar{u}$ una \textbf{meta-variable} fresca.
         \[
             (p(\metavar{u}) \fImp q(\metavar{u})) \fAnd p(k) \fAnd \fNot q(k)
         \]
-        \item Convertimos a DNF
+        \item Re-convertimos a DNF
         \[
-            (p(\metavar{u}) \fImp q(\metavar{u})) \fAnd p(k) \fAnd \fNot q(k)
-            \equiv
-            \begin{aligned}[t]
-                &(\fNot p(\metavar{u}) \fAnd p(k) \fAnd \fNot q(k))\ \fOr\\
-                &(q(\metavar{u}) \fAnd p(k)\fAnd \fNot q(k))
-            \end{aligned}
+            (\fNot p(\metavar{u}) \fAnd p(k) \fAnd \fNot q(k))
+            \fOr
+            (q(\metavar{u}) \fAnd p(k)\fAnd \fNot q(k))
         \]
-        \item Refutamos cada cláusula (con unificación).
+        \item Refutamos cada cláusula (\textbf{unificando}).
         \begin{itemize}
             \item $\alert{\fNot p(\metavar{u})} \fAnd \alert{p(k)} \fAnd \fNot q(k)$ tenemos $p(\metavar{u}) \unify p(k)$ con $\subst{\metavar{u}}{k}$
             \item $\alert{q(\metavar{u})} \fAnd p(k) \fAnd \alert{\fNot q(k)}$ tenemos $q(\metavar{u}) \unify q(k)$ con $\subst{\metavar{u}}{k}$
@@ -1559,17 +1531,6 @@ of formula: es_abuelo(nacho, padre(padre(nacho)))
         \item Siempre permite hacer extracción de testigos: proceso de normalización con \textit{forma normal} buena, una demostración de un $\exists$ debería comenzar con \ruleExistsI{} y de ahí sacás el testigo.
         \proofTreeExistsI{}
     \end{itemize}
-    \pause
-    \begin{block}{Isomorfismo Curry-Howard}
-        \vspace{-\baselineskip}
-        \begin{align*}
-            \text{Demostraciones en DN} &\leftrightarrow \text{Términos de $\lambda$-cálculo.}\\
-            \text{Normalización} &\leftrightarrow \text{Semántica (Reducciones)}
-        \end{align*}
-
-        Puede ser más intuitivo pensarlo en cálculos.
-    \end{block}
-    \vspace{\baselineskip}
 \end{frame}
 
 
@@ -1603,28 +1564,23 @@ of formula: es_abuelo(nacho, padre(padre(nacho)))
     \begin{example}
         \[
     \AxiomC{}
-    \RL{\ruleAx}
-    \UnaryInfC{$\form \judG \form$}
-    \RL{\ruleImpI}
-    \UnaryInfC{$\judG \form \fImp \form$}
+    \RL{\ruleAxh{\hypId_1}}
+    \UnaryInfC{$\ctxColor \judG \form$}
     \AxiomC{}
-    \RL{\ruleAx}
-    \UnaryInfC{$\formTwo \judG \formTwo$}
-    \RL{\ruleImpI}
-    \UnaryInfC{$\judG \formTwo \fImp \formTwo$}
-    \RL{\alert<2>{\ruleAndI}}
-    \BinaryInfC{$\judG (\form \fImp \form) \fAnd (\formTwo \fImp \formTwo)$}
-    \RL{\alert<2>{\ruleAndEOne{}}}
-    \UnaryInfC{$\judG \form \fImp \form$}
+    \RL{\ruleAxh{\hypId_2}}
+    \UnaryInfC{$\ctxColor \judG \formTwo$}
+    \RL{\alert<2->{\ruleAndI}}
+    \BinaryInfC{$\ctxColor = \hypId_1: \form, \hypId_2: \formTwo \judG \form \fAnd \formTwo$}
+    \RL{\alert<2->{\ruleAndEOne{}}}
+    \UnaryInfC{$\hypId_1: \form, \hypId_2: \formTwo \judG \form$}
 \DisplayProof
+\pause
 \quad
 \rewrite
 \quad
     \AxiomC{}
-    \RL{\ruleAx}
-    \UnaryInfC{$\form \judG \form$}
-    \RL{\ruleImpI}
-    \UnaryInfC{$\judG \form \fImp \form$}
+    \RL{\ruleAxh{\hypId_1}}
+    \UnaryInfC{$\hypId_1: \form, \hypId_2: \formTwo \judG \form$}
     \DisplayProof
 \]
     \end{example}
@@ -1682,7 +1638,7 @@ of formula: es_abuelo(nacho, padre(padre(nacho)))
 \end{definition}
 \pause
 \begin{definition}[Otras reglas]
-    Además, hay reglas para
+    Además, hay reglas para simplificar
     \begin{itemize}
         \item \ruleExistsE{} con \ruleExistsI{}, \ruleForallE{} con \ruleForallI{}.
         \item \ruleNotE{} con \ruleNotI{}, \ruleOrE{} con \ruleOrI{}.
@@ -1745,8 +1701,8 @@ of formula: es_abuelo(nacho, padre(padre(nacho)))
 % \]
 
 \begin{itemize}
-    \item \textbf{Algoritmo}: Reducir sucesivamente hasta que sea irreducible
-    \item \textbf{Estrategias de reducción}: en un paso o muchos pasos
+    \item \textbf{Algoritmo}: Reducir sucesivamente hasta que sea irreducible.
+    \item \textbf{Estrategias de reducción}: en un paso o muchos pasos.
     \item \textit{Gross-Knuth}: reduce en muchos pasos todos los sub-términos posibles al mismo tiempo.
 \end{itemize}
 
@@ -1798,7 +1754,7 @@ En un solo paso,
     \begin{itemize}
         \item Queremos \textit{embeber} lógica clásica a intuicionista (no son equivalentes)
         \item Traducción de \textbf{doble negación}: método general.
-        \item \textbf{Intuición}: ``agregar una doble negación a todo''
+        \item \textbf{Intuición}: ``agregar una doble negación a todo''.
         \item En clásica son equivalentes (\ruleDnegE{} $\equiv$ \ruleLEM{}) pero en intuicionista es más débil.
     \end{itemize}
     \pause
@@ -1880,7 +1836,7 @@ En un solo paso,
     \[
         \someProof \proves \ctx \judgC \anyFormTwo
     \]
-    Queremos demostrar la misma fórmula, manteniendo el contexto, en intuicionista. Pasos:
+    Queremos demostrar la misma fórmula en intuicionista. Pasos:
     \pause
     \begin{enumerate}[<+->]
         \item Aplicar traducción de doble negación relativizada (recursivamente a fórmula y demostración) tomando ``$R = \anyFormTwo$''.
@@ -1896,7 +1852,7 @@ En un solo paso,
             \exists \var .
             \anyForm(\var, \varTwo_1, \dots, \varTwo_n).
         \]
-        \item Mantener el contexto ()
+        \item Mantener el contexto (reemplazando \ruleAx{} por $\form \judgI \tdn{\form}$)
         
         \textbf{Restricción}: Axiomas ($\ctx$) deben ser \textbf{F-fórmulas}.
         \[
