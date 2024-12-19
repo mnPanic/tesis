@@ -79,15 +79,18 @@ testigos usando la traducción de Friedman}
 \section{Introducción}
 
 \begin{frame}{Repaso de lógica}
-    \begin{itemize}
-        \item \textbf{Teorema}: Afirmación que puede ser \textit{demostrada}.
-        \item \textbf{Axiomas}: Afirmaciones que son siempre válidas (sin demostración).
-        \item \textbf{Demostración} de un teorema:
+    \begin{definitions}[Conceptos centrales]
         \begin{itemize}
-            \item \textit{Argumento} que establece que el teorema es cierto
-            \item Usa \textit{reglas de inferencia} a partir de \textit{axiomas} y otros teoremas probados anteriormente. 
+            \item \textbf{Teorema}: Afirmación que puede ser \textit{demostrada}.
+            \item \textbf{Axioma}: Afirmación que es \textit{siempre válida} (sin demostración).
+            \item \textbf{Demostración}:
+            \begin{itemize}
+                \item \textit{Argumento} que establece que un teorema es cierto.
+                \item Usa \textit{reglas de inferencia} a partir de \textit{axiomas} y otros teoremas probados anteriormente.
+                \item Enmarcada en un \textit{sistema deductivo}.
+            \end{itemize} 
         \end{itemize}
-    \end{itemize}
+    \end{definitions}
 \end{frame}
 
 \begin{frame}{Ejemplo de teorema}
@@ -136,6 +139,8 @@ testigos usando la traducción de Friedman}
         \includegraphics[scale=0.25]{img/ppt/proof-assistants.png}
     \end{figure}
     \pause
+
+    % De una demostración de una fórmula que afirma que existe un objeto que cumple con alguna propiedad, podemos encontrar tal objeto.
     \textbf{Extracción de testigos}: De una demo de
     $\exists \var . \pred(\var)$, encontrar $\term$ tq $\pred(\term)$.
 
@@ -153,18 +158,13 @@ testigos usando la traducción de Friedman}
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Representación de demostraciones}
-    ¿Cómo representamos las demostraciones? Ejemplo:
-    
-    \begin{itemize}
-        \item Tenemos dos axiomas
+\begin{frame}{Ejemplo representación de demostraciones}
+    \begin{definition}[Axiomas]
         \begin{enumerate}
             \item Los alumnos que faltan a los exámenes, los reprueban.
             \item Si se reprueba un final, se recursa la materia.
         \end{enumerate}
-        \item A partir de ellos, podríamos demostrar que si un alumno falta a un final, entonces recursa la materia.
-    \end{itemize}
-
+    \end{definition}
     \pause
 
     \begin{theorem}
@@ -177,50 +177,10 @@ testigos usando la traducción de Friedman}
     \item Por (2), sabemos que si reprueba, entonces recursa. Por lo tanto recursó.
 \end{itemize}
     \end{proof}
-\end{frame}
-
-\begin{frame}{Sistemas deductivos}
-    \begin{itemize}
-        \item \textbf{Problema}: Poco precisa. No se puede representar rigurosamente.
-        \item Usamos el \textit{sistema deductivo} de \textbf{deducción natural}
-        \item Sistema lógico formal usado para escribir demostraciones.
-        \begin{itemize}
-            \item \textbf{Lenguaje formal}: lógica de primer orden.
-            \item \textbf{Reglas de inferencia}: Por ejemplo,
-            \begin{itemize}
-            \item \textit{modus ponens}: si
-            es cierto $\form \fImp \formTwo$ y $\form$, se puede concluir $\formTwo$
-            \item \textit{modus tollens}: si es cierto $\form \fImp \formTwo$ y $\fNot \formTwo$, se puede concluir $\fNot\form$
-            \end{itemize}
-        \end{itemize}
-    \end{itemize}
-\end{frame}
-
-\begin{frame}{Lógica de primer orden}
-
-\begin{definition}[Términos]
-    Los términos están dados por la gramática:
-    \begin{align*}
-        \term ::= &\ \var                               &\text{(variables)} \\
-                  & \mid \fun(\term_1, \dots, \term_n) &\text{(funciones)}
-    \end{align*}
-\end{definition}
-\begin{definition}[Fórmulas]
-    Las fórmulas están dadas por la gramática:
-    \begin{align*}
-        \form, \formTwo ::=
-         & \ \pred(\term_1, \dots, \term_n) & (\text{predicados})                \\
-         & \mid \fFalse                     
-           \mid \fTrue                      & \text{(falso o \textit{bottom} y verdadero o \textit{top})} \\
-         & \mid \form \fAnd \formTwo                        
-           \mid \form \fOr \formTwo           & \text{(conjunción y disyunción)}     \\
-         & \mid \form \fImp \formTwo                       
-           \mid \fNot \form                 & \text{(implicación y negación)}                  \\
-         & \mid \forall \var . \form        
-           \mid \exists \var . \form        & \text{(cuantificador universal y existencial)}
-    \end{align*}
-\end{definition}
-
+    \pause
+    \begin{alertblock}{}
+        \textbf{Problema}: Es poco precisa. No se puede representar formalmente.
+    \end{alertblock}
 \end{frame}
 
 % \begin{frame}{Lógica de primer orden}
@@ -240,7 +200,35 @@ testigos usando la traducción de Friedman}
 
 \section{Deducción natural (DN)}
 
-\begin{frame}{Reglas de inferencia}
+
+\begin{frame}{Lógica de primer orden}
+
+    \begin{definition}[Términos]
+        Los términos están dados por la gramática:
+        \begin{align*}
+            \term ::= &\ \var                               &\text{(variables)} \\
+                      & \mid \fun(\term_1, \dots, \term_n) &\text{(funciones)}
+        \end{align*}
+    \end{definition}
+    \begin{definition}[Fórmulas]
+        Las fórmulas están dadas por la gramática:
+        \begin{align*}
+            \form, \formTwo ::=
+             & \ \pred(\term_1, \dots, \term_n) & (\text{predicados})                \\
+             & \mid \fFalse                     
+               \mid \fTrue                      & \text{(falso o \textit{bottom} y verdadero o \textit{top})} \\
+             & \mid \form \fAnd \formTwo                        
+               \mid \form \fOr \formTwo           & \text{(conjunción y disyunción)}     \\
+             & \mid \form \fImp \formTwo                       
+               \mid \fNot \form                 & \text{(implicación y negación)}                  \\
+             & \mid \forall \var . \form        
+               \mid \exists \var . \form        & \text{(cuantificador universal y existencial)}
+        \end{align*}
+    \end{definition}
+    
+\end{frame}
+
+\begin{frame}{Reglas de inferencia}    
     \begin{definitions}
         $\ctx$ es un \textbf{contexto de demostración} y $\judG$ la \textbf{relación de derivabilidad}.
     \end{definitions}
@@ -266,6 +254,7 @@ testigos usando la traducción de Friedman}
     \end{itemize}
 \end{frame}
 
+\newcommand{\ctxColor}{\textcolor{Plum}{\ctx}}
 % https://tex.stackexchange.com/questions/469229/show-up-only-parts-of-prooftree-on-beamer-frames
 \begin{frame}{Ejemplo de demostración en DN}
     \begin{example}[Teorema en DN]
@@ -285,29 +274,29 @@ testigos usando la traducción de Friedman}
     \begin{example}[Demostración en DN]
         \begin{prooftree}
         \AxiomC{}
-        \RL{\uncover<5->{\ruleAx}}
+        \RL{\uncover<5->{\alert<5>{\ruleAx}}}
         \only<-4>{\noLine}
-        \UnaryInfC{\uncover<4->{$\ctx \judG \reprueba \fImp \recursa$}}
+        \UnaryInfC{\uncover<4->{$\ctxColor \judG \reprueba \fImp \recursa$}}
         %
         \AxiomC{}
-        \RL{\uncover<6->{\ruleAx}}
+        \RL{\uncover<6->{\alert{\ruleAx}}}
         \only<-5>{\noLine}
-        \UnaryInfC{\uncover<6->{$\ctx \judG (\falta \fImp \reprueba) \wedge (\reprueba \fImp \recursa)$}}
-        \RL{\uncover<6->{\ruleAndEOne}}
-        \only<-5>{\noLine}
-        \UnaryInfC{\uncover<6->{$\ctx \judG \falta \fImp \reprueba$}}
+        \UnaryInfC{\uncover<6->{$\ctxColor \judG \falta \fImp \reprueba$}}
         \AxiomC{}
-        \RL{\uncover<6->{\ruleAx}}
+        \RL{\uncover<6->{\alert{\ruleAx}}}
         \only<-5>{\noLine}
-        \UnaryInfC{\uncover<6->{$\ctx \judG \falta$}}
+        \UnaryInfC{\uncover<6->{$\ctxColor \judG \falta$}}
         \RL{\uncover<6->{\ruleImpE}}
         %
         \only<-5>{\noLine}
-        \BinaryInfC{\uncover<4->{$\ctx \judG \reprueba$}}
+        \BinaryInfC{\uncover<4->{$\ctxColor \judG \reprueba$}}
         \RL{\uncover<3->{\ruleImpE}}
         \only<-2>{\noLine}
         \BinaryInfC{\uncover<2->{\(
-            \ctx = (\falta \fImp \reprueba), (\reprueba \fImp \recursa), \falta
+            \ctxColor = 
+                \alert<6>{(\falta \fImp \reprueba)},
+                \alert<5>{(\reprueba \fImp \recursa)},
+                \alert<6>{\falta}
             \judG
             \recursa 
             \)}}
@@ -355,10 +344,10 @@ testigos usando la traducción de Friedman}
         \item \ruleFalseE, \ruleTrueI, \ruleLEM
     \end{itemize}
     \pause
-    Mencionamos \textit{modus tollens} pero no aparece
+    No tenemos regla por ej. para \textit{modus tollens}: $(\form \fImp \formTwo) \fAnd \fNot \formTwo \fImp \fNot \form$
     \begin{itemize}
         \item Queremos un sistema lógico \textbf{minimal}: no agregamos las reglas \textbf{admisibles}, derivables a partir de las existentes.
-        \item Se implementan como funciones o \textit{macros}.    
+        \item Se implementan como funciones o \textit{macros}.
     \end{itemize}
     \pause
     \begin{block}{Alfa equivalencia}
@@ -1465,15 +1454,21 @@ of formula: es_abuelo(nacho, padre(padre(nacho)))
 \end{frame}
 
 \begin{frame}{Lógica clásica}
-    \begin{figure}
-        \includegraphics[scale=0.3]{img/ppt/extraction-candidate.png}
-    \end{figure}
-    \begin{itemize}[<+->]
-        \item Buscamos un mecanismo general que nos permita extraer testigos a partir de demostraciones en \textbf{deducción natural clásica}
-        \item Pero la lógica clásica \textbf{no es constructiva}, por LEM:
-        \vspace{0.5cm}
-        \proofTreeLEM
-    \end{itemize}
+    \begin{columns}
+        \begin{column}{0.5\textwidth}
+            \begin{itemize}[<+->]
+                \item Buscamos un mecanismo general que nos permita extraer testigos a partir de demostraciones en \textbf{deducción natural clásica}
+                \item Pero la lógica clásica \textbf{no es constructiva}, por LEM:
+                \vspace{0.5cm}
+                \proofTreeLEM
+            \end{itemize}        
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{figure}
+                \includegraphics[scale=0.25]{img/ppt/extraction-candidate.png}
+            \end{figure}
+        \end{column}
+    \end{columns}
 %     \begin{block}{Mecanismo de extracción de testigos}
 %         A partir de una demostración en PPA para una fórmula de la forma \[\forall \var_0 \dots \forall \var_n
 % \exists \varTwo . \anyForm(\var_0, \dots, \var_n, \varTwo),\]
