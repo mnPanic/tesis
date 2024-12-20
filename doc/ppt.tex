@@ -953,32 +953,6 @@ testigos usando la traducción de Friedman}
 %     \end{figure}
 % \end{frame}
 
-\begin{frame}{Certificado del by}
-    Teniendo $\ctx = \{\hypId_1: \formTwo_1, \dots, \hypId_n: \formTwo_n\}$, para \lstinline{thus A by h1, ..., hn}:
-
-    \begin{enumerate}[<+->]
-        \item Buscamos las hipótesis en el contexto. Queremos demostrar
-        \[
-            \ctx \judG \formTwo_1 \fAnd \dots \fAnd \formTwo_n \fImp \form
-        \]
-        \item \textbf{Razonamos por el absurdo}: Asumiendo la negación buscamos una contradicción
-        \[
-            \ctx, \fNot (\formTwo_1 \fAnd \dots \fAnd \formTwo_n \fImp \form) \judG \fFalse
-        \]
-        \item Convertimos la negación a forma normal disyuntiva (\textbf{DNF})
-        \[
-            \ctx, (\formLit_{1} \fAnd \dots \fAnd \formLit_n)
-            \fOr \dots \fOr
-            (\formLitTwo_{1} \fAnd \dots \fAnd \formLitTwo_m) \judG \fFalse
-        \]
-        \item Buscamos una \textbf{contradicción} refutando cada cláusula individualmente. Será refutable si
-        \begin{itemize}
-            \item Contiene $\fFalse$ o dos fórmulas opuestas ($\formLit, \fNot \formLit$), 
-            \item Eliminando universales \textbf{consecutivos} y reiniciando el proceso, se consigue una refutación ($\fNot \pred(k, t), \forall \var . \forall \varTwo . \pred(\var, \varTwo)$)
-        \end{itemize}
-    \end{enumerate}
-\end{frame}
-
 \begin{frame}{Ejemplo sin cuantificadores (1/4)}
     \begin{figure}
         \centering
@@ -1001,12 +975,12 @@ testigos usando la traducción de Friedman}
 \begin{frame}{Ejemplo sin cuantificadores (2/4)}
     \begin{enumerate}
         \setcounter{enumi}{1}
-        \item Negamos la fórmula y buscamos una contradicción.
+        \item \textbf{Razonamos por el absurdo}: Negamos la fórmula y buscamos una contradicción.
         \[ 
             \ctx, \fNot [ \big( (a \to b) \fAnd a \big) \to b ] \judG \fFalse
         \]
     \end{enumerate}
-
+    \pause
     \begin{definition}[Eliminación de doble negación]
         \[
             \AxiomC{}
@@ -1112,7 +1086,7 @@ testigos usando la traducción de Friedman}
 \begin{frame}{Ejemplo sin cuantificadores (2/3)}
     \begin{enumerate}[<+->]
         \setcounter{enumi}{2}
-        \item La convertimos a DNF
+        \item La convertimos a \textbf{DNF} (\textit{Forma Normal Disyuntiva})
         \begin{align*}
             &\fNot [ \big( (a \to b) \fAnd a \big) \to b ] \\
             &\equiv \fNot [ \fNot \big( (a \to b) \fAnd a \big) \fOr b ]
@@ -1264,7 +1238,7 @@ testigos usando la traducción de Friedman}
 \begin{frame}{Ejemplo sin cuantificadores (3/3)}
     \begin{enumerate}
         \setcounter{enumi}{3}
-        \item Refutamos cada cláusula
+        \item Demostramos una \textbf{contradicción} refutando cada cláusula
         \[
             (\alert{\fNot a} \fAnd \alert{a} \fAnd \fNot b) \vee
             (\alert{b} \fAnd a \fAnd \alert{\fNot b}) \judG \fFalse
@@ -1307,6 +1281,22 @@ testigos usando la traducción de Friedman}
         \begin{itemize}
             \item $\alert{\fNot p(\metavar{u})} \fAnd \alert{p(k)} \fAnd \fNot q(k)$ tenemos $p(\metavar{u}) \unify p(k)$ con $\subst{\metavar{u}}{k}$
             \item $\alert{q(\metavar{u})} \fAnd p(k) \fAnd \alert{\fNot q(k)}$ tenemos $q(\metavar{u}) \unify q(k)$ con $\subst{\metavar{u}}{k}$
+        \end{itemize}
+    \end{enumerate}
+\end{frame}
+
+
+\begin{frame}{Certificado del by}
+    Teniendo $\ctx = \{\hypId_1: \formTwo_1, \dots, \hypId_n: \formTwo_n\}$, para \lstinline{thus A by h1, ..., hn}:
+
+    \begin{enumerate}
+        \item Buscamos las hipótesis en el contexto
+        \item \textbf{Razonamos por el absurdo}: Asumiendo la negación buscamos una contradicción.
+        \item Convertimos la fórmula a \textbf{DNF}.
+        \item Buscamos una \textbf{contradicción} refutando cada cláusula individualmente. Será refutable si
+        \begin{itemize}
+            \item Contiene $\fFalse$ o dos fórmulas opuestas ($\formLit, \fNot \formLit$), 
+            \item Eliminando universales \textbf{consecutivos} y reiniciando el proceso, se consigue una refutación ($\fNot \pred(k, t), \forall \var . \forall \varTwo . \pred(\var, \varTwo)$)
         \end{itemize}
     \end{enumerate}
 \end{frame}
@@ -1927,6 +1917,11 @@ En un solo paso,
         \item Mecanismo heurístico de demostración automática: \lstinline{by}. 
         
         \textbf{Extensión}: Hacerlo recursivo permitiendo eliminar los universales de más de una hipótesis.
+        \item Desafíos
+        \begin{itemize}
+            \item Cantidad de demostraciones a escribir.
+            \item Demostraciones generadas automáticamente difíciles de \textit{debuggear}.
+        \end{itemize}
         \item Otras mejoras
         \begin{itemize}
             \item Permitir importar archivos, implementar biblioteca estándar.
@@ -1939,6 +1934,8 @@ En un solo paso,
 
 \begin{frame}{Conclusiones - Extracción de testigos}
     Implementamos un mecanismo de \textbf{extracción de testigos}: composición de traducción de Friedman y reducción de ND intuicionista.
+
+    \textbf{Desafío}: Problemas aparecieron en la integración de las 3 partes.
     \pause
     \begin{center}
         Traducción
@@ -1962,10 +1959,7 @@ En un solo paso,
             \item \textit{Mejora}: Implementarlas.
         \end{itemize}
         \pause
-        \item \textbf{Ineficiente}: en cada paso reinicia la búsqueda de todos los focos de evaluación.
-        \begin{itemize}
-            \item \textit{Mejora}: Usar una \textit{máquina abstracta}.
-        \end{itemize}
+        \item \textbf{Ineficiente}: en cada paso reinicia la búsqueda de todos los focos de evaluación. \textit{Mejora}: Usar una \textit{máquina abstracta}.
     \end{itemize}
 \end{frame}
 
