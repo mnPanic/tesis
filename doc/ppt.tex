@@ -1286,7 +1286,7 @@ testigos usando la traducción de Friedman}
 \end{frame}
 
 
-\begin{frame}{Certificado del by}
+\begin{frame}{Certificador del by}
     Teniendo $\ctx = \{\hypId_1: \formTwo_1, \dots, \hypId_n: \formTwo_n\}$, para \lstinline{thus A by h1, ..., hn}:
 
     \begin{enumerate}
@@ -1299,34 +1299,17 @@ testigos usando la traducción de Friedman}
             \item Eliminando universales \textbf{consecutivos} y reiniciando el proceso, se consigue una refutación ($\fNot \pred(k, t), \forall \var . \forall \varTwo . \pred(\var, \varTwo)$)
         \end{itemize}
     \end{enumerate}
+
+    \begin{block}{Alcance}
+        \begin{columns}
+            \begin{column}{0.5\textwidth}
+                \textbf{Completo} para lógica proposicional y \textbf{heurístico} para primer orden. (aceptable, la validez de LPO es indecidible por el \textit{Teorema de Church}).
+            \end{column}
+        \begin{column}{0.5\textwidth}
+        \end{column}
+            \end{columns}
+    \end{block}
 \end{frame}
-
-\begin{frame}[fragile]{Alcance y limitaciones del by}
-    \begin{itemize}
-        \item \textbf{Completo} para lógica proposicional y \textbf{heurístico} para primer orden.
-        \item Esto es aceptable, la validez de LPO es indecidible (Teorema de Church).
-        \item ¿Por qué heurístico? Elimina los $\forall$ consecutivos de a lo sumo una hipótesis (Pero le falta aún más)
-    \end{itemize}
-\pause
-\begin{figure}
-    \centering
-    \small Ejemplo de falla en eliminación
-    \vspace{0.1cm}
-
-    \begin{tabular}{c}
-\begin{lstlisting}
-axiom ax1: forall X . p(X) -> q(X)
-axiom ax2: forall X . p(X)
-theorem t: q(a)
-proof
-    thus q(a) by ax1, ax2
-end
-\end{lstlisting}
-    \end{tabular}
-\end{figure}
-\end{frame}
-
-% Considerar saltear esto si no da el tiempo
 
 \begin{frame}[fragile]{Descarga de conjunciones}
     \begin{columns}[t]
