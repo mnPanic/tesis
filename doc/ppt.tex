@@ -14,6 +14,8 @@
 % https://tex.stackexchange.com/questions/362077/line-jump-using-the-xcancel-macro-in-beamer/362236#362236
 \newcommand<>{\xxcancel}[1]{\alt#2{\xcancel{#1}}{\vphantom{\xcancel{#1}}#1}}%uncover the xcancel command
 
+\usepackage{pifont}
+\newcommand{\xmark}{\ding{55}}
 
 % https://tex.stackexchange.com/questions/464916/listing-inside-a-frame-using-beamer
 \lstset{language=ppa, xleftmargin=0.5cm}
@@ -1299,15 +1301,12 @@ testigos usando la traducción de Friedman}
             \item Eliminando universales \textbf{consecutivos} y reiniciando el proceso, se consigue una refutación ($\fNot \pred(k, t), \forall \var . \forall \varTwo . \pred(\var, \varTwo)$)
         \end{itemize}
     \end{enumerate}
-
+    \pause
     \begin{block}{Alcance}
-        \begin{columns}
-            \begin{column}{0.5\textwidth}
-                \textbf{Completo} para lógica proposicional y \textbf{heurístico} para primer orden. (aceptable, la validez de LPO es indecidible por el \textit{Teorema de Church}).
-            \end{column}
-        \begin{column}{0.5\textwidth}
-        \end{column}
-            \end{columns}
+        \textbf{Completo} para lógica proposicional y \textbf{heurístico} para primer orden. (aceptable, la validez de LPO es indecidible por el \textit{Teorema de Church}).
+        \[
+            \text{\xmark}\quad (\forall x . p(x) \fImp q(x)) \fAnd (\forall x . p(x)) \fImp q(a) 
+        \]
     \end{block}
 \end{frame}
 
