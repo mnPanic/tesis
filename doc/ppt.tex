@@ -1371,13 +1371,13 @@ testigos usando la traducción de Friedman}
     \begin{minted}{shell-session}
 $ ppa extract parientes.ppa \
     --theorem todos_tienen_abuelo \
-    --terms nacho
-Running program... OK!
-Translating... OK!
+    --terms pepe
+Running program... OK! (size = 146)
+Translating... OK! (raw size = 136, reduced size = 9)
 Checking translated... OK!
-Extracted witness: padre(padre(nacho))
-of formula: es_abuelo(nacho, padre(padre(nacho)))
-    \end{minted}
+Extracted witness: padre(padre(pepe))
+       of formula: es_abuelo(pepe, padre(padre(pepe)))
+\end{minted}
 \end{figure}
 \end{frame}
 
@@ -1902,7 +1902,7 @@ En un solo paso,
         \textbf{Extensión}: Hacerlo recursivo permitiendo eliminar los universales de más de una hipótesis.
         \item Desafíos
         \begin{itemize}
-            \item Aprender Haskell.
+            \item Haskell.
             \item Demostraciones generadas automáticamente difíciles de \textit{debuggear}.
         \end{itemize}
         \item Otras mejoras
