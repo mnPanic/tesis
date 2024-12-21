@@ -121,6 +121,42 @@ executable ppa
             -- -fprof-auto
             -- -fprof-cafs
 
+-- https://github.com/cdepillabout/pretty-simple/blob/master/web/web.cabal
+executable web
+    import: warnings
+    main-is: Main.hs
+    hs-source-dirs: web
+    default-language: GHC2021
+    build-depends: ppa-lib, miso
+    if !impl(ghcjs)
+        build-depends:
+            base,
+            jsaddle,
+            jsaddle-warp,
+            transformers,
+            wai,
+            wai-app-static,
+            warp,
+            websockets
+    else
+        build-depends:
+            base ^>= 4.12,
+    ghcjs-options:
+        -dedupe
+    default-extensions:
+        BlockArguments
+        DeriveGeneric
+        EmptyCase
+        FlexibleContexts
+        GADTs
+        LambdaCase
+        OverloadedLabels
+        OverloadedStrings
+        RankNTypes
+        RecordWildCards
+        TupleSections
+        TypeApplications
+
 test-suite tests
     --import: warnings
     type: exitcode-stdio-1.0
