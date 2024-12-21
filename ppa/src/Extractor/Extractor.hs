@@ -21,7 +21,7 @@ import Text.Printf (printf)
 Para mantener los axiomas originales, reemplazo ax: f las ocurrencias de ax por
 una dem de f~~ a partir de f
 -}
-extractWitnessCtx :: Context -> HypId -> [Term] -> Result (Context, Term, Form)
+extractWitnessCtx :: Context -> HypId -> [Term] -> Result (Context, Context, Term, Form)
 extractWitnessCtx ctx theoremId terms = do
   h_theorem <- findHyp ctx theoremId
   case h_theorem of
@@ -29,15 +29,17 @@ extractWitnessCtx ctx theoremId terms = do
     HTheorem h f p -> do
       let ctxRest = removeHyp ctx theoremId
       let pInlined = inlineProofs ctxRest p
-      wrapR "check inlined" $ checkContext (axioms ctx ++ [HTheorem h f pInlined])
+      let ctxAxioms = axioms ctx
+      wrapR "check inlined" $ checkContext (ctxAxioms ++ [HTheorem h f pInlined])
 
-      (pInlinedTranslated, f_exists, t) <- extractWitness (axioms ctx) pInlined f terms
+      (pInlinedTranslated, pInlinedReduced, f_exists, t) <- extractWitness ctxAxioms pInlined f terms
       let (FExists x f') = f_exists
 
-      let ctxResult = axioms ctx ++ [HTheorem h f_exists pInlinedTranslated]
+      let ctxTranslate = ctxAxioms ++ [HTheorem h f_exists pInlinedTranslated]
+      let ctxResult = ctxAxioms ++ [HTheorem h f_exists pInlinedReduced]
 
       let f_witnessed = subst x t f'
-      return (ctxResult, t, f_witnessed)
+      return (ctxTranslate, ctxResult, t, f_witnessed)
 
 -- Inlinea todos los proofs del context en el proof
 inlineProofs :: Context -> Proof -> Proof
@@ -77,7 +79,7 @@ Para ello,
 La fórmula debe ser de la clase Sigma^0_1, es decir N
 existenciales seguidos de una fórmula sin cuantificadores.
 -}
-extractWitness :: (HasCallStack) => Context -> Proof -> Form -> [Term] -> Result (Proof, Form, Term)
+extractWitness :: (HasCallStack) => Context -> Proof -> Form -> [Term] -> Result (Proof, Proof, Form, Term)
 extractWitness ctxAxioms proof form instanceTerms = do
   formPi02@(ys, f_exists) <- toPi02 form
   if length ys /= length instanceTerms
@@ -109,9 +111,10 @@ extractWitness ctxAxioms proof form instanceTerms = do
               )
               (proofNJAdaptedAxioms, formPi02)
               (reverse instanceTerms)
+
       wrapR "check pre-reduce" $ checkContext (ctxAxioms ++ [HTheorem "h" f_exists_inst proofInst])
 
       let reducedProof = reduce proofInst
       case reducedProof of
-        (PExistsI t _) -> return (reducedProof, f_exists_inst, t)
-        proof' -> return (reducedProof, f_exists_inst, TVar $ printf "(broken) %s not ExistsI" (proofName proof'))
+        (PExistsI t _) -> return (proofInst, reducedProof, f_exists_inst, t)
+        proof' -> return (proofInst, reducedProof, f_exists_inst, TVar $ printf "(broken) %s not ExistsI" (proofName proof'))

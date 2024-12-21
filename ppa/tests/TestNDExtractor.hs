@@ -687,13 +687,14 @@ assertExtractProgramEquals theorem terms expectedTerm rawProgram = do
     ctx <- assertRight "certify" $ certify prog
     assertEqual "check failed" (Right ()) (checkContext ctx)
 
-    (ctx_translated, obtainedTerm, _) <-
+    (ctx_translated, ctx_reduced, obtainedTerm, _) <-
         assertRight "extract failed" $
             extractWitnessCtx ctx theorem terms
 
     assertEqual "terms don't match" expectedTerm obtainedTerm
 
     assertEqual "check translated failed" (Right ()) (checkContext ctx_translated)
+    assertEqual "check translated+reduced failed" (Right ()) (checkContext ctx_reduced)
 
 assertRight :: String -> Result a -> IO a
 assertRight msg res = case res of

@@ -3,10 +3,10 @@ module Main where
 import Args (Args (..), Path (..), parseArgs)
 import Extractor.Extractor (extractWitnessCtx)
 import PPA.Certifier (certify, checkContext)
-import PPA.PPA (Context)
+import PPA.PPA (Context, sizeC)
 import PPA.Parser (parseProgram', parseTerm)
-import Result (Result)
 import PrettyShow (PrettyShow (prettyShow))
+import Result (Result)
 
 import System.Environment (getArgs)
 
@@ -36,7 +36,7 @@ runCheck (ArgsCheck inPath outPath) = do
     case parseAndCheck (show inPath) rawProgram of
         Left err -> putStrLn err
         Right ctx -> do
-            putStrLn "OK!"
+            putStrLn $ printf "OK! (size = %d)" (sizeC ctx)
             case outPath of
                 Nothing -> return ()
                 Just path -> do
@@ -64,20 +64,20 @@ runExtract (ArgsExtract inPath outPath theoremId terms) = do
             case parseAndCheck (show inPath) rawProgram of
                 Left err -> putStrLn err
                 Right ctx -> do
-                    putStrLn "OK!"
+                    putStrLn $ printf "OK! (size = %d)" (sizeC ctx)
                     putStr "Translating... "
                     case extractWitnessCtx ctx theoremId parsedTerms of
                         Left err -> putStrLn err
-                        Right (ctx', t, f) -> do
-                            putStrLn "OK!"
+                        Right (ctxT, ctx', t, f) -> do
+                            putStrLn $ printf "OK! (raw size = %d, reduced size = %d)" (sizeC ctxT) (sizeC ctx')
                             writeResult outPath ctx ctx'
                             putStr "Checking translated... "
                             case checkContext ctx' of
                                 Left err -> putStrLn err
                                 Right _ -> do
-                                    putStrLn "OK!"
+                                    putStrLn $ printf "OK!"
                                     putStrLn $ printf "Extracted witness: %s" (show t)
-                                    putStrLn $ printf "of formula: %s" (show f)
+                                    putStrLn $ printf "       of formula: %s" (show f)
 
 writeResult :: Maybe Path -> Context -> Context -> IO ()
 writeResult Nothing _ _ = return ()

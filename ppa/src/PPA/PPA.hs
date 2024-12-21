@@ -11,6 +11,7 @@ module PPA.PPA (
   axioms,
   removeHyp,
   getHypId,
+  sizeC,
   getProof,
   getForm,
   fvC,
@@ -25,6 +26,7 @@ import ND.ND (
   Term,
   VarId,
   fv,
+  heightP,
  )
 
 import Result (Result)
@@ -99,6 +101,13 @@ isAxiom HAxiom{} = True
 isAxiom HTheorem{} = False
 
 type Context = [Hypothesis]
+
+sizeC :: Context -> Int
+sizeC = sum . map sizeH
+ where
+  sizeH h = case h of
+    HAxiom{} -> 1
+    HTheorem _ _ p -> heightP p
 
 findHyp :: Context -> HypId -> Result Hypothesis
 findHyp ctx h

@@ -5,6 +5,7 @@
 module ND.ND (
     Env (..),
     fromList,
+    heightP,
     get,
     VarId,
     FunId,
@@ -401,3 +402,28 @@ fvP p = case p of
     PForallE _ f pF t -> Set.unions [fv f, fvTerm t, fvP pF]
     PExistsI t p1 -> Set.union (fvP p1) (fvTerm t)
     PExistsE _ f pE _ pA -> Set.unions [fv f, fvP pE, fvP pA]
+
+heightP :: Proof -> Int
+heightP p = heightSubProof + 1
+  where
+    heightSubProof =
+        case p of
+            PAx _ -> 0
+            PNamed _ p1 -> heightP p1
+            PAndI pL pR -> max (heightP pL) (heightP pR)
+            PAndE1 _ pR -> heightP pR
+            PAndE2 _ pL -> heightP pL
+            POrI1 pL -> heightP pL
+            POrI2 pR -> heightP pR
+            POrE _ _ pOr _ pL _ pR -> maximum [heightP pOr, heightP pL, heightP pR]
+            PImpI _ p1 -> heightP p1
+            PImpE _ pI pA -> max (heightP pI) (heightP pA)
+            PNotI _ pB -> heightP pB
+            PNotE _ pNotF pF -> max (heightP pNotF) (heightP pF)
+            PTrueI -> 0
+            PFalseE pB -> heightP pB
+            PLEM -> 0
+            PForallI _ pF -> heightP pF
+            PForallE _ _ pF _ -> heightP pF
+            PExistsI _ p1 -> heightP p1
+            PExistsE _ _ pE _ pA -> max (heightP pE) (heightP pA)
