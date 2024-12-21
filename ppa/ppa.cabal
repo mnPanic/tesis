@@ -123,7 +123,7 @@ executable ppa
 
 -- https://github.com/cdepillabout/pretty-simple/blob/master/web/web.cabal
 executable web
-    import: warnings
+    --import: warnings
     main-is: Main.hs
     hs-source-dirs: web
     default-language: GHC2021
@@ -141,6 +141,8 @@ executable web
     else
         build-depends:
             base ^>= 4.12,
+    ghc-options:
+        -threaded
     ghcjs-options:
         -dedupe
     default-extensions:
