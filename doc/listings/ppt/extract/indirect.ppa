@@ -1,0 +1,15 @@
+axiom ax1: no_es_alto(juan)
+axiom ax2: forall X. no_es_alto(X) -> es_bajo(X)
+
+theorem t1: exists X. no_es_alto(X)
+proof
+    take X := juan
+    thus no_es_alto(juan) by ax1
+end
+
+theorem t2: exists X. es_bajo(X)
+proof
+    consider Y st h: no_es_alto(Y) by t1
+    take X := Y
+    hence es_bajo(Y) by ax2
+end

@@ -1,0 +1,14 @@
+Para sacar
+
+alpha eq hace fácil explicar sust
+sustitución tal vez, sobre todo la captura.
+Eliminación de universal viene bien para BY
+
+se pueden sacar ambas
+
+ND
+
+sin cuantificadores, explicar cómo razonar por el absurdo tiene sentido por friedman
+
+26: detalle de cómo refutar se podría sacar y juntar con DNF
+28: podría no repetir todo

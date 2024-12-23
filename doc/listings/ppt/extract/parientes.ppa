@@ -1,0 +1,18 @@
+axiom padre_es_padre: forall A. es_padre(A, padre(A))
+theorem todos_tienen_padre: forall Q. exists P. es_padre(Q, P)
+proof
+    let Q
+    take P := padre(Q)
+    thus es_padre(Q, padre(Q)) by "padre_es_padre"
+end
+
+axiom def_abuelo: forall P. forall Q. forall R.
+    (es_padre(P, Q) & es_padre(Q, R)) <-> es_abuelo(P, R)
+theorem todos_tienen_abuelo: forall A. exists B. es_abuelo(A, B)
+proof
+    let A
+    consider X st "h1": es_padre(A, X) by "todos_tienen_padre"
+    consider Y st "h2": es_padre(X, Y) by "todos_tienen_padre"
+    take B := Y
+    thus es_abuelo(A, Y) by "h1", "h2", "def_abuelo"
+end

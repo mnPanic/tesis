@@ -1,0 +1,10 @@
+axiom "ax1": a & e
+axiom "ax2": b & c
+axiom "ax3": d
+theorem "and discharge":
+    (a & b) & ((c & d) & e)
+proof
+    thus a & e by "ax1"
+    thus d by "a3"
+    thus b & c by "ax2"
+end

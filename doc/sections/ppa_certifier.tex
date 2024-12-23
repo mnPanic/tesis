@@ -261,7 +261,7 @@ vemos la idea general de la estrategia y luego profundizamos en cada paso. Los p
     \begin{itemize}
         \item Contiene $\fFalse$
         \item Contiene dos fórmulas opuestas ($\formLit, \fNot \formLit$)
-        \item Eliminando existenciales consecutivos y re-convirtiendo a DNF, se
+        \item Eliminando universales consecutivos y re-convirtiendo a DNF, se
         consigue una refutación ($\fNot \pred(k), \forall \var .\ \pred(x)$)
     \end{itemize}
 \end{itemize}
@@ -269,7 +269,7 @@ vemos la idea general de la estrategia y luego profundizamos en cada paso. Los p
 La complejidad del mecanismo no reside solo en tener que realizar todos estos
 pasos, sino que el desafío principal fue \textbf{generar la demostración en
 deducción natural}. Veamos un ejemplo sin generar la demostración, y sin
-eliminar existenciales.
+eliminar universales.
 
 \begin{ejemplo}[Ejemplo sin cuantificadores]
     Tenemos el siguiente programa
@@ -614,8 +614,12 @@ Esto de forma sintáctica sería trivial, basta con hacerlo recursivamente. Pero
 \begin{align*}
     \form \judG \form'
         &\Rightarrow \form \fAnd \formTwo \judG \form' \fAnd \formTwo\\
+    \formTwo \judG \formTwo'
+        &\Rightarrow \form \fAnd \formTwo \judG \form \fAnd \formTwo'\\
     \form \judG \form'
         &\Rightarrow \form \fOr \formTwo \judG \form' \fOr \formTwo\\
+    \formTwo \judG \formTwo'
+        &\Rightarrow \form \fAnd \formTwo \judG \form \fOr \formTwo'\\
     \form' \judG \form
         &\Rightarrow \fNot \form \judG \fNot \form'
 \end{align*}

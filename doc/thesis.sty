@@ -1,12 +1,7 @@
 \ProvidesPackage{thesis}
 
-\usepackage{fancyhdr}
-\pagestyle{fancy}
-
 \usepackage{graphicx}
 \usepackage[utf8]{inputenc}
-\usepackage[left=3cm,right=3cm,bottom=3.5cm,top=3.5cm]{geometry}
-
 \usepackage[spanish]{babel}
 
 \usepackage{amsmath}
@@ -22,19 +17,9 @@
 \usepackage{caption}
 \usepackage{subcaption}
 
-% https://tex.stackexchange.com/questions/159988/sidewaysfigure-and-landscape
-%\usepackage{pdflscape}
-
 % https://tex.stackexchange.com/questions/50070/landscape-figure-in-latex
 \usepackage{rotating}
 
-
-
-% Colores 
-% https://es.overleaf.com/learn/latex/Using_colors_in_LaTeX
-\usepackage[dvipsnames]{xcolor} % \textcolor
-
-\usepackage[colorlinks=true]{hyperref}  % referencias
 
 % Programas
 % https://tex.stackexchange.com/questions/116595/highlighting-haskell-listings-in-large-tex-document
@@ -68,23 +53,11 @@
 % https://www.overleaf.com/learn/latex/theorems_and_proofs
 \theoremstyle{definition} % Para que no salga en italicas
 
-\newtheorem{theorem}{Teorema}
-\newtheorem*{theorem*}{Teorema}
-
-\newtheorem{corollary}{Corolario}
-\newtheorem*{corollary*}{Corolario}
-
-\newtheorem{lemma}{Lema}
-\newtheorem*{lemma*}{Lema}
-
 \newtheorem{prop}{Prop.}
 \newtheorem*{prop*}{Prop}
 
 \newtheorem{criterion}{Criterio}
 \newtheorem*{criterion*}{Criterio}
-
-\newtheorem{definition}{Def.}
-\newtheorem*{definition*}{Def}
 
 \newtheorem{notation}{Notación.}
 \newtheorem*{notation*}{Notación}
@@ -114,7 +87,7 @@
 \newcommand{\obrace}[2]{\aoverbrace[L1R]{#1}^{#2}}
 
 % "Comunicacionales", para que el director (Pablo) o yo lea en el futuro
-\newcommand{\todo}[1]{\textcolor{BrickRed}{(TODO: #1)}}
+\newcommand{\todo}[1]{\textcolor{red}{(TODO: #1)}}
 \newcommand{\duda}[1]{\textcolor{Plum}{(DUDA: #1)}}
 \newcommand{\nota}[1]{\textcolor{BlueViolet}{(NOTA: #1)}}
 \newcommand{\ok}{\textcolor{Green}{\checkmark}}
@@ -275,7 +248,7 @@
     morecomment=[l]{//},
     morecomment=[s]{/*}{*/},
     morestring=[b]",
-    stringstyle=\ttfamily,
+    stringstyle=\ttfamily\color{red!50!brown},
     showstringspaces=false,
     extendedchars=true,
     literate={á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1,

@@ -1,4 +1,5 @@
-theorem "and discharge" : a -> b -> (a & b)
+theorem "and discharge":
+    a -> b -> (a & b)
 proof
     suppose "a" : a
     suppose "b" : b

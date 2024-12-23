@@ -236,7 +236,7 @@ clase particular que definimos más adelante (de la forma $\forall \varTwo_1
 
 \begin{definition}[Traducción de doble negación relativizada]
     \begin{align*}
-        \transDNeg{\bot}                         & = \bot                                                             \\
+        \transDNeg{\bot}                         & = R                                                             \\
         \transDNeg{\form}                        & = \fNotR\fNotR \form
         \quad \text{con $\form$ atómica}                                                                              \\
         \transDNeg{(\fNot \form)}                & = \fNotR \transDNeg{\form}                                          \\
@@ -659,7 +659,7 @@ En donde aprovechamos que la traducción de fórmulas atómicas es $\fNotR \tdn{
     El \namedref{fri:lemma:notr-trans-intro} no podría valer para todas las fórmulas, ya que en ese caso podríamos usar siempre la traducción de Friedman para traducir cualquier demostración, y sabemos que no es posible (porque la lógica clásica no es equivalente a la intuicionista). No obstante, la clasificación de \textit{conjuntivas} que deja fuera a $\fNot, \fOr, \fImp, \exists$ y $\forall$ es excesivamente restrictiva, debería ser posible extenderla.
 \end{obs*}
 
-\begin{theorem}[Traducción de Friedman para fórmulas $\classSigmaOne$ en general]
+\begin{theorem}[Traducción de Friedman para fórmulas $\classPiTwo$ en general]
     \label{fri:thm:fri-pitwo-general}
 
     Sea $\someProof$ una demostración clásica de \(
@@ -1329,6 +1329,7 @@ una pasada de forma lineal.
         \AxiomC{$\someProof_\formTwo$}
         \noLine
         \UnaryInfC{$\ctx, \hypId: \form \judG \formTwo$}
+        \RL{\ruleExistsE}
         \BinaryInfC{$\ctx \judG \formTwo$}
         \DisplayProof
         \rewrite \quad

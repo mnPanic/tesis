@@ -3,7 +3,9 @@ axiom "b": b
 axiom "c": c
 axiom "d": d
 axiom "e": e
-theorem "and discharge" : (a & b) & ((c & d) & e)
+
+theorem "and discharge":
+    (a & b) & ((c & d) & e)
 proof
     thus a & e by "a", "e"
     thus d by "d"

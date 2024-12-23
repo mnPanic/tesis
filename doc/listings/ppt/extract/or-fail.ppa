@@ -1,0 +1,17 @@
+axiom ax_1: roba(tuco) | mata(tuco)
+axiom ax_2: forall X . roba(X) -> criminal(X)
+axiom ax_3: forall X . mata(X) -> criminal(X)
+
+theorem t: exists X . criminal(X)
+proof
+    take X := tuco
+    cases by ax_1
+        case roba(tuco)
+            hence criminal(tuco)
+                by ax_2
+        
+        case mata(tuco)
+            hence criminal(tuco)
+                by ax_3
+    end
+end
