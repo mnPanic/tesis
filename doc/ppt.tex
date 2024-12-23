@@ -295,9 +295,9 @@ testigos usando la traducción de Friedman}
         %
         \only<-5>{\noLine}
         \BinaryInfC{\uncover<4->{$\ctxColor \judG \reprueba$}}
-        \RL{\uncover<3->{\ruleImpE}}
-        \only<-2>{\noLine}
-        \BinaryInfC{\uncover<2->{\(
+        \RL{\uncover<4->{\ruleImpE}}
+        \only<-3>{\noLine}
+        \BinaryInfC{\uncover<3->{\(
             \ctxColor = 
                 \alert<6>{(\falta \fImp \reprueba)},
                 \alert<5>{(\reprueba \fImp \recursa)},
@@ -305,8 +305,8 @@ testigos usando la traducción de Friedman}
             \judG
             \recursa 
             \)}}
-        \RL{\uncover<2->{\ruleImpI}}
-        \only<1>{\noLine}
+        \RL{\uncover<3->{\ruleImpI}}
+        \only<-2>{\noLine}
         \UnaryInfC{\(
             (\falta \fImp \reprueba), (\reprueba \fImp \recursa)
             \judG
@@ -472,9 +472,8 @@ testigos usando la traducción de Friedman}
     \pause
     \begin{itemize}[<+->]
         \item \textbf{Deducción natural en estilo de \textit{Fitch}}.
-        \item \textbf{Reglas de inferencia \textit{declarativas}}: Afirmar
-         \[\form_1, \dots, \form_n \judG \form\] sin
-        tener que demostrarlo a mano (automático).
+        \item \textbf{Reglas de inferencia \textit{declarativas}}:
+         \[\form_1, \dots, \form_n \judG \form\]
         \item \textbf{Sintaxis similar a un lenguaje de programación}
     \end{itemize}
 \end{frame}
@@ -1273,11 +1272,10 @@ testigos usando la traducción de Friedman}
 
 
 \begin{frame}{Certificador del by}
-    Teniendo $\ctx = \{\hypId_1: \formTwo_1, \dots, \hypId_n: \formTwo_n\}$, para \lstinline{thus A by h1, ..., hn}:
-
+    Para certificar un \lstinline{by}:
     \begin{enumerate}
         \item Buscamos las hipótesis en el contexto y armamos la fórmula
-        \item \textbf{Razonamos por el absurdo}: Asumimos negación y demostramos una contradicción ($\fFalse$)
+        \item \textbf{Razonamos por el absurdo}
         \item Convertimos la fórmula a \textbf{DNF}.
         \item Demostramos una \textbf{contradicción} refutando cada cláusula
         \begin{itemize}
@@ -1481,8 +1479,8 @@ testigos usando la traducción de Friedman}
     ¿Entonces por qué lógica clásica?
     \begin{itemize}
         \item Permite razonar por el absurdo, con \ruleDnegE{} $\equiv$ \ruleLEM{}.
-        \item Existen fórmulas que admiten \textit{solo demostraciones no constructivas} (i.e. clásicas)
-        Ejemplo: $\fNot (\form \fAnd \formTwo) \fImp \fNot \form \fOr \formTwo$ usa LEM.
+        \item Existen fórmulas que admiten \textit{solo demostraciones clásicas.}
+        Ejemplo: \[\fNot (\form \fAnd \formTwo) \fImp \fNot \form \fOr \formTwo.\]
     \end{itemize}
 
     % \begin{theorem}[Teorema constructivo y no constructivo]
@@ -1676,6 +1674,8 @@ testigos usando la traducción de Friedman}
     \end{center}
 
     \begin{example}
+        \[\ctxColor = \{\hypId_1: \form, \hypId_2: \formTwo \}\]
+        Luego
         \[
     \AxiomC{}
     \RL{\ruleAxh{\hypId_1}}
@@ -1697,7 +1697,6 @@ testigos usando la traducción de Friedman}
     \UnaryInfC{$\ctxColor \judG \form$}
     \DisplayProof
 \]
-    Donde \[\ctxColor = \{\hypId_1: \form, \hypId_2: \formTwo \}\]
     \end{example}
     \pause
     \begin{definition}[Reducción de conjunción]
@@ -1923,10 +1922,7 @@ testigos usando la traducción de Friedman}
         \item Reducción
         \begin{itemize}
             \item Solo contempla introducciones y eliminaciones del mismo conectivo.
-            \item \textbf{Incompleta}: no contempla \textit{reducciones permutativas}. \textit{Mejora}: Implementarlas.
-            \begin{itemize}
-                \item Hay algunas demostraciones que no se van a poder reducir a una forma normal útil. Ej: \lstinline{cases} (\ruleOrE{}).
-            \end{itemize}
+            \item \textbf{Incompleta}: no contempla \textit{reducciones permutativas}. \textit{Mejora}: Implementarlas. Ejemplo que queda afuera: \lstinline{cases} (\ruleOrE{}).
             \item \textbf{Ineficiente}: en cada paso reinicia la búsqueda de todos los focos de evaluación. \textit{Mejora}: Usar una \textit{máquina abstracta}.
         \end{itemize}
     \end{itemize}
