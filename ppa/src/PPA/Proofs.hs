@@ -1035,9 +1035,10 @@ proofNotCongruence' x _ hNotX hX' proofX'ThenX =
                 }
         }
 
--- TODO: No se necesita porque las imps se eliminan a nots
 {- Demuestra la congruencia del => sobre el primer argumento, es decir da una
 demostración de x => y -|- x' => y usando que x' -|- x (contravariante)
+
+NOTA: No se necesita porque las imps se eliminan a nots
 -}
 proofImpCongruence1 ::
     Form ->

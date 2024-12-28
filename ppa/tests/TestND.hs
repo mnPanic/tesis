@@ -3011,7 +3011,6 @@ f25 =
 
 -- Devuelve una demostración para
 -- (X ^ Y) v (X ^ Z) => X ^ (Y v Z)
--- TODO: Mejor nombre
 proofDistOrOverAnd :: Form -> Form -> Form -> Proof
 proofDistOrOverAnd fx fy fz =
     PImpI
@@ -3144,7 +3143,6 @@ f26 =
         )
         (propVar "B")
 
--- TODO arreglar esto que está mal DNF
 p26 :: Result Proof
 -- Primero doubleNegElim para demostrar por contradicción
 p26 = do

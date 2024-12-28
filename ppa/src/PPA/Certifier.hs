@@ -88,7 +88,6 @@ checkContext' [] _ = return ()
 checkContext' ((HAxiom h f) : hs) e = checkContext' hs e'
   where
     e' = EExtend h f e
--- TODO: que hacer con p? esta bien agregar al contexto los teoremas como si fueran axiomas? O deberíamos cada vez que se usa insertar la demostración?
 checkContext' ((HTheorem h f p) : hs) e = case check e p f of
     err | checkResultIsErr err -> Left $ printf "can't prove theorem '%s': \n%s" h (show err)
     CheckOK -> checkContext' hs e'
@@ -469,9 +468,6 @@ algunos operadores como el Not son opuestos).
 
 Devuelve Nothing cuando F ya está en DNF.
 -}
--- TODO: Raro que tomo la hip de l pero devuelvo la hip de l', porque se genera
--- acá y no se conoce de antemano. Se podrían devolver siempre acá las hips?
--- Pero es menos general.
 dnfStep :: EnvItem -> Maybe (EnvItem, Proof, Proof)
 -- dnfStep i | trace (printf "dnfStep %s" (show i)) False = undefined
 {- Casos de reescritura -}
@@ -895,7 +891,6 @@ proveClauseWithForallReplaced clause sub usedVars (f : fs) fForall@(FForall{}) =
                 proofF <- proofAndEProjection clause f
                 return (proofF : proofRest)
 
--- TODO
 {- Demuestra
 
 Dado {x = a, y = b, z = c}, demuestra

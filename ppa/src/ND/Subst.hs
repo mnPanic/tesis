@@ -128,7 +128,6 @@ substVar' s x t proof = case proof of
          in PForallE y' (doSubstS s' f) (recS s' pF) (doSubstT t')
     | otherwise -> PForallE y (doSubst f) (rec pF) (doSubstT t')
   PExistsI t' p1 -> PExistsI (doSubstT t') (rec p1)
-  -- TODO tests estos casos
   PExistsE y f pE h pA
     | x == y -> PExistsE y f (rec pE) h pA
     | y `elem` fvTerm t ->

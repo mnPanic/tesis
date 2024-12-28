@@ -177,8 +177,6 @@ alphaEqForm' = alphaEqForm 0
 -- una variable libre fresca igual para ambos. Si es la misma se sigue de largo.
 -- Luego, para ver si una var es igual a otra, nos fijamos que tengan mapeado el
 -- mismo nombre.
--- TODO: Hay que devolver también la próxima libre, sino para un && puede pasar
--- que se use la misma de ambos lados y está mal?
 alphaEqForm :: Int -> VarSubstitution -> VarSubstitution -> Form -> Form -> Bool
 alphaEqForm n m1 m2 f g = case (f, g) of
     (FTrue, FTrue) -> True
