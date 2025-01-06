@@ -14,7 +14,7 @@ lenguaje. Los detalles teóricos de cómo está implementado se abordan en el
     \label{ppa:prog:alumnos}
 \end{figure}
 
-Vayamos parte por parte. La primera de todo programa en PPA es definir
+Vayamos parte por parte. La primera parte de todo programa en PPA es definir
 los axiomas de la \textit{teoría de primer orden} con la que se está trabajando.
 Como no se chequean tipos, no es necesario definir explícitamente los símbolos
 de predicados y de función. Pero se pueden agregar a modo informativo como un
@@ -43,8 +43,8 @@ rindió, y si rindió el recuperatorio, es porque reprobó el parcial.
 
 Para demostrar un teorema, tenemos que agotar su \textit{tesis} reduciéndola
 sucesivamente con \textit{proof steps}. Una demostración es correcta si todos
-los pasos son lógicamente correctos, y luego de ejecutarlos todos, la tesis se
-reduce por completo.
+los pasos son lógicamente correctos, y luego de procesarlos todos, la tesis se
+reduce por completo. Veamos qué hace cada uno.
 
 \begin{itemize}
     \item \cmdLet{} permite demostrar un \lstinline{forall}, asignando un nombre general a la variable, y \textit{reduce} la tesis a su fórmula.
@@ -90,7 +90,7 @@ concentramos en la interfaz de usuario, sin entrar en detalle en cómo está
 implementada.
 
 Un programa de PPA consiste en una lista de \textbf{declaraciones}: axiomas y
-teoremas, que se leen en orden el inicio hasta el final.
+teoremas, que se leen en orden desde el inicio hasta el final.
 
 \begin{itemize}
     \item Los axiomas se asumen válidos, se usan para modelar la \textit{teoría
@@ -100,7 +100,7 @@ teoremas, que se leen en orden el inicio hasta el final.
 axiom <name> : <form>
     \end{lstlisting}
 
-    \item Los teoremas deben ser demostrados. En ella pueden citar
+    \item Los teoremas deben ser demostrados. En su prueba pueden citar
     todas las hipótesis definidas previamente.
 
     \begin{lstlisting}[numbers=none]
@@ -438,7 +438,8 @@ proof
 end
     \end{lstlisting}
 
-    \item \lstinline{claim}: permite demostrar una afirmación auxiliar. Útil
+    \item \lstinline{claim}: permite demostrar una afirmación auxiliar. Análogo
+    a \lstinline{have}, pero con una demostración entera en lugar de solo un \lstinline{by}. Útil
     para ordenar las demostraciones sin tener que definir otro teorema. Ejemplo
     en \fullref{ppa:prog:alumnos}
 

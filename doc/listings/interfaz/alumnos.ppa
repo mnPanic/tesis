@@ -41,7 +41,6 @@ proof
 
     hence recursa(A, M)
         by reprueba_recu,
-            reprueba_p,
             reprueba_recu_parcial_recursa
 end
 

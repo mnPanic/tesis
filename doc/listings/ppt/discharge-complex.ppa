@@ -5,6 +5,6 @@ theorem "and discharge":
     (a & b) & ((c & d) & e)
 proof
     thus a & e by "ax1"
-    thus d by "a3"
+    thus d by "ax3"
     thus b & c by "ax2"
 end
